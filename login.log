@@ -15752,3 +15752,45 @@ sqlalchemy.exc.IntegrityError: (pymysql.err.IntegrityError) (1062, "Duplicate en
 2025-11-10 15:28:57,478 INFO:127.0.0.1 - - [10/Nov/2025 15:28:57] "[33mGET /static/images/ HTTP/1.1[0m" 404 -
 2025-11-10 15:28:57,482 INFO:127.0.0.1 - - [10/Nov/2025 15:28:57] "[36mGET /static/images/kwarcab_02.JPG HTTP/1.1[0m" 304 -
 2025-11-10 15:28:57,485 INFO:127.0.0.1 - - [10/Nov/2025 15:28:57] "[36mGET /static/images/kwarcab_03.JPG HTTP/1.1[0m" 304 -
+2025-11-14 19:38:39,031 INFO:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-11-14 19:38:39,031 INFO:[33mPress CTRL+C to quit[0m
+2025-11-14 19:38:39,033 INFO: * Restarting with stat
+2025-11-14 19:38:41,196 WARNING: * Debugger is active!
+2025-11-14 19:38:41,200 INFO: * Debugger PIN: 124-661-812
+2025-11-14 19:39:40,747 INFO:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-11-14 19:39:40,747 INFO:[33mPress CTRL+C to quit[0m
+2025-11-14 19:39:40,749 INFO: * Restarting with stat
+2025-11-14 19:39:43,010 WARNING: * Debugger is active!
+2025-11-14 19:39:43,017 INFO: * Debugger PIN: 124-661-812
+2025-11-14 19:40:09,437 INFO:127.0.0.1 - - [14/Nov/2025 19:40:09] "GET / HTTP/1.1" 200 -
+2025-11-14 19:40:09,474 INFO:127.0.0.1 - - [14/Nov/2025 19:40:09] "GET /static/css/output.css HTTP/1.1" 200 -
+2025-11-14 19:40:09,602 INFO:127.0.0.1 - - [14/Nov/2025 19:40:09] "GET /static/css/style.css HTTP/1.1" 200 -
+2025-11-14 19:40:09,777 INFO:127.0.0.1 - - [14/Nov/2025 19:40:09] "[33mGET /static/images/ilustrasi.png HTTP/1.1[0m" 404 -
+2025-11-14 19:40:09,798 INFO:127.0.0.1 - - [14/Nov/2025 19:40:09] "GET /static/images/SPARK.png HTTP/1.1" 200 -
+2025-11-14 19:40:10,095 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "[33mGET /static/images/ilustrasi-2.png HTTP/1.1[0m" 404 -
+2025-11-14 19:40:10,114 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "[33mGET /static/images/ilustrasi-3.png HTTP/1.1[0m" 404 -
+2025-11-14 19:40:10,343 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "GET /static/js/jquery.min.js HTTP/1.1" 200 -
+2025-11-14 19:40:10,345 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "GET /static/js/jquery.easing.min.js HTTP/1.1" 200 -
+2025-11-14 19:40:10,347 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "GET /static/js/wow.js HTTP/1.1" 200 -
+2025-11-14 19:40:10,360 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "GET /static/images/kwarcab_01.JPG HTTP/1.1" 200 -
+2025-11-14 19:40:10,412 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "GET /static/images/kwarcab_02.JPG HTTP/1.1" 200 -
+2025-11-14 19:40:10,442 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "GET /static/images/kwarcab_03.JPG HTTP/1.1" 200 -
+2025-11-14 19:40:10,678 INFO:127.0.0.1 - - [14/Nov/2025 19:40:10] "[33mGET /static/images/ HTTP/1.1[0m" 404 -
+2025-11-14 19:40:11,009 INFO:127.0.0.1 - - [14/Nov/2025 19:40:11] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-11-14 19:41:10,017 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[35m[1mPOST /set-theme/dark HTTP/1.1[0m" 204 -
+2025-11-14 19:41:10,363 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "GET / HTTP/1.1" 200 -
+2025-11-14 19:41:10,417 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[36mGET /static/css/output.css HTTP/1.1[0m" 304 -
+2025-11-14 19:41:10,607 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-11-14 19:41:10,717 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[36mGET /static/js/jquery.min.js HTTP/1.1[0m" 304 -
+2025-11-14 19:41:10,717 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[36mGET /static/images/SPARK.png HTTP/1.1[0m" 304 -
+2025-11-14 19:41:10,926 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[33mGET /static/images/ilustrasi.png HTTP/1.1[0m" 404 -
+2025-11-14 19:41:10,936 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[33mGET /static/images/ilustrasi-3.png HTTP/1.1[0m" 404 -
+2025-11-14 19:41:10,938 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[33mGET /static/images/ilustrasi-2.png HTTP/1.1[0m" 404 -
+2025-11-14 19:41:10,947 INFO:127.0.0.1 - - [14/Nov/2025 19:41:10] "[36mGET /static/images/kwarcab_01.JPG HTTP/1.1[0m" 304 -
+2025-11-14 19:41:11,029 INFO:127.0.0.1 - - [14/Nov/2025 19:41:11] "[36mGET /static/js/jquery.easing.min.js HTTP/1.1[0m" 304 -
+2025-11-14 19:41:11,030 INFO:127.0.0.1 - - [14/Nov/2025 19:41:11] "[36mGET /static/js/wow.js HTTP/1.1[0m" 304 -
+2025-11-14 19:41:11,253 INFO:127.0.0.1 - - [14/Nov/2025 19:41:11] "[36mGET /static/images/kwarcab_03.JPG HTTP/1.1[0m" 304 -
+2025-11-14 19:41:11,254 INFO:127.0.0.1 - - [14/Nov/2025 19:41:11] "[36mGET /static/images/kwarcab_02.JPG HTTP/1.1[0m" 304 -
+2025-11-14 19:41:11,268 INFO:127.0.0.1 - - [14/Nov/2025 19:41:11] "[33mGET /static/images/ HTTP/1.1[0m" 404 -
