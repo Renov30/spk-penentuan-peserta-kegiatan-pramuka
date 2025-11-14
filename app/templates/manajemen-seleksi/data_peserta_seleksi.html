@@ -11,14 +11,14 @@
   class="space-y-6"
 >
   <!-- Judul -->
-  <h1 class="text-2xl font-bold">
+  <h1 class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
     {{ 'Data Peserta Seleksi' if current_lang == 'id' else 'Selection
     Participants Data' }}
   </h1>
 
   <!-- Pilih Kegiatan -->
   <div>
-    <label class="block font-semibold mb-2">
+    <label class="block font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
       {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Activity' }}
     </label>
     <select
@@ -35,12 +35,12 @@
   <!-- Info Kuota -->
   <div class="flex space-x-6">
     <div>
-      <span class="font-semibold">Kuota Putra:</span>
-      <span x-text="kuota.putra"></span>
+      <span class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">Kuota Putra:</span>
+      <span class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="kuota.putra"></span>
     </div>
     <div>
-      <span class="font-semibold">Kuota Putri:</span>
-      <span x-text="kuota.putri"></span>
+      <span class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">Kuota Putri:</span>
+      <span class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="kuota.putri"></span>
     </div>
   </div>
 
@@ -48,7 +48,7 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <!-- Peserta Putra -->
     <div class="p-4 border rounded-lg shadow-md">
-      <h2 class="text-lg font-bold mb-4">Peserta Putra</h2>
+      <h2 class="text-lg font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">Peserta Putra</h2>
       <template x-for="(peserta, index) in pesertaPutra" :key="index">
         <div class="space-y-3 mb-6 border-b pb-4">
           <input
@@ -133,7 +133,7 @@
 
     <!-- Peserta Putri -->
     <div class="p-4 border rounded-lg shadow-md">
-      <h2 class="text-lg font-bold mb-4">Peserta Putri</h2>
+      <h2 class="text-lg font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">Peserta Putri</h2>
       <template x-for="(peserta, index) in pesertaPutri" :key="index">
         <div class="space-y-3 mb-6 border-b pb-4">
           <input

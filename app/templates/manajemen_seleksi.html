@@ -79,7 +79,7 @@
             <!-- Content -->
             <div class="container mx-auto p-6">
               <h1
-                class="text-2xl font-bold mb-8 flex items-center gap-2 transition-all duration-1000"
+                class="text-2xl font-bold mb-8 flex items-center gap-2 transition-all duration-1000 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >
                 <template
                   x-for="(crumb, index) in $store.page.breadcrumbs"
@@ -111,7 +111,7 @@
                 >
                   <div class="flex items-center space-x-3 mb-4">
                     <i class="fa-solid fa-sliders text-blue-500 text-xl"></i>
-                    <h2 class="text-lg font-semibold">
+                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                       {{ 'Konfigurasi Seleksi' if current_lang == 'id' else
                       'Selection Configuration' }}
                     </h2>
@@ -144,7 +144,7 @@
                 >
                   <div class="flex items-center space-x-3 mb-4">
                     <i class="fa-solid fa-users text-green-500 text-xl"></i>
-                    <h2 class="text-lg font-semibold">
+                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                       {{ 'Data Peserta Seleksi' if current_lang == 'id' else
                       'Participant Data' }}
                     </h2>
@@ -180,7 +180,7 @@
                     <i
                       class="fa-solid fa-user-check text-purple-500 text-xl"
                     ></i>
-                    <h2 class="text-lg font-semibold">
+                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                       {{ 'Penugasan Penilai' if current_lang == 'id' else
                       'Evaluator Assignment' }}
                     </h2>
@@ -215,7 +215,7 @@
                     <i
                       class="fa-solid fa-clipboard-check text-orange-500 text-xl"
                     ></i>
-                    <h2 class="text-lg font-semibold">
+                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                       {{ 'Manajemen Penilaian' if current_lang == 'id' else
                       'Assessment Management' }}
                     </h2>
@@ -250,7 +250,7 @@
                     <i
                       class="fa-solid fa-ranking-star text-yellow-500 text-xl"
                     ></i>
-                    <h2 class="text-lg font-semibold">
+                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                       {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
                       Results' }}
                     </h2>
@@ -283,7 +283,7 @@
                 >
                   <div class="flex items-center space-x-3 mb-4">
                     <i class="fa-solid fa-folder-open text-red-500 text-xl"></i>
-                    <h2 class="text-lg font-semibold">
+                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                       {{ 'Laporan & Arsip Seleksi' if current_lang == 'id' else
                       'Reports & Archives' }}
                     </h2>

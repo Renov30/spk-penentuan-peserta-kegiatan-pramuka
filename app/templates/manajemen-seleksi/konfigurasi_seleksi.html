@@ -130,7 +130,7 @@
       <div>
         <!-- Periode & Jadwal -->
         <div x-show="tab==='periode'" x-transition>
-          <h3 class="font-semibold mb-2">
+          <h3 class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
             {{ 'Periode Seleksi' if current_lang == 'id' else 'Selection Period'
             }}
           </h3>
@@ -138,7 +138,7 @@
             <template x-for="(act, index) in activities" :key="index">
               <div class="mb-4 p-3 border rounded-lg dark:border-gray-700">
                 <!-- Nama Kegiatan -->
-                <label class="block text-sm font-medium mb-1 mt-2">
+                <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                   {{ 'Nama Kegiatan' if current_lang == 'id' else 'Activity
                   Name' }}
                 </label>
@@ -155,7 +155,7 @@
                 </small>
 
                 <!-- Skala Kegiatan -->
-                <label class="block text-sm font-medium mb-1 mt-2">
+                <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                   {{ 'Skala Kegiatan' if current_lang == 'id' else 'Activity
                   Scale' }}
                 </label>
@@ -182,7 +182,7 @@
                 </select>
 
                 <!-- Jenis Kegiatan -->
-                <label class="block text-sm font-medium mb-1 mt-2">
+                <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                   {{ 'Jenis Kegiatan' if current_lang == 'id' else 'Activity
                   Type' }}
                 </label>
@@ -209,7 +209,7 @@
                 </select>
 
                 <!-- Kwartir Penyelenggara -->
-                <label class="block text-sm font-medium mb-1 mt-2">
+                <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                   {{ 'Kwartir Penyelenggara' if current_lang == 'id' else
                   'Organizing Kwartir' }}
                 </label>
@@ -221,13 +221,13 @@
                 />
 
                 <!-- Waktu Pelaksanaan -->
-                <label class="block text-sm font-medium mb-1 mt-2">
+                <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                   {{ 'Waktu Pelaksanaan' if current_lang == 'id' else 'Execution
                   Time' }}
                 </label>
                 <div class="flex gap-3">
                   <div class="w-1/2">
-                    <small class="text-gray-500"
+                    <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
                       >{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small
                     >
                     <input
@@ -237,7 +237,7 @@
                     />
                   </div>
                   <div class="w-1/2">
-                    <small class="text-gray-500"
+                    <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
                       >{{ 'Selesai' if current_lang == 'id' else 'End' }}</small
                     >
                     <input
@@ -249,7 +249,7 @@
                 </div>
 
                 <!-- Tempat Pelaksanaan -->
-                <label class="block text-sm font-medium mb-1 mt-2">
+                <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                   {{ 'Tempat Pelaksanaan' if current_lang == 'id' else
                   'Execution Date' }}
                 </label>
@@ -262,13 +262,13 @@
                 />
 
                 <!-- Periode Pelaksanaan -->
-                <label class="block text-sm font-medium mb-1 mt-2">
+                <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                   {{ 'Periode Seleksi' if current_lang == 'id' else 'Selection
                   Period' }}
                 </label>
                 <div class="flex gap-3">
                   <div class="w-1/2">
-                    <small class="text-gray-500"
+                    <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
                       >{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small
                     >
                     <input
@@ -278,7 +278,7 @@
                     />
                   </div>
                   <div class="w-1/2">
-                    <small class="text-gray-500"
+                    <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
                       >{{ 'Selesai' if current_lang == 'id' else 'End' }}</small
                     >
                     <input
@@ -349,7 +349,7 @@
 
         <!-- Komposisi Kotingen -->
         <div x-show="tab==='kontingen'" x-transition>
-          <h3 class="font-semibold mb-2">
+          <h3 class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
             {{ 'Komposisi Kontingen' if current_lang == 'id' else 'Contingent
             Composition' }}
           </h3>
@@ -362,7 +362,7 @@
               <div class="flex gap-3">
                 <!-- Umpi Putra -->
                 <div class="w-1/2">
-                  <label class="block text-sm mb-1">
+                  <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                     {{ 'Umpi Putra' if current_lang == 'id' else 'Male Umpi' }}
                   </label>
                   <input
@@ -377,7 +377,7 @@
 
                 <!-- Umpi Putri -->
                 <div class="w-1/2">
-                  <label class="block text-sm mb-1">
+                  <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                     {{ 'Umpi Putri' if current_lang == 'id' else 'Female Umpi'
                     }}
                   </label>
@@ -416,7 +416,7 @@
 
         <!-- Kriteria Seleksi -->
         <div x-show="tab==='kriteria'" x-transition>
-          <h3 class="font-semibold mb-2">
+          <h3 class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
             {{ 'Kriteria Seleksi' if current_lang == 'id' else 'Selection
             Criteria' }}
           </h3>
@@ -427,7 +427,7 @@
                 x-text="activity.nama"
               ></h4>
               <div
-                class="flex items-center gap-2 mb-2 font-semibold text-sm border-b pb-1"
+                class="flex items-center gap-2 mb-2 font-semibold text-sm border-b pb-1 {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-300' }}"
               >
                 <div class="w-1/3">
                   {{ 'Nama Kriteria' if current_lang == 'id' else 'Criteria

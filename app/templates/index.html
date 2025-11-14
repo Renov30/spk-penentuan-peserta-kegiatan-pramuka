@@ -167,16 +167,26 @@
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center space-x-6">
           <nav class="flex space-x-4">
-            <a href="#home" class="hover:text-yellow-400 text-xl">
+            <a
+              href="#home"
+              class="hover:text-yellow-400 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+            >
               {{ 'Beranda' if current_lang == 'id' else 'Home' }}
             </a>
-            <a href="#news" class="hover:text-yellow-400 text-xl">
+            <a
+              href="#news"
+              class="hover:text-yellow-400 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+            >
               {{ 'Berita' if current_lang == 'id' else 'News' }}
             </a>
-            <a href="#about" class="hover:text-yellow-400 text-xl"
+            <a
+              href="#about"
+              class="hover:text-yellow-400 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >{{ 'Tentang Kami' if current_lang == 'id' else 'About Us' }}
             </a>
-            <a href="#services" class="hover:text-yellow-400 text-xl"
+            <a
+              href="#services"
+              class="hover:text-yellow-400 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >{{ 'Layanan' if current_lang == 'id' else 'Services' }}
             </a>
           </nav>
@@ -369,11 +379,13 @@
         x-transition:leave-end="opacity-0 scale-95"
         class="md:hidden px-6 pb-8 space-y-2 flex flex-col items-start text-start gap-2.5 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-gray-100' }}"
       >
-        <hr class="self-stretch border-gray-700 mb-6" />
+        <hr
+          class="self-stretch {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }} mb-6"
+        />
         <a
           href="#home"
           @click="open = false"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3"
+          class="hover:text-yellow-400 text-xl flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i class="fas fa-house"></i>
           {{ 'Beranda' if current_lang == 'id' else 'Home' }}
@@ -381,7 +393,7 @@
         <a
           href="#news"
           @click="open = false"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3"
+          class="hover:text-yellow-400 text-xl flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i class="fas fa-newspaper"></i>
           {{ 'Berita' if current_lang == 'id' else 'News' }}
@@ -389,7 +401,7 @@
         <a
           href="#about"
           @click="open = false"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3"
+          class="hover:text-yellow-400 text-xl flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i class="fas fa-circle-info"></i>
           {{ 'Tentang Kami' if current_lang == 'id' else 'About Us' }}
@@ -398,7 +410,7 @@
         <a
           href="#services"
           @click="open = false"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3"
+          class="hover:text-yellow-400 text-xl flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i class="fas fa-concierge-bell"></i>
           {{ 'Layanan' if current_lang == 'id' else 'Services' }}
@@ -412,7 +424,7 @@
       class="pt-24 min-h-screen flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
     >
       <div
-        class="container mx-auto px-6 flex flex-col mt-3.5 lg:flex-row items-center justify-between gap-10 text-white"
+        class="container mx-auto px-6 flex flex-col mt-3.5 lg:flex-row items-center justify-between gap-10 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
       >
         <!-- Text Content -->
         <div class="flex-1 text-center lg:text-left">
@@ -441,7 +453,7 @@
           >
             <a
               href="#services"
-              class="bg-yellow-400 px-6 py-3 rounded-full font-semibold hover:bg-yellow-300 hover:ring-2 hover:ring-yellow-200 transition {{ 'text-gray-900' if current_theme == 'dark' else 'text-white' }}"
+              class="bg-yellow-400 px-6 py-3 rounded-full font-semibold hover:bg-yellow-300 hover:ring-2 hover:ring-yellow-200 transition text-gray-900"
             >
               {{ 'Jelajahi Layanan' if current_lang == 'id' else 'Explore
               Services' }}
@@ -496,7 +508,9 @@
           >
             {{ 'Berita Terbaru' if current_lang == 'id' else 'Latest News' }}
           </h2>
-          <p class="text-sm">
+          <p
+            class="text-sm {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+          >
             {{ 'Ikuti perkembangan terbaru dan informasi terkini dari kami.' if
             current_lang == 'id' else 'Stay updated with our latest news and
             information.' }}
@@ -514,17 +528,23 @@
               class="w-full h-48 object-cover"
             />
             <div class="flex-grow p-3.5">
-              <h3 class="text-xl font-bold mb-2">
+              <h3
+                class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Kwarcab Merauke Prakarsai Pembentukkan Kwartir Ranting
                 (Kwarran) Okaba' if current_lang == 'id' else 'The Merauke Scout
                 Branch (Kwarcab) Initiates the Establishment of the Okaba
                 Subdistrict Scout Branch (Kwarran)' }}
               </h3>
-              <p class="text-sm text-gray-400 mb-3">
+              <p
+                class="text-sm mb-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+              >
                 {{ '20 September 2025' if current_lang == 'id' else 'September
                 20, 2025' }}
               </p>
-              <p class="mb-4 text-[0.9rem]">
+              <p
+                class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+              >
                 {{ 'Kwartir Cabang (Kwarcab) Gerakan Pramuka Merauke
                 memprakarsai pembentukan Kwartir Ranting (Kwarran) di Distrik
                 Okaba sebagai upaya memperluas jangkauan pembinaan kepramukaan
@@ -560,18 +580,24 @@
               class="w-full h-48 object-cover"
             />
             <div class="flex-grow p-3.5">
-              <h3 class="text-xl font-bold mb-2">
+              <h3
+                class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Kwarcab Merauke dan Bawaslu Kabupaten Merauke Teken MoU
                 Bentuk Saka Adhyasta Pemilu' if current_lang == 'id' else
                 'Merauke Scout Branch (Kwarcab) and the Merauke Regency General
                 Election Supervisory Agency (Bawaslu) Sign MoU to Establish the
                 Election Oversight Scout Unit (Saka Adhyasta Pemilu)' }}
               </h3>
-              <p class="text-sm text-gray-400 mb-3">
+              <p
+                class="text-sm mb-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+              >
                 {{ '25 September 2025' if current_lang == 'id' else 'September
                 25, 2025' }}
               </p>
-              <p class="mb-4 text-[0.9rem]">
+              <p
+                class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+              >
                 {{ 'Kwarcab Merauke bersama Badan Pengawas Pemilihan Umum
                 (Bawaslu) Kabupaten Merauke resmi menandatangani Nota
                 Kesepahaman (MoU) tentang pembentukan Saka Adhyasta Pemilu.
@@ -608,7 +634,9 @@
               class="w-full h-48 object-cover"
             />
             <div class="flex-grow p-3.5">
-              <h3 class="text-xl font-bold mb-2">
+              <h3
+                class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Kwarcab Merauke bersama Dinas Pemuda dan Olahraga Kabupaten
                 Merauke Laksanakan Lomba Senam Pramuka Tingkat Penggalang SD &
                 SMP Tahun 2025' if current_lang == 'id' else 'The Merauke Scout
@@ -616,11 +644,15 @@
                 Merauke Regency held the 2025 Scout Gymnastics Competition for
                 Elementary and Junior High School (Penggalang) Levels' }}
               </h3>
-              <p class="text-sm text-gray-400 mb-3">
+              <p
+                class="text-sm mb-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+              >
                 {{ '10 November 2025' if current_lang == 'id' else 'November 10,
                 2025' }}
               </p>
-              <p class="mb-4 text-[0.9rem]">
+              <p
+                class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+              >
                 {{ 'Kwartir Cabang (Kwarcab) Gerakan Pramuka Merauke bekerja
                 sama dengan Dinas Pemuda dan Olahraga Kabupaten Merauke
                 menyelenggarakan Lomba Senam Pramuka Tingkat Penggalang SD dan
@@ -663,7 +695,9 @@
           >
             {{ 'Tentang Kami' if current_lang == 'id' else 'About Us' }}
           </h2>
-          <p class="text-sm max-w-2xl mx-auto">
+          <p
+            class="text-sm max-w-2xl mx-auto {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+          >
             {{ 'Sistem Pendukung Keputusan Seleksi Peserta Kegiatan Pramuka
             adalah platform berbasis web yang dikembangkan untuk membantu proses
             seleksi peserta terbaik dalam kegiatan Pramuka tingkat Kwartir
@@ -692,7 +726,9 @@
 
           <!-- Description -->
           <div>
-            <h3 class="text-xl font-bold mb-4">
+            <h3
+              class="text-xl font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+            >
               {{ 'Mengapa memilih sistem ini?' if current_lang == 'id' else 'Why
               Choose This System?' }}
             </h3>
@@ -701,45 +737,62 @@
                 <i
                   class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
                 ></i>
-                {{ 'Sistem ini menggunakan metode Fuzzy AHP untuk meminimalkan
-                subjektivitas, sehingga setiap peserta dinilai berdasarkan
-                kriteria yang terukur dan terstruktur.' if current_lang == 'id'
-                else 'This system uses the Fuzzy AHP method to minimize
-                subjectivity, ensuring that every participant is evaluated based
-                on measurable and structured criteria.' }}
+                <span
+                  class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                >
+                  {{ 'Sistem ini menggunakan metode Fuzzy AHP untuk meminimalkan
+                  subjektivitas, sehingga setiap peserta dinilai berdasarkan
+                  kriteria yang terukur dan terstruktur.' if current_lang ==
+                  'id' else 'This system uses the Fuzzy AHP method to minimize
+                  subjectivity, ensuring that every participant is evaluated
+                  based on measurable and structured criteria.' }}
+                </span>
               </li>
               <li class="flex items-start">
                 <i
                   class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
                 ></i>
-                {{ 'Seluruh data penilaian, hasil perhitungan, dan ranking akhir
-                tersimpan dengan baik dan dapat ditinjau kapan saja, mendukung
-                proses seleksi yang terbuka dan akuntabel.' if current_lang ==
-                'id' else 'All assessment data, calculations, and final results
-                are stored and can be reviewed at any time, promoting
-                accountability and openness in the selection process.' }}
+                <span
+                  class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                >
+                  {{ 'Seluruh data penilaian, hasil perhitungan, dan ranking
+                  akhir tersimpan dengan baik dan dapat ditinjau kapan saja,
+                  mendukung proses seleksi yang terbuka dan akuntabel.' if
+                  current_lang == 'id' else 'All assessment data, calculations,
+                  and final results are stored and can be reviewed at any time,
+                  promoting accountability and openness in the selection
+                  process.' }}
+                </span>
               </li>
               <li class="flex items-start">
                 <i
                   class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
                 ></i>
-                {{ 'Perhitungan kompleks dilakukan secara otomatis, sehingga
-                mengurangi beban kerja panitia dalam proses penilaian dan
-                pengambilan keputusan.' if current_lang == 'id' else 'The system
-                automates complex calculations and simplifies data entry,
-                reducing the time and effort required for manual scoring and
-                decision-making.' }}
+                <span
+                  class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                >
+                  {{ 'Perhitungan kompleks dilakukan secara otomatis, sehingga
+                  mengurangi beban kerja panitia dalam proses penilaian dan
+                  pengambilan keputusan.' if current_lang == 'id' else 'The
+                  system automates complex calculations and simplifies data
+                  entry, reducing the time and effort required for manual
+                  scoring and decision-making.' }}
+                </span>
               </li>
               <li class="flex items-start">
                 <i
                   class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
                 ></i>
-                {{ 'Dirancang dengan tampilan yang sederhana dan mudah
-                digunakan, sistem ini dapat diakses oleh admin maupun juri dari
-                mana saja melalui perangkat berbasis web.' if current_lang ==
-                'id' else 'Designed with simplicity in mind, the web-based
-                platform allows both administrators and juries to easily access
-                and manage data from anywhere.' }}
+                <span
+                  class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                >
+                  {{ 'Dirancang dengan tampilan yang sederhana dan mudah
+                  digunakan, sistem ini dapat diakses oleh admin maupun juri
+                  dari mana saja melalui perangkat berbasis web.' if
+                  current_lang == 'id' else 'Designed with simplicity in mind,
+                  the web-based platform allows both administrators and juries
+                  to easily access and manage data from anywhere.' }}
+                </span>
               </li>
             </ul>
           </div>
@@ -757,7 +810,9 @@
         <!-- Logo / Perusahaan -->
         <div>
           <h3 class="text-2xl font-bold mb-4 text-yellow-400">SPARK</h3>
-          <p class="text-sm text-gray-400">
+          <p
+            class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
+          >
             {{ 'Sistem Pendukung Keputusan untuk rekomendasi nilai akhir seleksi
             peserta kegiatan Pramuka pada Tingkat Kwartir yang lebih objektif
             dan akurat.' if current_lang == 'id' else 'Decision Support System
@@ -769,7 +824,9 @@
 
         <!-- Navigasi -->
         <div>
-          <h4 class="text-xl font-semibold mb-4">
+          <h4
+            class="text-xl font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
             {{ 'Navigasi' if current_lang == 'id' else 'Navigation' }}
           </h4>
           <ul
@@ -812,14 +869,16 @@
 
         <!-- Sosial Media -->
         <div>
-          <h4 class="text-xl font-semibold mb-4">
+          <h4
+            class="text-xl font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
             {{ 'Ikuti Kami' if current_lang == 'id' else 'Follow Us' }}
           </h4>
           <div class="flex justify-center md:justify-start gap-4 text-xl">
             <a
               href="https://facebook.com"
               target="_blank"
-              class="relative group {{ 'hover:text-yellow-400' if current_theme == 'dark' else 'hover:text-gray-900' }}"
+              class="relative group {{ 'text-white hover:text-yellow-400' if current_theme == 'dark' else 'text-gray-700 hover:text-gray-900' }}"
             >
               <i class="fab fa-facebook-f"></i>
               <span
@@ -832,7 +891,7 @@
             <a
               href="https://www.instagram.com/id.toma?utm_source=ig_web_button_share_sheet&igsh=MW5sNzk3MG4wdXo5eA=="
               target="_blank"
-              class="relative group {{ 'hover:text-yellow-400' if current_theme == 'dark' else 'hover:text-gray-900' }}"
+              class="relative group {{ 'text-white hover:text-yellow-400' if current_theme == 'dark' else 'text-gray-700 hover:text-gray-900' }}"
             >
               <i class="fab fa-instagram"></i>
               <span
@@ -844,7 +903,7 @@
             </a>
             <a
               href="mailto:info@spark.com"
-              class="relative group {{ 'hover:text-yellow-400' if current_theme == 'dark' else 'hover:text-gray-900' }}"
+              class="relative group {{ 'text-white hover:text-yellow-400' if current_theme == 'dark' else 'text-gray-700 hover:text-gray-900' }}"
             >
               <i class="fas fa-envelope"></i>
               <span
@@ -943,7 +1002,7 @@
 
       <!-- Batas -->
       <div
-        class="mt-10 border-t border-gray-700 pt-6 text-center text-sm text-gray-500"
+        class="mt-10 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }} pt-6 text-center text-sm {{ 'text-gray-500' if current_theme == 'dark' else 'text-gray-600' }}"
       >
         &copy; 2025 SPARK Official. All rights reserved.
       </div>

@@ -13,13 +13,17 @@
   <!-- Header -->
   <div class="flex items-center justify-between mb-6">
     <div>
-      <h2 class="text-xl font-semibold">
+      <h2
+        class="text-xl font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+      >
         <!-- label: pref to use store lang if present -->
         <span
           x-text="$store?.page?.lang === 'id' ? 'Penugasan Penilai' : 'Evaluator Assignment'"
         ></span>
       </h2>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
+      <p
+        class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
+      >
         <span
           x-text="$store?.page?.lang === 'id' ? 'Kelola penilai dan tugas penilaian' : 'Manage evaluators and their assignments'"
         ></span>
@@ -60,11 +64,11 @@
     <div class="col-span-1 space-y-4">
       <div class="flex items-center justify-between">
         <h3
-          class="font-medium"
+          class="font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
           x-text="$store?.page?.lang === 'id' ? 'Daftar Penilai' : 'Assessors'"
         ></h3>
         <span
-          class="text-xs text-gray-500"
+          class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
           x-text="assessors.length + ' '+ ($store?.page?.lang === 'id' ? 'penilai' : 'assessors')"
         ></span>
       </div>
@@ -78,16 +82,22 @@
           <div class="flex-1">
             <div class="flex items-center justify-between">
               <div>
-                <div class="font-semibold" x-text="a.name"></div>
-                <div class="text-xs text-gray-500" x-text="a.role"></div>
+                <div
+                  class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  x-text="a.name"
+                ></div>
+                <div
+                  class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                  x-text="a.role"
+                ></div>
               </div>
               <div class="text-right">
                 <div
-                  class="text-sm font-medium"
+                  class="text-sm font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                   x-text="getAssignedCount(a.id) + ' / ' + totalParticipants"
                 ></div>
                 <div
-                  class="text-xs text-gray-400"
+                  class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
                   x-text="getStatus(a.id)"
                 ></div>
               </div>
@@ -109,7 +119,7 @@
 
       <div class="pt-3 border-t dark:border-gray-700">
         <div
-          class="text-sm text-gray-500 mb-2"
+          class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }} mb-2"
           x-text="$store?.page?.lang === 'id' ? 'Quick actions' : 'Quick actions'"
         ></div>
         <button
@@ -168,7 +178,7 @@
 
         <div class="flex items-center gap-2">
           <div
-            class="text-sm text-gray-500 mr-2"
+            class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }} mr-2"
             x-text="selectedAssessorId ? ('Selected: ' + getAssessorName(selectedAssessorId)) : ($store?.page?.lang === 'id' ? 'Pilih Penilai' : 'Select Assessor')"
           ></div>
           <button
@@ -194,27 +204,49 @@
         <table class="w-full text-sm">
           <thead class="bg-gray-100 dark:bg-gray-800">
             <tr>
-              <th class="px-3 py-2">
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 <input type="checkbox" @click="toggleAll($event)" />
               </th>
-              <th class="px-3 py-2">ID</th>
-              <th class="px-3 py-2">
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
+                ID
+              </th>
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Nama' if current_lang == 'id' else 'Name' }}
               </th>
-              <th class="px-3 py-2">
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Golongan' if current_lang == 'id' else 'Group' }}
               </th>
-              <th class="px-3 py-2">
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Tingkatan' if current_lang == 'id' else 'Rank' }}
               </th>
-              <th class="px-3 py-2">
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Usia' if current_lang == 'id' else 'Age' }}
               </th>
-              <th class="px-3 py-2">
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Gugus Depan' if current_lang == 'id' else 'Troop' }}
               </th>
-              <th class="px-3 py-2">Status</th>
-              <th class="px-3 py-2">
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
+                Status
+              </th>
+              <th
+                class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Penilai' if current_lang == 'id' else 'Assignee' }}
               </th>
             </tr>
@@ -225,26 +257,49 @@
                 <td class="px-3 py-2 text-center">
                   <input type="checkbox" :value="p.id" x-model="checked" />
                 </td>
-                <td class="px-3 py-2" x-text="p.id"></td>
-                <td class="px-3 py-2" x-text="p.nama_lengkap"></td>
-                <td class="px-3 py-2" x-text="p.golongan"></td>
-                <td class="px-3 py-2" x-text="p.tingkatan"></td>
-                <td class="px-3 py-2" x-text="p.usia"></td>
-                <td class="px-3 py-2" x-text="p.asal_gudep"></td>
+                <td
+                  class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  x-text="p.id"
+                ></td>
+                <td
+                  class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  x-text="p.nama_lengkap"
+                ></td>
+                <td
+                  class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  x-text="p.golongan"
+                ></td>
+                <td
+                  class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  x-text="p.tingkatan"
+                ></td>
+                <td
+                  class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  x-text="p.usia"
+                ></td>
+                <td
+                  class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  x-text="p.asal_gudep"
+                ></td>
                 <td class="px-3 py-2">
                   <span
                     :class="p.status === 'Aktif' ? 'px-2 py-1 bg-green-200 text-green-800 rounded-full text-xs' : 'px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs'"
                     x-text="p.status"
                   ></span>
                 </td>
-                <td class="px-3 py-2">
+                <td
+                  class="px-3 py-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                >
                   <span x-text="getAssigneeName(p.id) || '-'"></span>
                 </td>
               </tr>
             </template>
 
             <tr x-show="filteredParticipants().length === 0">
-              <td colspan="9" class="px-3 py-6 text-center text-gray-500">
+              <td
+                colspan="9"
+                class="px-3 py-6 text-center {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+              >
                 {{ 'Tidak ada peserta yang ditemukan.' if current_lang == 'id'
                 else 'No participants found.' }}
               </td>
@@ -255,7 +310,9 @@
 
       <!-- Footer actions -->
       <div class="flex items-center justify-between mt-4">
-        <div class="text-sm text-gray-500">
+        <div
+          class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
+        >
           <span
             x-text="'Showing: ' + filteredParticipants().length + ' / ' + participants.length"
           ></span>
@@ -293,7 +350,9 @@
       @click.away="openAddAssessor = false"
       class="bg-white p-6 rounded-xl w-full max-w-lg relative {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
     >
-      <h3 class="font-semibold mb-3">
+      <h3
+        class="font-semibold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+      >
         {{ 'Tambah Penilai' if current_lang == 'id' else 'Add Assessor' }}
       </h3>
       <div class="space-y-3">
@@ -339,10 +398,14 @@
       @click.away="openExport = false"
       class="bg-white dark:bg-gray-900 p-6 rounded-xl w-full max-w-md"
     >
-      <h3 class="font-semibold mb-3">
+      <h3
+        class="font-semibold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+      >
         {{ 'Ekspor' if current_lang == 'id' else 'Export' }}
       </h3>
-      <p class="text-sm text-gray-500 mb-4">
+      <p
+        class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }} mb-4"
+      >
         {{ 'Ini adalah ekspor demo. Hubungkan ke endpoint backend untuk
         menghasilkan CSV/XLSX.' if current_lang == 'id' else 'This is a demo
         export. Hook this to backend endpoint to generate CSV/XLSX.' }}
