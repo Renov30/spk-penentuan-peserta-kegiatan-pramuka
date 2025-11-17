@@ -1,1 +1,29 @@
 .env
+
+# Log files
+login.log
+*.log
+
+# Flask session files
+flask_session/
+app/flask_session/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
