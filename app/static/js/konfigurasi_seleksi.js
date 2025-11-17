@@ -141,7 +141,7 @@ function getDefaultCriteria() {
     { nama: "Pencapaian SKU", skala: 1, jenis: "Kualitatif" },
     { nama: "Pencapaian SPG", skala: 1, jenis: "Kualitatif" },
     { nama: "Kesehatan Jasmani dan Rohani", skala: 1, jenis: "Kualitatif" },
-    { nama: "Tes Wawancara", skala: 1, jenis: [] }, // multi-aspek
+    { nama: "Tes Wawancara", skala: 1, jenis: "Kualitatif" },
     {
       nama: "Tes Pilihan Ganda",
       skala: 1,

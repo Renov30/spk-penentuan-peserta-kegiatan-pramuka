@@ -78,6 +78,32 @@
         jenis: crit.jenis || []
       };
       this.showModal = false;
+    },
+
+    focusNextField(event, activityIndex) {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      
+      // Dapatkan semua input dan select yang bisa difokuskan dalam container kegiatan yang sama
+      const currentInput = event.target;
+      const activityContainer = currentInput.closest('.mb-4.p-3.border');
+      if (!activityContainer) return;
+      
+      // Ambil semua input dan select dalam container (dalam urutan DOM)
+      const allFields = Array.from(activityContainer.querySelectorAll('input, select'));
+      
+      // Cari index field saat ini
+      const currentIndex = allFields.indexOf(currentInput);
+      
+      // Cari field berikutnya yang bisa difokuskan
+      for (let i = currentIndex + 1; i < allFields.length; i++) {
+        const field = allFields[i];
+        // Skip jika disabled atau hidden
+        if (field && !field.disabled && field.offsetParent !== null) {
+          setTimeout(() => field.focus(), 10);
+          break;
+        }
+      }
     }
   }"
   x-transition:enter="transition ease-out duration-500"
@@ -150,6 +176,7 @@
                   type="text"
                   x-model="act.nama"
                   @input="errorMessage = ''; contingents[index].nama = act.nama"
+                  @keydown.enter="focusNextField($event, index)"
                   placeholder="Contoh: Raimuna Nasional"
                   class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                 />
@@ -167,6 +194,7 @@
                 </label>
                 <select
                   x-model="act.skala"
+                  @keydown.enter="focusNextField($event, index)"
                   class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                 >
                   <option value="Ranting">
@@ -196,6 +224,7 @@
                 </label>
                 <select
                   x-model="act.jenis"
+                  @keydown.enter="focusNextField($event, index)"
                   class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                 >
                   <option value="Siaga">
@@ -226,6 +255,7 @@
                 <input
                   type="text"
                   x-model="act.kwartir"
+                  @keydown.enter="focusNextField($event, index)"
                   placeholder="Contoh: Kwartir Cabang Merauke"
                   class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                 />
@@ -246,6 +276,7 @@
                     <input
                       type="datetime-local"
                       x-model="act.waktuMulai"
+                      @keydown.enter="focusNextField($event, index)"
                       class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                     />
                   </div>
@@ -257,6 +288,7 @@
                     <input
                       type="datetime-local"
                       x-model="act.waktuSelesai"
+                      @keydown.enter="focusNextField($event, index)"
                       class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                     />
                   </div>
@@ -272,6 +304,7 @@
                 <input
                   type="text"
                   x-model="activities[index].tempat"
+                  @keydown.enter="focusNextField($event, index)"
                   placeholder="Cari lokasi..."
                   class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                 />
@@ -292,6 +325,7 @@
                     <input
                       type="datetime-local"
                       x-model="act.mulai"
+                      @keydown.enter="focusNextField($event, index)"
                       class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                     />
                   </div>
@@ -303,6 +337,7 @@
                     <input
                       type="datetime-local"
                       x-model="act.selesai"
+                      @keydown.enter="focusNextField($event, index)"
                       class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                     />
                   </div>
