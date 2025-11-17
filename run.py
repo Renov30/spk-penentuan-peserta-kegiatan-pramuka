@@ -1099,24 +1099,81 @@ def save_config():
             nama = (act.get('nama') or '').strip()
             if not nama:
                 continue
+            
+            # Parse tanggal
             mulai_date = None
             selesai_date = None
+            waktu_pelaksanaan_date = None
             try:
                 if act.get('mulai'):
                     mulai_date = datetime.strptime(act['mulai'], '%Y-%m-%d').date()
                 if act.get('selesai'):
                     selesai_date = datetime.strptime(act['selesai'], '%Y-%m-%d').date()
+                # Gunakan waktuMulai untuk waktu_pelaksanaan jika ada
+                if act.get('waktuMulai'):
+                    try:
+                        # Format datetime-local: "YYYY-MM-DDTHH:mm" atau "YYYY-MM-DD"
+                        waktu_str = act['waktuMulai']
+                        if 'T' in waktu_str:
+                            waktu_pelaksanaan_date = datetime.strptime(waktu_str.split('T')[0], '%Y-%m-%d').date()
+                        else:
+                            waktu_pelaksanaan_date = datetime.strptime(waktu_str, '%Y-%m-%d').date()
+                    except Exception:
+                        waktu_pelaksanaan_date = mulai_date if mulai_date else None
+                elif mulai_date:
+                    waktu_pelaksanaan_date = mulai_date
             except Exception:
                 pass
+            
+            # Normalisasi jenis_kegiatan (ENUM case-sensitive)
+            jenis_kegiatan_map = {
+                'siaga': 'Siaga',
+                'penggalang': 'Penggalang',
+                'penegak': 'Penegak',
+                'pandega': 'Pandega',
+                'penegak dan pandega': 'Penegak dan Pandega'
+            }
+            jenis_raw = (act.get('jenis') or '').strip().lower()
+            jenis_kegiatan = jenis_kegiatan_map.get(jenis_raw, 'Siaga')  # Default ke Siaga
+            
+            # Normalisasi skala_kegiatan (ENUM case-sensitive)
+            skala_kegiatan_map = {
+                'ranting': 'Ranting',
+                'cabang': 'Cabang',
+                'daerah': 'Daerah',
+                'nasional': 'Nasional',
+                'internasional': 'Internasional'
+            }
+            skala_raw = (act.get('skala') or '').strip().lower()
+            skala_kegiatan = skala_kegiatan_map.get(skala_raw, 'Ranting')  # Default ke Ranting
+            
+            # Validasi tempat_pelaksanaan
+            tempat = (act.get('tempat') or '').strip()
+            if not tempat:
+                tempat = '-'
+            
+            # Validasi kwartir_penyelenggara
+            kwartir = (act.get('kwartir') or '').strip()
+            if not kwartir:
+                kwartir = 'Kwartir Ranting'
+            
+            # Pastikan semua tanggal ada
+            if not mulai_date:
+                mulai_date = datetime.utcnow().date()
+            if not selesai_date:
+                selesai_date = mulai_date
+            if not waktu_pelaksanaan_date:
+                waktu_pelaksanaan_date = mulai_date
+            
             event = Event(
-                jenis_kegiatan=act.get('jenis', 'siaga'),
+                jenis_kegiatan=jenis_kegiatan,
                 nama_kegiatan=nama,
-                waktu_pelaksanaan=act.get('waktu', ''),
-                tempat_pelaksanaan=act.get('tempat', act.get('tempat', '-')),
-                skala_kegiatan=act.get('skala', 'ranting'),
-                kwartir_penyelenggara=act.get('kwartir', 'kwartir ranting'),
-                mulai=mulai_date or datetime.utcnow().date(),
-                selesai=selesai_date or (mulai_date or datetime.utcnow().date())
+                waktu_pelaksanaan=waktu_pelaksanaan_date,
+                tempat_pelaksanaan=tempat,
+                skala_kegiatan=skala_kegiatan,
+                kwartir_penyelenggara=kwartir,
+                mulai=mulai_date,
+                selesai=selesai_date
             )
             db.session.add(event)
             db.session.flush()
@@ -1139,15 +1196,16 @@ def save_config():
             deskripsi = c.get('deskripsi', '')
             jenis_kriteria = c.get('jenis_kriteria', 'umum')
             if target_event_id is None:
+                today = datetime.utcnow().date()
                 placeholder = Event(
-                    jenis_kegiatan='-',
+                    jenis_kegiatan='Siaga',  # Default ENUM value
                     nama_kegiatan='(Default) Konfigurasi Seleksi',
-                    waktu_pelaksanaan='',
+                    waktu_pelaksanaan=today,
                     tempat_pelaksanaan='-',
-                    skala_kegiatan='-',
+                    skala_kegiatan='Ranting',  # Default ENUM value
                     kwartir_penyelenggara='-',
-                    mulai=datetime.utcnow().date(),
-                    selesai=datetime.utcnow().date()
+                    mulai=today,
+                    selesai=today
                 )
                 db.session.add(placeholder)
                 db.session.flush()

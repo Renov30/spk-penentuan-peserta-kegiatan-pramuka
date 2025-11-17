@@ -38,11 +38,11 @@ class Users(db.Model, UserMixin):
 class Event(db.Model):
     __tablename__ = 'tb_kegiatan'
     id_kegiatan = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    jenis_kegiatan = db.Column(db.Enum('siaga','penggalang','penegak','pandega','penegak dan pandega'), nullable=False)
+    jenis_kegiatan = db.Column(db.Enum('Siaga','Penggalang','Penegak','Pandega','Penegak dan Pandega'), nullable=False)
     nama_kegiatan = db.Column(db.String(255), nullable=False)
     waktu_pelaksanaan = db.Column(db.Date, nullable=False)
     tempat_pelaksanaan = db.Column(db.String(100), nullable=False)
-    skala_kegiatan = db.Column(db.Enum('ranting','cabang','daerah','nasional','internasional'), nullable=False)
+    skala_kegiatan = db.Column(db.Enum('Ranting','Cabang','Daerah','Nasional','Internasional'), nullable=False)
     kwartir_penyelenggara = db.Column(db.String(255), nullable=False)
     mulai = db.Column(db.Date, nullable=False)
     selesai = db.Column(db.Date, nullable=False)
