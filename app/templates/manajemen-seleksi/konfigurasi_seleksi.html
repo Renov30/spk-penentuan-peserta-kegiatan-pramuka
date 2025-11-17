@@ -95,12 +95,94 @@
       // Cari index field saat ini
       const currentIndex = allFields.indexOf(currentInput);
       
-      // Cari field berikutnya yang bisa difokuskan
+      // Jika field saat ini adalah select dan sudah ada nilai terpilih, lanjut ke field berikutnya
+      if (currentInput.tagName === 'SELECT' && currentInput.value) {
+        // Cari field berikutnya yang bisa difokuskan
+        for (let i = currentIndex + 1; i < allFields.length; i++) {
+          const field = allFields[i];
+          if (field && !field.disabled && field.offsetParent !== null) {
+            setTimeout(() => {
+              field.focus();
+              // Jika field berikutnya adalah select, buka dropdown
+              if (field.tagName === 'SELECT') {
+                setTimeout(() => {
+                  field.focus();
+                  // Trigger click untuk membuka dropdown
+                  field.click();
+                  // Juga trigger keydown Space sebagai alternatif
+                  setTimeout(() => {
+                    const spaceEvent = new KeyboardEvent('keydown', {
+                      key: ' ',
+                      code: 'Space',
+                      keyCode: 32,
+                      bubbles: true,
+                      cancelable: true
+                    });
+                    field.dispatchEvent(spaceEvent);
+                  }, 10);
+                }, 50);
+              }
+              // Jika field berikutnya adalah datetime-local, langsung buka picker
+              else if (field.type === 'datetime-local' || field.type === 'date' || field.type === 'time') {
+                if (typeof field.showPicker === 'function') {
+                  try {
+                    field.showPicker();
+                  } catch (e) {
+                    field.click();
+                  }
+                } else {
+                  field.click();
+                }
+              }
+            }, 10);
+            break;
+          }
+        }
+        return;
+      }
+      
+      // Jika field saat ini adalah input biasa atau select tanpa nilai, fokus ke field berikutnya
       for (let i = currentIndex + 1; i < allFields.length; i++) {
         const field = allFields[i];
         // Skip jika disabled atau hidden
         if (field && !field.disabled && field.offsetParent !== null) {
-          setTimeout(() => field.focus(), 10);
+          setTimeout(() => {
+            field.focus();
+            // Jika field berikutnya adalah select, buka dropdown
+            if (field.tagName === 'SELECT') {
+              setTimeout(() => {
+                field.focus();
+                // Trigger click untuk membuka dropdown
+                field.click();
+                // Juga trigger keydown Space sebagai alternatif
+                setTimeout(() => {
+                  const spaceEvent = new KeyboardEvent('keydown', {
+                    key: ' ',
+                    code: 'Space',
+                    keyCode: 32,
+                    bubbles: true,
+                    cancelable: true
+                  });
+                  field.dispatchEvent(spaceEvent);
+                }, 10);
+              }, 50);
+            }
+            // Jika field berikutnya adalah datetime-local, langsung buka picker
+            else if (field.type === 'datetime-local' || field.type === 'date' || field.type === 'time') {
+              // Coba gunakan showPicker() jika tersedia (browser modern)
+              if (typeof field.showPicker === 'function') {
+                try {
+                  field.showPicker();
+                } catch (e) {
+                  // Fallback: klik field untuk membuka picker
+                  field.click();
+                }
+              } else {
+                // Fallback untuk browser lama: klik field
+                field.click();
+              }
+            }
+          }, 10);
           break;
         }
       }
