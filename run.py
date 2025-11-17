@@ -1280,6 +1280,115 @@ def view_config():
                          sidebar_state=sidebar_state, 
                          user=current_user)
 
+# API Update Konfigurasi Seleksi
+@app.route('/api/update_config/<int:event_id>', methods=['PUT', 'POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def update_config(event_id):
+    try:
+        event = Event.query.get_or_404(event_id)
+        data = request.get_json(force=True)
+        
+        # Update Event
+        if 'event' in data:
+            evt_data = data['event']
+            if 'nama_kegiatan' in evt_data:
+                event.nama_kegiatan = evt_data['nama_kegiatan'].strip()
+            if 'jenis_kegiatan' in evt_data:
+                jenis_kegiatan_map = {
+                    'siaga': 'Siaga', 'penggalang': 'Penggalang', 'penegak': 'Penegak',
+                    'pandega': 'Pandega', 'penegak dan pandega': 'Penegak dan Pandega'
+                }
+                jenis_raw = evt_data['jenis_kegiatan'].strip().lower()
+                event.jenis_kegiatan = jenis_kegiatan_map.get(jenis_raw, event.jenis_kegiatan)
+            if 'skala_kegiatan' in evt_data:
+                skala_kegiatan_map = {
+                    'ranting': 'Ranting', 'cabang': 'Cabang', 'daerah': 'Daerah',
+                    'nasional': 'Nasional', 'internasional': 'Internasional'
+                }
+                skala_raw = evt_data['skala_kegiatan'].strip().lower()
+                event.skala_kegiatan = skala_kegiatan_map.get(skala_raw, event.skala_kegiatan)
+            if 'kwartir_penyelenggara' in evt_data:
+                event.kwartir_penyelenggara = evt_data['kwartir_penyelenggara'].strip()
+            if 'tempat_pelaksanaan' in evt_data:
+                event.tempat_pelaksanaan = evt_data['tempat_pelaksanaan'].strip()
+            if 'waktu_pelaksanaan' in evt_data and evt_data['waktu_pelaksanaan']:
+                try:
+                    event.waktu_pelaksanaan = datetime.strptime(evt_data['waktu_pelaksanaan'], '%Y-%m-%d').date()
+                except:
+                    pass
+            if 'mulai' in evt_data and evt_data['mulai']:
+                try:
+                    event.mulai = datetime.strptime(evt_data['mulai'], '%Y-%m-%d').date()
+                except:
+                    pass
+            if 'selesai' in evt_data and evt_data['selesai']:
+                try:
+                    event.selesai = datetime.strptime(evt_data['selesai'], '%Y-%m-%d').date()
+                except:
+                    pass
+        
+        # Update Kuota
+        if 'kuota' in data:
+            kuota = Kuota.query.filter_by(event_id=event_id).first()
+            if kuota:
+                if 'putra' in data['kuota']:
+                    kuota.putra = int(data['kuota']['putra'] or 0)
+                if 'putri' in data['kuota']:
+                    kuota.putri = int(data['kuota']['putri'] or 0)
+            else:
+                kuota = Kuota(
+                    event_id=event_id,
+                    putra=int(data['kuota'].get('putra', 0)),
+                    putri=int(data['kuota'].get('putri', 0))
+                )
+                db.session.add(kuota)
+        
+        # Update Criteria
+        if 'criteria' in data:
+            # Hapus criteria lama
+            Criteria.query.filter_by(event_id=event_id).delete()
+            # Tambah criteria baru
+            for c in data['criteria']:
+                crit = Criteria(
+                    event_id=event_id,
+                    nama_kriteria=c.get('nama_kriteria', '').strip() or 'Unnamed Criteria',
+                    bobot=float(c.get('bobot', 0)),
+                    aspek=', '.join(c.get('aspek', [])) if isinstance(c.get('aspek'), list) else (c.get('aspek', '') or ''),
+                    deskripsi=c.get('deskripsi', ''),
+                    jenis_kriteria=c.get('jenis_kriteria', 'Kualitatif'),
+                    jumlah_soal=int(c.get('jumlah_soal')) if c.get('jumlah_soal') else None
+                )
+                db.session.add(crit)
+        
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Konfigurasi berhasil diperbarui'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/update_config:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# API Delete Konfigurasi Seleksi
+@app.route('/api/delete_config/<int:event_id>', methods=['DELETE', 'POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def delete_config(event_id):
+    try:
+        event = Event.query.get_or_404(event_id)
+        event_name = event.nama_kegiatan
+        
+        # Hapus akan cascade otomatis ke Kuota dan Criteria karena cascade="all, delete-orphan"
+        db.session.delete(event)
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': f'Konfigurasi "{event_name}" berhasil dihapus'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/delete_config:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 # API Kegiatan 
 @app.route('/api/kegiatan')
 @login_required
