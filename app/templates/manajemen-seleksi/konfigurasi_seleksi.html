@@ -83,11 +83,15 @@
     focusNextField(event, activityIndex) {
       if (event.key !== 'Enter') return;
       event.preventDefault();
+      event.stopPropagation();
       
       // Dapatkan semua input dan select yang bisa difokuskan dalam container kegiatan yang sama
       const currentInput = event.target;
       const activityContainer = currentInput.closest('.mb-4.p-3.border');
-      if (!activityContainer) return;
+      if (!activityContainer) {
+        // Jika tidak ada container, tetap prevent default untuk mencegah form submit
+        return;
+      }
       
       // Ambil semua input dan select dalam container (dalam urutan DOM)
       const allFields = Array.from(activityContainer.querySelectorAll('input, select'));
@@ -142,10 +146,12 @@
       }
       
       // Jika field saat ini adalah input biasa atau select tanpa nilai, fokus ke field berikutnya
+      let foundNextField = false;
       for (let i = currentIndex + 1; i < allFields.length; i++) {
         const field = allFields[i];
         // Skip jika disabled atau hidden
         if (field && !field.disabled && field.offsetParent !== null) {
+          foundNextField = true;
           setTimeout(() => {
             field.focus();
             // Jika field berikutnya adalah select, buka dropdown
@@ -186,6 +192,9 @@
           break;
         }
       }
+      
+      // Jika tidak ada field berikutnya, tetap prevent default untuk mencegah form submit atau navigasi
+      // preventDefault dan stopPropagation sudah dipanggil di awal fungsi
     }
   }"
   x-transition:enter="transition ease-out duration-500"
@@ -510,6 +519,7 @@
                     min="5"
                     max="12"
                     x-model.number="cont.umpiPutra"
+                    @keydown.enter="focusNextField($event, index)"
                     placeholder="5–12"
                     class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
                   />
@@ -528,6 +538,7 @@
                     min="5"
                     max="12"
                     x-model.number="cont.umpiPutri"
+                    @keydown.enter="focusNextField($event, index)"
                     placeholder="5–12"
                     class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
                   />
