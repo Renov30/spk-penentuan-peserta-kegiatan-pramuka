@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>
+      {{ 'Data Konfigurasi Seleksi | SPK Pramuka' if current_lang == 'id' else 'Selection Configuration Data | Scout DSS' }}
+    </title>
+
+    <!-- Tailwind CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/output.css') }}"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    />
+
+    <!-- Alpine.js -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <!-- Script Sidebar -->
+    {% include "script_sidebar.html" %}
+
+    <!-- Script Theme -->
+    {% include 'script_theme.html' %}
+  </head>
+  <body
+    x-data="{ 
+      ready: false, 
+      current_lang: '{{ current_lang }}',
+      selectedEvent: null,
+      configData: null,
+      loading: false,
+      modal: { show: false, title: '', message: '' },
+      loadConfig(eventId) {
+        this.loading = true;
+        this.selectedEvent = eventId;
+        this.configData = null;
+        
+        fetch(`/api/get_config/${eventId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
+              this.configData = data.data;
+            } else {
+              this.modal = {
+                show: true,
+                title: '{{ 'Error' if current_lang == 'id' else 'Error' }}',
+                message: data.message || '{{ 'Gagal memuat data konfigurasi' if current_lang == 'id' else 'Failed to load configuration data' }}'
+              };
+              this.selectedEvent = null;
+            }
+          })
+          .catch(err => {
+            console.error('Error loading config:', err);
+            this.modal = {
+              show: true,
+              title: '{{ 'Error' if current_lang == 'id' else 'Error' }}',
+              message: '{{ 'Terjadi kesalahan saat memuat data' if current_lang == 'id' else 'An error occurred while loading data' }}'
+            };
+            this.selectedEvent = null;
+          })
+          .finally(() => {
+            this.loading = false;
+          });
+      }
+    }"
+    x-init="ready = true"
+    :class="{ 'dark': $store.theme?.isDark }"
+    x-bind:class="{
+        'bg-background-dark text-white': $store.theme?.isDark,
+        'bg-gray-100 text-black': !$store.theme?.isDark
+      }"
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+  >
+    <div
+      class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      <!-- Sidebar -->
+      {% include 'sidebar.html' %}
+
+      <!-- Main content -->
+      <div class="flex flex-col flex-1 overflow-hidden h-full">
+        <!-- Top Navbar -->
+        {% include 'header.html' %}
+
+        <!-- Page Content -->
+        <main
+          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[1%]'"
+        >
+          <section
+            class="flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+          >
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
+            <!-- Content -->
+            <div class="container mx-auto p-6">
+              <div class="flex justify-between items-center mb-6">
+                <h1
+                  class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                >
+                  <i class="fa-solid fa-list-check mr-2"></i>
+                  {{ 'Data Konfigurasi Seleksi' if current_lang == 'id' else 'Selection Configuration Data' }}
+                </h1>
+                <button
+                  @click="window.location.href='/admin/manajemen_seleksi'"
+                  class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}"
+                >
+                  <i class="fa-solid fa-arrow-left mr-2"></i>
+                  {{ 'Kembali' if current_lang == 'id' else 'Back' }}
+                </button>
+              </div>
+
+              <!-- List Konfigurasi -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                {% for event in events %}
+                <div
+                  class="bg-white shadow-md rounded-xl p-6 hover:shadow-lg transition cursor-pointer {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-100' }}"
+                  @click="loadConfig({{ event.id_kegiatan }})"
+                >
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                      <h3 class="text-lg font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                        {{ event.nama_kegiatan }}
+                      </h3>
+                      <div class="flex flex-wrap gap-2 mb-2">
+                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          {{ event.jenis_kegiatan }}
+                        </span>
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          {{ event.skala_kegiatan }}
+                        </span>
+                      </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-400"></i>
+                  </div>
+                  <div class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                    <p class="mb-1">
+                      <i class="fa-solid fa-calendar mr-2"></i>
+                      {% if event.mulai %}
+                        {{ event.mulai.strftime('%d/%m/%Y') }}
+                        {% if event.selesai %} - {{ event.selesai.strftime('%d/%m/%Y') }}{% endif %}
+                      {% else %}
+                        -
+                      {% endif %}
+                    </p>
+                    <p>
+                      <i class="fa-solid fa-location-dot mr-2"></i>
+                      {{ event.tempat_pelaksanaan or '-' }}
+                    </p>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+
+              <!-- Detail Modal -->
+              <div
+                x-show="selectedEvent !== null && configData !== null"
+                x-transition.opacity
+                class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-300/50' }}"
+                @click.away="selectedEvent = null; configData = null"
+              >
+                <div
+                  x-transition.scale
+                  class="p-6 rounded-2xl shadow-2xl w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
+                >
+                  <!-- Header -->
+                  <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Detail Konfigurasi Seleksi' if current_lang == 'id' else 'Configuration Details' }}
+                    </h2>
+                    <button
+                      @click="selectedEvent = null; configData = null"
+                      class="text-gray-500 hover:text-gray-700 dark:hover:text-red-600 transition cursor-pointer"
+                    >
+                      <i class="fa-solid fa-xmark text-2xl"></i>
+                    </button>
+                  </div>
+
+                  <template x-if="configData">
+                    <div class="space-y-6">
+                      <!-- Informasi Kegiatan -->
+                      <div class="border rounded-lg p-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}">
+                        <h3 class="text-lg font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                          <i class="fa-solid fa-info-circle mr-2 text-blue-500"></i>
+                          {{ 'Informasi Kegiatan' if current_lang == 'id' else 'Activity Information' }}
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Nama Kegiatan' if current_lang == 'id' else 'Activity Name' }}
+                            </label>
+                            <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="configData.event.nama_kegiatan"></p>
+                          </div>
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Jenis Kegiatan' if current_lang == 'id' else 'Activity Type' }}
+                            </label>
+                            <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="configData.event.jenis_kegiatan"></p>
+                          </div>
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Skala Kegiatan' if current_lang == 'id' else 'Activity Scale' }}
+                            </label>
+                            <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="configData.event.skala_kegiatan"></p>
+                          </div>
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Kwartir Penyelenggara' if current_lang == 'id' else 'Organizing Kwartir' }}
+                            </label>
+                            <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="configData.event.kwartir_penyelenggara"></p>
+                          </div>
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Tempat Pelaksanaan' if current_lang == 'id' else 'Location' }}
+                            </label>
+                            <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="configData.event.tempat_pelaksanaan"></p>
+                          </div>
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Waktu Pelaksanaan' if current_lang == 'id' else 'Execution Time' }}
+                            </label>
+                            <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" 
+                               x-text="configData.event.waktu_pelaksanaan ? new Date(configData.event.waktu_pelaksanaan).toLocaleDateString('id-ID') : '-'"></p>
+                          </div>
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Periode Seleksi' if current_lang == 'id' else 'Selection Period' }}
+                            </label>
+                            <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                              <span x-text="configData.event.mulai ? new Date(configData.event.mulai).toLocaleDateString('id-ID') : '-'"></span>
+                              <span x-show="configData.event.selesai"> - <span x-text="new Date(configData.event.selesai).toLocaleDateString('id-ID')"></span></span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Komposisi Kontingen -->
+                      <div class="border rounded-lg p-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}">
+                        <h3 class="text-lg font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                          <i class="fa-solid fa-users mr-2 text-green-500"></i>
+                          {{ 'Komposisi Kontingen' if current_lang == 'id' else 'Contingent Composition' }}
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Umpi Putra' if current_lang == 'id' else 'Male Umpi' }}
+                            </label>
+                            <p class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="configData.kuota.putra"></p>
+                          </div>
+                          <div>
+                            <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                              {{ 'Umpi Putri' if current_lang == 'id' else 'Female Umpi' }}
+                            </label>
+                            <p class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="configData.kuota.putri"></p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Kriteria Seleksi -->
+                      <div class="border rounded-lg p-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}">
+                        <h3 class="text-lg font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                          <i class="fa-solid fa-list-check mr-2 text-purple-500"></i>
+                          {{ 'Kriteria Seleksi' if current_lang == 'id' else 'Selection Criteria' }}
+                        </h3>
+                        <div class="overflow-x-auto">
+                          <table class="w-full text-sm">
+                            <thead class="{{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-200' }}">
+                              <tr>
+                                <th class="px-4 py-3 text-left {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                                  {{ 'Nama Kriteria' if current_lang == 'id' else 'Criteria Name' }}
+                                </th>
+                                <th class="px-4 py-3 text-left {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                                  {{ 'Jenis' if current_lang == 'id' else 'Type' }}
+                                </th>
+                                <th class="px-4 py-3 text-left {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                                  {{ 'Skala' if current_lang == 'id' else 'Scale' }}
+                                </th>
+                                <th class="px-4 py-3 text-left {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                                  {{ 'Aspek' if current_lang == 'id' else 'Aspect' }}
+                                </th>
+                                <th class="px-4 py-3 text-left {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                                  {{ 'Jumlah Soal' if current_lang == 'id' else 'Question Count' }}
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-300' }}">
+                              <template x-for="(crit, index) in configData.criteria" :key="index">
+                                <tr class="{{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-100' }}">
+                                  <td class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="crit.nama_kriteria"></td>
+                                  <td class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="crit.jenis_kriteria"></td>
+                                  <td class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="crit.bobot"></td>
+                                  <td class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="crit.aspek || '-'"></td>
+                                  <td class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}" x-text="crit.jumlah_soal ? crit.jumlah_soal : '-'"></td>
+                                </tr>
+                              </template>
+                              <tr x-show="!configData.criteria || configData.criteria.length === 0">
+                                <td colspan="5" class="px-4 py-8 text-center {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                                  {{ 'Tidak ada kriteria' if current_lang == 'id' else 'No criteria' }}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              {% if not events %}
+              <div class="text-center py-12">
+                <i class="fa-solid fa-inbox text-6xl {{ 'text-gray-600' if current_theme == 'dark' else 'text-gray-400' }} mb-4"></i>
+                <p class="text-lg {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                  {{ 'Belum ada konfigurasi seleksi' if current_lang == 'id' else 'No selection configuration yet' }}
+                </p>
+              </div>
+              {% endif %}
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+  </body>
+</html>
+

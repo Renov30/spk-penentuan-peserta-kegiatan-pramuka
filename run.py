@@ -1227,6 +1227,59 @@ def save_config():
         current_app.logger.exception('Error in /api/save_config:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# API Get Konfigurasi Seleksi
+@app.route('/api/get_config/<int:event_id>')
+@login_required
+@admin_required
+def get_config(event_id):
+    try:
+        event = Event.query.get_or_404(event_id)
+        kuota = Kuota.query.filter_by(event_id=event_id).first()
+        criteria_list = Criteria.query.filter_by(event_id=event_id).all()
+        
+        config_data = {
+            'event': {
+                'id': event.id_kegiatan,
+                'nama_kegiatan': event.nama_kegiatan,
+                'jenis_kegiatan': event.jenis_kegiatan,
+                'skala_kegiatan': event.skala_kegiatan,
+                'kwartir_penyelenggara': event.kwartir_penyelenggara,
+                'tempat_pelaksanaan': event.tempat_pelaksanaan,
+                'waktu_pelaksanaan': event.waktu_pelaksanaan.strftime('%Y-%m-%d') if event.waktu_pelaksanaan else None,
+                'mulai': event.mulai.strftime('%Y-%m-%d') if event.mulai else None,
+                'selesai': event.selesai.strftime('%Y-%m-%d') if event.selesai else None,
+            },
+            'kuota': {
+                'putra': kuota.putra if kuota else 0,
+                'putri': kuota.putri if kuota else 0
+            },
+            'criteria': [{
+                'id': c.id_kriteria,
+                'nama_kriteria': c.nama_kriteria,
+                'bobot': c.bobot,
+                'jenis_kriteria': c.jenis_kriteria,
+                'aspek': c.aspek,
+                'deskripsi': c.deskripsi,
+                'jumlah_soal': c.jumlah_soal
+            } for c in criteria_list]
+        }
+        return jsonify({'status': 'success', 'data': config_data}), 200
+    except Exception as e:
+        current_app.logger.exception('Error in /api/get_config:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Halaman View Konfigurasi Seleksi
+@app.route('/admin/view_config')
+@login_required
+@admin_required
+def view_config():
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    events = Event.query.order_by(Event.id_kegiatan.desc()).all()
+    return render_template("manajemen-seleksi/view_konfigurasi.html", 
+                         events=events, 
+                         sidebar_state=sidebar_state, 
+                         user=current_user)
+
 # API Kegiatan 
 @app.route('/api/kegiatan')
 @login_required

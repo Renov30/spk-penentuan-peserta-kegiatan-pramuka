@@ -123,19 +123,28 @@
                     current_lang == 'id' else 'Set up period, schedule, quota,
                     and selection criteria.' }}
                   </p>
-                  <button
-                    @click="
-                      page = 'config';
-                      $store.page.breadcrumbs =
-                        current_lang === 'id'
-                          ? ['Manajemen Seleksi', 'Konfigurasi Seleksi']
-                          : ['Selection Management', 'Selection Configuration']
-                    "
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer"
-                  >
-                    <i class="fa-solid fa-gear mr-2"></i>
-                    {{ 'Kelola' if current_lang == 'id' else 'Manage' }}
-                  </button>
+                  <div class="flex gap-2">
+                    <button
+                      @click="
+                        page = 'config';
+                        $store.page.breadcrumbs =
+                          current_lang === 'id'
+                            ? ['Manajemen Seleksi', 'Konfigurasi Seleksi']
+                            : ['Selection Management', 'Selection Configuration']
+                      "
+                      class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer"
+                    >
+                      <i class="fa-solid fa-gear mr-2"></i>
+                      {{ 'Kelola' if current_lang == 'id' else 'Manage' }}
+                    </button>
+                    <a
+                      href="/admin/view_config"
+                      class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-green-500 text-white hover:bg-green-600 active:scale-95 transition-all shadow dark:bg-green-600 dark:hover:bg-green-700 cursor-pointer"
+                    >
+                      <i class="fa-solid fa-eye mr-2"></i>
+                      {{ 'Lihat Data' if current_lang == 'id' else 'View Data' }}
+                    </a>
+                  </div>
                 </div>
 
                 <!-- Data Peserta Seleksi -->
