@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>
+      {{ 'Hasil Seleksi | SPK Pramuka' if current_lang == 'id' else 'Selection Results | Scout DSS' }}
+    </title>
+
+    <!-- Tailwind CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/output.css') }}"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    />
+
+    <!-- Alpine.js -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <!-- Script Sidebar -->
+    {% include "script_sidebar.html" %}
+
+    <!-- Script Theme -->
+    {% include 'script_theme.html' %}
+  </head>
+  <body
+    x-data="{ ready: false }"
+    x-init="ready = true"
+    :class="{ 'dark': $store.theme?.isDark }"
+    x-bind:class="{
+        'bg-background-dark text-white': $store.theme?.isDark,
+        'bg-gray-100 text-black': !$store.theme?.isDark
+      }"
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+  >
+    <div
+      class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      <!-- Sidebar -->
+      {% include 'sidebar.html' %}
+
+      <!-- Main content -->
+      <div class="flex flex-col flex-1 overflow-hidden h-full">
+        <!-- Top Navbar -->
+        {% include 'header.html' %}
+
+        <!-- Page Content -->
+        <main
+          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
+        >
+          <section
+            class="flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+          >
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
+            <!-- Content -->
+            <div class="container mx-auto p-6">
+              <h1
+                class="text-3xl font-bold mb-6 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+              >
+                {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection Results' }}
+              </h1>
+
+              {% if hasil_seleksi %}
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Skor Akhir -->
+                <div
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                >
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">
+                      {{ 'Skor Akhir' if current_lang == 'id' else 'Final Score' }}
+                    </h2>
+                    <i class="fa-solid fa-star text-2xl text-yellow-500"></i>
+                  </div>
+                  <p class="text-3xl font-bold text-yellow-600">
+                    {{ "%.2f"|format(hasil_seleksi.skor_akhir) }}
+                  </p>
+                </div>
+
+                <!-- Ranking -->
+                <div
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                >
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">
+                      {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
+                    </h2>
+                    <i class="fa-solid fa-trophy text-2xl text-green-500"></i>
+                  </div>
+                  <p class="text-3xl font-bold text-green-600">
+                    #{{ hasil_seleksi.ranking }}
+                  </p>
+                </div>
+
+                <!-- Status -->
+                <div
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                >
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">
+                      {{ 'Status' if current_lang == 'id' else 'Status' }}
+                    </h2>
+                    <i class="fa-solid fa-check-circle text-2xl text-blue-500"></i>
+                  </div>
+                  <p class="text-xl font-bold text-blue-600">
+                    {{ 'Selesai' if current_lang == 'id' else 'Completed' }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Informasi Tambahan -->
+              {% if biodata %}
+              <div class="mt-8">
+                <h2
+                  class="text-2xl font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                >
+                  <i class="fa-solid fa-info-circle mr-2"></i>
+                  {{ 'Informasi Peserta' if current_lang == 'id' else 'Participant Information' }}
+                </h2>
+                <div
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                >
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                        {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}
+                      </label>
+                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                        {{ biodata.nama_lengkap or '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                        {{ 'Golongan' if current_lang == 'id' else 'Group' }}
+                      </label>
+                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                        {{ biodata.golongan or '-' }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+              {% else %}
+              <div
+                class="rounded-xl shadow p-12 text-center {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+              >
+                <i class="fa-solid fa-clipboard-question text-6xl text-gray-400 mb-4"></i>
+                <p class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
+                  {{ 'Hasil seleksi belum tersedia. Silakan tunggu pengumuman lebih lanjut.' if current_lang == 'id' else 'Selection results are not available yet. Please wait for further announcement.' }}
+                </p>
+              </div>
+              {% endif %}
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html' %}
+  </body>
+</html>
+

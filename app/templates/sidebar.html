@@ -25,11 +25,11 @@
 
     <nav class="px-4 py-6">
       <ul class="space-y-4">
-        <!-- Dashboard -->
+        <!-- Dashboard / Beranda -->
         <li>
           <a
-            href="{{ url_for('admin_dashboard') }}"
-            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'admin_dashboard' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
+            href="{{ url_for('peserta_dashboard') if current_user.level == 'peserta' else url_for('admin_dashboard') }}"
+            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'admin_dashboard' or request.endpoint == 'peserta_dashboard' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
           >
             <i
               class="fa-solid fa-house w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
@@ -48,6 +48,81 @@
           </a>
         </li>
 
+        {% if current_user.level == 'peserta' %}
+        <!-- Menu untuk Peserta -->
+        <!-- Data Peserta -->
+        <li>
+          <a
+            href="{{ url_for('peserta_dashboard') }}#biodata"
+            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }}"
+          >
+            <i
+              class="fas fa-user-check w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
+            ></i>
+            <span
+              x-show="$store.sidebar.open"
+              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
+            >
+              {{ 'Data Peserta' if current_lang == 'id' else 'Participant Data' }}
+            </span>
+            <span
+              x-show="!$store.sidebar.open"
+              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
+            >
+              {{ 'Data Peserta' if current_lang == 'id' else 'Participant Data' }}
+            </span>
+          </a>
+        </li>
+
+        <!-- Notifikasi -->
+        <li>
+          <a
+            href="{{ url_for('peserta_notifikasi') }}"
+            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'peserta_notifikasi' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
+          >
+            <i
+              class="fas fa-bell w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
+            ></i>
+            <span
+              x-show="$store.sidebar.open"
+              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
+            >
+              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
+            </span>
+            <span
+              x-show="!$store.sidebar.open"
+              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
+            >
+              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
+            </span>
+          </a>
+        </li>
+
+        <!-- Hasil Seleksi -->
+        <li>
+          <a
+            href="{{ url_for('peserta_hasil_seleksi') }}"
+            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'peserta_hasil_seleksi' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
+          >
+            <i
+              class="fa-solid fa-square-poll-vertical w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
+            ></i>
+            <span
+              x-show="$store.sidebar.open"
+              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
+            >
+              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection Results' }}
+            </span>
+            <span
+              x-show="!$store.sidebar.open"
+              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
+            >
+              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection Results' }}
+            </span>
+          </a>
+        </li>
+        {% else %}
+        <!-- Menu untuk Admin -->
         {% for menu in [ ('admin_users', 'fas fa-users', 'Manajemen Pengguna',
         'User Management'), ('admin_manajemen_seleksi', 'fa-solid
         fa-calendar-days', 'Manajemen Seleksi', 'Selection Management'),
@@ -85,6 +160,7 @@
           </a>
         </li>
         {% endfor %}
+        {% endif %}
 
         <!-- Logout -->
         <li>

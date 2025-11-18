@@ -3,7 +3,7 @@ from flask_session import Session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -295,7 +295,16 @@ def login_google_callback():
         print("✅ Session set:", session.get('user'))
         logging.info(f"User '{user.username}' berhasil login via Google.")
         flash(f"Login berhasil! Selamat datang, {escape(user.nama_lengkap)}.", "success")
-        return redirect(url_for('admin_dashboard'))
+        
+        # Redirect sesuai role
+        if user.level == "admin":
+            return redirect(url_for('admin_dashboard'))
+        elif user.level == "penilai":
+            return redirect(url_for('penilai_dashboard'))
+        elif user.level == "peserta":
+            return redirect(url_for('peserta_dashboard'))
+        else:
+            return redirect(url_for('admin_dashboard'))
     else:
         # Jika belum ada, arahkan ke konfirmasi registrasi
         session['pending_user'] = user_info
@@ -1782,16 +1791,71 @@ def peserta_dashboard():
         flash("Anda tidak memiliki akses ke halaman ini.", "error")
         return redirect(url_for('index'))
 
-    # Contoh data untuk peserta
-    biodata = Participants.query.filter_by(user_id=current_user.id).first()
-    status_seleksi = biodata.status if biodata else "Belum ada status"
-    nilai_akhir = biodata.nilai if biodata else None
-
+    # Gunakan email untuk menghubungkan Participants dengan Users
+    biodata = Participants.query.filter_by(email=current_user.email).first()
+    
+    # Ambil hasil seleksi jika ada
+    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=current_user.id).first()
+    
+    # Status seleksi dan nilai
+    status_seleksi = "Belum ada status"
+    nilai_akhir = None
+    ranking = None
+    
+    if hasil_seleksi:
+        status_seleksi = "Selesai"
+        nilai_akhir = hasil_seleksi.skor_akhir
+        ranking = hasil_seleksi.ranking
+    elif biodata:
+        status_seleksi = "Terdaftar"
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
     return render_template(
         'peserta/dashboard.html',
         biodata=biodata,
+        hasil_seleksi=hasil_seleksi,
         status_seleksi=status_seleksi,
-        nilai_akhir=nilai_akhir
+        nilai_akhir=nilai_akhir,
+        ranking=ranking,
+        user=current_user,
+        sidebar_state=sidebar_state
+    )
+
+@app.route('/peserta/notifikasi')
+@login_required
+def peserta_notifikasi():
+    if current_user.level != 'peserta':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.id.desc()).all()
+    
+    return render_template(
+        'peserta/notifikasi.html',
+        notifications=notifications,
+        sidebar_state=sidebar_state,
+        user=current_user
+    )
+
+@app.route('/peserta/hasil_seleksi')
+@login_required
+def peserta_hasil_seleksi():
+    if current_user.level != 'peserta':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=current_user.id).first()
+    biodata = Participants.query.filter_by(email=current_user.email).first()
+    
+    return render_template(
+        'peserta/hasil_seleksi.html',
+        hasil_seleksi=hasil_seleksi,
+        biodata=biodata,
+        sidebar_state=sidebar_state,
+        user=current_user
     )
 
 @app.route('/logout/')
