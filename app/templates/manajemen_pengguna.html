@@ -47,6 +47,16 @@
       }"
     class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
   >
+    <!-- Inisialisasi Alpine Store untuk Page -->
+    <script>
+      document.addEventListener("alpine:init", () => {
+        const lang = "{{ current_lang }}";
+        Alpine.store("page", {
+          current: "main",
+          breadcrumbs: lang === "id" ? ["Manajemen Pengguna"] : ["Users Management"],
+        });
+      });
+    </script>
     <div
       class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
     >
@@ -716,7 +726,7 @@
                         >
                           <!-- prettier-ignore -->
                           <button
-                            @click="selectedUser={id:{{user.id}},nama_lengkap:'{{user.nama_lengkap}}',email:'{{user.email}}',username:'{{user.username}}',jenis_kelamin:'{{user.jenis_kelamin or ''}}',usia:{{user.usia or 0}},nomor_hp:'{{user.nomor_hp or ''}}',level:'{{user.level}}',status:'{{user.status}}',foto:'{{user.foto or ''}}'};page='edit';$store.page.breadcrumbs=['Manajemen Pengguna','Edit User']"
+                            @click="selectedUser={id:{{user.id}},nama_lengkap:'{{user.nama_lengkap|replace("'", "\\'")}}',email:'{{user.email}}',username:'{{user.username}}',jenis_kelamin:'{{user.jenis_kelamin or ''}}',usia:{{user.usia or 0}},nomor_hp:'{{user.nomor_hp or ''}}',level:'{{user.level}}',status:'{{user.status}}',foto:'{{user.foto or 'img/default-user.png'}}'};page='edit';if($store.page){$store.page.breadcrumbs=current_lang==='id'?['Manajemen Pengguna','Edit User']:['Users Management','Edit User']}"
                             class="px-3 py-1 rounded bg-blue-500 hover:bg-blue-700 text-white text-xs cursor-pointer"
                           >
                             Edit

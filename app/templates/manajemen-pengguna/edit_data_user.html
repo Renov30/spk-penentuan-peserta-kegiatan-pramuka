@@ -24,7 +24,7 @@
     </div>
 
     <button
-      @click="page = 'main'; $store.page.breadcrumbs = ['Manajemen Pengguna']"
+      @click="page = 'main'; if ($store.page) $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Pengguna'] : ['Users Management']"
       class="px-2 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-900 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}"
     >
       <i class="fa-solid fa-backward"></i>
@@ -37,6 +37,7 @@
     <form
       method="POST"
       :action="'/admin/edit_user/' + selectedUser.id"
+      enctype="multipart/form-data"
       class="space-y-6 max-w-4xl mx-auto rounded-lg py-8 px-8 {{ 'bg-gray-900 text-gray-100' if current_theme == 'dark' else 'bg-white text-gray-800 dark:bg-gray-100' }}"
     >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -47,9 +48,10 @@
       >
         <div class="relative w-28 h-28">
           <img
-            :src="selectedUser.foto ? `/static/${selectedUser.foto}` : '/static/img/default-user.png'"
+            :src="selectedUser.foto && selectedUser.foto !== 'img/default-user.png' ? `{{ url_for('static', filename='') }}${selectedUser.foto}` : '{{ url_for('static', filename='img/default-user.png') }}'"
             alt="Foto Profil"
             class="w-28 h-28 rounded-full object-cover border-4 border-yellow-500 shadow-md"
+            @error="$el.src='{{ url_for('static', filename='img/default-user.png') }}'"
           />
         </div>
         <div class="flex-1">
@@ -125,10 +127,10 @@
               {{ current_lang == 'id' and '-- Pilih Jenis Kelamin --' or '--
               Select Gender --' }}
             </option>
-            <option value="Laki-laki">
+            <option value="laki-laki">
               {{ current_lang == 'id' and 'Laki-laki' or 'Male' }}
             </option>
-            <option value="Perempuan">
+            <option value="perempuan">
               {{ current_lang == 'id' and 'Perempuan' or 'Female' }}
             </option>
           </select>
@@ -212,7 +214,7 @@
       <div class="flex justify-end gap-4 pt-8 border-t">
         <button
           type="button"
-          @click="page = 'main'; $store.page.breadcrumbs = ['Manajemen Pengguna']"
+          @click="page = 'main'; if ($store.page) $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Pengguna'] : ['Users Management']"
           class="px-6 py-2.5 rounded-lg font-medium cursor-pointer bg-red-600 hover:bg-red-700 text-gray-700 dark:text-gray-100 transition-all duration-200 shadow-sm"
         >
           <i class="fa-solid fa-xmark"></i>

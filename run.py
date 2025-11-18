@@ -1090,29 +1090,125 @@ def edit_user(user_id):
         flash("Pengguna tidak ditemukan!", "danger")
         return redirect(url_for('admin_users'))
     
-    user.nama_lengkap = request.form.get('nama_lengkap')
-    user.email = request.form.get('email')
-    user.username = request.form.get('username')
-    user.level = request.form.get('level')
-    user.status = request.form.get('status')
-    user.jenis_kelamin = request.form.get('jenis_kelamin')
-    user.usia = request.form.get('usia') or user.usia
-    user.nomor_hp = request.form.get('nomor_hp') or user.nomor_hp
-
-    # kalau ada file foto
-    foto_file = request.files.get('foto')
-    if foto_file and foto_file.filename:
-        # proses simpan file sesuai implementasimu
-        # simpan path ke user.foto = 'img/xxx.png'
-        pass
-
+    # Jika GET request, hanya redirect ke halaman manajemen pengguna
+    # (form edit ditangani di frontend dengan Alpine.js)
+    if request.method == 'GET':
+        return redirect(url_for('admin_users'))
+    
+    # POST request - proses update data
     try:
+        # Update data dari form
+        # Field required
+        nama_lengkap = request.form.get('nama_lengkap', '').strip()
+        if not nama_lengkap:
+            flash("Nama lengkap harus diisi.", "danger")
+            return redirect(url_for('admin_users'))
+        user.nama_lengkap = nama_lengkap
+        
+        email = request.form.get('email', '').strip().lower()
+        if not email:
+            flash("Email harus diisi.", "danger")
+            return redirect(url_for('admin_users'))
+        # Cek apakah email sudah digunakan oleh user lain
+        existing_user = Users.query.filter(Users.email == email, Users.id != user_id).first()
+        if existing_user:
+            flash("Email sudah digunakan oleh pengguna lain.", "danger")
+            return redirect(url_for('admin_users'))
+        user.email = email
+        
+        username = request.form.get('username', '').strip()
+        if not username:
+            flash("Username harus diisi.", "danger")
+            return redirect(url_for('admin_users'))
+        # Cek apakah username sudah digunakan oleh user lain
+        existing_user = Users.query.filter(Users.username == username, Users.id != user_id).first()
+        if existing_user:
+            flash("Username sudah digunakan oleh pengguna lain.", "danger")
+            return redirect(url_for('admin_users'))
+        user.username = username
+        
+        # Field optional dengan validasi
+        level = request.form.get('level', '').strip()
+        if level and level in ['admin', 'penilai', 'peserta']:
+            user.level = level
+        elif not user.level:  # Pastikan level selalu ada
+            user.level = 'peserta'
+        
+        status = request.form.get('status', '').strip()
+        if status:
+            # Normalisasi status: "nonaktif" -> "non-aktif"
+            if status == 'nonaktif':
+                status = 'non-aktif'
+            if status in ['aktif', 'non-aktif']:
+                user.status = status
+        elif not user.status:  # Pastikan status selalu ada
+            user.status = 'aktif'
+        
+        jenis_kelamin = request.form.get('jenis_kelamin', '').strip()
+        if jenis_kelamin:
+            # Normalisasi jenis kelamin
+            if jenis_kelamin.lower() in ['laki-laki', 'laki laki']:
+                user.jenis_kelamin = 'laki-laki'
+            elif jenis_kelamin.lower() == 'perempuan':
+                user.jenis_kelamin = 'perempuan'
+        elif not user.jenis_kelamin:  # Pastikan jenis_kelamin selalu ada
+            user.jenis_kelamin = 'laki-laki'
+        
+        usia = request.form.get('usia', '').strip()
+        if usia:
+            user.usia = str(usia)  # Pastikan string
+        elif not user.usia:  # Jika kosong dan belum ada nilai sebelumnya
+            user.usia = '0'
+        
+        nomor_hp = request.form.get('nomor_hp', '').strip()
+        if nomor_hp:
+            user.nomor_hp = nomor_hp
+        elif not user.nomor_hp:  # Jika kosong dan belum ada nilai sebelumnya
+            user.nomor_hp = ''
+
+        # Handle upload foto jika ada
+        foto_file = request.files.get('foto')
+        if foto_file and foto_file.filename and allowed_file(foto_file.filename):
+            # Generate unique filename
+            filename = secure_filename(foto_file.filename)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            unique_filename = f"{timestamp}_{filename}"
+            
+            # Simpan file
+            foto_path = os.path.join(app.config['UPLOAD_FOLDER'], 'users', unique_filename)
+            os.makedirs(os.path.dirname(foto_path), exist_ok=True)
+            foto_file.save(foto_path)
+            
+            # Update path foto (relative dari static folder)
+            user.foto = f"uploads/users/{unique_filename}"
+
         db.session.commit()
         flash(f"Data pengguna '{user.username}' berhasil diperbarui!", "success")
+        log_activity(
+            current_user.id,
+            f'Mengupdate data pengguna: {user.username}'
+        )
+    except IntegrityError as e:
+        db.session.rollback()
+        flash("Email atau username sudah digunakan oleh pengguna lain.", "danger")
+        logging.error(f"Integrity error saat update user_id {user_id}: {e}")
+        current_app.logger.exception('Integrity error in edit_user:')
+    except ValueError as e:
+        db.session.rollback()
+        flash(f"Data tidak valid: {str(e)}", "danger")
+        logging.error(f"Value error saat update user_id {user_id}: {e}")
+        current_app.logger.exception('Value error in edit_user:')
     except Exception as e:
         db.session.rollback()
-        flash("Terjadi kesalahan saat memperbarui data.", "danger")
-        logging.error(f"Gagal memperbarui user_id {user_id}: {e}")
+        error_msg = str(e)
+        flash(f"Terjadi kesalahan saat memperbarui data: {error_msg}", "danger")
+        logging.error(f"Gagal memperbarui user_id {user_id}: {error_msg}")
+        current_app.logger.exception('Error in edit_user:')
+        # Print error untuk debugging
+        print(f"ERROR in edit_user: {error_msg}")
+        import traceback
+        traceback.print_exc()
+    
     return redirect(url_for('admin_users'))
 
 # Manajemen Seleksi   
@@ -2007,9 +2103,7 @@ def api_daftar_seleksi():
         # Log aktivitas
         log_activity(
             current_user.id,
-            f'Mendaftar ke seleksi kegiatan: {kegiatan.nama_kegiatan}',
-            request.remote_addr,
-            request.headers.get('User-Agent')
+            f'Mendaftar ke seleksi kegiatan: {kegiatan.nama_kegiatan}'
         )
         
         return jsonify({
