@@ -51,7 +51,15 @@ async function saveConfig() {
     }
   }
 
-  // payload cukup activities saja
+  // Sinkronkan data contingents ke activities
+  for (let i = 0; i < state.activities.length; i++) {
+    if (state.contingents[i]) {
+      state.activities[i].putra = state.contingents[i].umpiPutra || 0;
+      state.activities[i].putri = state.contingents[i].umpiPutri || 0;
+    }
+  }
+
+  // Siapkan payload dengan activities (yang sudah berisi putra/putri) dan criteria
   const payload = {
     activities: state.activities,
   };

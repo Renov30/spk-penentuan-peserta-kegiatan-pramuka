@@ -1106,9 +1106,19 @@ def save_config():
             waktu_pelaksanaan_date = None
             try:
                 if act.get('mulai'):
-                    mulai_date = datetime.strptime(act['mulai'], '%Y-%m-%d').date()
+                    # Handle datetime-local format (YYYY-MM-DDTHH:mm)
+                    mulai_str = act['mulai']
+                    if 'T' in mulai_str:
+                        mulai_date = datetime.strptime(mulai_str.split('T')[0], '%Y-%m-%d').date()
+                    else:
+                        mulai_date = datetime.strptime(mulai_str, '%Y-%m-%d').date()
                 if act.get('selesai'):
-                    selesai_date = datetime.strptime(act['selesai'], '%Y-%m-%d').date()
+                    # Handle datetime-local format (YYYY-MM-DDTHH:mm)
+                    selesai_str = act['selesai']
+                    if 'T' in selesai_str:
+                        selesai_date = datetime.strptime(selesai_str.split('T')[0], '%Y-%m-%d').date()
+                    else:
+                        selesai_date = datetime.strptime(selesai_str, '%Y-%m-%d').date()
                 # Gunakan waktuMulai untuk waktu_pelaksanaan jika ada
                 if act.get('waktuMulai'):
                     try:
@@ -1177,49 +1187,104 @@ def save_config():
             )
             db.session.add(event)
             db.session.flush()
+            
+            # Ambil data kuota dari act (sudah disinkronkan dari contingents di frontend)
+            putra = int(act.get('putra') or act.get('umpiPutra') or 0)
+            putri = int(act.get('putri') or act.get('umpiPutri') or 0)
+            
             kuota = Kuota(
                 event_id=event.id_kegiatan,
-                putra=int(act.get('putra') or 0),
-                putri=int(act.get('putri') or 0)
+                putra=putra,
+                putri=putri
             )
             db.session.add(kuota)
             created_events.append(event)
-        target_event_id = created_events[0].id_kegiatan if created_events else None
-
-        # Buat Criteria
-        for c in criteria_list:
-            nama_kriteria = (c.get('nama') or '').strip() or 'Unnamed Criteria'
-            bobot = float(c.get('bobot') or 0)
-            aspek = c.get('aspek', [])
-            aspek_str = ', '.join(aspek) if isinstance(aspek, list) else (aspek or '')
-            jumlah_soal = c.get('jumlah_soal') or c.get('jumlahSoal') or None
-            deskripsi = c.get('deskripsi', '')
-            jenis_kriteria = c.get('jenis_kriteria', 'umum')
-            if target_event_id is None:
-                today = datetime.utcnow().date()
-                placeholder = Event(
-                    jenis_kegiatan='Siaga',  # Default ENUM value
-                    nama_kegiatan='(Default) Konfigurasi Seleksi',
-                    waktu_pelaksanaan=today,
-                    tempat_pelaksanaan='-',
-                    skala_kegiatan='Ranting',  # Default ENUM value
-                    kwartir_penyelenggara='-',
-                    mulai=today,
-                    selesai=today
+            
+            # Buat Criteria untuk event ini dari activities[index].criteria
+            criteria_list = act.get('criteria', [])
+            for c in criteria_list:
+                nama_kriteria = (c.get('nama') or '').strip()
+                if not nama_kriteria:
+                    continue
+                
+                # Ambil skala (bobot) dari kriteria
+                skala = c.get('skala') or c.get('bobot') or 0
+                bobot = float(skala) if skala else 0.0
+                
+                # Ambil jenis kriteria
+                jenis_kriteria_raw = c.get('jenis', 'Kualitatif')
+                if isinstance(jenis_kriteria_raw, list):
+                    # Jika jenis adalah array (untuk Tes Wawancara), gabungkan
+                    aspek_str = ', '.join(jenis_kriteria_raw) if jenis_kriteria_raw else ''
+                    jenis_kriteria = 'Kualitatif'  # Default untuk wawancara
+                else:
+                    # Jika jenis adalah string
+                    jenis_kriteria = jenis_kriteria_raw if jenis_kriteria_raw else 'Kualitatif'
+                    aspek_str = ''
+                
+                # Ambil jumlah soal jika ada
+                jumlah_soal = c.get('jumlah_soal') or c.get('jumlahSoal') or None
+                
+                # Ambil deskripsi jika ada
+                deskripsi = c.get('deskripsi', '')
+                
+                crit = Criteria(
+                    event_id=event.id_kegiatan,
+                    nama_kriteria=nama_kriteria,
+                    aspek=aspek_str,
+                    bobot=bobot,
+                    deskripsi=deskripsi,
+                    jenis_kriteria=jenis_kriteria,
+                    jumlah_soal=int(jumlah_soal) if jumlah_soal else None
                 )
-                db.session.add(placeholder)
-                db.session.flush()
-                target_event_id = placeholder.id_kegiatan
-            crit = Criteria(
-                event_id=target_event_id,
-                nama_kriteria=nama_kriteria,
-                aspek=aspek_str,
-                bobot=bobot,
-                deskripsi=deskripsi,
-                jenis_kriteria=jenis_kriteria,
-                jumlah_soal=int(jumlah_soal) if jumlah_soal else None
-            )
-            db.session.add(crit)
+                db.session.add(crit)
+        
+        # Fallback: jika criteria_list dikirim terpisah (backward compatibility)
+        # Hanya diproses jika tidak ada criteria di dalam activities
+        if criteria_list and not any(act.get('criteria') for act in activities):
+            target_event_id = created_events[0].id_kegiatan if created_events else None
+            for c in criteria_list:
+                nama_kriteria = (c.get('nama') or '').strip()
+                if not nama_kriteria:
+                    continue
+                    
+                bobot = float(c.get('bobot') or c.get('skala') or 0)
+                aspek = c.get('aspek', [])
+                aspek_str = ', '.join(aspek) if isinstance(aspek, list) else (aspek or '')
+                jumlah_soal = c.get('jumlah_soal') or c.get('jumlahSoal') or None
+                deskripsi = c.get('deskripsi', '')
+                jenis_kriteria = c.get('jenis_kriteria', 'Kualitatif')
+                if isinstance(c.get('jenis'), list):
+                    aspek_str = ', '.join(c.get('jenis', []))
+                    jenis_kriteria = 'Kualitatif'
+                elif c.get('jenis'):
+                    jenis_kriteria = c.get('jenis')
+                
+                if target_event_id is None:
+                    today = datetime.utcnow().date()
+                    placeholder = Event(
+                        jenis_kegiatan='Siaga',  # Default ENUM value
+                        nama_kegiatan='(Default) Konfigurasi Seleksi',
+                        waktu_pelaksanaan=today,
+                        tempat_pelaksanaan='-',
+                        skala_kegiatan='Ranting',  # Default ENUM value
+                        kwartir_penyelenggara='-',
+                        mulai=today,
+                        selesai=today
+                    )
+                    db.session.add(placeholder)
+                    db.session.flush()
+                    target_event_id = placeholder.id_kegiatan
+                crit = Criteria(
+                    event_id=target_event_id,
+                    nama_kriteria=nama_kriteria,
+                    aspek=aspek_str,
+                    bobot=bobot,
+                    deskripsi=deskripsi,
+                    jenis_kriteria=jenis_kriteria,
+                    jumlah_soal=int(jumlah_soal) if jumlah_soal else None
+                )
+                db.session.add(crit)
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Konfigurasi berhasil disimpan'}), 200
     except Exception as e:
