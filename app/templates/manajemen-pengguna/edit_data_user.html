@@ -83,7 +83,7 @@
             name="nama_lengkap"
             x-model="selectedUser.nama_lengkap"
             required
-            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -95,7 +95,7 @@
             name="email"
             x-model="selectedUser.email"
             required
-            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -109,7 +109,7 @@
             name="username"
             x-model="selectedUser.username"
             required
-            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -121,7 +121,7 @@
             id="jenis_kelamin"
             name="jenis_kelamin"
             x-model="selectedUser.jenis_kelamin"
-            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             <option value="">
               {{ current_lang == 'id' and '-- Pilih Jenis Kelamin --' or '--
@@ -149,7 +149,7 @@
             name="usia"
             min="0"
             x-model="selectedUser.usia"
-            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -163,7 +163,7 @@
             name="nomor_hp"
             x-model="selectedUser.nomor_hp"
             placeholder="Contoh: 081234567890"
-            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900 placeholder-gray-500' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -176,7 +176,7 @@
             name="level"
             x-model="selectedUser.level"
             required
-            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             <option value="peserta">
               {{ 'Peserta' if current_lang == 'id' else 'Participant' }}
@@ -199,7 +199,7 @@
           name="status"
           x-model="selectedUser.status"
           required
-          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
         >
           <option value="aktif">
             {{ current_lang == 'id' and 'Aktif' or 'Active' }}
