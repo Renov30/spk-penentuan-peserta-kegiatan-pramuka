@@ -161,7 +161,16 @@ def generate_verification_code():
 
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
-    return render_template('csrf_error.html', reason=e.description), 400
+    try:
+        return render_template('csrf_error.html', reason=e.description), 400
+    except:
+        # Fallback jika template tidak ditemukan
+        flash("Sesi Anda mungkin telah kedaluwarsa. Silakan refresh halaman dan coba lagi.", "danger")
+        if current_user.is_authenticated:
+            if current_user.level == 'admin':
+                return redirect(url_for('admin_users'))
+            return redirect(url_for('dashboard'))
+        return redirect(url_for('login'))
 
 @app.errorhandler(429)
 def ratelimit_handler(e):

@@ -708,7 +708,11 @@
                         </td>
                         <td
                           class="border p-2 px-4 py-2 flex gap-2"
-                          x-data="{ showModal: false, deleteUrl: '{{ url_for('delete_user', user_id=user.id) }}', username: '{{ user.username }}' }"
+                          x-data="{ 
+                            showModal: false, 
+                            deleteUrl: '{{ url_for('delete_user', user_id=user.id) }}', 
+                            username: '{{ user.username }}'
+                          }"
                         >
                           <!-- prettier-ignore -->
                           <button
@@ -762,7 +766,7 @@
                                 else 'Confirm Delete' }}
                               </h2>
 
-                              <p class="text-gray-300 text-center mb-10">
+                              <p class="text-gray-600 text-center mb-10">
                                 {{ 'Apakah Anda yakin ingin menghapus pengguna'
                                 if current_lang == 'id' else 'Are you sure you
                                 want to delete user' }}
@@ -773,7 +777,11 @@
                                 >?
                               </p>
 
-                              <form :action="deleteUrl" method="post">
+                              <form
+                                :action="deleteUrl"
+                                method="POST"
+                                id="deleteForm{{ user.id }}"
+                              >
                                 <input
                                   type="hidden"
                                   name="csrf_token"
