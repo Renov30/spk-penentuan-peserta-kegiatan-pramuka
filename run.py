@@ -333,13 +333,15 @@ def do_register():
                 password=generate_password_hash(secrets.token_urlsafe(12), method='pbkdf2:sha256'),
                 nama_lengkap=user_info['name'],
                 email=user_info['email'],
-                jenis_kelamin=None,
-                usia=None,
-                foto=user_info['picture'],
-                nomor_hp=None,
-                level='user',
-                reset_token=None,
-                token_exp=None
+                jenis_kelamin='laki-laki',
+                usia='0',
+                foto=user_info.get('picture', 'img/default-user.png'),
+                nomor_hp='',
+                level='peserta',
+                reset_token="",
+                login_method="google",
+                sidebar_state="expanded",
+                status='aktif'
         )
         try:
             db.session.add(new_user)
@@ -403,12 +405,25 @@ def register():
             hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16) 
             # Masukkan data ke database
             try:
+                # Ambil field tambahan dari form atau gunakan default
+                jenis_kelamin = request.form.get('jenis_kelamin', 'laki-laki')
+                usia = request.form.get('usia', '0')
+                nomor_hp = request.form.get('nomor_hp', '')
+                foto = request.form.get('foto', 'img/default-user.png')
+                
                 new_user = Users(
                     username=username,
                     password=hashed_password,
                     nama_lengkap=full_name,
                     email=email,
+                    jenis_kelamin=jenis_kelamin,
+                    usia=usia,
+                    foto=foto,
+                    nomor_hp=nomor_hp,
                     level=level,
+                    reset_token="",
+                    login_method="manual",
+                    sidebar_state="expanded",
                     status='aktif'
                 )
                 db.session.add(new_user)
@@ -457,20 +472,19 @@ def register_google_callback():
             password=generate_password_hash(secrets.token_urlsafe(12), method='pbkdf2:sha256'),
             nama_lengkap=user_info['name'],
             email=user_info['email'],
-            jenis_kelamin=None,
-            usia=None,
-            foto=user_info['picture'],
-            nomor_hp=None,
+            jenis_kelamin='laki-laki',
+            usia='0',
+            foto=user_info.get('picture', 'img/default-user.png'),
+            nomor_hp='',
             level='peserta',
-            reset_token=None,
-            token_exp=None,
-            login_method="google"
+            reset_token="",
+            login_method="google",
+            sidebar_state="expanded",
+            status='aktif'
     )
     if Users.query.filter_by(email=email).first():
         flash("Email sudah digunakan. Silakan login.", "warning")
         return redirect(url_for('login'))
-    if not new_user.jenis_kelamin:
-        new_user.jenis_kelamin = "tidak_diketahui"
     db.session.add(new_user)
     db.session.commit()
     
@@ -815,12 +829,25 @@ def admin_add_user():
             hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16) 
             # Masukkan data ke database
             try:
+                # Ambil field tambahan dari form atau gunakan default
+                jenis_kelamin = request.form.get('jenis_kelamin', 'laki-laki')
+                usia = request.form.get('usia', '0')
+                nomor_hp = request.form.get('nomor_hp', '')
+                foto = request.form.get('foto', 'img/default-user.png')
+                
                 new_user = Users(
                     username=username,
                     password=hashed_password,
                     nama_lengkap=nama_lengkap,
                     email=email,
+                    jenis_kelamin=jenis_kelamin,
+                    usia=usia,
+                    foto=foto,
+                    nomor_hp=nomor_hp,
                     level=level,
+                    reset_token="",
+                    login_method="manual",
+                    sidebar_state="expanded",
                     status='aktif'
                 )
                 db.session.add(new_user)

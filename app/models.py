@@ -11,16 +11,16 @@ class Users(db.Model, UserMixin):
     password = db.Column(db.String(255), nullable=False)
     nama_lengkap = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False)
-    jenis_kelamin = db.Column(ENUM('Laki-laki', 'Perempuan', name='jenis_kelamin'), nullable=True, default="")
-    usia = db.Column(db.String(255), nullable=True, default="0")
-    foto = db.Column(db.String(255), default="img/default-user.png")
-    nomor_hp = db.Column(db.String(255), nullable=True, default="")
+    jenis_kelamin = db.Column(ENUM('laki-laki', 'perempuan', name='jenis_kelamin'), nullable=False, default="laki-laki")
+    usia = db.Column(db.String(255), nullable=False, default="0")
+    foto = db.Column(db.String(255), nullable=False, default="img/default-user.png")
+    nomor_hp = db.Column(db.String(255), nullable=False, default="")
     level = db.Column(ENUM('admin', 'penilai', 'peserta', name='user_level'), nullable=False)
-    reset_token = db.Column(db.String(255), nullable=True, default="")
+    reset_token = db.Column(db.String(255), nullable=False, default="")
     token_exp = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
     login_method = db.Column(db.String(100), nullable=False, default="manual")
-    sidebar_state = db.Column(db.String(10), nullable=True, default='expanded')
-    status = db.Column(ENUM('aktif', 'non-aktif', name='user_status'), nullable=False, default='aktif', server_default='aktif')
+    sidebar_state = db.Column(db.String(10), nullable=False, default='expanded')
+    status = db.Column(ENUM('aktif', 'non-aktif', '', '', name='user_status'), nullable=False, default='aktif', server_default='aktif')
     
     def to_dict(self):
         return {
