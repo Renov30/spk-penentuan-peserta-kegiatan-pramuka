@@ -365,7 +365,7 @@
                       >{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small
                     >
                     <input
-                      type="datetime-local"
+                      type="date"
                       x-model="act.waktuMulai"
                       @keydown.enter="focusNextField($event, index)"
                       class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
@@ -377,7 +377,7 @@
                       >{{ 'Selesai' if current_lang == 'id' else 'End' }}</small
                     >
                     <input
-                      type="datetime-local"
+                      type="date"
                       x-model="act.waktuSelesai"
                       @keydown.enter="focusNextField($event, index)"
                       class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
@@ -414,7 +414,7 @@
                       >{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small
                     >
                     <input
-                      type="datetime-local"
+                      type="date"
                       x-model="act.mulai"
                       @keydown.enter="focusNextField($event, index)"
                       class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
@@ -426,7 +426,7 @@
                       >{{ 'Selesai' if current_lang == 'id' else 'End' }}</small
                     >
                     <input
-                      type="datetime-local"
+                      type="date"
                       x-model="act.selesai"
                       @keydown.enter="focusNextField($event, index)"
                       class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"

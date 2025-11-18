@@ -625,8 +625,8 @@
                                   'Start' }}</small
                                 >
                                 <input
-                                  type="datetime-local"
-                                  :value="editData.event.waktu_pelaksanaan_dimulai ? (editData.event.waktu_pelaksanaan_dimulai.includes('T') ? editData.event.waktu_pelaksanaan_dimulai : editData.event.waktu_pelaksanaan_dimulai + 'T00:00') : ''"
+                                  type="date"
+                                  :value="editData.event.waktu_pelaksanaan_dimulai ? (editData.event.waktu_pelaksanaan_dimulai.includes('T') ? editData.event.waktu_pelaksanaan_dimulai.split('T')[0] : editData.event.waktu_pelaksanaan_dimulai) : ''"
                                   @input="editData.event.waktu_pelaksanaan_dimulai = $event.target.value"
                                   class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
@@ -638,8 +638,8 @@
                                   'End' }}</small
                                 >
                                 <input
-                                  type="datetime-local"
-                                  :value="editData.event.waktu_pelaksanaan_selesai ? (editData.event.waktu_pelaksanaan_selesai.includes('T') ? editData.event.waktu_pelaksanaan_selesai : editData.event.waktu_pelaksanaan_selesai + 'T00:00') : ''"
+                                  type="date"
+                                  :value="editData.event.waktu_pelaksanaan_selesai ? (editData.event.waktu_pelaksanaan_selesai.includes('T') ? editData.event.waktu_pelaksanaan_selesai.split('T')[0] : editData.event.waktu_pelaksanaan_selesai) : ''"
                                   @input="editData.event.waktu_pelaksanaan_selesai = $event.target.value"
                                   class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
@@ -674,8 +674,8 @@
                                   'Start' }}</small
                                 >
                                 <input
-                                  type="datetime-local"
-                                  :value="editData.event.mulai ? (editData.event.mulai.includes('T') ? editData.event.mulai : editData.event.mulai + 'T00:00') : ''"
+                                  type="date"
+                                  :value="editData.event.mulai ? (editData.event.mulai.includes('T') ? editData.event.mulai.split('T')[0] : editData.event.mulai) : ''"
                                   @input="editData.event.mulai = $event.target.value"
                                   class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
@@ -687,8 +687,8 @@
                                   'End' }}</small
                                 >
                                 <input
-                                  type="datetime-local"
-                                  :value="editData.event.selesai ? (editData.event.selesai.includes('T') ? editData.event.selesai : editData.event.selesai + 'T00:00') : ''"
+                                  type="date"
+                                  :value="editData.event.selesai ? (editData.event.selesai.includes('T') ? editData.event.selesai.split('T')[0] : editData.event.selesai) : ''"
                                   @input="editData.event.selesai = $event.target.value"
                                   class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
