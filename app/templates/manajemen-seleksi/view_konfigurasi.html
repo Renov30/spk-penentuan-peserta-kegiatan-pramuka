@@ -209,12 +209,13 @@
               >
                 <div
                   x-transition.scale
-                  class="p-6 rounded-2xl shadow-2xl w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
+                  class="p-4 rounded-2xl shadow-2xl w-11/12 max-w-5xl flex flex-col bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
+                  style="max-height: 90vh; height: 90vh;"
                 >
                   <!-- Header -->
-                  <div class="flex justify-between items-center mb-6">
+                  <div class="flex justify-between items-center mb-3 flex-shrink-0 pb-3 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}">
                     <h2
-                      class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                      class="text-lg font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                     >
                       <span x-show="!editMode"
                         >{{ 'Detail Konfigurasi Seleksi' if current_lang == 'id'
@@ -253,8 +254,11 @@
                     </div>
                   </div>
 
-                  <template x-if="configData && !editMode">
-                    <div class="space-y-6">
+                  <!-- Scrollable Content -->
+                  <div class="flex-1 overflow-y-auto overflow-x-hidden" style="min-height: 0; max-height: 100%;">
+                    <div class="pr-2">
+                      <template x-if="configData && !editMode">
+                        <div class="space-y-4 pb-2">
                       <!-- Informasi Kegiatan -->
                       <div
                         class="border rounded-lg p-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
@@ -502,18 +506,18 @@
                           </table>
                         </div>
                       </div>
-                    </div>
-                  </template>
+                        </div>
+                      </template>
 
-                  <!-- Form Edit -->
-                  <template x-if="editData && editMode">
-                    <div class="space-y-6">
+                      <!-- Form Edit -->
+                      <template x-if="editData && editMode">
+                        <div class="space-y-4 pb-2">
                       <!-- Informasi Kegiatan -->
                       <div
-                        class="border rounded-lg p-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+                        class="border rounded-lg p-3 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
                       >
                         <h3
-                          class="text-lg font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                          class="text-base font-semibold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                         >
                           <i
                             class="fa-solid fa-info-circle mr-2 text-blue-500"
@@ -521,7 +525,7 @@
                           {{ 'Informasi Kegiatan' if current_lang == 'id' else
                           'Activity Information' }}
                         </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <label
                               class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
@@ -646,16 +650,16 @@
 
                       <!-- Komposisi Kontingen -->
                       <div
-                        class="border rounded-lg p-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+                        class="border rounded-lg p-3 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
                       >
                         <h3
-                          class="text-lg font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                          class="text-base font-semibold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                         >
                           <i class="fa-solid fa-users mr-2 text-green-500"></i>
                           {{ 'Komposisi Kontingen' if current_lang == 'id' else
                           'Contingent Composition' }}
                         </h3>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-3">
                           <div>
                             <label
                               class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
@@ -687,10 +691,10 @@
 
                       <!-- Kriteria Seleksi -->
                       <div
-                        class="border rounded-lg p-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+                        class="border rounded-lg p-3 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
                       >
                         <h3
-                          class="text-lg font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                          class="text-base font-semibold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                         >
                           <i
                             class="fa-solid fa-list-check mr-2 text-purple-500"
@@ -698,16 +702,16 @@
                           {{ 'Kriteria Seleksi' if current_lang == 'id' else
                           'Selection Criteria' }}
                         </h3>
-                        <div class="space-y-4">
+                        <div class="space-y-3">
                           <template
                             x-for="(crit, index) in editData.criteria"
                             :key="index"
                           >
                             <div
-                              class="border rounded-lg p-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+                              class="border rounded-lg p-3 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
                             >
                               <div
-                                class="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                class="grid grid-cols-1 md:grid-cols-2 gap-3"
                               >
                                 <div>
                                   <label
@@ -800,33 +804,37 @@
                         </div>
                       </div>
 
-                      <!-- Action Buttons -->
-                      <div
-                        class="flex justify-end gap-3 pt-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
-                      >
-                        <button
-                          @click="cancelEdit()"
-                          class="px-4 py-2 border rounded-lg {{ 'border-gray-600 text-gray-300 hover:bg-gray-700' if current_theme == 'dark' else 'border-gray-300 text-gray-700 hover:bg-gray-100' }} transition"
-                        >
-                          {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
-                        </button>
-                        <button
-                          @click="saveEdit()"
-                          :disabled="loading"
-                          class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition disabled:opacity-50"
-                        >
-                          <span x-show="!loading"
-                            >{{ 'Simpan' if current_lang == 'id' else 'Save'
-                            }}</span
-                          >
-                          <span x-show="loading"
-                            >{{ 'Menyimpan...' if current_lang == 'id' else
-                            'Saving...' }}</span
-                          >
-                        </button>
-                      </div>
+                        </div>
+                      </template>
                     </div>
-                  </template>
+                  </div>
+
+                  <!-- Action Buttons (Fixed at bottom) -->
+                  <div
+                    x-show="editMode"
+                    class="flex justify-end gap-3 pt-3 mt-3 border-t flex-shrink-0 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+                  >
+                    <button
+                      @click="cancelEdit()"
+                      class="px-4 py-2 border rounded-lg {{ 'border-gray-600 text-gray-300 hover:bg-gray-700' if current_theme == 'dark' else 'border-gray-300 text-gray-700 hover:bg-gray-100' }} transition"
+                    >
+                      {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+                    </button>
+                    <button
+                      @click="saveEdit()"
+                      :disabled="loading"
+                      class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition disabled:opacity-50"
+                    >
+                      <span x-show="!loading"
+                        >{{ 'Simpan' if current_lang == 'id' else 'Save'
+                        }}</span
+                      >
+                      <span x-show="loading"
+                        >{{ 'Menyimpan...' if current_lang == 'id' else
+                        'Saving...' }}</span
+                      >
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -907,6 +915,38 @@
       </div>
     </div>
   </body>
+
+  <style>
+    /* Custom Scrollbar untuk Modal */
+    .overflow-y-auto::-webkit-scrollbar {
+      width: 10px;
+    }
+    .overflow-y-auto::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+    }
+    .overflow-y-auto::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 5px;
+    }
+    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.6);
+    }
+    /* Dark mode scrollbar */
+    .dark .overflow-y-auto::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .dark .overflow-y-auto::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.4);
+    }
+    .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.6);
+    }
+    /* Ensure scrollable area works */
+    .flex-1.overflow-y-auto {
+      overscroll-behavior: contain;
+    }
+  </style>
 
   <script>
     document.addEventListener("alpine:init", () => {
