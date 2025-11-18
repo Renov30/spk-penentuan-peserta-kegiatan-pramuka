@@ -1103,7 +1103,8 @@ def save_config():
             # Parse tanggal
             mulai_date = None
             selesai_date = None
-            waktu_pelaksanaan_date = None
+            waktu_pelaksanaan_dimulai_date = None
+            waktu_pelaksanaan_selesai_date = None
             try:
                 if act.get('mulai'):
                     # Handle datetime-local format (YYYY-MM-DDTHH:mm)
@@ -1119,19 +1120,32 @@ def save_config():
                         selesai_date = datetime.strptime(selesai_str.split('T')[0], '%Y-%m-%d').date()
                     else:
                         selesai_date = datetime.strptime(selesai_str, '%Y-%m-%d').date()
-                # Gunakan waktuMulai untuk waktu_pelaksanaan jika ada
+                # Parse waktu pelaksanaan dimulai dan selesai
                 if act.get('waktuMulai'):
                     try:
                         # Format datetime-local: "YYYY-MM-DDTHH:mm" atau "YYYY-MM-DD"
                         waktu_str = act['waktuMulai']
                         if 'T' in waktu_str:
-                            waktu_pelaksanaan_date = datetime.strptime(waktu_str.split('T')[0], '%Y-%m-%d').date()
+                            waktu_pelaksanaan_dimulai_date = datetime.strptime(waktu_str.split('T')[0], '%Y-%m-%d').date()
                         else:
-                            waktu_pelaksanaan_date = datetime.strptime(waktu_str, '%Y-%m-%d').date()
+                            waktu_pelaksanaan_dimulai_date = datetime.strptime(waktu_str, '%Y-%m-%d').date()
                     except Exception:
-                        waktu_pelaksanaan_date = mulai_date if mulai_date else None
-                elif mulai_date:
-                    waktu_pelaksanaan_date = mulai_date
+                        waktu_pelaksanaan_dimulai_date = mulai_date if mulai_date else None
+                else:
+                    waktu_pelaksanaan_dimulai_date = mulai_date if mulai_date else None
+                
+                if act.get('waktuSelesai'):
+                    try:
+                        # Format datetime-local: "YYYY-MM-DDTHH:mm" atau "YYYY-MM-DD"
+                        waktu_str = act['waktuSelesai']
+                        if 'T' in waktu_str:
+                            waktu_pelaksanaan_selesai_date = datetime.strptime(waktu_str.split('T')[0], '%Y-%m-%d').date()
+                        else:
+                            waktu_pelaksanaan_selesai_date = datetime.strptime(waktu_str, '%Y-%m-%d').date()
+                    except Exception:
+                        waktu_pelaksanaan_selesai_date = selesai_date if selesai_date else waktu_pelaksanaan_dimulai_date
+                else:
+                    waktu_pelaksanaan_selesai_date = selesai_date if selesai_date else waktu_pelaksanaan_dimulai_date
             except Exception:
                 pass
             
@@ -1172,13 +1186,16 @@ def save_config():
                 mulai_date = datetime.utcnow().date()
             if not selesai_date:
                 selesai_date = mulai_date
-            if not waktu_pelaksanaan_date:
-                waktu_pelaksanaan_date = mulai_date
+            if not waktu_pelaksanaan_dimulai_date:
+                waktu_pelaksanaan_dimulai_date = mulai_date
+            if not waktu_pelaksanaan_selesai_date:
+                waktu_pelaksanaan_selesai_date = waktu_pelaksanaan_dimulai_date
             
             event = Event(
                 jenis_kegiatan=jenis_kegiatan,
                 nama_kegiatan=nama,
-                waktu_pelaksanaan=waktu_pelaksanaan_date,
+                waktu_pelaksanaan_dimulai=waktu_pelaksanaan_dimulai_date,
+                waktu_pelaksanaan_selesai=waktu_pelaksanaan_selesai_date,
                 tempat_pelaksanaan=tempat,
                 skala_kegiatan=skala_kegiatan,
                 kwartir_penyelenggara=kwartir,
@@ -1265,7 +1282,8 @@ def save_config():
                     placeholder = Event(
                         jenis_kegiatan='Siaga',  # Default ENUM value
                         nama_kegiatan='(Default) Konfigurasi Seleksi',
-                        waktu_pelaksanaan=today,
+                        waktu_pelaksanaan_dimulai=today,
+                        waktu_pelaksanaan_selesai=today,
                         tempat_pelaksanaan='-',
                         skala_kegiatan='Ranting',  # Default ENUM value
                         kwartir_penyelenggara='-',
@@ -1310,7 +1328,8 @@ def get_config(event_id):
                 'skala_kegiatan': event.skala_kegiatan,
                 'kwartir_penyelenggara': event.kwartir_penyelenggara,
                 'tempat_pelaksanaan': event.tempat_pelaksanaan,
-                'waktu_pelaksanaan': event.waktu_pelaksanaan.strftime('%Y-%m-%d') if event.waktu_pelaksanaan else None,
+                'waktu_pelaksanaan_dimulai': event.waktu_pelaksanaan_dimulai.strftime('%Y-%m-%d') if event.waktu_pelaksanaan_dimulai else None,
+                'waktu_pelaksanaan_selesai': event.waktu_pelaksanaan_selesai.strftime('%Y-%m-%d') if event.waktu_pelaksanaan_selesai else None,
                 'mulai': event.mulai.strftime('%Y-%m-%d') if event.mulai else None,
                 'selesai': event.selesai.strftime('%Y-%m-%d') if event.selesai else None,
             },
@@ -1378,9 +1397,14 @@ def update_config(event_id):
                 event.kwartir_penyelenggara = evt_data['kwartir_penyelenggara'].strip()
             if 'tempat_pelaksanaan' in evt_data:
                 event.tempat_pelaksanaan = evt_data['tempat_pelaksanaan'].strip()
-            if 'waktu_pelaksanaan' in evt_data and evt_data['waktu_pelaksanaan']:
+            if 'waktu_pelaksanaan_dimulai' in evt_data and evt_data['waktu_pelaksanaan_dimulai']:
                 try:
-                    event.waktu_pelaksanaan = datetime.strptime(evt_data['waktu_pelaksanaan'], '%Y-%m-%d').date()
+                    event.waktu_pelaksanaan_dimulai = datetime.strptime(evt_data['waktu_pelaksanaan_dimulai'], '%Y-%m-%d').date()
+                except:
+                    pass
+            if 'waktu_pelaksanaan_selesai' in evt_data and evt_data['waktu_pelaksanaan_selesai']:
+                try:
+                    event.waktu_pelaksanaan_selesai = datetime.strptime(evt_data['waktu_pelaksanaan_selesai'], '%Y-%m-%d').date()
                 except:
                     pass
             if 'mulai' in evt_data and evt_data['mulai']:
@@ -1515,7 +1539,8 @@ def api_kegiatan():
             "id": k.id_kegiatan,
             "nama_kegiatan": k.nama_kegiatan,
             "jenis_kegiatan": k.jenis_kegiatan,
-            "waktu_pelaksanaan": k.waktu_pelaksanaan.strftime("%Y-%m-%d"),
+            "waktu_pelaksanaan_dimulai": k.waktu_pelaksanaan_dimulai.strftime("%Y-%m-%d") if k.waktu_pelaksanaan_dimulai else None,
+            "waktu_pelaksanaan_selesai": k.waktu_pelaksanaan_selesai.strftime("%Y-%m-%d") if k.waktu_pelaksanaan_selesai else None,
             "tempat_pelaksanaan": k.tempat_pelaksanaan,
             "skala_kegiatan": k.skala_kegiatan,
             "kwartir_penyelenggara": k.kwartir_penyelenggara,
@@ -1573,7 +1598,8 @@ def tambah_seleksi():
     if request.method == 'POST':
         nama = request.form['nama_kegiatan']
         jenis = request.form['jenis_kegiatan']
-        waktu = request.form['waktu_pelaksanaan']
+        waktu_dimulai = request.form.get('waktu_pelaksanaan_dimulai', request.form.get('waktu_pelaksanaan', ''))
+        waktu_selesai = request.form.get('waktu_pelaksanaan_selesai', waktu_dimulai)
         tempat = request.form['tempat_pelaksanaan']
         skala = request.form['skala_kegiatan']
         kwartir = request.form['kwartir_penyelenggara']
@@ -1581,10 +1607,13 @@ def tambah_seleksi():
         new_event = Event(
             nama_kegiatan=nama,
             jenis_kegiatan=jenis,
-            waktu_pelaksanaan=waktu,
+            waktu_pelaksanaan_dimulai=datetime.strptime(waktu_dimulai, '%Y-%m-%d').date() if waktu_dimulai else datetime.utcnow().date(),
+            waktu_pelaksanaan_selesai=datetime.strptime(waktu_selesai, '%Y-%m-%d').date() if waktu_selesai else datetime.utcnow().date(),
             tempat_pelaksanaan=tempat,
             skala_kegiatan=skala,
-            kwartir_penyelenggara=kwartir
+            kwartir_penyelenggara=kwartir,
+            mulai=datetime.utcnow().date(),
+            selesai=datetime.utcnow().date()
         )
         db.session.add(new_event)
         db.session.commit()
@@ -1602,7 +1631,15 @@ def edit_kegiatan(id):
     if request.method == 'POST':
         event.nama_kegiatan = request.form['nama_kegiatan']
         event.jenis_kegiatan = request.form['jenis_kegiatan']
-        event.waktu_pelaksanaan = request.form['waktu_pelaksanaan']
+        if 'waktu_pelaksanaan_dimulai' in request.form:
+            event.waktu_pelaksanaan_dimulai = datetime.strptime(request.form['waktu_pelaksanaan_dimulai'], '%Y-%m-%d').date()
+        if 'waktu_pelaksanaan_selesai' in request.form:
+            event.waktu_pelaksanaan_selesai = datetime.strptime(request.form['waktu_pelaksanaan_selesai'], '%Y-%m-%d').date()
+        elif 'waktu_pelaksanaan' in request.form:
+            # Fallback untuk backward compatibility
+            waktu = datetime.strptime(request.form['waktu_pelaksanaan'], '%Y-%m-%d').date()
+            event.waktu_pelaksanaan_dimulai = waktu
+            event.waktu_pelaksanaan_selesai = waktu
         event.tempat_pelaksanaan = request.form['tempat_pelaksanaan']
         db.session.commit()
         flash('Kegiatan berhasil diupdate!', 'success')
