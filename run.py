@@ -1389,6 +1389,56 @@ def delete_config(event_id):
         current_app.logger.exception('Error in /api/delete_config:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# API Delete Banyak Konfigurasi Seleksi
+@app.route('/api/delete_config_bulk', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def delete_config_bulk():
+    try:
+        data = request.get_json(force=True)
+        event_ids = data.get('event_ids', [])
+        
+        if not event_ids or not isinstance(event_ids, list):
+            return jsonify({'status': 'error', 'message': 'Tidak ada ID konfigurasi yang dipilih'}), 400
+        
+        # Validasi bahwa semua event_id adalah integer
+        try:
+            event_ids = [int(eid) for eid in event_ids]
+        except (ValueError, TypeError):
+            return jsonify({'status': 'error', 'message': 'Format ID konfigurasi tidak valid'}), 400
+        
+        if len(event_ids) == 0:
+            return jsonify({'status': 'error', 'message': 'Tidak ada konfigurasi yang dipilih'}), 400
+        
+        # Query semua event yang akan dihapus
+        events = Event.query.filter(Event.id_kegiatan.in_(event_ids)).all()
+        
+        if not events:
+            return jsonify({'status': 'error', 'message': 'Konfigurasi yang dipilih tidak ditemukan'}), 404
+        
+        # Simpan nama-nama event untuk pesan sukses
+        event_names = [event.nama_kegiatan for event in events]
+        deleted_count = len(events)
+        
+        # Hapus semua event (cascade akan menghapus Kuota dan Criteria secara otomatis)
+        for event in events:
+            db.session.delete(event)
+        
+        db.session.commit()
+        
+        message = f'{deleted_count} konfigurasi berhasil dihapus'
+        if deleted_count == 1:
+            message = f'Konfigurasi "{event_names[0]}" berhasil dihapus'
+        elif deleted_count <= 3:
+            message = f'{deleted_count} konfigurasi berhasil dihapus: {", ".join(event_names)}'
+        
+        return jsonify({'status': 'success', 'message': message}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/delete_config_bulk:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 # API Kegiatan 
 @app.route('/api/kegiatan')
 @login_required

@@ -78,13 +78,48 @@
                   {{ 'Data Konfigurasi Seleksi' if current_lang == 'id' else
                   'Selection Configuration Data' }}
                 </h1>
-                <button
-                  @click="window.location.href='/admin/manajemen_seleksi'"
-                  class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}"
-                >
-                  <i class="fa-solid fa-arrow-left mr-2"></i>
-                  {{ 'Kembali' if current_lang == 'id' else 'Back' }}
-                </button>
+                <div class="flex gap-2">
+                  <button
+                    x-show="selectedItems.length > 0"
+                    @click="confirmBulkDelete()"
+                    class="px-4 py-2 rounded-lg cursor-pointer bg-red-500 hover:bg-red-600 text-white transition"
+                  >
+                    <i class="fa-solid fa-trash mr-2"></i>
+                    {{ 'Hapus Banyak' if current_lang == 'id' else 'Delete Selected' }}
+                    (<span x-text="selectedItems.length"></span>)
+                  </button>
+                  <button
+                    @click="window.location.href='/admin/manajemen_seleksi'"
+                    class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}"
+                  >
+                    <i class="fa-solid fa-arrow-left mr-2"></i>
+                    {{ 'Kembali' if current_lang == 'id' else 'Back' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Select All Controls -->
+              <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      @change="toggleSelectAll($event.target.checked)"
+                      :checked="selectedItems.length === events.length && events.length > 0"
+                      class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 {{ 'bg-gray-700 border-gray-600' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                    />
+                    <span class="ml-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Pilih Semua' if current_lang == 'id' else 'Select All' }}
+                    </span>
+                  </label>
+                  <span
+                    x-show="selectedItems.length > 0"
+                    class="px-3 py-1 rounded-full text-sm {{ 'bg-blue-500 text-white' if current_theme == 'dark' else 'bg-blue-100 text-blue-800' }}"
+                  >
+                    <span x-text="selectedItems.length"></span>
+                    {{ ' dipilih' if current_lang == 'id' else ' selected' }}
+                  </span>
+                </div>
               </div>
 
               <!-- List Konfigurasi -->
@@ -94,12 +129,21 @@
                 {% for event in events %}
                 <div
                   class="bg-white shadow-md rounded-xl p-6 hover:shadow-lg transition {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-100' }}"
+                  :class="{ 'ring-2 ring-blue-500': selectedItems.includes({{ event.id_kegiatan }}) }"
                 >
                   <div class="flex items-start justify-between mb-4">
-                    <div
-                      class="flex-1 cursor-pointer"
-                      @click="loadConfig({{ event.id_kegiatan }})"
-                    >
+                    <div class="flex items-start gap-3 flex-1">
+                      <input
+                        type="checkbox"
+                        :checked="selectedItems.includes({{ event.id_kegiatan }})"
+                        @change="toggleSelectItem({{ event.id_kegiatan }}, $event.target.checked)"
+                        @click.stop
+                        class="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500 {{ 'bg-gray-700 border-gray-600' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                      />
+                      <div
+                        class="flex-1 cursor-pointer"
+                        @click="loadConfig({{ event.id_kegiatan }})"
+                      >
                       <h3
                         class="text-lg font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                       >
@@ -116,6 +160,7 @@
                         >
                           {{ event.skala_kegiatan }}
                         </span>
+                      </div>
                       </div>
                     </div>
                     <div class="flex gap-2 ml-2">
@@ -805,20 +850,27 @@
                   <p
                     class="mb-6 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
                   >
-                    {{ 'Apakah Anda yakin ingin menghapus konfigurasi ini?
-                    Tindakan ini tidak dapat dibatalkan.' if current_lang ==
-                    'id' else 'Are you sure you want to delete this
-                    configuration? This action cannot be undone.' }}
+                    <span x-show="!isBulkDelete">
+                      {{ 'Apakah Anda yakin ingin menghapus konfigurasi ini?
+                      Tindakan ini tidak dapat dibatalkan.' if current_lang ==
+                      'id' else 'Are you sure you want to delete this
+                      configuration? This action cannot be undone.' }}
+                    </span>
+                    <span x-show="isBulkDelete">
+                      {{ 'Apakah Anda yakin ingin menghapus' if current_lang == 'id' else 'Are you sure you want to delete' }}
+                      <strong x-text="selectedItems.length"></strong>
+                      {{ 'konfigurasi yang dipilih? Tindakan ini tidak dapat dibatalkan.' if current_lang == 'id' else 'selected configurations? This action cannot be undone.' }}
+                    </span>
                   </p>
                   <div class="flex justify-end gap-3">
                     <button
-                      @click="showDeleteModal = false; deleteEventId = null"
+                      @click="showDeleteModal = false; deleteEventId = null; isBulkDelete = false"
                       class="px-4 py-2 border rounded-lg {{ 'border-gray-600 text-gray-300 hover:bg-gray-700' if current_theme == 'dark' else 'border-gray-300 text-gray-700 hover:bg-gray-100' }} transition"
                     >
                       {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
                     </button>
                     <button
-                      @click="deleteConfig()"
+                      @click="isBulkDelete ? deleteBulkConfig() : deleteConfig()"
                       :disabled="loading"
                       class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition disabled:opacity-50"
                     >
@@ -868,11 +920,45 @@
         editMode: false,
         deleteEventId: null,
         showDeleteModal: false,
+        isBulkDelete: false,
+        selectedItems: [],
+        events: [
+          {% for event in events %}
+          {
+            id: {{ event.id_kegiatan }},
+            nama: "{{ event.nama_kegiatan }}"
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ],
         modal: { show: false, title: "", message: "" },
         pendingAction: null,
 
         init() {
           this.ready = true;
+        },
+
+        toggleSelectItem(eventId, checked) {
+          if (checked) {
+            if (!this.selectedItems.includes(eventId)) {
+              this.selectedItems.push(eventId);
+            }
+          } else {
+            this.selectedItems = this.selectedItems.filter(id => id !== eventId);
+          }
+        },
+
+        toggleSelectAll(checked) {
+          if (checked) {
+            this.selectedItems = this.events.map(e => e.id);
+          } else {
+            this.selectedItems = [];
+          }
+        },
+
+        confirmBulkDelete() {
+          if (this.selectedItems.length === 0) return;
+          this.isBulkDelete = true;
+          this.showDeleteModal = true;
         },
 
         loadConfig(eventId, action = null) {
@@ -1034,6 +1120,9 @@
                 };
                 this.showDeleteModal = false;
                 this.deleteEventId = null;
+                this.isBulkDelete = false;
+                // Remove from selected items if it was selected
+                this.selectedItems = this.selectedItems.filter(id => id !== this.deleteEventId);
                 setTimeout(() => {
                   window.location.reload();
                 }, 1000);
@@ -1049,6 +1138,60 @@
             })
             .catch((err) => {
               console.error("Error deleting config:", err);
+              this.modal = {
+                show: true,
+                title: "{{ 'Error' if current_lang == 'id' else 'Error' }}",
+                message:
+                  "{{ 'Terjadi kesalahan saat menghapus data' if current_lang == 'id' else 'An error occurred while deleting data' }}",
+              };
+            })
+            .finally(() => {
+              this.loading = false;
+            });
+        },
+
+        deleteBulkConfig() {
+          if (this.selectedItems.length === 0) return;
+
+          this.loading = true;
+          const csrfToken =
+            document.querySelector("meta[name=csrf-token]")?.content || "";
+
+          fetch(`/api/delete_config_bulk`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({ event_ids: this.selectedItems }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.status === "success") {
+                this.modal = {
+                  show: true,
+                  title:
+                    "{{ 'Berhasil' if current_lang == 'id' else 'Success' }}",
+                  message: data.message,
+                };
+                this.showDeleteModal = false;
+                this.isBulkDelete = false;
+                this.selectedItems = [];
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              } else {
+                this.modal = {
+                  show: true,
+                  title: "{{ 'Error' if current_lang == 'id' else 'Error' }}",
+                  message:
+                    data.message ||
+                    "{{ 'Gagal menghapus konfigurasi' if current_lang == 'id' else 'Failed to delete configuration' }}",
+                };
+              }
+            })
+            .catch((err) => {
+              console.error("Error deleting bulk config:", err);
               this.modal = {
                 show: true,
                 title: "{{ 'Error' if current_lang == 'id' else 'Error' }}",
