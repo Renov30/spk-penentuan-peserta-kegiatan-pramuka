@@ -169,7 +169,10 @@ def handle_csrf_error(e):
         if current_user.is_authenticated:
             if current_user.level == 'admin':
                 return redirect(url_for('admin_users'))
-            return redirect(url_for('dashboard'))
+            elif current_user.level == 'penilai':
+                return redirect(url_for('penilai_dashboard'))
+            elif current_user.level == 'peserta':
+                return redirect(url_for('peserta_dashboard'))
         return redirect(url_for('login'))
 
 @app.errorhandler(429)
@@ -802,7 +805,7 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if 'role' not in session or session['role'] != 'admin':
             flash("Akses ditolak! Hanya admin yang bisa membuka halaman ini.", "error")
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('admin_dashboard'))
         return f(*args, **kwargs)
     return decorated_function
 
