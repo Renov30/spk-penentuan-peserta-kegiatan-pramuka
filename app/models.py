@@ -97,9 +97,13 @@ class Participants(db.Model):
     email = db.Column(db.String(255), nullable=False)
     nomor_hp = db.Column(db.String(100), nullable=False)
     foto = db.Column(db.String(100), nullable=False)
+    kegiatan_id = db.Column(db.Integer, db.ForeignKey("tb_kegiatan.id_kegiatan"), nullable=True)
 
     # kolom yang selalu berisi "peserta"
     level = db.Column(db.String(50), nullable=False, default="peserta", server_default="peserta")
+    
+    # Relationship dengan Event
+    kegiatan = db.relationship("Event", backref="peserta_list", lazy=True)
 
     def __repr__(self):
         return f"<Participant {self.nama_lengkap}>"

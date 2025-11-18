@@ -1858,6 +1858,170 @@ def peserta_hasil_seleksi():
         user=current_user
     )
 
+# API untuk mendapatkan kegiatan/seleksi yang tersedia (sedang dibuka)
+@app.route('/api/kegiatan_tersedia')
+@login_required
+def api_kegiatan_tersedia():
+    """Mengembalikan daftar kegiatan yang sedang membuka seleksi (tanggal sekarang antara mulai dan selesai)"""
+    try:
+        if current_user.level != 'peserta':
+            return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+        
+        today = datetime.utcnow().date()
+        
+        # Ambil kegiatan yang sedang membuka seleksi (tanggal sekarang antara mulai dan selesai)
+        kegiatan_list = Event.query.filter(
+            Event.mulai <= today,
+            Event.selesai >= today
+        ).order_by(Event.mulai.desc()).all()
+        
+        # Ambil biodata peserta untuk cek apakah sudah terdaftar
+        biodata = Participants.query.filter_by(email=current_user.email).first()
+        peserta_kegiatan_ids = []
+        if biodata and biodata.kegiatan_id:
+            peserta_kegiatan_ids = [biodata.kegiatan_id]
+        
+        result = []
+        for kegiatan in kegiatan_list:
+            kuota = Kuota.query.filter_by(event_id=kegiatan.id_kegiatan).first()
+            
+            # Hitung jumlah peserta yang sudah terdaftar
+            peserta_terdaftar = Participants.query.filter_by(kegiatan_id=kegiatan.id_kegiatan).count()
+            peserta_putra = Participants.query.filter_by(
+                kegiatan_id=kegiatan.id_kegiatan,
+                jenis_kelamin='laki-laki'
+            ).count()
+            peserta_putri = Participants.query.filter_by(
+                kegiatan_id=kegiatan.id_kegiatan,
+                jenis_kelamin='perempuan'
+            ).count()
+            
+            # Cek apakah peserta sudah terdaftar
+            sudah_terdaftar = biodata and biodata.kegiatan_id == kegiatan.id_kegiatan
+            
+            result.append({
+                'id_kegiatan': kegiatan.id_kegiatan,
+                'nama_kegiatan': kegiatan.nama_kegiatan,
+                'jenis_kegiatan': kegiatan.jenis_kegiatan,
+                'skala_kegiatan': kegiatan.skala_kegiatan,
+                'kwartir_penyelenggara': kegiatan.kwartir_penyelenggara,
+                'tempat_pelaksanaan': kegiatan.tempat_pelaksanaan,
+                'waktu_pelaksanaan_dimulai': kegiatan.waktu_pelaksanaan_dimulai.strftime('%Y-%m-%d') if kegiatan.waktu_pelaksanaan_dimulai else None,
+                'waktu_pelaksanaan_selesai': kegiatan.waktu_pelaksanaan_selesai.strftime('%Y-%m-%d') if kegiatan.waktu_pelaksanaan_selesai else None,
+                'periode_seleksi_mulai': kegiatan.mulai.strftime('%Y-%m-%d') if kegiatan.mulai else None,
+                'periode_seleksi_selesai': kegiatan.selesai.strftime('%Y-%m-%d') if kegiatan.selesai else None,
+                'kuota_putra': kuota.putra if kuota else 0,
+                'kuota_putri': kuota.putri if kuota else 0,
+                'peserta_terdaftar': peserta_terdaftar,
+                'peserta_putra_terdaftar': peserta_putra,
+                'peserta_putri_terdaftar': peserta_putri,
+                'sisa_kuota_putra': (kuota.putra if kuota else 0) - peserta_putra,
+                'sisa_kuota_putri': (kuota.putri if kuota else 0) - peserta_putri,
+                'sudah_terdaftar': sudah_terdaftar,
+                'status': 'Terdaftar' if sudah_terdaftar else 'Tersedia'
+            })
+        
+        return jsonify({'status': 'success', 'data': result}), 200
+    except Exception as e:
+        current_app.logger.exception('Error in /api/kegiatan_tersedia:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# API untuk peserta mendaftar/bergabung ke seleksi
+@app.route('/api/daftar_seleksi', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_daftar_seleksi():
+    """Endpoint untuk peserta mendaftar ke seleksi kegiatan"""
+    try:
+        if current_user.level != 'peserta':
+            return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+        
+        data = request.get_json(force=True)
+        kegiatan_id = data.get('kegiatan_id')
+        
+        if not kegiatan_id:
+            return jsonify({'status': 'error', 'message': 'ID kegiatan tidak ditemukan'}), 400
+        
+        # Cek apakah kegiatan ada dan sedang membuka seleksi
+        kegiatan = Event.query.get(kegiatan_id)
+        if not kegiatan:
+            return jsonify({'status': 'error', 'message': 'Kegiatan tidak ditemukan'}), 404
+        
+        today = datetime.utcnow().date()
+        if today < kegiatan.mulai or today > kegiatan.selesai:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Pendaftaran seleksi untuk kegiatan ini belum dibuka atau sudah ditutup'
+            }), 400
+        
+        # Cek apakah peserta sudah punya biodata
+        biodata = Participants.query.filter_by(email=current_user.email).first()
+        if not biodata:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Biodata Anda belum terdaftar. Silakan hubungi administrator untuk mendaftarkan biodata.'
+            }), 400
+        
+        # Cek apakah peserta sudah terdaftar di kegiatan lain
+        if biodata.kegiatan_id and biodata.kegiatan_id != kegiatan_id:
+            kegiatan_lain = Event.query.get(biodata.kegiatan_id)
+            return jsonify({
+                'status': 'error', 
+                'message': f'Anda sudah terdaftar di kegiatan: {kegiatan_lain.nama_kegiatan if kegiatan_lain else "Kegiatan lain"}. Silakan hubungi administrator untuk mengubah pendaftaran.'
+            }), 400
+        
+        # Cek apakah sudah terdaftar di kegiatan yang sama
+        if biodata.kegiatan_id == kegiatan_id:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Anda sudah terdaftar di kegiatan ini'
+            }), 400
+        
+        # Cek kuota
+        kuota = Kuota.query.filter_by(event_id=kegiatan_id).first()
+        if kuota:
+            peserta_putra = Participants.query.filter_by(
+                kegiatan_id=kegiatan_id,
+                jenis_kelamin='laki-laki'
+            ).count()
+            peserta_putri = Participants.query.filter_by(
+                kegiatan_id=kegiatan_id,
+                jenis_kelamin='perempuan'
+            ).count()
+            
+            if biodata.jenis_kelamin == 'laki-laki' and peserta_putra >= kuota.putra:
+                return jsonify({
+                    'status': 'error', 
+                    'message': 'Kuota untuk peserta putra sudah penuh'
+                }), 400
+            elif biodata.jenis_kelamin == 'perempuan' and peserta_putri >= kuota.putri:
+                return jsonify({
+                    'status': 'error', 
+                    'message': 'Kuota untuk peserta putri sudah penuh'
+                }), 400
+        
+        # Daftarkan peserta ke kegiatan
+        biodata.kegiatan_id = kegiatan_id
+        db.session.commit()
+        
+        # Log aktivitas
+        log_activity(
+            current_user.id,
+            f'Mendaftar ke seleksi kegiatan: {kegiatan.nama_kegiatan}',
+            request.remote_addr,
+            request.headers.get('User-Agent')
+        )
+        
+        return jsonify({
+            'status': 'success', 
+            'message': f'Berhasil mendaftar ke seleksi kegiatan: {kegiatan.nama_kegiatan}'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/daftar_seleksi:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/logout/')
 def logout():
     session.clear()

@@ -9,7 +9,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
-      {{ 'Dashboard Peserta | SPK Pramuka' if current_lang == 'id' else 'Participant Dashboard | Scout DSS' }}
+      {{ 'Dashboard Peserta | SPK Pramuka' if current_lang == 'id' else
+      'Participant Dashboard | Scout DSS' }}
     </title>
 
     <!-- Tailwind CSS -->
@@ -77,34 +78,26 @@
               <h1
                 class="text-3xl font-bold mb-6 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
               >
-                {{ 'Dashboard Peserta' if current_lang == 'id' else 'Participant Dashboard' }}
+                {{ 'Dashboard Peserta' if current_lang == 'id' else 'Participant
+                Dashboard' }}
               </h1>
 
-              <!-- Welcome Message -->
-              <div class="mb-6">
-                <h3
-                  class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
-                >
-                  {{ 'Selamat datang,' if current_lang == 'id' else 'Welcome,' }} {{ user.nama_lengkap }}
-                </h3>
-                <p
-                  class="{{ 'text-gray-200' if current_theme == 'dark' else 'text-gray-600' }}"
-                >
-                  {{ 'Dashboard ini menampilkan informasi biodata dan status seleksi Anda.' if current_lang == 'id' else 'This dashboard displays your biodata information and selection status.' }}
-                </p>
-              </div>
-
               <!-- Status Cards -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+              <div
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"
+              >
                 <!-- Status Seleksi -->
                 <div
                   class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
                 >
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">
-                      {{ 'Status Seleksi' if current_lang == 'id' else 'Selection Status' }}
+                      {{ 'Status Seleksi' if current_lang == 'id' else
+                      'Selection Status' }}
                     </h2>
-                    <i class="fa-solid fa-clipboard-check text-2xl text-blue-500"></i>
+                    <i
+                      class="fa-solid fa-clipboard-check text-2xl text-blue-500"
+                    ></i>
                   </div>
                   <p class="text-2xl font-bold text-blue-600">
                     {{ status_seleksi }}
@@ -118,7 +111,8 @@
                 >
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">
-                      {{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}
+                      {{ 'Nilai Akhir' if current_lang == 'id' else 'Final
+                      Score' }}
                     </h2>
                     <i class="fa-solid fa-star text-2xl text-yellow-500"></i>
                   </div>
@@ -142,8 +136,7 @@
                     #{{ ranking }}
                   </p>
                 </div>
-                {% endif %}
-                {% endif %}
+                {% endif %} {% endif %}
               </div>
 
               <!-- Biodata Section -->
@@ -153,113 +146,177 @@
                   class="text-2xl font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
                 >
                   <i class="fa-solid fa-user-circle mr-2"></i>
-                  {{ 'Biodata Peserta' if current_lang == 'id' else 'Participant Biodata' }}
+                  {{ 'Biodata Peserta' if current_lang == 'id' else 'Participant
+                  Biodata' }}
                 </h2>
                 <div
                   class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
                 >
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Nama Lengkap' if current_lang == 'id' else 'Full
+                        Name' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.nama_lengkap or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Tanggal Lahir' if current_lang == 'id' else 'Date of Birth' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Tanggal Lahir' if current_lang == 'id' else 'Date of
+                        Birth' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
-                        {{ biodata.tanggal_lahir.strftime('%d/%m/%Y') if biodata.tanggal_lahir else '-' }}
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
+                        {{ biodata.tanggal_lahir.strftime('%d/%m/%Y') if
+                        biodata.tanggal_lahir else '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Jenis Kelamin' if current_lang == 'id' else 'Gender' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Jenis Kelamin' if current_lang == 'id' else 'Gender'
+                        }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.jenis_kelamin or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
                         {{ 'Usia' if current_lang == 'id' else 'Age' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
-                        {{ biodata.usia or '-' }} {{ 'tahun' if current_lang == 'id' else 'years' }}
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
+                        {{ biodata.usia or '-' }} {{ 'tahun' if current_lang ==
+                        'id' else 'years' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
                         {{ 'Golongan' if current_lang == 'id' else 'Group' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.golongan or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
                         {{ 'Tingkatan' if current_lang == 'id' else 'Level' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.tingkatan or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
                         {{ 'Email' if current_lang == 'id' else 'Email' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.email or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Nomor HP' if current_lang == 'id' else 'Phone Number' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Nomor HP' if current_lang == 'id' else 'Phone
+                        Number' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.nomor_hp or '-' }}
                       </p>
                     </div>
                     <div class="md:col-span-2">
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Alamat Tinggal' if current_lang == 'id' else 'Address' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Alamat Tinggal' if current_lang == 'id' else
+                        'Address' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.alamat_tinggal or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Asal Gudep' if current_lang == 'id' else 'Gudep Origin' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Asal Gudep' if current_lang == 'id' else 'Gudep
+                        Origin' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.asal_gudep or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Asal Kwarran' if current_lang == 'id' else 'Kwarran Origin' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Asal Kwarran' if current_lang == 'id' else 'Kwarran
+                        Origin' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.asal_kwarran or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Asal Kwarcab' if current_lang == 'id' else 'Kwarcab Origin' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Asal Kwarcab' if current_lang == 'id' else 'Kwarcab
+                        Origin' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.asal_kwarcab or '-' }}
                       </p>
                     </div>
                     <div>
-                      <label class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Asal Kwarda' if current_lang == 'id' else 'Kwarda Origin' }}
+                      <label
+                        class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Asal Kwarda' if current_lang == 'id' else 'Kwarda
+                        Origin' }}
                       </label>
-                      <p class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                      <p
+                        class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                      >
                         {{ biodata.asal_kwarda or '-' }}
                       </p>
                     </div>
@@ -272,13 +329,233 @@
                 <div
                   class="rounded-xl shadow p-6 text-center {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
                 >
-                  <i class="fa-solid fa-info-circle text-4xl text-blue-500 mb-4"></i>
-                  <p class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
-                    {{ 'Biodata Anda belum terdaftar. Silakan hubungi administrator untuk mendaftarkan biodata.' if current_lang == 'id' else 'Your biodata is not registered yet. Please contact the administrator to register your biodata.' }}
+                  <i
+                    class="fa-solid fa-info-circle text-4xl text-blue-500 mb-4"
+                  ></i>
+                  <p
+                    class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                  >
+                    {{ 'Biodata Anda belum terdaftar. Silakan hubungi
+                    administrator untuk mendaftarkan biodata.' if current_lang
+                    == 'id' else 'Your biodata is not registered yet. Please
+                    contact the administrator to register your biodata.' }}
                   </p>
                 </div>
               </div>
               {% endif %}
+
+              <!-- Kegiatan Tersedia Section -->
+              <div
+                class="mt-8"
+                id="kegiatan-tersedia"
+                x-data="kegiatanTersedia()"
+              >
+                <h2
+                  class="text-2xl font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                >
+                  <i class="fa-solid fa-calendar-check mr-2"></i>
+                  {{ 'Kegiatan Seleksi Tersedia' if current_lang == 'id' else
+                  'Available Selection Activities' }}
+                </h2>
+
+                <!-- Loading State -->
+                <div x-show="loading" class="text-center py-8">
+                  <i
+                    class="fa-solid fa-spinner fa-spin text-3xl text-blue-500"
+                  ></i>
+                  <p
+                    class="mt-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                  >
+                    {{ 'Memuat data...' if current_lang == 'id' else 'Loading
+                    data...' }}
+                  </p>
+                </div>
+
+                <!-- Empty State -->
+                <div
+                  x-show="!loading && kegiatanList.length === 0"
+                  class="rounded-xl shadow p-6 text-center {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                >
+                  <i
+                    class="fa-solid fa-calendar-xmark text-4xl text-gray-400 mb-4"
+                  ></i>
+                  <p
+                    class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                  >
+                    {{ 'Tidak ada kegiatan seleksi yang sedang dibuka saat ini.'
+                    if current_lang == 'id' else 'No selection activities are
+                    currently open.' }}
+                  </p>
+                </div>
+
+                <!-- Kegiatan List -->
+                <div
+                  x-show="!loading && kegiatanList.length > 0"
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                  <template
+                    x-for="kegiatan in kegiatanList"
+                    :key="kegiatan.id_kegiatan"
+                  >
+                    <div
+                      class="rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl {{ 'bg-gray-900 text-white border border-gray-700' if current_theme == 'dark' else 'bg-white text-black border border-gray-200' }}"
+                    >
+                      <!-- Header -->
+                      <div class="mb-4">
+                        <h3
+                          class="text-xl font-bold mb-2"
+                          x-text="kegiatan.nama_kegiatan"
+                        ></h3>
+                        <div class="flex items-center gap-2 mb-2">
+                          <span
+                            class="px-3 py-1 rounded-full text-xs font-semibold"
+                            :class="kegiatan.sudah_terdaftar ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'"
+                            x-text="kegiatan.status"
+                          ></span>
+                          <span
+                            class="px-3 py-1 rounded-full text-xs font-semibold {{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 text-gray-800' }}"
+                            x-text="kegiatan.jenis_kegiatan"
+                          ></span>
+                        </div>
+                      </div>
+
+                      <!-- Info Kegiatan -->
+                      <div
+                        class="space-y-2 mb-4 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        <div class="flex items-start">
+                          <i
+                            class="fa-solid fa-map-marker-alt mr-2 mt-1 text-blue-500"
+                          ></i>
+                          <span
+                            class="text-sm"
+                            x-text="kegiatan.tempat_pelaksanaan"
+                          ></span>
+                        </div>
+                        <div class="flex items-start">
+                          <i
+                            class="fa-solid fa-building mr-2 mt-1 text-blue-500"
+                          ></i>
+                          <span
+                            class="text-sm"
+                            x-text="kegiatan.kwartir_penyelenggara"
+                          ></span>
+                        </div>
+                        <div class="flex items-start">
+                          <i
+                            class="fa-solid fa-globe mr-2 mt-1 text-blue-500"
+                          ></i>
+                          <span
+                            class="text-sm"
+                            x-text="kegiatan.skala_kegiatan"
+                          ></span>
+                        </div>
+                        <div class="flex items-start">
+                          <i
+                            class="fa-solid fa-calendar-alt mr-2 mt-1 text-blue-500"
+                          ></i>
+                          <span class="text-sm">
+                            <span
+                              x-text="formatDate(kegiatan.waktu_pelaksanaan_dimulai)"
+                            ></span>
+                            <span
+                              x-show="kegiatan.waktu_pelaksanaan_dimulai !== kegiatan.waktu_pelaksanaan_selesai"
+                            >
+                              -
+                              <span
+                                x-text="formatDate(kegiatan.waktu_pelaksanaan_selesai)"
+                              ></span>
+                            </span>
+                          </span>
+                        </div>
+                        <div class="flex items-start">
+                          <i
+                            class="fa-solid fa-clock mr-2 mt-1 text-orange-500"
+                          ></i>
+                          <span class="text-sm">
+                            {{ 'Periode Seleksi:' if current_lang == 'id' else
+                            'Selection Period:' }}
+                            <span
+                              x-text="formatDate(kegiatan.periode_seleksi_mulai)"
+                            ></span>
+                            -
+                            <span
+                              x-text="formatDate(kegiatan.periode_seleksi_selesai)"
+                            ></span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Kuota Info -->
+                      <div
+                        class="mb-4 p-3 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
+                      >
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span class="font-semibold"
+                              >{{ 'Putra:' if current_lang == 'id' else 'Male:'
+                              }}</span
+                            >
+                            <span
+                              x-text="kegiatan.peserta_putra_terdaftar"
+                            ></span
+                            >/<span x-text="kegiatan.kuota_putra"></span>
+                            <span
+                              class="text-xs"
+                              x-text="'(' + kegiatan.sisa_kuota_putra + ' tersisa)'"
+                            ></span>
+                          </div>
+                          <div>
+                            <span class="font-semibold"
+                              >{{ 'Putri:' if current_lang == 'id' else
+                              'Female:' }}</span
+                            >
+                            <span
+                              x-text="kegiatan.peserta_putri_terdaftar"
+                            ></span
+                            >/<span x-text="kegiatan.kuota_putri"></span>
+                            <span
+                              class="text-xs"
+                              x-text="'(' + kegiatan.sisa_kuota_putri + ' tersisa)'"
+                            ></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Action Button -->
+                      <button
+                        @click="daftarSeleksi(kegiatan.id_kegiatan, kegiatan.nama_kegiatan)"
+                        :disabled="kegiatan.sudah_terdaftar || isRegistering"
+                        :class="{
+                          'bg-green-500 hover:bg-green-600': kegiatan.sudah_terdaftar,
+                          'bg-blue-500 hover:bg-blue-600': !kegiatan.sudah_terdaftar && !isRegistering,
+                          'bg-gray-400 cursor-not-allowed': isRegistering,
+                          'opacity-50': kegiatan.sudah_terdaftar || isRegistering
+                        }"
+                        class="w-full py-2 px-4 rounded-lg text-white font-semibold transition-all duration-300 disabled:cursor-not-allowed"
+                      >
+                        <span x-show="!isRegistering">
+                          <span x-show="kegiatan.sudah_terdaftar">
+                            <i class="fa-solid fa-check mr-2"></i>
+                            {{ 'Sudah Terdaftar' if current_lang == 'id' else
+                            'Registered' }}
+                          </span>
+                          <span x-show="!kegiatan.sudah_terdaftar">
+                            <i class="fa-solid fa-user-plus mr-2"></i>
+                            {{ 'Daftar Seleksi' if current_lang == 'id' else
+                            'Register for Selection' }}
+                          </span>
+                        </span>
+                        <span x-show="isRegistering">
+                          <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+                          {{ 'Mendaftar...' if current_lang == 'id' else
+                          'Registering...' }}
+                        </span>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
           </section>
         </main>
@@ -286,7 +563,129 @@
     </div>
 
     <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} {% include 'script_notification.html' %}
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
+
+    <!-- Script untuk Kegiatan Tersedia -->
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("kegiatanTersedia", () => ({
+          kegiatanList: [],
+          loading: true,
+          isRegistering: false,
+
+          async init() {
+            await this.loadKegiatan();
+          },
+
+          async loadKegiatan() {
+            try {
+              this.loading = true;
+              const response = await fetch("/api/kegiatan_tersedia");
+              const result = await response.json();
+
+              if (result.status === "success") {
+                this.kegiatanList = result.data;
+              } else {
+                console.error("Error loading kegiatan:", result.message);
+                // Tampilkan notifikasi error jika ada
+                if (window.showNotification) {
+                  window.showNotification(
+                    result.message || "Gagal memuat data kegiatan",
+                    "error"
+                  );
+                }
+              }
+            } catch (error) {
+              console.error("Error:", error);
+              if (window.showNotification) {
+                window.showNotification(
+                  "Terjadi kesalahan saat memuat data",
+                  "error"
+                );
+              }
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          formatDate(dateString) {
+            if (!dateString) return "-";
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, "0");
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+          },
+
+          async daftarSeleksi(kegiatanId, namaKegiatan) {
+            if (this.isRegistering) return;
+
+            // Konfirmasi
+            const confirmed = confirm(
+              `Apakah Anda yakin ingin mendaftar ke seleksi kegiatan: ${namaKegiatan}?`
+            );
+
+            if (!confirmed) return;
+
+            try {
+              this.isRegistering = true;
+
+              const response = await fetch("/api/daftar_seleksi", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ kegiatan_id: kegiatanId }),
+              });
+
+              const result = await response.json();
+
+              if (result.status === "success") {
+                // Tampilkan notifikasi sukses
+                if (window.showNotification) {
+                  window.showNotification(
+                    result.message || "Berhasil mendaftar!",
+                    "success"
+                  );
+                } else {
+                  alert(result.message || "Berhasil mendaftar!");
+                }
+
+                // Reload data kegiatan untuk update status
+                await this.loadKegiatan();
+
+                // Reload halaman setelah 1 detik untuk update status seleksi
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              } else {
+                // Tampilkan notifikasi error
+                if (window.showNotification) {
+                  window.showNotification(
+                    result.message || "Gagal mendaftar",
+                    "error"
+                  );
+                } else {
+                  alert(result.message || "Gagal mendaftar");
+                }
+              }
+            } catch (error) {
+              console.error("Error:", error);
+              if (window.showNotification) {
+                window.showNotification(
+                  "Terjadi kesalahan saat mendaftar",
+                  "error"
+                );
+              } else {
+                alert("Terjadi kesalahan saat mendaftar");
+              }
+            } finally {
+              this.isRegistering = false;
+            }
+          },
+        }));
+      });
+    </script>
   </body>
 </html>
-
