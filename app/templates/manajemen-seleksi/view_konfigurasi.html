@@ -212,7 +212,7 @@
               >
                 <div
                   x-transition.scale
-                  class="p-6 rounded-2xl shadow-2xl w-[95%] max-w-7xl flex flex-col bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
+                  class="p-6 rounded-2xl shadow-2xl w-[85%] max-w-5xl flex flex-col bg-white"
                   style="max-height: 90vh; height: 90vh"
                 >
                   <!-- Header -->
@@ -535,153 +535,162 @@
                         <div class="space-y-4 pb-2">
                           <!-- Informasi Kegiatan -->
                           <div
-                            class="border rounded-lg p-3 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+                            class="border rounded-lg p-4 mb-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
                           >
                             <h3
-                              class="text-base font-semibold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                              class="font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                             >
-                              <i
-                                class="fa-solid fa-info-circle mr-2 text-blue-500"
-                              ></i>
                               {{ 'Informasi Kegiatan' if current_lang == 'id'
                               else 'Activity Information' }}
                             </h3>
-                            <div
-                              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+
+                            <!-- Nama Kegiatan -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                             >
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                              {{ 'Nama Kegiatan' if current_lang == 'id' else
+                              'Activity Name' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="editData.event.nama_kegiatan"
+                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
+                            />
+
+                            <!-- Skala Kegiatan -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ 'Skala Kegiatan' if current_lang == 'id' else
+                              'Activity Scale' }}
+                            </label>
+                            <select
+                              x-model="editData.event.skala_kegiatan"
+                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
+                            >
+                              <option value="Ranting">Ranting</option>
+                              <option value="Cabang">Cabang</option>
+                              <option value="Daerah">Daerah</option>
+                              <option value="Nasional">Nasional</option>
+                              <option value="Internasional">
+                                Internasional
+                              </option>
+                            </select>
+
+                            <!-- Jenis Kegiatan -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ 'Jenis Kegiatan' if current_lang == 'id' else
+                              'Activity Type' }}
+                            </label>
+                            <select
+                              x-model="editData.event.jenis_kegiatan"
+                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
+                            >
+                              <option value="Siaga">Siaga</option>
+                              <option value="Penggalang">Penggalang</option>
+                              <option value="Penegak">Penegak</option>
+                              <option value="Pandega">Pandega</option>
+                              <option value="Penegak dan Pandega">
+                                Penegak dan Pandega
+                              </option>
+                            </select>
+
+                            <!-- Kwartir Penyelenggara -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ 'Kwartir Penyelenggara' if current_lang == 'id'
+                              else 'Organizing Kwartir' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="editData.event.kwartir_penyelenggara"
+                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
+                            />
+
+                            <!-- Waktu Pelaksanaan -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ 'Waktu Pelaksanaan' if current_lang == 'id'
+                              else 'Execution Time' }}
+                            </label>
+                            <div class="flex gap-3">
+                              <div class="w-1/2">
+                                <small
+                                  class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
+                                  >{{ 'Mulai' if current_lang == 'id' else
+                                  'Start' }}</small
                                 >
-                                  {{ 'Nama Kegiatan' if current_lang == 'id'
-                                  else 'Activity Name' }}
-                                </label>
                                 <input
-                                  type="text"
-                                  x-model="editData.event.nama_kegiatan"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                />
-                              </div>
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                >
-                                  {{ 'Jenis Kegiatan' if current_lang == 'id'
-                                  else 'Activity Type' }}
-                                </label>
-                                <select
-                                  x-model="editData.event.jenis_kegiatan"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                >
-                                  <option value="Siaga">Siaga</option>
-                                  <option value="Penggalang">Penggalang</option>
-                                  <option value="Penegak">Penegak</option>
-                                  <option value="Pandega">Pandega</option>
-                                  <option value="Penegak dan Pandega">
-                                    Penegak dan Pandega
-                                  </option>
-                                </select>
-                              </div>
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                >
-                                  {{ 'Skala Kegiatan' if current_lang == 'id'
-                                  else 'Activity Scale' }}
-                                </label>
-                                <select
-                                  x-model="editData.event.skala_kegiatan"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                >
-                                  <option value="Ranting">Ranting</option>
-                                  <option value="Cabang">Cabang</option>
-                                  <option value="Daerah">Daerah</option>
-                                  <option value="Nasional">Nasional</option>
-                                  <option value="Internasional">
-                                    Internasional
-                                  </option>
-                                </select>
-                              </div>
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                >
-                                  {{ 'Kwartir Penyelenggara' if current_lang ==
-                                  'id' else 'Organizing Kwartir' }}
-                                </label>
-                                <input
-                                  type="text"
-                                  x-model="editData.event.kwartir_penyelenggara"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                />
-                              </div>
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                >
-                                  {{ 'Tempat Pelaksanaan' if current_lang ==
-                                  'id' else 'Location' }}
-                                </label>
-                                <input
-                                  type="text"
-                                  x-model="editData.event.tempat_pelaksanaan"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                />
-                              </div>
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                >
-                                  {{ 'Waktu Pelaksanaan Dimulai' if current_lang
-                                  == 'id' else 'Execution Start Time' }}
-                                </label>
-                                <input
-                                  type="date"
-                                  :value="editData.event.waktu_pelaksanaan_dimulai ? (editData.event.waktu_pelaksanaan_dimulai.includes('T') ? editData.event.waktu_pelaksanaan_dimulai.split('T')[0] : editData.event.waktu_pelaksanaan_dimulai) : ''"
+                                  type="datetime-local"
+                                  :value="editData.event.waktu_pelaksanaan_dimulai ? (editData.event.waktu_pelaksanaan_dimulai.includes('T') ? editData.event.waktu_pelaksanaan_dimulai : editData.event.waktu_pelaksanaan_dimulai + 'T00:00') : ''"
                                   @input="editData.event.waktu_pelaksanaan_dimulai = $event.target.value"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+                                  class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
                               </div>
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                              <div class="w-1/2">
+                                <small
+                                  class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
+                                  >{{ 'Selesai' if current_lang == 'id' else
+                                  'End' }}</small
                                 >
-                                  {{ 'Waktu Pelaksanaan Selesai' if current_lang
-                                  == 'id' else 'Execution End Time' }}
-                                </label>
                                 <input
-                                  type="date"
-                                  :value="editData.event.waktu_pelaksanaan_selesai ? (editData.event.waktu_pelaksanaan_selesai.includes('T') ? editData.event.waktu_pelaksanaan_selesai.split('T')[0] : editData.event.waktu_pelaksanaan_selesai) : ''"
+                                  type="datetime-local"
+                                  :value="editData.event.waktu_pelaksanaan_selesai ? (editData.event.waktu_pelaksanaan_selesai.includes('T') ? editData.event.waktu_pelaksanaan_selesai : editData.event.waktu_pelaksanaan_selesai + 'T00:00') : ''"
                                   @input="editData.event.waktu_pelaksanaan_selesai = $event.target.value"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+                                  class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
                               </div>
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                            </div>
+
+                            <!-- Tempat Pelaksanaan -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ 'Tempat Pelaksanaan' if current_lang == 'id'
+                              else 'Location' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="editData.event.tempat_pelaksanaan"
+                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
+                            />
+
+                            <!-- Periode Seleksi -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ 'Periode Seleksi' if current_lang == 'id' else
+                              'Selection Period' }}
+                            </label>
+                            <div class="flex gap-3">
+                              <div class="w-1/2">
+                                <small
+                                  class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
+                                  >{{ 'Mulai' if current_lang == 'id' else
+                                  'Start' }}</small
                                 >
-                                  {{ 'Mulai' if current_lang == 'id' else
-                                  'Start' }}
-                                </label>
                                 <input
-                                  type="date"
-                                  :value="editData.event.mulai ? (editData.event.mulai.includes('T') ? editData.event.mulai.split('T')[0] : editData.event.mulai) : ''"
+                                  type="datetime-local"
+                                  :value="editData.event.mulai ? (editData.event.mulai.includes('T') ? editData.event.mulai : editData.event.mulai + 'T00:00') : ''"
                                   @input="editData.event.mulai = $event.target.value"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+                                  class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
                               </div>
-                              <div>
-                                <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                              <div class="w-1/2">
+                                <small
+                                  class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
+                                  >{{ 'Selesai' if current_lang == 'id' else
+                                  'End' }}</small
                                 >
-                                  {{ 'Selesai' if current_lang == 'id' else
-                                  'End' }}
-                                </label>
                                 <input
-                                  type="date"
-                                  :value="editData.event.selesai ? (editData.event.selesai.includes('T') ? editData.event.selesai.split('T')[0] : editData.event.selesai) : ''"
+                                  type="datetime-local"
+                                  :value="editData.event.selesai ? (editData.event.selesai.includes('T') ? editData.event.selesai : editData.event.selesai + 'T00:00') : ''"
                                   @input="editData.event.selesai = $event.target.value"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+                                  class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
                               </div>
                             </div>
@@ -689,21 +698,18 @@
 
                           <!-- Komposisi Kontingen -->
                           <div
-                            class="border rounded-lg p-3 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+                            class="border rounded-lg p-4 mb-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
                           >
                             <h3
-                              class="text-base font-semibold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                              class="font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                             >
-                              <i
-                                class="fa-solid fa-users mr-2 text-green-500"
-                              ></i>
                               {{ 'Komposisi Kontingen' if current_lang == 'id'
                               else 'Contingent Composition' }}
                             </h3>
-                            <div class="grid grid-cols-2 gap-3">
-                              <div>
+                            <div class="flex gap-3">
+                              <div class="w-1/2">
                                 <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                                 >
                                   {{ 'Umpi Putra' if current_lang == 'id' else
                                   'Male Umpi' }}
@@ -711,12 +717,12 @@
                                 <input
                                   type="number"
                                   x-model.number="editData.kuota.putra"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+                                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
                               </div>
-                              <div>
+                              <div class="w-1/2">
                                 <label
-                                  class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                                 >
                                   {{ 'Umpi Putri' if current_lang == 'id' else
                                   'Female Umpi' }}
@@ -724,7 +730,7 @@
                                 <input
                                   type="number"
                                   x-model.number="editData.kuota.putri"
-                                  class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+                                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                                 />
                               </div>
                             </div>
@@ -732,117 +738,102 @@
 
                           <!-- Kriteria Seleksi -->
                           <div
-                            class="border rounded-lg p-3 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+                            class="border rounded-lg p-4 mb-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
                           >
                             <h3
-                              class="text-base font-semibold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                              class="font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                             >
-                              <i
-                                class="fa-solid fa-list-check mr-2 text-purple-500"
-                              ></i>
                               {{ 'Kriteria Seleksi' if current_lang == 'id' else
                               'Selection Criteria' }}
                             </h3>
-                            <div class="space-y-3">
+
+                            <!-- Table Header -->
+                            <div
+                              class="flex items-center gap-2 mb-2 font-semibold text-sm border-b pb-2 {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-300' }}"
+                            >
+                              <div class="w-1/3">
+                                {{ 'Nama Kriteria' if current_lang == 'id' else
+                                'Criteria Name' }}
+                              </div>
+                              <div class="w-1/3 pl-3">
+                                {{ 'Jenis Penilaian' if current_lang == 'id'
+                                else 'Type of Assessment' }}
+                              </div>
+                              <div class="w-1/3 pl-3">
+                                {{ 'Skala Penilaian' if current_lang == 'id'
+                                else 'Assessment Scale' }}
+                              </div>
+                              <div class="w-12 text-center">
+                                {{ 'Aksi' if current_lang == 'id' else 'Action'
+                                }}
+                              </div>
+                            </div>
+
+                            <!-- Table Rows -->
+                            <div class="space-y-2">
                               <template
                                 x-for="(crit, index) in editData.criteria"
                                 :key="index"
                               >
-                                <div
-                                  class="border rounded-lg p-3 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
-                                >
+                                <div class="flex items-center gap-2 mb-2">
+                                  <!-- Nama Kriteria -->
+                                  <input
+                                    type="text"
+                                    x-model="crit.nama_kriteria"
+                                    class="w-1/3 rounded-lg px-2 py-1 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
+                                  />
+
+                                  <!-- Jenis Penilaian -->
                                   <div
-                                    class="grid grid-cols-1 md:grid-cols-2 gap-3"
+                                    class="w-1/3 flex relative group items-center justify-between border px-2 py-1 rounded-lg {{ 'dark:bg-gray-800 dark:text-white border-gray-600' if current_theme == 'dark' else 'dark:bg-gray-300 dark:text-gray-900 border-gray-300' }}"
                                   >
-                                    <div>
-                                      <label
-                                        class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                      >
-                                        {{ 'Nama Kriteria' if current_lang ==
-                                        'id' else 'Criteria Name' }}
-                                      </label>
-                                      <input
-                                        type="text"
-                                        x-model="crit.nama_kriteria"
-                                        class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label
-                                        class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                      >
-                                        {{ 'Bobot' if current_lang == 'id' else
-                                        'Weight' }}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        step="0.01"
-                                        x-model.number="crit.bobot"
-                                        class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label
-                                        class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                      >
-                                        {{ 'Jenis Kriteria' if current_lang ==
-                                        'id' else 'Criteria Type' }}
-                                      </label>
-                                      <select
-                                        x-model="crit.jenis_kriteria"
-                                        class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                      >
-                                        <option value="Kualitatif">
-                                          Kualitatif
-                                        </option>
-                                        <option value="Kuantitatif">
-                                          Kuantitatif
-                                        </option>
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label
-                                        class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                      >
-                                        {{ 'Jumlah Soal' if current_lang == 'id'
-                                        else 'Number of Questions' }}
-                                      </label>
-                                      <input
-                                        type="number"
-                                        x-model.number="crit.jumlah_soal"
-                                        class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                      />
-                                    </div>
-                                    <div class="md:col-span-2">
-                                      <label
-                                        class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                      >
-                                        {{ 'Aspek' if current_lang == 'id' else
-                                        'Aspect' }}
-                                      </label>
-                                      <input
-                                        type="text"
-                                        x-model="crit.aspek"
-                                        class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                      />
-                                    </div>
-                                    <div class="md:col-span-2">
-                                      <label
-                                        class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                      >
-                                        {{ 'Deskripsi' if current_lang == 'id'
-                                        else 'Description' }}
-                                      </label>
-                                      <textarea
-                                        x-model="crit.deskripsi"
-                                        rows="3"
-                                        class="w-full px-3 py-2 border rounded-lg {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
-                                      ></textarea>
-                                    </div>
+                                    <span
+                                      class="text-sm"
+                                      x-text="crit.jenis_kriteria || 'Belum diatur'"
+                                    ></span>
+                                    <button
+                                      @click="openEditCriteria(index)"
+                                      class="px-2 py-1 bg-yellow-500 hover:bg-amber-500 text-white rounded text-xs cursor-pointer"
+                                      title="{{ 'Edit' if current_lang == 'id' else 'Edit' }}"
+                                    >
+                                      <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
                                   </div>
+
+                                  <!-- Skala Penilaian (Bobot) -->
+                                  <div class="flex items-center w-1/3">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      x-model.number="crit.bobot"
+                                      min="0"
+                                      max="10"
+                                      placeholder="0-10"
+                                      class="w-full rounded-lg px-2 py-1 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
+                                    />
+                                  </div>
+
+                                  <!-- Hapus -->
+                                  <button
+                                    @click="deleteCriteria(index)"
+                                    class="px-2 py-1 bg-red-500 hover:bg-red-700 text-white rounded-lg text-xs cursor-pointer"
+                                    title="{{ 'Hapus' if current_lang == 'id' else 'Delete' }}"
+                                  >
+                                    <i class="fa-solid fa-trash"></i>
+                                  </button>
                                 </div>
                               </template>
                             </div>
+
+                            <!-- Tambah Kriteria -->
+                            <button
+                              @click="addCriteria()"
+                              class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg text-sm mt-3 cursor-pointer"
+                            >
+                              <i class="fa-solid fa-plus mr-1"></i>
+                              {{ '+ Tambah Kriteria' if current_lang == 'id'
+                              else '+ Add Criteria' }}
+                            </button>
                           </div>
                         </div>
                       </template>
@@ -933,6 +924,136 @@
                         >{{ 'Menghapus...' if current_lang == 'id' else
                         'Deleting...' }}</span
                       >
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Modal Edit Kriteria -->
+              <div
+                x-show="showCriteriaModal"
+                x-transition.opacity
+                class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-300/50' }}"
+                @click.away="showCriteriaModal = false"
+              >
+                <div
+                  x-transition.scale
+                  class="p-6 rounded-2xl shadow-2xl w-96 flex flex-col items-center relative bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
+                >
+                  <!-- Tombol Close -->
+                  <button
+                    @click="showCriteriaModal = false"
+                    class="absolute top-3 right-3 dark:hover:text-red-600 transition cursor-pointer {{ 'text-gray-500 hover:text-gray-700' if current_theme == 'dark' else 'text-gray-800 hover:text-gray-900' }}"
+                    aria-label="Close"
+                  >
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                  </button>
+
+                  <!-- Icon -->
+                  <div
+                    class="text-3xl mb-2 animate-bounce {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
+                  >
+                    <i class="fa-solid fa-chart-pie"></i>
+                  </div>
+
+                  <h4
+                    class="font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  >
+                    {{ 'Atur Jenis Penilaian' if current_lang == 'id' else 'Set
+                    Assessment Type' }}
+                  </h4>
+
+                  <template
+                    x-if="selectedCriteriaIndex !== null && editData.criteria[selectedCriteriaIndex]"
+                  >
+                    <div class="w-full space-y-4">
+                      <!-- Jenis Kriteria -->
+                      <div>
+                        <label
+                          class="block mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                        >
+                          {{ 'Jenis Kriteria' if current_lang == 'id' else
+                          'Criteria Type' }}
+                        </label>
+                        <select
+                          x-model="editData.criteria[selectedCriteriaIndex].jenis_kriteria"
+                          class="w-full rounded-lg px-3 py-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
+                        >
+                          <option value="Kualitatif">
+                            {{ 'Kualitatif' if current_lang == 'id' else
+                            'Qualitative' }}
+                          </option>
+                          <option value="Kuantitatif">
+                            {{ 'Kuantitatif' if current_lang == 'id' else
+                            'Quantitative' }}
+                          </option>
+                        </select>
+                      </div>
+
+                      <!-- Jumlah Soal (jika Kuantitatif) -->
+                      <div
+                        x-show="editData.criteria[selectedCriteriaIndex].jenis_kriteria === 'Kuantitatif'"
+                      >
+                        <label
+                          class="block mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                        >
+                          {{ 'Jumlah Soal' if current_lang == 'id' else 'Number
+                          of Questions' }}
+                        </label>
+                        <input
+                          type="number"
+                          x-model.number="editData.criteria[selectedCriteriaIndex].jumlah_soal"
+                          min="1"
+                          class="w-full rounded-lg px-3 py-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
+                        />
+                      </div>
+
+                      <!-- Aspek -->
+                      <div>
+                        <label
+                          class="block mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                        >
+                          {{ 'Aspek' if current_lang == 'id' else 'Aspect' }}
+                        </label>
+                        <input
+                          type="text"
+                          x-model="editData.criteria[selectedCriteriaIndex].aspek"
+                          class="w-full rounded-lg px-3 py-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
+                        />
+                      </div>
+
+                      <!-- Deskripsi -->
+                      <div>
+                        <label
+                          class="block mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                        >
+                          {{ 'Deskripsi' if current_lang == 'id' else
+                          'Description' }}
+                        </label>
+                        <textarea
+                          x-model="editData.criteria[selectedCriteriaIndex].deskripsi"
+                          rows="3"
+                          class="w-full rounded-lg px-3 py-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
+                        ></textarea>
+                      </div>
+                    </div>
+                  </template>
+
+                  <div class="mt-6 flex justify-end gap-3 w-full">
+                    <button
+                      type="button"
+                      @click="showCriteriaModal = false"
+                      class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white transition rounded-lg cursor-pointer"
+                    >
+                      <i class="fa-solid fa-xmark"></i>
+                      {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+                    </button>
+                    <button
+                      @click="showCriteriaModal = false"
+                      class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white transition rounded-lg cursor-pointer"
+                    >
+                      <i class="fa-solid fa-floppy-disk"></i>
+                      {{ 'Simpan' if current_lang == 'id' else 'Save' }}
                     </button>
                   </div>
                 </div>
@@ -1100,6 +1221,35 @@
           this.editMode = false;
           this.editData = null;
         },
+
+        addCriteria() {
+          if (!this.editData.criteria) {
+            this.editData.criteria = [];
+          }
+          this.editData.criteria.push({
+            nama_kriteria: '',
+            jenis_kriteria: 'Kualitatif',
+            bobot: 1,
+            jumlah_soal: null,
+            aspek: '',
+            deskripsi: ''
+          });
+        },
+
+        deleteCriteria(index) {
+          if (confirm('{{ 'Apakah Anda yakin ingin menghapus kriteria ini?' if current_lang == 'id' else 'Are you sure you want to delete this criteria?' }}')) {
+            this.editData.criteria.splice(index, 1);
+          }
+        },
+
+        openEditCriteria(index) {
+          // Buka modal edit untuk kriteria
+          this.selectedCriteriaIndex = index;
+          this.showCriteriaModal = true;
+        },
+
+        selectedCriteriaIndex: null,
+        showCriteriaModal: false,
 
         saveEdit() {
           if (!this.selectedEvent || !this.editData) return;
