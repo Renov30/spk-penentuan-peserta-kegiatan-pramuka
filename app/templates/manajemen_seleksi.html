@@ -147,39 +147,6 @@
                   </div>
                 </div>
 
-                <!-- Data Peserta Seleksi -->
-                <div
-                  class="bg-white shadow-md rounded-2xl p-5 flex flex-col items-start transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
-                >
-                  <div class="flex items-center space-x-3 mb-4">
-                    <i class="fa-solid fa-users text-green-500 text-xl"></i>
-                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
-                      {{ 'Data Peserta Seleksi' if current_lang == 'id' else
-                      'Participant Data' }}
-                    </h2>
-                  </div>
-                  <p
-                    class="text-sm mb-4 {{ 'text-gray-600 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-600' }}"
-                  >
-                    {{ 'Kelola data peserta, verifikasi berkas, dan status
-                    administrasi.' if current_lang == 'id' else 'Manage
-                    participant data, verify documents, and administrative
-                    status.' }}
-                  </p>
-                  <button
-                    @click="
-                      page = 'peserta';
-                      $store.page.breadcrumbs =
-                        current_lang === 'id'
-                          ? ['Manajemen Seleksi', 'Data Peserta Seleksi']
-                          : ['Selection Management', 'Selection Participants Data']
-                    "
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer"
-                  >
-                    <i class="fa-solid fa-gear mr-2"></i>
-                    {{ 'Kelola' if current_lang == 'id' else 'Manage' }}
-                  </button>
-                </div>
 
                 <!-- Penugasan Penilai -->
                 <div
@@ -322,7 +289,6 @@
 
               <!-- === (Tabs) === -->
               {%include 'manajemen-seleksi/konfigurasi_seleksi.html'%} {%include
-              'manajemen-seleksi/data_peserta_seleksi.html'%} {%include
               'manajemen-seleksi/penugasan_penilai.html' %} {%include
               'manajemen-seleksi/manajemen_penilaian.html'%} {%include
               'manajemen-seleksi/hasil_seleksi.html'%} {%include
@@ -379,7 +345,7 @@
         </button>
         <button
           x-show="modal.title === 'Berhasil'"
-          @click="$store.page.current = 'peserta'; $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Seleksi', 'Data Peserta Seleksi'] : ['Selection Management', 'Selection Participants Data']"
+          @click="window.location.href = '/admin/view_config'"
           class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer mt-2.5"
         >
           <i class="fa-solid fa-gear mr-2"></i>
