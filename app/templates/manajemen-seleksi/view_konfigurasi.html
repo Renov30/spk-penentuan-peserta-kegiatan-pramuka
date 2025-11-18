@@ -212,7 +212,7 @@
               >
                 <div
                   x-transition.scale
-                  class="p-4 rounded-2xl shadow-2xl w-11/12 max-w-5xl flex flex-col bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
+                  class="p-6 rounded-2xl shadow-2xl w-[95%] max-w-7xl flex flex-col bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
                   style="max-height: 90vh; height: 90vh"
                 >
                   <!-- Header -->
@@ -546,7 +546,9 @@
                               {{ 'Informasi Kegiatan' if current_lang == 'id'
                               else 'Activity Information' }}
                             </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div
+                              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                            >
                               <div>
                                 <label
                                   class="block text-sm font-medium mb-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
