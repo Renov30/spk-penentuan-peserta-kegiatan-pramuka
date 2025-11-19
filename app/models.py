@@ -28,6 +28,9 @@ class Users(db.Model, UserMixin):
             'nama_lengkap': self.nama_lengkap,
             'email': self.email,
             'username': self.username,
+            'jenis_kelamin': self.jenis_kelamin or '',
+            'usia': self.usia or 0,
+            'nomor_hp': self.nomor_hp or '',
             'level': self.level,
             'status': self.status,
             'foto': self.foto

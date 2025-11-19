@@ -726,7 +726,48 @@
                         >
                           <!-- prettier-ignore -->
                           <button
-                            @click="selectedUser={id:{{user.id}},nama_lengkap:'{{user.nama_lengkap|replace("'", "\\'")}}',email:'{{user.email}}',username:'{{user.username}}',jenis_kelamin:'{{user.jenis_kelamin or ''}}',usia:{{user.usia or 0}},nomor_hp:'{{user.nomor_hp or ''}}',level:'{{user.level}}',status:'{{user.status}}',foto:'{{user.foto or 'img/default-user.png'}}'};page='edit';if($store.page){$store.page.breadcrumbs=current_lang==='id'?['Manajemen Pengguna','Edit User']:['Users Management','Edit User']}"
+                            @click="
+                              let userData = {
+                                id: {{user.id}},
+                                nama_lengkap: '{{user.nama_lengkap|replace("'", "\\'")}}',
+                                email: '{{user.email}}',
+                                username: '{{user.username}}',
+                                jenis_kelamin: '{{user.jenis_kelamin or ''}}',
+                                usia: {{user.usia or 0}},
+                                nomor_hp: '{{user.nomor_hp or ''}}',
+                                level: '{{user.level}}',
+                                status: '{{user.status}}',
+                                foto: '{{user.foto or 'img/default-user.png'}}'
+                              };
+                              {% if user.biodata %}
+                              userData.biodata = {
+                                nama_lengkap: '{{user.biodata.nama_lengkap|replace("'", "\\'")}}',
+                                tanggal_lahir: '{{user.biodata.tanggal_lahir}}',
+                                alamat_tinggal: '{{user.biodata.alamat_tinggal|replace("'", "\\'")}}',
+                                golongan: '{{user.biodata.golongan}}',
+                                tingkatan: '{{user.biodata.tingkatan}}',
+                                asal_gudep: '{{user.biodata.asal_gudep|replace("'", "\\'")}}',
+                                asal_kwarran: '{{user.biodata.asal_kwarran|replace("'", "\\'")}}',
+                                asal_kwarcab: '{{user.biodata.asal_kwarcab|replace("'", "\\'")}}',
+                                asal_kwarda: '{{user.biodata.asal_kwarda|replace("'", "\\'")}}',
+                                usia: {{user.biodata.usia or 0}},
+                                jenis_kelamin: '{{user.biodata.jenis_kelamin}}',
+                                nomor_hp: '{{user.biodata.nomor_hp|replace("'", "\\'")}}',
+                                foto: '{{user.biodata.foto|replace("'", "\\'")}}'
+                              };
+                              // Merge data biodata ke userData jika ada
+                              if (userData.biodata.nama_lengkap) userData.nama_lengkap = userData.biodata.nama_lengkap;
+                              if (userData.biodata.email) userData.email = userData.biodata.email;
+                              if (userData.biodata.jenis_kelamin) userData.jenis_kelamin = userData.biodata.jenis_kelamin;
+                              if (userData.biodata.usia) userData.usia = userData.biodata.usia;
+                              if (userData.biodata.nomor_hp) userData.nomor_hp = userData.biodata.nomor_hp;
+                              {% endif %}
+                              selectedUser = userData;
+                              page = 'edit';
+                              if ($store.page) {
+                                $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Pengguna', 'Edit User'] : ['Users Management', 'Edit User'];
+                              }
+                            "
                             class="px-3 py-1 rounded bg-blue-500 hover:bg-blue-700 text-white text-xs cursor-pointer"
                           >
                             Edit

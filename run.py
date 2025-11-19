@@ -815,7 +815,32 @@ def admin_required(f):
 def admin_users():
     sidebar_state = current_user.sidebar_state or 'expanded'
     users = Users.query.all()
-    users_data = [u.to_dict() for u in users]
+    users_data = []
+    for u in users:
+        user_dict = u.to_dict()
+        # Cari biodata berdasarkan email
+        biodata = Participants.query.filter_by(email=u.email).first()
+        if biodata:
+            # Tambahkan data biodata ke user_dict
+            user_dict['biodata'] = {
+                'nama_lengkap': biodata.nama_lengkap or '',
+                'tanggal_lahir': biodata.tanggal_lahir.strftime('%Y-%m-%d') if biodata.tanggal_lahir else '',
+                'alamat_tinggal': biodata.alamat_tinggal or '',
+                'golongan': biodata.golongan or '',
+                'tingkatan': biodata.tingkatan or '',
+                'asal_gudep': biodata.asal_gudep or '',
+                'asal_kwarran': biodata.asal_kwarran or '',
+                'asal_kwarcab': biodata.asal_kwarcab or '',
+                'asal_kwarda': biodata.asal_kwarda or '',
+                'usia': biodata.usia or '',
+                'jenis_kelamin': biodata.jenis_kelamin or '',
+                'email': biodata.email or '',
+                'nomor_hp': biodata.nomor_hp or '',
+                'foto': biodata.foto or ''
+            }
+        else:
+            user_dict['biodata'] = None
+        users_data.append(user_dict)
     return render_template('manajemen_pengguna.html', sidebar_state=sidebar_state, users=users_data, time=time)
 
 @app.route('/admin/add_user', methods=['GET', 'POST'])

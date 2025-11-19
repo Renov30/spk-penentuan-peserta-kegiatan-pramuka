@@ -82,6 +82,7 @@
             id="nama_lengkap"
             name="nama_lengkap"
             x-model="selectedUser.nama_lengkap"
+            x-init="if(selectedUser.biodata && selectedUser.biodata.nama_lengkap) { selectedUser.nama_lengkap = selectedUser.biodata.nama_lengkap; }"
             required
             class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
@@ -94,6 +95,7 @@
             id="email"
             name="email"
             x-model="selectedUser.email"
+            x-init="if(selectedUser.biodata && selectedUser.biodata.email) { selectedUser.email = selectedUser.biodata.email; }"
             required
             class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
@@ -121,6 +123,7 @@
             id="jenis_kelamin"
             name="jenis_kelamin"
             x-model="selectedUser.jenis_kelamin"
+            x-init="if(selectedUser.biodata && selectedUser.biodata.jenis_kelamin) { selectedUser.jenis_kelamin = selectedUser.biodata.jenis_kelamin; }"
             class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             <option value="">
@@ -149,6 +152,7 @@
             name="usia"
             min="0"
             x-model="selectedUser.usia"
+            x-init="if(selectedUser.biodata && selectedUser.biodata.usia) { selectedUser.usia = selectedUser.biodata.usia; }"
             class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
@@ -162,6 +166,7 @@
             id="nomor_hp"
             name="nomor_hp"
             x-model="selectedUser.nomor_hp"
+            x-init="if(selectedUser.biodata && selectedUser.biodata.nomor_hp) { selectedUser.nomor_hp = selectedUser.biodata.nomor_hp; }"
             placeholder="Contoh: 081234567890"
             class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900 placeholder-gray-500' }} focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
