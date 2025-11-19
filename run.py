@@ -2289,7 +2289,8 @@ def peserta_dashboard():
         status_seleksi = "Selesai"
         nilai_akhir = hasil_seleksi.skor_akhir
         ranking = hasil_seleksi.ranking
-    elif biodata:
+    elif biodata and biodata.kegiatan_id:
+        # Status "Terdaftar" hanya muncul jika peserta sudah mendaftar di salah satu kegiatan
         status_seleksi = "Terdaftar"
     
     sidebar_state = current_user.sidebar_state or 'expanded'
@@ -2501,6 +2502,70 @@ def api_daftar_seleksi():
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception('Error in /api/daftar_seleksi:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# API untuk peserta membatalkan pendaftaran seleksi
+@app.route('/api/batal_daftar_seleksi', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_batal_daftar_seleksi():
+    """Endpoint untuk peserta membatalkan pendaftaran ke seleksi kegiatan"""
+    try:
+        if current_user.level != 'peserta':
+            return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+        
+        data = request.get_json(force=True)
+        kegiatan_id = data.get('kegiatan_id')
+        
+        if not kegiatan_id:
+            return jsonify({'status': 'error', 'message': 'ID kegiatan tidak ditemukan'}), 400
+        
+        # Cek apakah kegiatan ada
+        kegiatan = Event.query.get(kegiatan_id)
+        if not kegiatan:
+            return jsonify({'status': 'error', 'message': 'Kegiatan tidak ditemukan'}), 404
+        
+        # Cek apakah peserta sudah punya biodata
+        biodata = Participants.query.filter_by(email=current_user.email).first()
+        if not biodata:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Biodata Anda belum terdaftar. Silakan hubungi administrator untuk mendaftarkan biodata.'
+            }), 400
+        
+        # Cek apakah peserta terdaftar di kegiatan ini
+        if not biodata.kegiatan_id or biodata.kegiatan_id != kegiatan_id:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Anda belum terdaftar di kegiatan ini'
+            }), 400
+        
+        # Cek apakah sudah ada hasil seleksi (jika sudah ada hasil seleksi, tidak bisa dibatalkan)
+        hasil_seleksi = HasilSeleksi.query.filter_by(id_users=current_user.id).first()
+        if hasil_seleksi:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Tidak dapat membatalkan pendaftaran karena seleksi sudah selesai'
+            }), 400
+        
+        # Batalkan pendaftaran (set kegiatan_id menjadi None)
+        biodata.kegiatan_id = None
+        db.session.commit()
+        
+        # Log aktivitas
+        log_activity(
+            current_user.id,
+            f'Membatalkan pendaftaran seleksi kegiatan: {kegiatan.nama_kegiatan}'
+        )
+        
+        return jsonify({
+            'status': 'success', 
+            'message': f'Berhasil membatalkan pendaftaran ke seleksi kegiatan: {kegiatan.nama_kegiatan}'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/batal_daftar_seleksi:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/logout/')

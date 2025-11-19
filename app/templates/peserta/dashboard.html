@@ -551,28 +551,46 @@
                       </div>
 
                       <!-- Action Button -->
+                      <!-- Tombol Batal Daftar (jika sudah terdaftar) -->
                       <button
-                        @click="daftarSeleksi(kegiatan.id_kegiatan, kegiatan.nama_kegiatan)"
-                        :disabled="kegiatan.sudah_terdaftar || isRegistering"
+                        x-show="kegiatan.sudah_terdaftar"
+                        @click="openCancelModal(kegiatan.id_kegiatan, kegiatan.nama_kegiatan)"
+                        :disabled="isCanceling"
                         :class="{
-                          'bg-green-500 hover:bg-green-600': kegiatan.sudah_terdaftar,
-                          'bg-blue-500 hover:bg-blue-600': !kegiatan.sudah_terdaftar && !isRegistering,
+                          'bg-red-500 hover:bg-red-600': !isCanceling,
+                          'bg-gray-400 cursor-not-allowed': isCanceling,
+                          'opacity-50': isCanceling
+                        }"
+                        class="w-full py-2 px-4 rounded-lg text-white font-semibold transition-all duration-300 disabled:cursor-not-allowed"
+                      >
+                        <span x-show="!isCanceling">
+                          <i class="fa-solid fa-times mr-2"></i>
+                          {{ 'Batal Daftar' if current_lang == 'id' else 'Cancel
+                          Registration' }}
+                        </span>
+                        <span x-show="isCanceling">
+                          <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+                          {{ 'Membatalkan...' if current_lang == 'id' else
+                          'Canceling...' }}
+                        </span>
+                      </button>
+
+                      <!-- Tombol Daftar (jika belum terdaftar) -->
+                      <button
+                        x-show="!kegiatan.sudah_terdaftar"
+                        @click="openRegisterModal(kegiatan.id_kegiatan, kegiatan.nama_kegiatan)"
+                        :disabled="isRegistering"
+                        :class="{
+                          'bg-blue-500 hover:bg-blue-600': !isRegistering,
                           'bg-gray-400 cursor-not-allowed': isRegistering,
-                          'opacity-50': kegiatan.sudah_terdaftar || isRegistering
+                          'opacity-50': isRegistering
                         }"
                         class="w-full py-2 px-4 rounded-lg text-white font-semibold transition-all duration-300 disabled:cursor-not-allowed"
                       >
                         <span x-show="!isRegistering">
-                          <span x-show="kegiatan.sudah_terdaftar">
-                            <i class="fa-solid fa-check mr-2"></i>
-                            {{ 'Sudah Terdaftar' if current_lang == 'id' else
-                            'Registered' }}
-                          </span>
-                          <span x-show="!kegiatan.sudah_terdaftar">
-                            <i class="fa-solid fa-user-plus mr-2"></i>
-                            {{ 'Daftar Seleksi' if current_lang == 'id' else
-                            'Register for Selection' }}
-                          </span>
+                          <i class="fa-solid fa-user-plus mr-2"></i>
+                          {{ 'Daftar Seleksi' if current_lang == 'id' else
+                          'Register for Selection' }}
                         </span>
                         <span x-show="isRegistering">
                           <i class="fa-solid fa-spinner fa-spin mr-2"></i>
@@ -583,16 +601,135 @@
                     </div>
                   </template>
                 </div>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
-    </div>
 
-    <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} {% include 'script_notification.html'
-    %}
+                <!-- Modal Konfirmasi Daftar Seleksi -->
+                <div
+                  x-show="showRegisterModal"
+                  x-transition
+                  class="fixed inset-0 z-50 flex items-center justify-center {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }} backdrop-blur-sm"
+                  @click.away="closeRegisterModal()"
+                  x-cloak
+                >
+                  <div
+                    @click.stop
+                    class="w-full max-w-md rounded-2xl shadow-2xl {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-white text-gray-900' }} p-6 m-4"
+                  >
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-xl font-bold">
+                        {{ 'Konfirmasi Daftar Seleksi' if current_lang == 'id' else 'Confirm Registration' }}
+                      </h3>
+                      <button
+                        @click="closeRegisterModal()"
+                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition cursor-pointer"
+                        aria-label="Close"
+                      >
+                        <i class="fa-solid fa-times text-lg"></i>
+                      </button>
+                    </div>
+                    
+                    <div class="mb-6">
+                      <div class="flex items-center justify-center mb-4">
+                        <div class="text-4xl text-blue-500 animate-pulse">
+                          <i class="fa-solid fa-user-plus"></i>
+                        </div>
+                      </div>
+                      <p class="text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
+                        {{ 'Apakah Anda yakin ingin mendaftar ke seleksi kegiatan' if current_lang == 'id' else 'Are you sure you want to register for selection activity' }}?
+                      </p>
+                      <p class="text-center mt-2 font-semibold" x-text="selectedKegiatanRegister ? selectedKegiatanRegister.nama : ''"></p>
+                      <p class="text-sm text-center mt-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}">
+                        {{ 'Setelah mendaftar, Anda akan mengikuti proses seleksi untuk kegiatan ini.' if current_lang == 'id' else 'After registering, you will participate in the selection process for this activity.' }}
+                      </p>
+                    </div>
+                    
+                    <div class="flex justify-end gap-4">
+                      <button
+                        @click="closeRegisterModal()"
+                        class="px-6 py-2.5 rounded-lg font-medium cursor-pointer {{ 'bg-gray-600 hover:bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-300 text-gray-900' }} transition"
+                      >
+                        {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+                      </button>
+                      <button
+                        @click="daftarSeleksi()"
+                        :disabled="isRegistering"
+                        class="px-6 py-2.5 rounded-lg font-semibold cursor-pointer text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span x-show="!isRegistering">
+                          {{ 'Ya, Daftar' if current_lang == 'id' else 'Yes, Register' }}
+                        </span>
+                        <span x-show="isRegistering">
+                          <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+                          {{ 'Mendaftar...' if current_lang == 'id' else 'Registering...' }}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Modal Konfirmasi Batal Daftar -->
+                <div
+                  x-show="showCancelModal"
+                  x-transition
+                  class="fixed inset-0 z-50 flex items-center justify-center {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }} backdrop-blur-sm"
+                  @click.away="closeCancelModal()"
+                  x-cloak
+                >
+                  <div
+                    @click.stop
+                    class="w-full max-w-md rounded-2xl shadow-2xl {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-white text-gray-900' }} p-6 m-4"
+                  >
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-xl font-bold">
+                        {{ 'Konfirmasi Batal Daftar' if current_lang == 'id' else 'Confirm Cancel Registration' }}
+                      </h3>
+                      <button
+                        @click="closeCancelModal()"
+                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition cursor-pointer"
+                        aria-label="Close"
+                      >
+                        <i class="fa-solid fa-times text-lg"></i>
+                      </button>
+                    </div>
+                    
+                    <div class="mb-6">
+                      <div class="flex items-center justify-center mb-4">
+                        <div class="text-4xl text-orange-500 animate-pulse">
+                          <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                      </div>
+                      <p class="text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
+                        {{ 'Apakah Anda yakin ingin membatalkan pendaftaran ke seleksi kegiatan' if current_lang == 'id' else 'Are you sure you want to cancel registration for selection activity' }}?
+                      </p>
+                      <p class="text-center mt-2 font-semibold" x-text="selectedKegiatan ? selectedKegiatan.nama : ''"></p>
+                      <p class="text-sm text-center mt-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}">
+                        {{ 'Tindakan ini akan menghapus pendaftaran Anda dari kegiatan ini.' if current_lang == 'id' else 'This action will remove your registration from this activity.' }}
+                      </p>
+                    </div>
+                    
+                    <div class="flex justify-end gap-4">
+                      <button
+                        @click="closeCancelModal()"
+                        class="px-6 py-2.5 rounded-lg font-medium cursor-pointer {{ 'bg-gray-600 hover:bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-300 text-gray-900' }} transition"
+                      >
+                        {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+                      </button>
+                      <button
+                        @click="batalDaftarSeleksi()"
+                        :disabled="isCanceling"
+                        class="px-6 py-2.5 rounded-lg font-semibold cursor-pointer text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span x-show="!isCanceling">
+                          {{ 'Ya, Batalkan' if current_lang == 'id' else 'Yes, Cancel' }}
+                        </span>
+                        <span x-show="isCanceling">
+                          <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+                          {{ 'Membatalkan...' if current_lang == 'id' else 'Canceling...' }}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
     <!-- Script untuk Kegiatan Tersedia -->
     <script>
@@ -601,6 +738,11 @@
           kegiatanList: [],
           loading: true,
           isRegistering: false,
+          isCanceling: false,
+          showCancelModal: false,
+          showRegisterModal: false,
+          selectedKegiatan: null,
+          selectedKegiatanRegister: null,
 
           async init() {
             await this.loadKegiatan();
@@ -619,8 +761,10 @@
                 // Tampilkan notifikasi error jika ada
                 if (window.showNotification) {
                   window.showNotification(
-                    result.message || "Gagal memuat data kegiatan",
-                    "error"
+                    "error",
+                    '{{ "Error" if current_lang == "id" else "Error" }}',
+                    result.message ||
+                      '{{ "Gagal memuat data kegiatan" if current_lang == "id" else "Failed to load activity data" }}'
                   );
                 }
               }
@@ -628,8 +772,9 @@
               console.error("Error:", error);
               if (window.showNotification) {
                 window.showNotification(
-                  "Terjadi kesalahan saat memuat data",
-                  "error"
+                  "error",
+                  '{{ "Error" if current_lang == "id" else "Error" }}',
+                  '{{ "Terjadi kesalahan saat memuat data" if current_lang == "id" else "An error occurred while loading data" }}'
                 );
               }
             } finally {
@@ -646,25 +791,29 @@
             return `${day}/${month}/${year}`;
           },
 
-          async daftarSeleksi(kegiatanId, namaKegiatan) {
-            if (this.isRegistering) return;
+          openRegisterModal(kegiatanId, namaKegiatan) {
+            this.selectedKegiatanRegister = { id: kegiatanId, nama: namaKegiatan };
+            this.showRegisterModal = true;
+          },
 
-            // Konfirmasi
-            const confirmed = confirm(
-              `Apakah Anda yakin ingin mendaftar ke seleksi kegiatan: ${namaKegiatan}?`
-            );
+          closeRegisterModal() {
+            this.showRegisterModal = false;
+            this.selectedKegiatanRegister = null;
+          },
 
-            if (!confirmed) return;
+          async daftarSeleksi() {
+            if (this.isRegistering || !this.selectedKegiatanRegister) return;
 
             try {
               this.isRegistering = true;
+              this.showRegisterModal = false;
 
               const response = await fetch("/api/daftar_seleksi", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ kegiatan_id: kegiatanId }),
+                body: JSON.stringify({ kegiatan_id: this.selectedKegiatanRegister.id }),
               });
 
               const result = await response.json();
@@ -673,11 +822,11 @@
                 // Tampilkan notifikasi sukses
                 if (window.showNotification) {
                   window.showNotification(
-                    result.message || "Berhasil mendaftar!",
-                    "success"
+                    "success",
+                    '{{ "Success" if current_lang == "id" else "Success" }}',
+                    result.message ||
+                      '{{ "Berhasil mendaftar" if current_lang == "id" else "Successfully registered" }}!'
                   );
-                } else {
-                  alert(result.message || "Berhasil mendaftar!");
                 }
 
                 // Reload data kegiatan untuk update status
@@ -691,29 +840,155 @@
                 // Tampilkan notifikasi error
                 if (window.showNotification) {
                   window.showNotification(
-                    result.message || "Gagal mendaftar",
-                    "error"
+                    "error",
+                    '{{ "Error" if current_lang == "id" else "Error" }}',
+                    result.message ||
+                      '{{ "Gagal mendaftar" if current_lang == "id" else "Failed to register" }}'
                   );
-                } else {
-                  alert(result.message || "Gagal mendaftar");
                 }
               }
             } catch (error) {
               console.error("Error:", error);
               if (window.showNotification) {
                 window.showNotification(
-                  "Terjadi kesalahan saat mendaftar",
-                  "error"
+                  "error",
+                  '{{ "Error" if current_lang == "id" else "Error" }}',
+                  '{{ "Terjadi kesalahan saat mendaftar" if current_lang == "id" else "An error occurred while registering" }}'
                 );
-              } else {
-                alert("Terjadi kesalahan saat mendaftar");
               }
             } finally {
               this.isRegistering = false;
+              this.selectedKegiatanRegister = null;
+            }
+          },
+
+          openCancelModal(kegiatanId, namaKegiatan) {
+            this.selectedKegiatan = { id: kegiatanId, nama: namaKegiatan };
+            this.showCancelModal = true;
+          },
+
+          closeCancelModal() {
+            this.showCancelModal = false;
+            this.selectedKegiatan = null;
+          },
+
+          async batalDaftarSeleksi() {
+            if (this.isCanceling || !this.selectedKegiatan) return;
+
+            try {
+              this.isCanceling = true;
+              this.showCancelModal = false;
+
+              const response = await fetch("/api/batal_daftar_seleksi", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ kegiatan_id: this.selectedKegiatan.id }),
+              });
+
+              const result = await response.json();
+
+              if (result.status === "success") {
+                // Tampilkan notifikasi sukses
+                if (window.showNotification) {
+                  window.showNotification(
+                    "success",
+                    '{{ "Success" if current_lang == "id" else "Success" }}',
+                    result.message ||
+                      '{{ "Berhasil membatalkan pendaftaran" if current_lang == "id" else "Successfully canceled registration" }}!'
+                  );
+                }
+
+                // Reload data kegiatan untuk update status
+                await this.loadKegiatan();
+
+                // Reload halaman setelah 1 detik untuk update status seleksi
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              } else {
+                // Tampilkan notifikasi error
+                if (window.showNotification) {
+                  window.showNotification(
+                    "error",
+                    '{{ "Error" if current_lang == "id" else "Error" }}',
+                    result.message ||
+                      '{{ "Gagal membatalkan pendaftaran" if current_lang == "id" else "Failed to cancel registration" }}'
+                  );
+                }
+              }
+            } catch (error) {
+              console.error("Error:", error);
+              if (window.showNotification) {
+                window.showNotification(
+                  "error",
+                  '{{ "Error" if current_lang == "id" else "Error" }}',
+                  '{{ "Terjadi kesalahan saat membatalkan pendaftaran" if current_lang == "id" else "An error occurred while canceling registration" }}'
+                );
+              }
+            } finally {
+              this.isCanceling = false;
+              this.selectedKegiatan = null;
             }
           },
         }));
       });
     </script>
+
+    <!-- Notifikasi Toast -->
+    <div
+      x-data="{ notifications: [] }"
+      x-init="window.showNotification = function(category, title, message) {
+        const notification = { id: Date.now(), category, title, message, show: true };
+        $data.notifications.push(notification);
+        setTimeout(() => {
+          notification.show = false;
+          setTimeout(() => {
+            $data.notifications = $data.notifications.filter(n => n.id !== notification.id);
+          }, 300);
+        }, 5000);
+      }"
+      class="fixed bottom-6 right-6 z-[60] space-y-3"
+    >
+      <template x-for="notification in notifications" :key="notification.id">
+        <div
+          x-show="notification.show"
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0 transform translate-x-full"
+          x-transition:enter-end="opacity-100 transform translate-x-0"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="opacity-100 transform translate-x-0"
+          x-transition:leave-end="opacity-0 transform translate-x-full"
+          class="flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl border min-w-[300px] max-w-md"
+          :class="{
+            'bg-green-600 text-white border-green-500': notification.category === 'success',
+            'bg-red-600 text-white border-red-500': notification.category === 'danger' || notification.category === 'error',
+            'bg-yellow-500 text-gray-900 border-yellow-400': notification.category === 'warning',
+            'bg-gray-800 text-white border-gray-700': !['success', 'danger', 'error', 'warning'].includes(notification.category)
+          }"
+        >
+          <i
+            class="fa-solid text-lg"
+            :class="{
+              'fa-circle-check': notification.category === 'success',
+              'fa-triangle-exclamation': notification.category === 'danger' || notification.category === 'error',
+              'fa-exclamation-circle': notification.category === 'warning',
+              'fa-info-circle': !['success', 'danger', 'error', 'warning'].includes(notification.category)
+            }"
+          ></i>
+          <div class="flex-1">
+            <strong x-text="notification.title"></strong><br />
+            <span class="text-sm" x-text="notification.message"></span>
+          </div>
+          <button
+            @click="notification.show = false; setTimeout(() => notifications = notifications.filter(n => n.id !== notification.id), 300)"
+            class="ml-2 text-lg opacity-70 hover:opacity-100 transition-opacity"
+          >
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+      </template>
+    </div>
   </body>
 </html>
