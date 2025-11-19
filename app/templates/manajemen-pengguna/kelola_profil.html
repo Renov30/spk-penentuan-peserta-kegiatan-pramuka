@@ -16,11 +16,12 @@
     <div>
       <h2 class="text-3xl font-semibold flex items-center gap-3">
         <i class="fa-solid fa-id-card text-teal-500 text-4xl"></i>
-        {{ 'Profil Peserta' if current_lang == 'id' else 'Participant Profile' }}
+        {{ 'Profil Peserta' if current_lang == 'id' else 'Participant Profile'
+        }}
       </h2>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-        {{ 'Kelola data peserta yang terdaftar di sistem' if
-        current_lang == 'id' else 'Manage participant data registered in the system' }}
+        {{ 'Kelola data peserta yang terdaftar di sistem' if current_lang ==
+        'id' else 'Manage participant data registered in the system' }}
       </p>
     </div>
 
@@ -34,28 +35,42 @@
   </div>
 
   <!-- Toolbar: Search, Filter, Tambah -->
-  <div class="mb-6 space-y-4">
-    <!-- Search & Filter Row -->
-    <div class="flex flex-col md:flex-row gap-4">
-      <!-- Search -->
-      <div class="flex-1">
+  <div
+    class="mb-6 {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} p-4 rounded-lg border {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+  >
+    <!-- Search Bar - Full Width -->
+    <div class="mb-3">
+      <div class="relative">
         <input
           type="text"
           x-model="searchQuery"
           @input="filterPeserta()"
+          @keyup.enter="filterPeserta()"
           placeholder="{{ 'Cari nama, email, atau username...' if current_lang == 'id' else 'Search name, email, or username...' }}"
-          class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900 placeholder-gray-500' }} focus:outline-none focus:ring-2 focus:ring-teal-400"
+          class="w-full pl-4 pr-14 py-2.5 rounded-lg border-2 text-sm {{ 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900 placeholder-gray-500' }} focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-400 transition shadow-sm"
         />
+        <div
+          class="absolute inset-y-0 right-4 flex items-center pointer-events-none z-10"
+        >
+          <i
+            class="fa-solid fa-search {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+          ></i>
+        </div>
       </div>
+    </div>
 
+    <!-- Filter & Action Row -->
+    <div class="flex flex-col md:flex-row gap-3 items-center">
       <!-- Filter Golongan -->
-      <div class="w-full md:w-48">
+      <div class="w-full md:w-48 flex-shrink-0">
         <select
           x-model="filterGolongan"
           @change="filterPeserta()"
-          class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-teal-400"
+          class="w-full px-3 py-2.5 rounded-lg border-2 text-sm {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-400 transition shadow-sm"
         >
-          <option value="">{{ 'Semua Golongan' if current_lang == 'id' else 'All Groups' }}</option>
+          <option value="">
+            {{ 'Semua Golongan' if current_lang == 'id' else 'All Groups' }}
+          </option>
           <option value="siaga">Siaga</option>
           <option value="penggalang">Penggalang</option>
           <option value="penegak">Penegak</option>
@@ -64,61 +79,106 @@
       </div>
 
       <!-- Filter Status -->
-      <div class="w-full md:w-48">
+      <div class="w-full md:w-48 flex-shrink-0">
         <select
           x-model="filterStatus"
           @change="filterPeserta()"
-          class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-teal-400"
+          class="w-full px-3 py-2.5 rounded-lg border-2 text-sm {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-400 transition shadow-sm"
         >
-          <option value="">{{ 'Semua Status' if current_lang == 'id' else 'All Status' }}</option>
-          <option value="aktif">{{ 'Aktif' if current_lang == 'id' else 'Active' }}</option>
-          <option value="non-aktif">{{ 'Nonaktif' if current_lang == 'id' else 'Inactive' }}</option>
+          <option value="">
+            {{ 'Semua Status' if current_lang == 'id' else 'All Status' }}
+          </option>
+          <option value="aktif">
+            {{ 'Aktif' if current_lang == 'id' else 'Active' }}
+          </option>
+          <option value="non-aktif">
+            {{ 'Nonaktif' if current_lang == 'id' else 'Inactive' }}
+          </option>
         </select>
       </div>
 
       <!-- Tombol Tambah -->
-      <button
-        @click="selectedPeserta = {nama_lengkap: '', username: '', email: '', jenis_kelamin: '', usia: '', nomor_hp: '', golongan: '', tingkatan: '', tanggal_lahir: '', alamat_tinggal: '', asal_gudep: '', asal_kwarran: '', asal_kwarcab: '', asal_kwarda: '', status: 'aktif'}; showAddModal = true; showEditModal = false"
-        class="px-6 py-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition cursor-pointer whitespace-nowrap"
-      >
-        <i class="fa-solid fa-plus mr-2"></i>
-        {{ 'Tambah Peserta' if current_lang == 'id' else 'Add Participant' }}
-      </button>
+      <div class="w-full md:w-auto flex-shrink-0 md:ml-auto">
+        <button
+          @click="selectedPeserta = {nama_lengkap: '', username: '', email: '', jenis_kelamin: '', usia: '', nomor_hp: '', golongan: '', tingkatan: '', tanggal_lahir: '', alamat_tinggal: '', asal_gudep: '', asal_kwarran: '', asal_kwarcab: '', asal_kwarda: '', status: 'aktif'}; showAddModal = true; showEditModal = false"
+          class="w-full md:w-auto px-5 py-2.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition cursor-pointer whitespace-nowrap text-sm font-medium shadow-md hover:shadow-lg"
+        >
+          <i class="fa-solid fa-plus mr-2"></i>
+          {{ 'Tambah Peserta' if current_lang == 'id' else 'Add Participant' }}
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- Tabel Data Peserta -->
-  <div class="overflow-x-auto rounded-lg border {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-300' }}">
+  <div
+    class="overflow-x-auto rounded-lg border {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-300' }}"
+  >
     <table class="w-full text-sm">
-      <thead class="{{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-100 text-gray-900' }}">
+      <thead
+        class="{{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-100 text-gray-900' }}"
+      >
         <tr>
           <th class="px-4 py-3 text-left font-semibold">No.</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Foto' if current_lang == 'id' else 'Photo' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Username' if current_lang == 'id' else 'Username' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Email' if current_lang == 'id' else 'Email' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Jenis Kelamin' if current_lang == 'id' else 'Gender' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Usia' if current_lang == 'id' else 'Age' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Golongan' if current_lang == 'id' else 'Group' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Tingkatan' if current_lang == 'id' else 'Level' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Nomor HP' if current_lang == 'id' else 'Phone' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Status' if current_lang == 'id' else 'Status' }}</th>
-          <th class="px-4 py-3 text-left font-semibold">{{ 'Aksi' if current_lang == 'id' else 'Actions' }}</th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Foto' if current_lang == 'id' else 'Photo' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Username' if current_lang == 'id' else 'Username' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Email' if current_lang == 'id' else 'Email' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Jenis Kelamin' if current_lang == 'id' else 'Gender' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Usia' if current_lang == 'id' else 'Age' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Golongan' if current_lang == 'id' else 'Group' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Tingkatan' if current_lang == 'id' else 'Level' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Nomor HP' if current_lang == 'id' else 'Phone' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Status' if current_lang == 'id' else 'Status' }}
+          </th>
+          <th class="px-4 py-3 text-left font-semibold">
+            {{ 'Aksi' if current_lang == 'id' else 'Actions' }}
+          </th>
         </tr>
       </thead>
       <tbody>
-        <template x-for="(peserta, index) in paginatedPeserta" :key="peserta.id">
-          <tr class="border-b {{ 'border-gray-700 hover:bg-gray-800' if current_theme == 'dark' else 'border-gray-200 hover:bg-gray-50' }}">
-            <td class="px-4 py-3" x-text="(currentPage - 1) * itemsPerPage + index + 1"></td>
+        <template
+          x-for="(peserta, index) in paginatedPeserta"
+          :key="peserta.id"
+        >
+          <tr
+            class="border-b {{ 'border-gray-700 hover:bg-gray-800' if current_theme == 'dark' else 'border-gray-200 hover:bg-gray-50' }}"
+          >
+            <td
+              class="px-4 py-3"
+              x-text="(currentPage - 1) * itemsPerPage + index + 1"
+            ></td>
             <td class="px-4 py-3">
               <img
-                :src="peserta.foto && peserta.foto !== 'img/default-user.png' ? `{{ url_for('static', filename='') }}${peserta.foto}` : '{{ url_for('static', filename='img/default-user.png') }}'"
+                :src="peserta.foto && peserta.foto !== 'img/default-user.png' && peserta.foto !== '' ? `{{ url_for('static', filename='') }}${peserta.foto}` : '{{ url_for('static', filename='images/profil-default.jpg') }}'"
                 alt="Foto"
-                class="w-10 h-10 rounded-full object-cover border-2 {{ 'border-teal-500' if current_theme == 'dark' else 'border-teal-400' }}"
-                @error="$el.src='{{ url_for('static', filename='img/default-user.png') }}'"
+                class="w-6 h-6 rounded-full object-cover border {{ 'border-teal-500' if current_theme == 'dark' else 'border-teal-400' }}"
+                @error="$el.src='{{ url_for('static', filename='images/profil-default.jpg') }}'"
               />
             </td>
-            <td class="px-4 py-3 font-medium" x-text="peserta.nama_lengkap || '-'"></td>
+            <td
+              class="px-4 py-3 font-medium"
+              x-text="peserta.nama_lengkap || '-'"
+            ></td>
             <td class="px-4 py-3" x-text="peserta.username || '-'"></td>
             <td class="px-4 py-3" x-text="peserta.email || '-'"></td>
             <td class="px-4 py-3" x-text="peserta.jenis_kelamin || '-'"></td>
@@ -154,9 +214,15 @@
           </tr>
         </template>
         <tr x-show="filteredPeserta.length === 0">
-          <td colspan="12" class="px-4 py-8 text-center {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}">
+          <td
+            colspan="12"
+            class="px-4 py-8 text-center {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+          >
             <i class="fa-solid fa-inbox text-4xl mb-2"></i>
-            <p>{{ 'Tidak ada data peserta' if current_lang == 'id' else 'No participant data' }}</p>
+            <p>
+              {{ 'Tidak ada data peserta' if current_lang == 'id' else 'No
+              participant data' }}
+            </p>
           </td>
         </tr>
       </tbody>
@@ -164,12 +230,19 @@
   </div>
 
   <!-- Pagination -->
-  <div class="mt-6 flex justify-between items-center" x-show="filteredPeserta.length > 0">
-    <span class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+  <div
+    class="mt-6 flex justify-between items-center"
+    x-show="filteredPeserta.length > 0"
+  >
+    <span
+      class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+    >
       {{ 'Menampilkan' if current_lang == 'id' else 'Showing' }}
       <span x-text="((currentPage - 1) * itemsPerPage) + 1"></span>
       -
-      <span x-text="Math.min(currentPage * itemsPerPage, filteredPeserta.length)"></span>
+      <span
+        x-text="Math.min(currentPage * itemsPerPage, filteredPeserta.length)"
+      ></span>
       {{ 'dari' if current_lang == 'id' else 'of' }}
       <span x-text="filteredPeserta.length"></span>
       {{ 'peserta' if current_lang == 'id' else 'participants' }}
@@ -205,11 +278,19 @@
       @click.stop
       class="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-white text-gray-900' }} m-4"
     >
-      <div class="p-6 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+      <div
+        class="p-6 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+      >
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-bold">
-            <span x-show="showAddModal">{{ 'Tambah Peserta' if current_lang == 'id' else 'Add Participant' }}</span>
-            <span x-show="showEditModal">{{ 'Edit Peserta' if current_lang == 'id' else 'Edit Participant' }}</span>
+            <span x-show="showAddModal"
+              >{{ 'Tambah Peserta' if current_lang == 'id' else 'Add
+              Participant' }}</span
+            >
+            <span x-show="showEditModal"
+              >{{ 'Edit Peserta' if current_lang == 'id' else 'Edit Participant'
+              }}</span
+            >
           </h3>
           <button
             @click="showAddModal = false; showEditModal = false; selectedPeserta = null"
@@ -233,7 +314,8 @@
           <!-- Nama Lengkap -->
           <div>
             <label class="block font-semibold mb-2">
-              {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }} <span class="text-red-500">*</span>
+              {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}
+              <span class="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -247,7 +329,8 @@
           <!-- Username -->
           <div>
             <label class="block font-semibold mb-2">
-              {{ 'Username' if current_lang == 'id' else 'Username' }} <span class="text-red-500">*</span>
+              {{ 'Username' if current_lang == 'id' else 'Username' }}
+              <span class="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -261,7 +344,8 @@
           <!-- Email -->
           <div>
             <label class="block font-semibold mb-2">
-              {{ 'Email' if current_lang == 'id' else 'Email' }} <span class="text-red-500">*</span>
+              {{ 'Email' if current_lang == 'id' else 'Email' }}
+              <span class="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -275,7 +359,8 @@
           <!-- Password (hanya untuk tambah) -->
           <div x-show="showAddModal">
             <label class="block font-semibold mb-2">
-              {{ 'Password' if current_lang == 'id' else 'Password' }} <span class="text-red-500">*</span>
+              {{ 'Password' if current_lang == 'id' else 'Password' }}
+              <span class="text-red-500">*</span>
             </label>
             <input
               type="password"
@@ -288,7 +373,8 @@
           <!-- Jenis Kelamin -->
           <div>
             <label class="block font-semibold mb-2">
-              {{ 'Jenis Kelamin' if current_lang == 'id' else 'Gender' }} <span class="text-red-500">*</span>
+              {{ 'Jenis Kelamin' if current_lang == 'id' else 'Gender' }}
+              <span class="text-red-500">*</span>
             </label>
             <select
               x-model="selectedPeserta.jenis_kelamin"
@@ -296,9 +382,15 @@
               required
               class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-teal-400"
             >
-              <option value="">{{ '-- Pilih --' if current_lang == 'id' else '-- Select --' }}</option>
-              <option value="laki-laki">{{ 'Laki-laki' if current_lang == 'id' else 'Male' }}</option>
-              <option value="perempuan">{{ 'Perempuan' if current_lang == 'id' else 'Female' }}</option>
+              <option value="">
+                {{ '-- Pilih --' if current_lang == 'id' else '-- Select --' }}
+              </option>
+              <option value="laki-laki">
+                {{ 'Laki-laki' if current_lang == 'id' else 'Male' }}
+              </option>
+              <option value="perempuan">
+                {{ 'Perempuan' if current_lang == 'id' else 'Female' }}
+              </option>
             </select>
           </div>
 
@@ -340,7 +432,9 @@
               name="golongan"
               class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-teal-400"
             >
-              <option value="">{{ '-- Pilih --' if current_lang == 'id' else '-- Select --' }}</option>
+              <option value="">
+                {{ '-- Pilih --' if current_lang == 'id' else '-- Select --' }}
+              </option>
               <option value="siaga">Siaga</option>
               <option value="penggalang">Penggalang</option>
               <option value="penegak">Penegak</option>
@@ -358,7 +452,9 @@
               name="tingkatan"
               class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-teal-400"
             >
-              <option value="">{{ '-- Pilih --' if current_lang == 'id' else '-- Select --' }}</option>
+              <option value="">
+                {{ '-- Pilih --' if current_lang == 'id' else '-- Select --' }}
+              </option>
               <option value="siaga mula">Siaga Mula</option>
               <option value="siaga tata">Siaga Tata</option>
               <option value="siaga bantu">Siaga Bantu</option>
@@ -391,7 +487,8 @@
           <!-- Alamat Tinggal -->
           <div class="md:col-span-2">
             <label class="block font-semibold mb-2">
-              {{ 'Alamat Tinggal' if current_lang == 'id' else 'Residence Address' }}
+              {{ 'Alamat Tinggal' if current_lang == 'id' else 'Residence
+              Address' }}
             </label>
             <textarea
               x-model="selectedPeserta.alamat_tinggal"
@@ -463,14 +560,20 @@
               name="status"
               class="w-full px-4 py-2.5 rounded-lg border {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-teal-400"
             >
-              <option value="aktif">{{ 'Aktif' if current_lang == 'id' else 'Active' }}</option>
-              <option value="non-aktif">{{ 'Nonaktif' if current_lang == 'id' else 'Inactive' }}</option>
+              <option value="aktif">
+                {{ 'Aktif' if current_lang == 'id' else 'Active' }}
+              </option>
+              <option value="non-aktif">
+                {{ 'Nonaktif' if current_lang == 'id' else 'Inactive' }}
+              </option>
             </select>
           </div>
         </div>
 
         <!-- Tombol Aksi -->
-        <div class="flex justify-end gap-4 pt-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+        <div
+          class="flex justify-end gap-4 pt-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+        >
           <button
             type="button"
             @click="showAddModal = false; showEditModal = false; selectedPeserta = null"
@@ -504,8 +607,11 @@
       <h3 class="text-xl font-bold mb-4">
         {{ 'Konfirmasi Hapus' if current_lang == 'id' else 'Confirm Delete' }}
       </h3>
-      <p class="mb-6 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
-        {{ 'Apakah Anda yakin ingin menghapus peserta' if current_lang == 'id' else 'Are you sure you want to delete participant' }}
+      <p
+        class="mb-6 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+      >
+        {{ 'Apakah Anda yakin ingin menghapus peserta' if current_lang == 'id'
+        else 'Are you sure you want to delete participant' }}
         <strong x-text="selectedPeserta.nama_lengkap || ''"></strong>?
       </p>
       <div class="flex justify-end gap-4">
@@ -527,162 +633,207 @@
 </div>
 
 <script>
-document.addEventListener('alpine:init', () => {
-  Alpine.data('pesertaProfilData', () => ({
-    pesertaList: [],
-    filteredPeserta: [],
-    searchQuery: '',
-    filterGolongan: '',
-    filterTingkatan: '',
-    filterStatus: '',
-    showAddModal: false,
-    showEditModal: false,
-    showDeleteModal: false,
-    selectedPeserta: null,
-    loading: false,
-    currentPage: 1,
-    itemsPerPage: 10,
-    get paginatedPeserta() {
-      const start = (this.currentPage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.filteredPeserta.slice(start, end);
-    },
-    get totalPages() {
-      return Math.ceil(this.filteredPeserta.length / this.itemsPerPage);
-    },
-    async loadPesertaList() {
-      this.loading = true;
-      try {
-        const response = await fetch('/api/peserta/list', {
-          headers: {
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+  document.addEventListener("alpine:init", () => {
+    Alpine.data("pesertaProfilData", () => ({
+      pesertaList: [],
+      filteredPeserta: [],
+      searchQuery: "",
+      filterGolongan: "",
+      filterTingkatan: "",
+      filterStatus: "",
+      showAddModal: false,
+      showEditModal: false,
+      showDeleteModal: false,
+      selectedPeserta: null,
+      loading: false,
+      currentPage: 1,
+      itemsPerPage: 10,
+      get paginatedPeserta() {
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        return this.filteredPeserta.slice(start, end);
+      },
+      get totalPages() {
+        return Math.ceil(this.filteredPeserta.length / this.itemsPerPage);
+      },
+      async loadPesertaList() {
+        this.loading = true;
+        try {
+          const response = await fetch("/api/peserta/list", {
+            headers: {
+              "X-CSRFToken":
+                document.querySelector('meta[name="csrf-token"]')?.content ||
+                "",
+            },
+          });
+          const data = await response.json();
+          if (data.success) {
+            this.pesertaList = data.peserta || [];
+            this.filteredPeserta = data.peserta || [];
           }
-        });
-        const data = await response.json();
-        if (data.success) {
-          this.pesertaList = data.peserta || [];
-          this.filteredPeserta = data.peserta || [];
+        } catch (error) {
+          console.error("Error:", error);
+        } finally {
+          this.loading = false;
         }
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        this.loading = false;
-      }
-    },
-    filterPeserta() {
-      let filtered = [...this.pesertaList];
-      
-      if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase();
-        filtered = filtered.filter(p => 
-          (p.nama_lengkap && p.nama_lengkap.toLowerCase().includes(query)) ||
-          (p.email && p.email.toLowerCase().includes(query)) ||
-          (p.username && p.username.toLowerCase().includes(query))
-        );
-      }
-      
-      if (this.filterGolongan) {
-        filtered = filtered.filter(p => p.golongan === this.filterGolongan);
-      }
-      
-      if (this.filterStatus) {
-        filtered = filtered.filter(p => p.status === this.filterStatus);
-      }
-      
-      this.filteredPeserta = filtered;
-      this.currentPage = 1;
-    },
-    editPeserta(peserta) {
-      this.selectedPeserta = { ...peserta };
-      this.showEditModal = true;
-      this.showAddModal = false;
-    },
-    confirmDelete(peserta) {
-      this.selectedPeserta = peserta;
-      this.showDeleteModal = true;
-    },
-    async deletePeserta() {
-      if (!this.selectedPeserta) return;
-      
-      try {
-        const response = await fetch(`/api/peserta/delete/${this.selectedPeserta.id}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
-          }
-        });
-        const result = await response.json();
-        if (result.success) {
-          alert('{{ "Peserta berhasil dihapus" if current_lang == "id" else "Participant deleted successfully" }}');
-          await this.loadPesertaList();
-          this.showDeleteModal = false;
-          this.selectedPeserta = null;
-        } else {
-          alert(result.message || '{{ "Gagal menghapus peserta" if current_lang == "id" else "Failed to delete participant" }}');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('{{ "Terjadi kesalahan saat menghapus peserta" if current_lang == "id" else "Error occurred while deleting participant" }}');
-      }
-    },
-    async savePeserta() {
-      if (!this.selectedPeserta) {
-        alert('{{ "Data peserta tidak ditemukan" if current_lang == "id" else "Participant data not found" }}');
-        return;
-      }
-      
-      const form = this.$el.querySelector('form');
-      if (!form) {
-        alert('{{ "Form tidak ditemukan" if current_lang == "id" else "Form not found" }}');
-        return;
-      }
-      
-      const formData = new FormData(form);
-      
-      // Tambahkan data dari x-model ke FormData jika belum ada
-      if (this.selectedPeserta.nama_lengkap) formData.set('nama_lengkap', this.selectedPeserta.nama_lengkap);
-      if (this.selectedPeserta.username) formData.set('username', this.selectedPeserta.username);
-      if (this.selectedPeserta.email) formData.set('email', this.selectedPeserta.email);
-      if (this.selectedPeserta.jenis_kelamin) formData.set('jenis_kelamin', this.selectedPeserta.jenis_kelamin);
-      if (this.selectedPeserta.usia) formData.set('usia', this.selectedPeserta.usia);
-      if (this.selectedPeserta.nomor_hp) formData.set('nomor_hp', this.selectedPeserta.nomor_hp);
-      if (this.selectedPeserta.golongan) formData.set('golongan', this.selectedPeserta.golongan);
-      if (this.selectedPeserta.tingkatan) formData.set('tingkatan', this.selectedPeserta.tingkatan);
-      if (this.selectedPeserta.tanggal_lahir) formData.set('tanggal_lahir', this.selectedPeserta.tanggal_lahir);
-      if (this.selectedPeserta.alamat_tinggal) formData.set('alamat_tinggal', this.selectedPeserta.alamat_tinggal);
-      if (this.selectedPeserta.asal_gudep) formData.set('asal_gudep', this.selectedPeserta.asal_gudep);
-      if (this.selectedPeserta.asal_kwarran) formData.set('asal_kwarran', this.selectedPeserta.asal_kwarran);
-      if (this.selectedPeserta.asal_kwarcab) formData.set('asal_kwarcab', this.selectedPeserta.asal_kwarcab);
-      if (this.selectedPeserta.asal_kwarda) formData.set('asal_kwarda', this.selectedPeserta.asal_kwarda);
-      if (this.selectedPeserta.status) formData.set('status', this.selectedPeserta.status);
-      
-      const url = this.showAddModal ? '/api/peserta/add' : `/api/peserta/edit/${this.selectedPeserta.id}`;
-      
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
-          }
-        });
-        const result = await response.json();
-        if (result.success) {
-          alert('{{ "Data peserta berhasil disimpan" if current_lang == "id" else "Participant data saved successfully" }}');
-          await this.loadPesertaList();
-          this.showAddModal = false;
-          this.showEditModal = false;
-          this.selectedPeserta = null;
-        } else {
-          alert(result.message || '{{ "Gagal menyimpan data peserta" if current_lang == "id" else "Failed to save participant data" }}');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('{{ "Terjadi kesalahan saat menyimpan data" if current_lang == "id" else "Error occurred while saving data" }}');
-      }
-    }
-  }));
-});
-</script>
+      },
+      filterPeserta() {
+        let filtered = [...this.pesertaList];
 
+        if (this.searchQuery) {
+          const query = this.searchQuery.toLowerCase();
+          filtered = filtered.filter(
+            (p) =>
+              (p.nama_lengkap &&
+                p.nama_lengkap.toLowerCase().includes(query)) ||
+              (p.email && p.email.toLowerCase().includes(query)) ||
+              (p.username && p.username.toLowerCase().includes(query))
+          );
+        }
+
+        if (this.filterGolongan) {
+          filtered = filtered.filter((p) => p.golongan === this.filterGolongan);
+        }
+
+        if (this.filterStatus) {
+          filtered = filtered.filter((p) => p.status === this.filterStatus);
+        }
+
+        this.filteredPeserta = filtered;
+        this.currentPage = 1;
+      },
+      editPeserta(peserta) {
+        this.selectedPeserta = { ...peserta };
+        this.showEditModal = true;
+        this.showAddModal = false;
+      },
+      confirmDelete(peserta) {
+        this.selectedPeserta = peserta;
+        this.showDeleteModal = true;
+      },
+      async deletePeserta() {
+        if (!this.selectedPeserta) return;
+
+        try {
+          const response = await fetch(
+            `/api/peserta/delete/${this.selectedPeserta.id}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken":
+                  document.querySelector('meta[name="csrf-token"]')?.content ||
+                  "",
+              },
+            }
+          );
+          const result = await response.json();
+          if (result.success) {
+            alert(
+              '{{ "Peserta berhasil dihapus" if current_lang == "id" else "Participant deleted successfully" }}'
+            );
+            await this.loadPesertaList();
+            this.showDeleteModal = false;
+            this.selectedPeserta = null;
+          } else {
+            alert(
+              result.message ||
+                '{{ "Gagal menghapus peserta" if current_lang == "id" else "Failed to delete participant" }}'
+            );
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert(
+            '{{ "Terjadi kesalahan saat menghapus peserta" if current_lang == "id" else "Error occurred while deleting participant" }}'
+          );
+        }
+      },
+      async savePeserta() {
+        if (!this.selectedPeserta) {
+          alert(
+            '{{ "Data peserta tidak ditemukan" if current_lang == "id" else "Participant data not found" }}'
+          );
+          return;
+        }
+
+        const form = this.$el.querySelector("form");
+        if (!form) {
+          alert(
+            '{{ "Form tidak ditemukan" if current_lang == "id" else "Form not found" }}'
+          );
+          return;
+        }
+
+        const formData = new FormData(form);
+
+        // Tambahkan data dari x-model ke FormData jika belum ada
+        if (this.selectedPeserta.nama_lengkap)
+          formData.set("nama_lengkap", this.selectedPeserta.nama_lengkap);
+        if (this.selectedPeserta.username)
+          formData.set("username", this.selectedPeserta.username);
+        if (this.selectedPeserta.email)
+          formData.set("email", this.selectedPeserta.email);
+        if (this.selectedPeserta.jenis_kelamin)
+          formData.set("jenis_kelamin", this.selectedPeserta.jenis_kelamin);
+        if (this.selectedPeserta.usia)
+          formData.set("usia", this.selectedPeserta.usia);
+        if (this.selectedPeserta.nomor_hp)
+          formData.set("nomor_hp", this.selectedPeserta.nomor_hp);
+        if (this.selectedPeserta.golongan)
+          formData.set("golongan", this.selectedPeserta.golongan);
+        if (this.selectedPeserta.tingkatan)
+          formData.set("tingkatan", this.selectedPeserta.tingkatan);
+        if (this.selectedPeserta.tanggal_lahir)
+          formData.set("tanggal_lahir", this.selectedPeserta.tanggal_lahir);
+        if (this.selectedPeserta.alamat_tinggal)
+          formData.set("alamat_tinggal", this.selectedPeserta.alamat_tinggal);
+        if (this.selectedPeserta.asal_gudep)
+          formData.set("asal_gudep", this.selectedPeserta.asal_gudep);
+        if (this.selectedPeserta.asal_kwarran)
+          formData.set("asal_kwarran", this.selectedPeserta.asal_kwarran);
+        if (this.selectedPeserta.asal_kwarcab)
+          formData.set("asal_kwarcab", this.selectedPeserta.asal_kwarcab);
+        if (this.selectedPeserta.asal_kwarda)
+          formData.set("asal_kwarda", this.selectedPeserta.asal_kwarda);
+        if (this.selectedPeserta.status)
+          formData.set("status", this.selectedPeserta.status);
+
+        const url = this.showAddModal
+          ? "/api/peserta/add"
+          : `/api/peserta/edit/${this.selectedPeserta.id}`;
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            body: formData,
+            headers: {
+              "X-CSRFToken":
+                document.querySelector('meta[name="csrf-token"]')?.content ||
+                "",
+            },
+          });
+          const result = await response.json();
+          if (result.success) {
+            alert(
+              '{{ "Data peserta berhasil disimpan" if current_lang == "id" else "Participant data saved successfully" }}'
+            );
+            await this.loadPesertaList();
+            this.showAddModal = false;
+            this.showEditModal = false;
+            this.selectedPeserta = null;
+          } else {
+            alert(
+              result.message ||
+                '{{ "Gagal menyimpan data peserta" if current_lang == "id" else "Failed to save participant data" }}'
+            );
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert(
+            '{{ "Terjadi kesalahan saat menyimpan data" if current_lang == "id" else "Error occurred while saving data" }}'
+          );
+        }
+      },
+    }));
+  });
+</script>
