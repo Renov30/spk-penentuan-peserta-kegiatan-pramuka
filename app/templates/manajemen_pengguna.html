@@ -38,7 +38,7 @@
     {% include 'script_theme.html' %}
   </head>
   <body
-    x-data="{ ready: false, page: 'main', selectedUser: null, current_lang: '{{ current_lang }}' }"
+    x-data="{ ready: false, page: 'main', selectedUser: null, searchPeserta: '', selectedPeserta: null, current_lang: '{{ current_lang }}' }"
     x-init="ready = true"
     :class="{ 'dark': $store.theme?.isDark }"
     x-bind:class="{

@@ -1780,6 +1780,344 @@ def get_peserta(kegiatan_id):
         })
     return jsonify(data)
 
+# API Search Peserta untuk Kelola Profil
+@app.route("/api/peserta/search")
+@login_required
+@admin_required
+def api_search_peserta():
+    """API untuk mencari peserta berdasarkan email atau nama"""
+    try:
+        query = request.args.get('q', '').strip()
+        if not query:
+            return jsonify({'success': False, 'message': 'Query tidak boleh kosong'}), 400
+        
+        # Cari peserta berdasarkan email atau nama
+        peserta = Participants.query.filter(
+            (Participants.email.ilike(f'%{query}%')) |
+            (Participants.nama_lengkap.ilike(f'%{query}%'))
+        ).first()
+        
+        if not peserta:
+            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+        
+        # Format data peserta
+        data = {
+            'success': True,
+            'peserta': {
+                'id': peserta.id,
+                'nama_lengkap': peserta.nama_lengkap or '',
+                'tanggal_lahir': peserta.tanggal_lahir.strftime('%Y-%m-%d') if peserta.tanggal_lahir else '',
+                'jenis_kelamin': peserta.jenis_kelamin or '',
+                'usia': peserta.usia or '',
+                'alamat_tinggal': peserta.alamat_tinggal or '',
+                'golongan': peserta.golongan or '',
+                'tingkatan': peserta.tingkatan or '',
+                'asal_gudep': peserta.asal_gudep or '',
+                'asal_kwarran': peserta.asal_kwarran or '',
+                'asal_kwarcab': peserta.asal_kwarcab or '',
+                'asal_kwarda': peserta.asal_kwarda or '',
+                'nomor_hp': peserta.nomor_hp or '',
+                'email': peserta.email or '',
+                'foto': peserta.foto or 'img/default-user.png'
+            }
+        }
+        
+        return jsonify(data)
+    except Exception as e:
+        logging.error(f"Error in api_search_peserta: {e}")
+        current_app.logger.exception('Error in api_search_peserta:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API List Peserta (gabungan users + participants)
+@app.route("/api/peserta/list")
+@login_required
+@admin_required
+def api_list_peserta():
+    """API untuk mendapatkan semua data peserta (gabungan users dan participants)"""
+    try:
+        # Ambil semua user dengan level peserta
+        users_peserta = Users.query.filter_by(level='peserta').all()
+        
+        peserta_data = []
+        for user in users_peserta:
+            # Cari data biodata dari tabel participants berdasarkan email
+            biodata = Participants.query.filter_by(email=user.email).first()
+            
+            # Gabungkan data dari users dan participants
+            peserta_item = {
+                'id': user.id,
+                'user_id': user.id,
+                'participant_id': biodata.id if biodata else None,
+                'username': user.username or '',
+                'nama_lengkap': biodata.nama_lengkap if biodata and biodata.nama_lengkap else (user.nama_lengkap or ''),
+                'email': user.email or '',
+                'jenis_kelamin': biodata.jenis_kelamin if biodata and biodata.jenis_kelamin else (user.jenis_kelamin or ''),
+                'usia': str(biodata.usia) if biodata and biodata.usia else (user.usia or '0'),
+                'nomor_hp': biodata.nomor_hp if biodata and biodata.nomor_hp else (user.nomor_hp or ''),
+                'foto': user.foto if user.foto and user.foto != 'img/default-user.png' else (biodata.foto if biodata and biodata.foto else 'img/default-user.png'),
+                'status': user.status or 'aktif',
+                'golongan': biodata.golongan if biodata else '',
+                'tingkatan': biodata.tingkatan if biodata else '',
+                'tanggal_lahir': biodata.tanggal_lahir.strftime('%Y-%m-%d') if biodata and biodata.tanggal_lahir else '',
+                'alamat_tinggal': biodata.alamat_tinggal if biodata else '',
+                'asal_gudep': biodata.asal_gudep if biodata else '',
+                'asal_kwarran': biodata.asal_kwarran if biodata else '',
+                'asal_kwarcab': biodata.asal_kwarcab if biodata else '',
+                'asal_kwarda': biodata.asal_kwarda if biodata else ''
+            }
+            peserta_data.append(peserta_item)
+        
+        return jsonify({'success': True, 'peserta': peserta_data})
+    except Exception as e:
+        logging.error(f"Error in api_list_peserta: {e}")
+        current_app.logger.exception('Error in api_list_peserta:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Add Peserta
+@app.route("/api/peserta/add", methods=['POST'])
+@login_required
+@admin_required
+def api_add_peserta():
+    """API untuk menambah data peserta (users + participants)"""
+    try:
+        # Ambil data dari form
+        nama_lengkap = request.form.get('nama_lengkap', '').strip()
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '').strip()
+        jenis_kelamin = request.form.get('jenis_kelamin', '').strip()
+        usia = request.form.get('usia', '0').strip()
+        nomor_hp = request.form.get('nomor_hp', '').strip()
+        status = request.form.get('status', 'aktif').strip()
+        
+        # Validasi required fields
+        if not nama_lengkap or not username or not email:
+            return jsonify({'success': False, 'message': 'Nama lengkap, username, dan email wajib diisi'}), 400
+        
+        # Cek apakah username sudah ada
+        if Users.query.filter_by(username=username).first():
+            return jsonify({'success': False, 'message': 'Username sudah digunakan'}), 400
+        
+        # Cek apakah email sudah ada
+        if Users.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'message': 'Email sudah digunakan'}), 400
+        
+        # Hash password jika ada
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16) if password else ''
+        
+        # Buat user baru
+        new_user = Users(
+            username=username,
+            password=hashed_password,
+            nama_lengkap=nama_lengkap,
+            email=email,
+            jenis_kelamin=jenis_kelamin or 'laki-laki',
+            usia=usia or '0',
+            nomor_hp=nomor_hp,
+            level='peserta',
+            status=status,
+            foto='img/default-user.png',
+            login_method='manual'
+        )
+        db.session.add(new_user)
+        db.session.flush()  # Untuk mendapatkan ID user
+        
+        # Buat data participants jika ada data tambahan
+        golongan = request.form.get('golongan', '').strip()
+        tingkatan = request.form.get('tingkatan', '').strip()
+        tanggal_lahir = request.form.get('tanggal_lahir', '').strip()
+        alamat_tinggal = request.form.get('alamat_tinggal', '').strip()
+        asal_gudep = request.form.get('asal_gudep', '').strip()
+        asal_kwarran = request.form.get('asal_kwarran', '').strip()
+        asal_kwarcab = request.form.get('asal_kwarcab', '').strip()
+        asal_kwarda = request.form.get('asal_kwarda', '').strip()
+        
+        if golongan or tingkatan or tanggal_lahir or alamat_tinggal:
+            # Konversi usia ke integer jika ada
+            usia_int = int(usia) if usia and usia.isdigit() else 0
+            
+            new_participant = Participants(
+                nama_lengkap=nama_lengkap,
+                email=email,
+                jenis_kelamin=jenis_kelamin or 'laki-laki',
+                usia=usia_int,
+                nomor_hp=nomor_hp,
+                tanggal_lahir=datetime.strptime(tanggal_lahir, '%Y-%m-%d').date() if tanggal_lahir else datetime.now().date(),
+                alamat_tinggal=alamat_tinggal or '',
+                golongan=golongan or 'siaga',
+                tingkatan=tingkatan or 'siaga mula',
+                asal_gudep=asal_gudep or '',
+                asal_kwarran=asal_kwarran or '',
+                asal_kwarcab=asal_kwarcab or '',
+                asal_kwarda=asal_kwarda or '',
+                foto='img/default-user.png',
+                level='peserta'
+            )
+            db.session.add(new_participant)
+        
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Menambah peserta baru: {username}')
+        return jsonify({'success': True, 'message': 'Peserta berhasil ditambahkan'})
+        
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Data tidak valid: {str(e)}'}), 400
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_add_peserta: {e}")
+        current_app.logger.exception('Error in api_add_peserta:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Edit Peserta
+@app.route("/api/peserta/edit/<int:user_id>", methods=['POST'])
+@login_required
+@admin_required
+def api_edit_peserta(user_id):
+    """API untuk mengedit data peserta (users + participants)"""
+    try:
+        user = Users.query.get(user_id)
+        if not user or user.level != 'peserta':
+            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+        
+        # Update data user
+        nama_lengkap = request.form.get('nama_lengkap', '').strip()
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        jenis_kelamin = request.form.get('jenis_kelamin', '').strip()
+        usia = request.form.get('usia', '0').strip()
+        nomor_hp = request.form.get('nomor_hp', '').strip()
+        status = request.form.get('status', 'aktif').strip()
+        
+        if nama_lengkap:
+            user.nama_lengkap = nama_lengkap
+        if username and username != user.username:
+            # Cek apakah username sudah digunakan
+            if Users.query.filter(Users.username == username, Users.id != user_id).first():
+                return jsonify({'success': False, 'message': 'Username sudah digunakan'}), 400
+            user.username = username
+        if email and email != user.email:
+            # Cek apakah email sudah digunakan
+            if Users.query.filter(Users.email == email, Users.id != user_id).first():
+                return jsonify({'success': False, 'message': 'Email sudah digunakan'}), 400
+            user.email = email
+        if jenis_kelamin:
+            user.jenis_kelamin = jenis_kelamin
+        if usia:
+            user.usia = usia
+        if nomor_hp:
+            user.nomor_hp = nomor_hp
+        if status:
+            user.status = status
+        
+        # Update atau buat data participants
+        biodata = Participants.query.filter_by(email=user.email).first()
+        
+        golongan = request.form.get('golongan', '').strip()
+        tingkatan = request.form.get('tingkatan', '').strip()
+        tanggal_lahir = request.form.get('tanggal_lahir', '').strip()
+        alamat_tinggal = request.form.get('alamat_tinggal', '').strip()
+        asal_gudep = request.form.get('asal_gudep', '').strip()
+        asal_kwarran = request.form.get('asal_kwarran', '').strip()
+        asal_kwarcab = request.form.get('asal_kwarcab', '').strip()
+        asal_kwarda = request.form.get('asal_kwarda', '').strip()
+        
+        if biodata:
+            # Update existing biodata
+            if nama_lengkap:
+                biodata.nama_lengkap = nama_lengkap
+            if jenis_kelamin:
+                biodata.jenis_kelamin = jenis_kelamin
+            if usia:
+                biodata.usia = int(usia) if usia.isdigit() else 0
+            if nomor_hp:
+                biodata.nomor_hp = nomor_hp
+            if email:
+                biodata.email = email
+            if tanggal_lahir:
+                biodata.tanggal_lahir = datetime.strptime(tanggal_lahir, '%Y-%m-%d').date()
+            if alamat_tinggal:
+                biodata.alamat_tinggal = alamat_tinggal
+            if golongan:
+                biodata.golongan = golongan
+            if tingkatan:
+                biodata.tingkatan = tingkatan
+            if asal_gudep:
+                biodata.asal_gudep = asal_gudep
+            if asal_kwarran:
+                biodata.asal_kwarran = asal_kwarran
+            if asal_kwarcab:
+                biodata.asal_kwarcab = asal_kwarcab
+            if asal_kwarda:
+                biodata.asal_kwarda = asal_kwarda
+        elif golongan or tingkatan or tanggal_lahir or alamat_tinggal:
+            # Buat biodata baru jika ada data
+            usia_int = int(usia) if usia and usia.isdigit() else 0
+            new_biodata = Participants(
+                nama_lengkap=nama_lengkap or user.nama_lengkap,
+                email=email or user.email,
+                jenis_kelamin=jenis_kelamin or user.jenis_kelamin,
+                usia=usia_int,
+                nomor_hp=nomor_hp or user.nomor_hp,
+                tanggal_lahir=datetime.strptime(tanggal_lahir, '%Y-%m-%d').date() if tanggal_lahir else datetime.now().date(),
+                alamat_tinggal=alamat_tinggal or '',
+                golongan=golongan or 'siaga',
+                tingkatan=tingkatan or 'siaga mula',
+                asal_gudep=asal_gudep or '',
+                asal_kwarran=asal_kwarran or '',
+                asal_kwarcab=asal_kwarcab or '',
+                asal_kwarda=asal_kwarda or '',
+                foto=user.foto or 'img/default-user.png',
+                level='peserta'
+            )
+            db.session.add(new_biodata)
+        
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Mengupdate data peserta: {user.username}')
+        return jsonify({'success': True, 'message': 'Data peserta berhasil diperbarui'})
+        
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Data tidak valid: {str(e)}'}), 400
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_edit_peserta: {e}")
+        current_app.logger.exception('Error in api_edit_peserta:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Delete Peserta
+@app.route("/api/peserta/delete/<int:user_id>", methods=['POST'])
+@login_required
+@admin_required
+def api_delete_peserta(user_id):
+    """API untuk menghapus data peserta (users + participants)"""
+    try:
+        user = Users.query.get(user_id)
+        if not user or user.level != 'peserta':
+            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+        
+        username = user.username
+        email = user.email
+        
+        # Hapus data participants jika ada
+        biodata = Participants.query.filter_by(email=email).first()
+        if biodata:
+            db.session.delete(biodata)
+        
+        # Hapus user
+        db.session.delete(user)
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Menghapus peserta: {username}')
+        return jsonify({'success': True, 'message': 'Peserta berhasil dihapus'})
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_delete_peserta: {e}")
+        current_app.logger.exception('Error in api_delete_peserta:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # Tambah Kegiatan
 @app.route('/admin/tambah_seleksi', methods=['GET', 'POST'])
 @login_required
