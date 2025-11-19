@@ -636,6 +636,61 @@
       </div>
     </div>
   </div>
+
+  <!-- Notifikasi Toast -->
+  <div
+    x-data="{ notifications: [] }"
+    x-init="window.showNotification = function(category, title, message) {
+      const notification = { id: Date.now(), category, title, message, show: true };
+      $data.notifications.push(notification);
+      setTimeout(() => {
+        notification.show = false;
+        setTimeout(() => {
+          $data.notifications = $data.notifications.filter(n => n.id !== notification.id);
+        }, 300);
+      }, 5000);
+    }"
+    class="fixed bottom-6 right-6 z-[60] space-y-3"
+  >
+    <template x-for="notification in notifications" :key="notification.id">
+      <div
+        x-show="notification.show"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform translate-x-full"
+        x-transition:enter-end="opacity-100 transform translate-x-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-x-0"
+        x-transition:leave-end="opacity-0 transform translate-x-full"
+        class="flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl border min-w-[300px] max-w-md"
+        :class="{
+          'bg-green-600 text-white border-green-500': notification.category === 'success',
+          'bg-red-600 text-white border-red-500': notification.category === 'danger' || notification.category === 'error',
+          'bg-yellow-500 text-gray-900 border-yellow-400': notification.category === 'warning',
+          'bg-gray-800 text-white border-gray-700': !['success', 'danger', 'error', 'warning'].includes(notification.category)
+        }"
+      >
+        <i
+          class="fa-solid text-lg"
+          :class="{
+            'fa-circle-check': notification.category === 'success',
+            'fa-triangle-exclamation': notification.category === 'danger' || notification.category === 'error',
+            'fa-exclamation-circle': notification.category === 'warning',
+            'fa-info-circle': !['success', 'danger', 'error', 'warning'].includes(notification.category)
+          }"
+        ></i>
+        <div class="flex-1">
+          <strong x-text="notification.title"></strong><br />
+          <span class="text-sm" x-text="notification.message"></span>
+        </div>
+        <button
+          @click="notification.show = false; setTimeout(() => notifications = notifications.filter(n => n.id !== notification.id), 300)"
+          class="ml-2 text-lg opacity-70 hover:opacity-100 transition-opacity"
+        >
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+    </template>
+  </div>
 </div>
 
 <script>
@@ -735,30 +790,50 @@
           );
           const result = await response.json();
           if (result.success) {
-            alert(
-              '{{ "Peserta berhasil dihapus" if current_lang == "id" else "Participant deleted successfully" }}'
-            );
+            const username =
+              this.selectedPeserta.username ||
+              this.selectedPeserta.nama_lengkap ||
+              "";
+            if (window.showNotification) {
+              window.showNotification(
+                "success",
+                '{{ "Success" if current_lang == "id" else "Success" }}',
+                `{{ "Peserta" if current_lang == "id" else "Participant" }} '${username}' {{ "berhasil dihapus" if current_lang == "id" else "deleted successfully" }}!`
+              );
+            }
             await this.loadPesertaList();
             this.showDeleteModal = false;
             this.selectedPeserta = null;
           } else {
-            alert(
-              result.message ||
-                '{{ "Gagal menghapus peserta" if current_lang == "id" else "Failed to delete participant" }}'
-            );
+            if (window.showNotification) {
+              window.showNotification(
+                "error",
+                '{{ "Error" if current_lang == "id" else "Error" }}',
+                result.message ||
+                  '{{ "Gagal menghapus peserta" if current_lang == "id" else "Failed to delete participant" }}'
+              );
+            }
           }
         } catch (error) {
           console.error("Error:", error);
-          alert(
-            '{{ "Terjadi kesalahan saat menghapus peserta" if current_lang == "id" else "Error occurred while deleting participant" }}'
-          );
+          if (window.showNotification) {
+            window.showNotification(
+              "error",
+              '{{ "Error" if current_lang == "id" else "Error" }}',
+              '{{ "Terjadi kesalahan saat menghapus peserta" if current_lang == "id" else "Error occurred while deleting participant" }}'
+            );
+          }
         }
       },
       async savePeserta() {
         if (!this.selectedPeserta) {
-          alert(
-            '{{ "Data peserta tidak ditemukan" if current_lang == "id" else "Participant data not found" }}'
-          );
+          if (window.showNotification) {
+            window.showNotification(
+              "error",
+              '{{ "Error" if current_lang == "id" else "Error" }}',
+              '{{ "Data peserta tidak ditemukan" if current_lang == "id" else "Participant data not found" }}'
+            );
+          }
           return;
         }
 
@@ -780,9 +855,13 @@
 
         if (!form) {
           console.error("Form element not found");
-          alert(
-            '{{ "Form tidak ditemukan" if current_lang == "id" else "Form not found" }}'
-          );
+          if (window.showNotification) {
+            window.showNotification(
+              "error",
+              '{{ "Error" if current_lang == "id" else "Error" }}',
+              '{{ "Form tidak ditemukan" if current_lang == "id" else "Form not found" }}'
+            );
+          }
           return;
         }
 
@@ -836,24 +915,48 @@
           });
           const result = await response.json();
           if (result.success) {
-            alert(
-              '{{ "Data peserta berhasil disimpan" if current_lang == "id" else "Participant data saved successfully" }}'
-            );
+            const username =
+              this.selectedPeserta.username ||
+              this.selectedPeserta.nama_lengkap ||
+              "";
+            let message = "";
+
+            if (this.showAddModal) {
+              message = `{{ "Data peserta" if current_lang == "id" else "Participant data" }} '${username}' {{ "berhasil ditambahkan" if current_lang == "id" else "added successfully" }}!`;
+            } else {
+              message = `{{ "Data peserta" if current_lang == "id" else "Participant data" }} '${username}' {{ "berhasil diperbarui" if current_lang == "id" else "updated successfully" }}!`;
+            }
+
+            if (window.showNotification) {
+              window.showNotification(
+                "success",
+                '{{ "Success" if current_lang == "id" else "Success" }}',
+                message
+              );
+            }
             await this.loadPesertaList();
             this.showAddModal = false;
             this.showEditModal = false;
             this.selectedPeserta = null;
           } else {
-            alert(
-              result.message ||
-                '{{ "Gagal menyimpan data peserta" if current_lang == "id" else "Failed to save participant data" }}'
-            );
+            if (window.showNotification) {
+              window.showNotification(
+                "error",
+                '{{ "Error" if current_lang == "id" else "Error" }}',
+                result.message ||
+                  '{{ "Gagal menyimpan data peserta" if current_lang == "id" else "Failed to save participant data" }}'
+              );
+            }
           }
         } catch (error) {
           console.error("Error:", error);
-          alert(
-            '{{ "Terjadi kesalahan saat menyimpan data" if current_lang == "id" else "Error occurred while saving data" }}'
-          );
+          if (window.showNotification) {
+            window.showNotification(
+              "error",
+              '{{ "Error" if current_lang == "id" else "Error" }}',
+              '{{ "Terjadi kesalahan saat menyimpan data" if current_lang == "id" else "Error occurred while saving data" }}'
+            );
+          }
         }
       },
     }));
