@@ -38,8 +38,6 @@ app.config['SESSION_FILE_PATH'] = os.path.join(app.root_path, 'flask_session')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
-app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 app.secret_key = os.getenv("APP_SECRET_KEY")
 Session(app)
 
@@ -60,20 +58,22 @@ login_manager.login_message_category = 'info'
 def load_user(user_id):
     return Users.query.get(int(user_id))
 
-# Buat folder uploads jika belum ada
-# if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    # os.makedirs(app.config['UPLOAD_FOLDER'])
-    
-# Tentukan folder upload (misalnya di static/uploads)
-UPLOAD_FOLDER = os.path.join(app.root_path, 'static/uploads')
-ALLOWED_EXTENSIONS = {'csv', 'xls', 'xlsx'}
-
+# Tentukan folder upload (path absolut dari root aplikasi)
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Extension yang diizinkan untuk file
+ALLOWED_EXTENSIONS_IMAGE = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS_DOC = {'csv', 'xls', 'xlsx'}
+
+def allowed_file(filename, file_type='image'):
+    """Validasi extension file"""
+    if file_type == 'image':
+        allowed = ALLOWED_EXTENSIONS_IMAGE
+    else:
+        allowed = ALLOWED_EXTENSIONS_DOC
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed
 
 # Configure Flask-Mail OTP
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -915,10 +915,6 @@ def admin_add_user():
     return render_template('manajemen_pengguna.html', sidebar_state=sidebar_state, users=Users.query.all(), time=time)
 
 # Admin/Import Data User
-def allowed_file(filename):
-    allowed_extensions = {'csv', 'xls', 'xlsx'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
 @app.route('/admin/import_users', methods=['POST'])
 @login_required
 @admin_required
@@ -941,7 +937,7 @@ def admin_import_users():
         return redirect(url_for('admin_users'))
 
     ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
-    if not allowed_file(file.filename):
+    if not allowed_file(file.filename, 'doc'):
         flash('Format file tidak diizinkan! Gunakan CSV atau Excel.', 'error')
         return redirect(url_for('admin_users'))
 
@@ -1196,19 +1192,44 @@ def edit_user(user_id):
 
         # Handle upload foto jika ada
         foto_file = request.files.get('foto')
-        if foto_file and foto_file.filename and allowed_file(foto_file.filename):
-            # Generate unique filename
-            filename = secure_filename(foto_file.filename)
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            unique_filename = f"{timestamp}_{filename}"
+        if foto_file and foto_file.filename:
+            # Validasi file extension
+            if not allowed_file(foto_file.filename, 'image'):
+                flash("Format file tidak didukung! Gunakan file gambar (png, jpg, jpeg, gif).", "danger")
+                return redirect(url_for('admin_users'))
             
-            # Simpan file
-            foto_path = os.path.join(app.config['UPLOAD_FOLDER'], 'users', unique_filename)
-            os.makedirs(os.path.dirname(foto_path), exist_ok=True)
-            foto_file.save(foto_path)
-            
-            # Update path foto (relative dari static folder)
-            user.foto = f"uploads/users/{unique_filename}"
+            try:
+                # Generate unique filename
+                filename = secure_filename(foto_file.filename)
+                if not filename:
+                    flash("Nama file tidak valid.", "danger")
+                    return redirect(url_for('admin_users'))
+                    
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                unique_filename = f"{timestamp}_{filename}"
+                
+                # Buat folder users jika belum ada
+                users_upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'users')
+                os.makedirs(users_upload_dir, exist_ok=True)
+                
+                # Simpan file
+                foto_path = os.path.join(users_upload_dir, unique_filename)
+                foto_file.save(foto_path)
+                
+                # Verifikasi file berhasil disimpan
+                if os.path.exists(foto_path) and os.path.getsize(foto_path) > 0:
+                    # Update path foto (relative dari static folder untuk url_for)
+                    user.foto = f"uploads/users/{unique_filename}"
+                    logging.info(f"Foto berhasil diupload untuk user_id {user_id}: {foto_path}")
+                else:
+                    flash("Gagal menyimpan file foto. Silakan coba lagi.", "danger")
+                    logging.error(f"File tidak ditemukan atau kosong setelah save: {foto_path}")
+                    return redirect(url_for('admin_users'))
+            except Exception as e:
+                flash(f"Terjadi kesalahan saat mengupload foto: {str(e)}", "danger")
+                logging.error(f"Error uploading foto for user_id {user_id}: {e}")
+                current_app.logger.exception('Error uploading foto:')
+                return redirect(url_for('admin_users'))
 
         db.session.commit()
         flash(f"Data pengguna '{user.username}' berhasil diperbarui!", "success")
