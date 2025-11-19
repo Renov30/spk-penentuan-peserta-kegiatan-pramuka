@@ -346,10 +346,22 @@
             title="{{ 'Akun' if current_lang == 'id' else
                     'Account' }}"
           >
+            {% set user_foto = current_user.foto if
+            current_user.is_authenticated and current_user.foto else
+            (profile_picture if profile_picture else 'img/default-user.png') %}
+            {% if user_foto.startswith('http') %} {% set foto_url = user_foto %}
+            {% elif user_foto.startswith('uploads/') %} {% set foto_url =
+            url_for('static', filename=user_foto) %} {% elif
+            user_foto.startswith('img/') %} {% set foto_url = url_for('static',
+            filename=user_foto) %} {% else %} {% set foto_url =
+            url_for('static', filename='img/default-user.png') %} {% endif %} {%
+            set default_foto = url_for('static',
+            filename='img/default-user.png') %}
             <img
-              src="{% if profile_picture and profile_picture.startswith('http') %}{{ profile_picture }}{% else %}{{ url_for('static', filename=profile_picture or 'images/profil-default.jpg') }}{% endif %}"
+              src="{{ foto_url }}"
               alt="Foto Profil"
-              class="w-9 h-9 rounded-full border border-gray-300 object-cover"
+              class="w-9 h-9 rounded-full border-2 {{ 'border-yellow-400' if current_theme == 'dark' else 'border-yellow-500' }} object-cover shadow-md"
+              onerror="this.onerror=null; this.src='{{ default_foto }}';"
             />
           </button>
 
