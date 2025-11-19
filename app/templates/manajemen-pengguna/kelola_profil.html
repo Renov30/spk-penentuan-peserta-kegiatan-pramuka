@@ -304,6 +304,7 @@
 
       <!-- Form Content - Scrollable -->
       <form
+        id="pesertaForm"
         @submit.prevent="savePeserta()"
         class="flex-1 overflow-y-auto p-6 space-y-6 min-h-0"
         x-show="selectedPeserta"
@@ -761,8 +762,24 @@
           return;
         }
 
-        const form = this.$el.querySelector("form");
+        // Cari form dengan ID atau di dalam modal
+        let form = document.getElementById("pesertaForm");
+
+        // Jika tidak ditemukan, cari form di dalam modal container
         if (!form) {
+          const modalContainer = document.querySelector(".fixed.inset-0.z-50");
+          if (modalContainer) {
+            form = modalContainer.querySelector("form");
+          }
+        }
+
+        // Jika masih tidak ditemukan, cari form secara global
+        if (!form) {
+          form = document.querySelector("form");
+        }
+
+        if (!form) {
+          console.error("Form element not found");
           alert(
             '{{ "Form tidak ditemukan" if current_lang == "id" else "Form not found" }}'
           );
