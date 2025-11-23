@@ -38,7 +38,7 @@
     {% include 'script_theme.html' %}
   </head>
   <body
-    x-data="{ ready: false, page: 'main', selectedUser: null, searchPeserta: '', selectedPeserta: null, current_lang: '{{ current_lang }}' }"
+    x-data="{ ready: false, page: 'main', selectedUser: null, searchPeserta: '', selectedPeserta: null, current_lang: '{{ current_lang }}', searchQuery: '', filterRole: '', filterStatus: '' }"
     x-init="ready = true"
     :class="{ 'dark': $store.theme?.isDark }"
     x-bind:class="{
@@ -622,35 +622,38 @@
                   <div class="flex flex-wrap items-center gap-3">
                     <input
                       type="text"
+                      x-model="searchQuery"
                       placeholder="Cari pengguna..."
                       class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
                     />
 
                     <select
+                      x-model="filterRole"
                       class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
                     >
-                      <option>
+                      <option value="">
                         {{ 'Semua Role' if current_lang == 'id' else 'All Roles'
                         }}
                       </option>
-                      <option>
+                      <option value="peserta">
                         {{ 'Peserta' if current_lang == 'id' else 'Participant'
                         }}
                       </option>
-                      <option>
+                      <option value="penilai">
                         {{ 'Penilai' if current_lang == 'id' else 'Evaluator' }}
                       </option>
-                      <option>Admin</option>
+                      <option value="admin">Admin</option>
                     </select>
 
                     <select
+                      x-model="filterStatus"
                       class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
                     >
-                      <option>Status</option>
-                      <option>
+                      <option value="">{{ 'Semua Status' if current_lang == 'id' else 'All Status' }}</option>
+                      <option value="aktif">
                         {{ 'Aktif' if current_lang == 'id' else 'Active' }}
                       </option>
-                      <option>
+                      <option value="nonaktif">
                         {{ 'Nonaktif' if current_lang == 'id' else 'Inactive' }}
                       </option>
                     </select>
@@ -695,7 +698,17 @@
                     </thead>
                     <tbody>
                       {% for user in users %}
-                      <tr class="border-b dark:border-gray-700">
+                      <tr 
+                        class="border-b dark:border-gray-700"
+                        x-show="
+                          (searchQuery === '' || 
+                           '{{ user.nama_lengkap }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           '{{ user.email }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           '{{ user.username }}'.toLowerCase().includes(searchQuery.toLowerCase())) &&
+                          (filterRole === '' || '{{ user.level }}'.toLowerCase() === filterRole.toLowerCase()) &&
+                          (filterStatus === '' || '{{ user.status }}'.toLowerCase() === filterStatus.toLowerCase())
+                        "
+                      >
                         <td class="border p-2">{{ loop.index }}</td>
                         <td class="border p-2 px-4 py-2">
                           {{ user.nama_lengkap }}
