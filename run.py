@@ -3,7 +3,7 @@ from flask_session import Session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
