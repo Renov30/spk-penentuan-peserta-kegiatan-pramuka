@@ -348,15 +348,15 @@
           >
             {% set user_foto = current_user.foto if
             current_user.is_authenticated and current_user.foto else
-            (profile_picture if profile_picture else 'img/default-user.png') %}
+            (profile_picture if profile_picture else 'images/profil-default.jpg') %}
             {% if user_foto.startswith('http') %} {% set foto_url = user_foto %}
             {% elif user_foto.startswith('uploads/') %} {% set foto_url =
             url_for('static', filename=user_foto) %} {% elif
             user_foto.startswith('img/') %} {% set foto_url = url_for('static',
             filename=user_foto) %} {% else %} {% set foto_url =
-            url_for('static', filename='img/default-user.png') %} {% endif %} {%
+            url_for('static', filename='images/profil-default.jpg') %} {% endif %} {%
             set default_foto = url_for('static',
-            filename='img/default-user.png') %}
+            filename='images/profil-default.jpg') %}
             <img
               src="{{ foto_url }}"
               alt="Foto Profil"
