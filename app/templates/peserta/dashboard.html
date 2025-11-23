@@ -183,7 +183,34 @@
                     #{{ ranking }}
                   </p>
                 </div>
-                {% endif %} {% endif %}
+                {% endif %} 
+                {% endif %}
+
+                <!-- Jadwal Seleksi -->
+                {% if biodata and biodata.kegiatan %}
+                <div
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+                >
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">
+                      {{ 'Jadwal Tes Seleksi' if current_lang == 'id' else 'Selection Test Schedule' }}
+                    </h2>
+                    <i class="fa-solid fa-calendar-day text-2xl text-purple-500"></i>
+                  </div>
+                  {% if biodata.kegiatan.tanggal_tes %}
+                  <p class="text-lg font-bold text-purple-600">
+                    {{ biodata.kegiatan.tanggal_tes.strftime('%d %b %Y') }}
+                  </p>
+                  <p class="text-sm opacity-70">
+                    {{ biodata.kegiatan.tempat_tes or '-' }}
+                  </p>
+                  {% else %}
+                  <p class="text-sm italic opacity-70">
+                    {{ 'Jadwal tes belum ditentukan.' if current_lang == 'id' else 'Test schedule not yet determined.' }}
+                  </p>
+                  {% endif %}
+                </div>
+                {% endif %}
               </div>
 
               <!-- Biodata Section -->

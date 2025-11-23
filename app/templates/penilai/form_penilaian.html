@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}" x-data>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Form Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading Form | Scout DSS' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {% include "script_sidebar.html" %}
+    {% include 'script_theme.html' %}
+</head>
+<body class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+      :class="{ 'dark': $store.theme?.isDark }">
+    
+    <div class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}">
+        {% include 'sidebar.html' %}
+
+        <div class="flex flex-col flex-1 overflow-hidden h-full">
+            {% include 'header.html' %}
+
+            <main class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+                  :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'">
+                
+                <div class="container mx-auto p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <a href="{{ url_for('penilai_event_participants', event_id=event.id_kegiatan) }}" class="text-sm hover:underline mb-2 inline-block {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}">
+                                <i class="fa-solid fa-arrow-left mr-1"></i> {{ 'Kembali ke Daftar Peserta' if current_lang == 'id' else 'Back to Participant List' }}
+                            </a>
+                            <h1 class="text-3xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-800' }}">
+                                {{ 'Form Penilaian' if current_lang == 'id' else 'Grading Form' }}
+                            </h1>
+                            <p class="text-sm opacity-70 mt-1">
+                                {{ 'Peserta' if current_lang == 'id' else 'Participant' }}: <span class="font-semibold">{{ participant.nama_lengkap }}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Participant Info Card -->
+                        <div class="lg:col-span-1">
+                            <div class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-gray-800' }}">
+                                <div class="flex flex-col items-center text-center mb-6">
+                                    <img src="{{ url_for('static', filename=participant.foto) }}" alt="" class="w-32 h-32 rounded-full object-cover border-4 mb-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+                                    <h3 class="text-xl font-bold">{{ participant.nama_lengkap }}</h3>
+                                    <p class="text-sm opacity-70">{{ participant.asal_gudep }}</p>
+                                </div>
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex justify-between border-b pb-2 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+                                        <span class="opacity-70">Golongan</span>
+                                        <span class="font-medium">{{ participant.golongan|title }}</span>
+                                    </div>
+                                    <div class="flex justify-between border-b pb-2 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+                                        <span class="opacity-70">Tingkatan</span>
+                                        <span class="font-medium">{{ participant.tingkatan|title }}</span>
+                                    </div>
+                                    <div class="flex justify-between border-b pb-2 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+                                        <span class="opacity-70">Usia</span>
+                                        <span class="font-medium">{{ participant.usia }} Tahun</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grading Form -->
+                        <div class="lg:col-span-2">
+                            <div class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-gray-800' }}">
+                                <form action="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=participant.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    
+                                    <div class="space-y-6">
+                                        {% for criteria in criterias %}
+                                        <div class="p-4 rounded-lg border {{ 'border-gray-700 bg-gray-800' if current_theme == 'dark' else 'border-gray-200 bg-gray-50' }}">
+                                            <label class="block font-semibold mb-2 text-lg">
+                                                {{ criteria.nama_kriteria }}
+                                                <span class="text-xs font-normal opacity-70 ml-2">({{ criteria.jenis_kriteria|title }})</span>
+                                            </label>
+                                            <p class="text-sm opacity-70 mb-3">{{ criteria.deskripsi }}</p>
+                                            
+                                            {% if criteria.jenis_kriteria == 'kualitatif' %}
+                                                <select name="score_{{ criteria.id_kriteria }}" required
+                                                        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}">
+                                                    <option value="">{{ 'Pilih Nilai' if current_lang == 'id' else 'Select Score' }}</option>
+                                                    {% for himpunan in criteria.himpunan %}
+                                                    <option value="{{ himpunan.nilai_himpunan }}" 
+                                                            {{ 'selected' if existing_scores.get(criteria.id_kriteria) == himpunan.nilai_himpunan }}>
+                                                        {{ himpunan.nama_himpunan }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            {% else %}
+                                                <div class="flex items-center gap-3">
+                                                    <input type="number" step="0.01" name="score_{{ criteria.id_kriteria }}" required
+                                                           value="{{ existing_scores.get(criteria.id_kriteria, '') }}"
+                                                           placeholder="0-100"
+                                                           class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}">
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="mt-8 flex justify-end">
+                                        <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg transition flex items-center gap-2">
+                                            <i class="fa-solid fa-save"></i>
+                                            {{ 'Simpan Penilaian' if current_lang == 'id' else 'Save Grading' }}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

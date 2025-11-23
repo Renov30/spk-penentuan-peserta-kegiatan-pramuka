@@ -213,7 +213,7 @@
                 <div>
                   <label class="block mb-1 font-medium"
                     >{{ 'Kwartir Penyelenggara' if current_lang == 'id' else
-                    'Schedule' }}</label
+                    'Organizer' }}</label
                   >
                   <select
                     name="kwartir_penyelenggara"
@@ -227,25 +227,75 @@
                       class="text-gray-950 font-semibold"
                     >
                       {{ 'Pilih Kwartir Penyelenggara' if current_lang == 'id'
-                      else 'Select Role' }}
+                      else 'Select Organizer' }}
                     </option>
                     <option value="kwartir ranting" class="text-gray-950">
                       {{ 'Kwartir Ranting' if current_lang == 'id' else
-                      'Schedule' }}
+                      'Branch Quarter' }}
                     </option>
                     <option value="kwartir cabang" class="text-gray-950">
                       {{ 'Kwartir Cabang' if current_lang == 'id' else
-                      'Schedule' }}
+                      'District Quarter' }}
                     </option>
                     <option value="kwartir daerah" class="text-gray-950">
                       {{ 'Kwartir Daerah' if current_lang == 'id' else
-                      'Schedule' }}
+                      'Regional Quarter' }}
                     </option>
                     <option value="kwartir nasional" class="text-gray-950">
                       {{ 'Kwartir Nasional' if current_lang == 'id' else
-                      'Schedule' }}
+                      'National Quarter' }}
                     </option>
                   </select>
+                </div>
+
+                <!-- Tanggal Tes -->
+                <div>
+                  <label
+                    class="block mb-1 font-medium {{ 'text-gray-700 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-100 dark:text-gray-800' }}"
+                  >
+                    {{ 'Tanggal Tes' if current_lang == 'id' else 'Test Date' }}
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggal_tes"
+                    class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition {{ 'dark:bg-gray-700 dark:text-white border-white dark:border-white' if current_theme == 'dark' else 'dark:bg-gray-200 dark:text-black border-gray-300 dark:border-gray-600' }}"
+                  />
+                </div>
+
+                <!-- Tempat Tes -->
+                <div>
+                  <label
+                    class="block mb-1 font-medium {{ 'text-gray-700 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-100 dark:text-gray-800' }}"
+                  >
+                    {{ 'Tempat Tes' if current_lang == 'id' else 'Test Location' }}
+                  </label>
+                  <input
+                    type="text"
+                    name="tempat_tes"
+                    class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition {{ 'dark:bg-gray-700 dark:text-white border-white dark:border-white' if current_theme == 'dark' else 'dark:bg-gray-200 dark:text-black border-gray-300 dark:border-gray-600' }}"
+                    placeholder="{{ 'Masukkan tempat tes' if current_lang == 'id' else 'Enter test location' }}"
+                  />
+                </div>
+
+                <!-- Assign Evaluator -->
+                <div>
+                  <label
+                    class="block mb-2 font-medium {{ 'text-gray-700 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-100 dark:text-gray-800' }}"
+                  >
+                    {{ 'Pilih Penilai' if current_lang == 'id' else 'Assign Evaluators' }}
+                  </label>
+                  <div class="space-y-2 max-h-40 overflow-y-auto p-3 border rounded-lg {{ 'dark:bg-gray-700 dark:border-gray-600' if current_theme == 'dark' else 'bg-white border-gray-300' }}">
+                    {% for evaluator in evaluators %}
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                      <input type="checkbox" name="evaluators" value="{{ evaluator.id }}" class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500">
+                      <span class="{{ 'text-gray-200' if current_theme == 'dark' else 'text-gray-800' }}">
+                        {{ evaluator.nama_lengkap }}
+                      </span>
+                    </label>
+                    {% else %}
+                    <p class="text-sm text-gray-500 italic">{{ 'Belum ada penilai terdaftar.' if current_lang == 'id' else 'No evaluators registered.' }}</p>
+                    {% endfor %}
+                  </div>
                 </div>
 
                 <button

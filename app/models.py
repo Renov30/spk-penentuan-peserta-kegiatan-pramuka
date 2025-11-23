@@ -37,6 +37,12 @@ class Users(db.Model, UserMixin):
         }
 
 
+# Association Table for Event and Evaluator
+tb_event_evaluator = db.Table('tb_event_evaluator',
+    db.Column('event_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
+)
+
 # Access to table tb_kegiatan
 class Event(db.Model):
     __tablename__ = 'tb_kegiatan'
@@ -50,8 +56,17 @@ class Event(db.Model):
     kwartir_penyelenggara = db.Column(db.String(255), nullable=False)
     mulai = db.Column(db.Date, nullable=False)
     selesai = db.Column(db.Date, nullable=False)
+    
+    # New fields for Test Details
+    tanggal_tes = db.Column(db.Date, nullable=True)
+    tempat_tes = db.Column(db.String(100), nullable=True)
+    
     kuota = db.relationship("Kuota", backref="event", lazy=True, cascade="all, delete-orphan")
     kriteria = db.relationship("Criteria", backref="event", lazy=True, cascade="all, delete-orphan")
+    
+    # Relationship with Evaluators
+    evaluators = db.relationship('Users', secondary=tb_event_evaluator, lazy='subquery',
+        backref=db.backref('assigned_events', lazy=True))
 
 class Kuota(db.Model):
     __tablename__ = 'tb_kuota'
@@ -123,7 +138,8 @@ class HimpunanKriteria(db.Model):
 class Penilaian(db.Model):
     __tablename__ = 'tb_penilaian'
     id_penilaian = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    id_users = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    id_users = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # Peserta
+    evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Penilai
     id_kriteria = db.Column(db.Integer, db.ForeignKey('tb_kriteria.id_kriteria'), nullable=False)
     nilai = db.Column(db.Float, nullable=False)
 

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}" x-data>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Daftar Peserta | SPK Pramuka' if current_lang == 'id' else 'Participant List | Scout DSS' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {% include "script_sidebar.html" %}
+    {% include 'script_theme.html' %}
+</head>
+<body class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+      :class="{ 'dark': $store.theme?.isDark }">
+    
+    <div class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}">
+        {% include 'sidebar.html' %}
+
+        <div class="flex flex-col flex-1 overflow-hidden h-full">
+            {% include 'header.html' %}
+
+            <main class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+                  :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'">
+                
+                <div class="container mx-auto p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <a href="{{ url_for('penilai_dashboard') }}" class="text-sm hover:underline mb-2 inline-block {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}">
+                                <i class="fa-solid fa-arrow-left mr-1"></i> {{ 'Kembali ke Dashboard' if current_lang == 'id' else 'Back to Dashboard' }}
+                            </a>
+                            <h1 class="text-3xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-800' }}">
+                                {{ event.nama_kegiatan }}
+                            </h1>
+                            <p class="text-sm opacity-70 mt-1">
+                                {{ 'Daftar Peserta Seleksi' if current_lang == 'id' else 'Selection Participants List' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Participants List -->
+                    <div class="rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-100 text-gray-600' }}">
+                                        <th class="p-4 font-semibold">No</th>
+                                        <th class="p-4 font-semibold">{{ 'Nama Peserta' if current_lang == 'id' else 'Participant Name' }}</th>
+                                        <th class="p-4 font-semibold">{{ 'Asal Gudep' if current_lang == 'id' else 'Gudep Origin' }}</th>
+                                        <th class="p-4 font-semibold text-center">{{ 'Status Penilaian' if current_lang == 'id' else 'Grading Status' }}</th>
+                                        <th class="p-4 font-semibold text-center">{{ 'Aksi' if current_lang == 'id' else 'Action' }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}">
+                                    {% for p in participants %}
+                                    <tr class="hover:bg-opacity-50 transition {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}">
+                                        <td class="p-4 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">{{ loop.index }}</td>
+                                        <td class="p-4 font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                                            <div class="flex items-center gap-3">
+                                                <img src="{{ url_for('static', filename=p.foto) }}" alt="" class="w-8 h-8 rounded-full object-cover">
+                                                {{ p.nama_lengkap }}
+                                            </div>
+                                        </td>
+                                        <td class="p-4 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">{{ p.asal_gudep }}</td>
+                                        <td class="p-4 text-center">
+                                            {% if p.is_graded %}
+                                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                                {{ 'Sudah Dinilai' if current_lang == 'id' else 'Graded' }}
+                                            </span>
+                                            {% else %}
+                                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                                {{ 'Belum Dinilai' if current_lang == 'id' else 'Not Graded' }}
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="p-4 text-center">
+                                            <a href="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=p.id) }}" 
+                                               class="inline-flex items-center px-4 py-2 {{ 'bg-yellow-500 hover:bg-yellow-600' if p.is_graded else 'bg-blue-600 hover:bg-blue-700' }} text-white text-sm font-medium rounded-lg transition shadow-md">
+                                                <i class="fa-solid fa-pen-to-square mr-2"></i>
+                                                {{ 'Edit Nilai' if p.is_graded else ('Beri Nilai' if current_lang == 'id' else 'Grade') }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="5" class="p-8 text-center text-gray-500">
+                                            {{ 'Belum ada peserta yang mendaftar di kegiatan ini.' if current_lang == 'id' else 'No participants registered for this event.' }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

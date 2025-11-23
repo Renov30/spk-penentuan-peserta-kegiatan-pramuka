@@ -1381,6 +1381,21 @@ def save_config():
             if not waktu_pelaksanaan_selesai_date:
                 waktu_pelaksanaan_selesai_date = waktu_pelaksanaan_dimulai_date
             
+            # Parse tanggal tes
+            tanggal_tes_date = None
+            if act.get('tanggalTes'):
+                try:
+                    tanggal_tes_str = act['tanggalTes']
+                    if 'T' in tanggal_tes_str:
+                        tanggal_tes_date = datetime.strptime(tanggal_tes_str.split('T')[0], '%Y-%m-%d').date()
+                    else:
+                        tanggal_tes_date = datetime.strptime(tanggal_tes_str, '%Y-%m-%d').date()
+                except Exception:
+                    pass
+            
+            # Parse tempat tes
+            tempat_tes = (act.get('tempatTes') or '').strip()
+            
             event = Event(
                 jenis_kegiatan=jenis_kegiatan,
                 nama_kegiatan=nama,
@@ -1390,7 +1405,9 @@ def save_config():
                 skala_kegiatan=skala_kegiatan,
                 kwartir_penyelenggara=kwartir,
                 mulai=mulai_date,
-                selesai=selesai_date
+                selesai=selesai_date,
+                tanggal_tes=tanggal_tes_date,
+                tempat_tes=tempat_tes if tempat_tes else None
             )
             db.session.add(event)
             db.session.flush()
@@ -2131,6 +2148,11 @@ def tambah_seleksi():
         tempat = request.form['tempat_pelaksanaan']
         skala = request.form['skala_kegiatan']
         kwartir = request.form['kwartir_penyelenggara']
+        
+        # New Fields
+        tanggal_tes = request.form.get('tanggal_tes')
+        tempat_tes = request.form.get('tempat_tes')
+        evaluator_ids = request.form.getlist('evaluators')
 
         new_event = Event(
             nama_kegiatan=nama,
@@ -2141,14 +2163,25 @@ def tambah_seleksi():
             skala_kegiatan=skala,
             kwartir_penyelenggara=kwartir,
             mulai=datetime.utcnow().date(),
-            selesai=datetime.utcnow().date()
+            selesai=datetime.utcnow().date(),
+            tanggal_tes=datetime.strptime(tanggal_tes, '%Y-%m-%d').date() if tanggal_tes else None,
+            tempat_tes=tempat_tes
         )
+        
+        # Assign Evaluators
+        if evaluator_ids:
+            evaluators = Users.query.filter(Users.id.in_(evaluator_ids)).all()
+            new_event.evaluators = evaluators
+            
         db.session.add(new_event)
         db.session.commit()
 
         flash('Kegiatan berhasil ditambahkan!', 'success')
         return redirect(url_for('admin_manajemen_seleksi'))
-    return render_template("tambah_kegiatan.html")
+    
+    # Get all evaluators
+    evaluators = Users.query.filter_by(level='penilai').all()
+    return render_template("tambah_kegiatan.html", evaluators=evaluators)
 
 # Edit Kegiatan
 @app.route('/admin/edit_kegiatan/<int:id>', methods=['GET', 'POST'])
@@ -2169,10 +2202,28 @@ def edit_kegiatan(id):
             event.waktu_pelaksanaan_dimulai = waktu
             event.waktu_pelaksanaan_selesai = waktu
         event.tempat_pelaksanaan = request.form['tempat_pelaksanaan']
+        
+        # Update Test Details
+        tanggal_tes = request.form.get('tanggal_tes')
+        if tanggal_tes:
+            event.tanggal_tes = datetime.strptime(tanggal_tes, '%Y-%m-%d').date()
+        event.tempat_tes = request.form.get('tempat_tes')
+        
+        # Update Evaluators
+        evaluator_ids = request.form.getlist('evaluators')
+        if evaluator_ids:
+            evaluators = Users.query.filter(Users.id.in_(evaluator_ids)).all()
+            event.evaluators = evaluators
+        else:
+            event.evaluators = []
+            
         db.session.commit()
         flash('Kegiatan berhasil diupdate!', 'success')
         return redirect(url_for('admin_manajemen_seleksi'))
-    return render_template("edit_kegiatan.html", event=event)
+    
+    # Get all evaluators
+    evaluators = Users.query.filter_by(level='penilai').all()
+    return render_template("edit_kegiatan.html", event=event, evaluators=evaluators)
 
 # Hapus Kegiatan
 @app.route('/admin/hapus_kegiatan/<int:id>', methods=['GET'])
@@ -2255,16 +2306,126 @@ def penilai_dashboard():
         flash("Anda tidak memiliki akses ke halaman ini.", "error")
         return redirect(url_for('index'))
 
-    # Contoh data yang bisa ditampilkan di dashboard penilai
-    data_peserta = Participants.query.all()  # Ambil semua peserta
+    # Ambil semua kegiatan yang aktif dan ditugaskan ke penilai ini
+    # Jika tidak ada assignment, tampilkan kosong atau semua (tergantung kebijakan, di sini kita filter)
+    events = Event.query.filter(Event.evaluators.any(id=current_user.id)).order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Hitung total peserta (dari tabel participants)
     total_peserta = Participants.query.count()
-    total_penilai = Users.query.filter_by(level='penilai').count()
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
 
     return render_template(
         'penilai/dashboard.html',
-        data_peserta=data_peserta,
+        events=events,
         total_peserta=total_peserta,
-        total_penilai=total_penilai
+        sidebar_state=sidebar_state
+    )
+
+@app.route('/penilai/event/<int:event_id>/participants')
+@login_required
+def penilai_event_participants(event_id):
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    event = Event.query.get_or_404(event_id)
+    participants = Participants.query.filter_by(kegiatan_id=event_id).all()
+    
+    # Cek status penilaian untuk setiap peserta oleh penilai ini
+    for p in participants:
+        # Cari user ID dari tabel Users berdasarkan email peserta
+        user_peserta = Users.query.filter_by(email=p.email).first()
+        if user_peserta:
+            # Cek apakah sudah ada nilai dari penilai ini untuk peserta ini
+            # Asumsi: jika ada minimal 1 nilai, dianggap sudah dinilai (bisa diperbaiki logikanya nanti)
+            existing_score = Penilaian.query.filter_by(
+                id_users=user_peserta.id, 
+                evaluator_id=current_user.id
+            ).first()
+            p.is_graded = True if existing_score else False
+            p.id = user_peserta.id # Override id participant dengan id user untuk link
+        else:
+            p.is_graded = False
+            p.id = 0 # Fallback jika user tidak ditemukan
+
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    return render_template(
+        'penilai/list_peserta.html',
+        event=event,
+        participants=participants,
+        sidebar_state=sidebar_state
+    )
+
+@app.route('/penilai/event/<int:event_id>/grade/<int:participant_id>', methods=['GET', 'POST'])
+@login_required
+def penilai_input_score(event_id, participant_id):
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    event = Event.query.get_or_404(event_id)
+    participant_user = Users.query.get_or_404(participant_id)
+    participant_biodata = Participants.query.filter_by(email=participant_user.email).first()
+    
+    # Ambil kriteria untuk event ini
+    criterias = Criteria.query.filter_by(event_id=event_id).all()
+    
+    # Ambil himpunan kriteria untuk dropdown
+    for c in criterias:
+        c.himpunan = HimpunanKriteria.query.filter_by(id_kriteria=c.id_kriteria).all()
+        
+    # Ambil nilai yang sudah ada (jika edit)
+    existing_scores = {}
+    scores_query = Penilaian.query.filter_by(
+        id_users=participant_id,
+        evaluator_id=current_user.id
+    ).all()
+    for s in scores_query:
+        existing_scores[s.id_kriteria] = s.nilai
+
+    if request.method == 'POST':
+        try:
+            for criteria in criterias:
+                score_val = request.form.get(f'score_{criteria.id_kriteria}')
+                if score_val:
+                    # Cek apakah update atau insert
+                    penilaian = Penilaian.query.filter_by(
+                        id_users=participant_id,
+                        evaluator_id=current_user.id,
+                        id_kriteria=criteria.id_kriteria
+                    ).first()
+                    
+                    if penilaian:
+                        penilaian.nilai = float(score_val)
+                    else:
+                        penilaian = Penilaian(
+                            id_users=participant_id,
+                            evaluator_id=current_user.id,
+                            id_kriteria=criteria.id_kriteria,
+                            nilai=float(score_val)
+                        )
+                        db.session.add(penilaian)
+            
+            db.session.commit()
+            flash("Penilaian berhasil disimpan!", "success")
+            return redirect(url_for('penilai_event_participants', event_id=event_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error saving score: {e}")
+            flash("Terjadi kesalahan saat menyimpan nilai.", "danger")
+
+    sidebar_state = current_user.sidebar_state or 'expanded'
+
+    return render_template(
+        'penilai/form_penilaian.html',
+        event=event,
+        participant=participant_biodata,
+        criterias=criterias,
+        existing_scores=existing_scores,
+        sidebar_state=sidebar_state
     )
 
 @app.route('/peserta/dashboard')
