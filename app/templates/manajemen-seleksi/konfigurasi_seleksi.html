@@ -440,12 +440,13 @@
                 <label
                   class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                 >
-                  {{ 'Tanggal Tes' if current_lang == 'id' else 'Test Date' }}
+                  {{ 'Jadwal Tes' if current_lang == 'id' else 'Test Schedule' }}
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   x-model="act.tanggalTes"
                   @keydown.enter="focusNextField($event, index)"
+                  placeholder="{{ 'Contoh: Setiap hari jam 07:00 - 15:00' if current_lang == 'id' else 'Example: Every day 07:00 - 15:00' }}"
                   class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                 />
 

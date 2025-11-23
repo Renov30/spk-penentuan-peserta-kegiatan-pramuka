@@ -58,7 +58,7 @@ class Event(db.Model):
     selesai = db.Column(db.Date, nullable=False)
     
     # New fields for Test Details
-    tanggal_tes = db.Column(db.Date, nullable=True)
+    tanggal_tes = db.Column(db.String(255), nullable=True)
     tempat_tes = db.Column(db.String(100), nullable=True)
     
     kuota = db.relationship("Kuota", backref="event", lazy=True, cascade="all, delete-orphan")

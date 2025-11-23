@@ -1381,17 +1381,8 @@ def save_config():
             if not waktu_pelaksanaan_selesai_date:
                 waktu_pelaksanaan_selesai_date = waktu_pelaksanaan_dimulai_date
             
-            # Parse tanggal tes
-            tanggal_tes_date = None
-            if act.get('tanggalTes'):
-                try:
-                    tanggal_tes_str = act['tanggalTes']
-                    if 'T' in tanggal_tes_str:
-                        tanggal_tes_date = datetime.strptime(tanggal_tes_str.split('T')[0], '%Y-%m-%d').date()
-                    else:
-                        tanggal_tes_date = datetime.strptime(tanggal_tes_str, '%Y-%m-%d').date()
-                except Exception:
-                    pass
+            # Parse jadwal tes (now as text)
+            tanggal_tes = (act.get('tanggalTes') or '').strip()
             
             # Parse tempat tes
             tempat_tes = (act.get('tempatTes') or '').strip()
@@ -1406,7 +1397,7 @@ def save_config():
                 kwartir_penyelenggara=kwartir,
                 mulai=mulai_date,
                 selesai=selesai_date,
-                tanggal_tes=tanggal_tes_date,
+                tanggal_tes=tanggal_tes if tanggal_tes else None,
                 tempat_tes=tempat_tes if tempat_tes else None
             )
             db.session.add(event)
@@ -1624,6 +1615,10 @@ def update_config(event_id):
                     event.selesai = datetime.strptime(evt_data['selesai'], '%Y-%m-%d').date()
                 except:
                     pass
+            if 'tanggal_tes' in evt_data:
+                event.tanggal_tes = evt_data['tanggal_tes'].strip() if evt_data['tanggal_tes'] else None
+            if 'tempat_tes' in evt_data:
+                event.tempat_tes = evt_data['tempat_tes'].strip() if evt_data['tempat_tes'] else None
         
         # Update Kuota
         if 'kuota' in data:
@@ -2164,7 +2159,7 @@ def tambah_seleksi():
             kwartir_penyelenggara=kwartir,
             mulai=datetime.utcnow().date(),
             selesai=datetime.utcnow().date(),
-            tanggal_tes=datetime.strptime(tanggal_tes, '%Y-%m-%d').date() if tanggal_tes else None,
+            tanggal_tes=tanggal_tes if tanggal_tes else None,
             tempat_tes=tempat_tes
         )
         
@@ -2206,7 +2201,7 @@ def edit_kegiatan(id):
         # Update Test Details
         tanggal_tes = request.form.get('tanggal_tes')
         if tanggal_tes:
-            event.tanggal_tes = datetime.strptime(tanggal_tes, '%Y-%m-%d').date()
+            event.tanggal_tes = tanggal_tes
         event.tempat_tes = request.form.get('tempat_tes')
         
         # Update Evaluators

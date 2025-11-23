@@ -253,12 +253,13 @@
                   <label
                     class="block mb-1 font-medium {{ 'text-gray-700 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-100 dark:text-gray-800' }}"
                   >
-                    {{ 'Tanggal Tes' if current_lang == 'id' else 'Test Date' }}
+                    {{ 'Jadwal Tes' if current_lang == 'id' else 'Test Schedule' }}
                   </label>
                   <input
-                    type="date"
+                    type="text"
                     name="tanggal_tes"
                     class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition {{ 'dark:bg-gray-700 dark:text-white border-white dark:border-white' if current_theme == 'dark' else 'dark:bg-gray-200 dark:text-black border-gray-300 dark:border-gray-600' }}"
+                    placeholder="{{ 'Contoh: Setiap hari jam 07:00 - 15:00' if current_lang == 'id' else 'Example: Every day 07:00 - 15:00' }}"
                   />
                 </div>
 

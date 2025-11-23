@@ -385,6 +385,30 @@
                                   ></span>
                                 </p>
                               </div>
+                              <div>
+                                <label
+                                  class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                                >
+                                  {{ 'Jadwal Tes' if current_lang == 'id'
+                                  else 'Test Schedule' }}
+                                </label>
+                                <p
+                                  class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                                  x-text="configData.event.tanggal_tes || '-'"
+                                ></p>
+                              </div>
+                              <div>
+                                <label
+                                  class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                                >
+                                  {{ 'Tempat Tes' if current_lang == 'id'
+                                  else 'Test Location' }}
+                                </label>
+                                <p
+                                  class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                                  x-text="configData.event.tempat_tes || '-'"
+                                ></p>
+                              </div>
                             </div>
                           </div>
 
@@ -694,6 +718,34 @@
                                 />
                               </div>
                             </div>
+
+                            <!-- Jadwal Tes -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ 'Jadwal Tes' if current_lang == 'id' else
+                              'Test Schedule' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="editData.event.tanggal_tes"
+                              placeholder="{{ 'Contoh: Setiap hari jam 07:00 - 15:00' if current_lang == 'id' else 'Example: Every day 07:00 - 15:00' }}"
+                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
+                            />
+
+                            <!-- Tempat Tes -->
+                            <label
+                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ 'Tempat Tes' if current_lang == 'id' else
+                              'Test Location' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="editData.event.tempat_tes"
+                              placeholder="{{ 'Masukkan tempat tes' if current_lang == 'id' else 'Enter test location' }}"
+                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
+                            />
                           </div>
 
                           <!-- Komposisi Kontingen -->
