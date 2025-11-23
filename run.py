@@ -1526,10 +1526,12 @@ def get_config(event_id):
                 'skala_kegiatan': event.skala_kegiatan,
                 'kwartir_penyelenggara': event.kwartir_penyelenggara,
                 'tempat_pelaksanaan': event.tempat_pelaksanaan,
-                'waktu_pelaksanaan_dimulai': event.waktu_pelaksanaan_dimulai.strftime('%Y-%m-%d') if event.waktu_pelaksanaan_dimulai else None,
-                'waktu_pelaksanaan_selesai': event.waktu_pelaksanaan_selesai.strftime('%Y-%m-%d') if event.waktu_pelaksanaan_selesai else None,
-                'mulai': event.mulai.strftime('%Y-%m-%d') if event.mulai else None,
-                'selesai': event.selesai.strftime('%Y-%m-%d') if event.selesai else None,
+                'waktu_pelaksanaan_dimulai': event.waktu_pelaksanaan_dimulai.isoformat() if event.waktu_pelaksanaan_dimulai else None,
+                'waktu_pelaksanaan_selesai': event.waktu_pelaksanaan_selesai.isoformat() if event.waktu_pelaksanaan_selesai else None,
+                'mulai': event.mulai.isoformat() if event.mulai else None,
+                'selesai': event.selesai.isoformat() if event.selesai else None,
+                'tanggal_tes': event.tanggal_tes,
+                'tempat_tes': event.tempat_tes
             },
             'kuota': {
                 'putra': kuota.putra if kuota else 0,
