@@ -70,6 +70,7 @@
                                         <th class="p-4 font-semibold">{{ 'Nama Kegiatan' if current_lang == 'id' else 'Event Name' }}</th>
                                         <th class="p-4 font-semibold">{{ 'Tanggal Pelaksanaan' if current_lang == 'id' else 'Event Date' }}</th>
                                         <th class="p-4 font-semibold">{{ 'Jumlah Peserta' if current_lang == 'id' else 'Participants' }}</th>
+                                        <th class="p-4 font-semibold text-center">{{ 'Status' if current_lang == 'id' else 'Status' }}</th>
                                         <th class="p-4 font-semibold text-center">{{ 'Aksi' if current_lang == 'id' else 'Action' }}</th>
                                     </tr>
                                 </thead>
@@ -85,16 +86,37 @@
                                             {{ event.peserta_list|length }}
                                         </td>
                                         <td class="p-4 text-center">
+                                            {% if event.is_assigned %}
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fa-solid fa-check-circle mr-1"></i>
+                                                {{ 'Ditugaskan' if current_lang == 'id' else 'Assigned' }}
+                                            </span>
+                                            {% else %}
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                                <i class="fa-solid fa-minus-circle mr-1"></i>
+                                                {{ 'Tidak Ditugaskan' if current_lang == 'id' else 'Not Assigned' }}
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="p-4 text-center">
+                                            {% if event.is_assigned %}
                                             <a href="{{ url_for('penilai_event_participants', event_id=event.id_kegiatan) }}" 
                                                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition shadow-md">
                                                 <i class="fa-solid fa-list-check mr-2"></i>
-                                                {{ 'Lihat Peserta' if current_lang == 'id' else 'View Participants' }}
+                                                {{ 'Beri Nilai' if current_lang == 'id' else 'Assess' }}
                                             </a>
+                                            {% else %}
+                                            <button disabled
+                                               class="inline-flex items-center px-4 py-2 bg-gray-400 text-gray-200 text-sm font-medium rounded-lg cursor-not-allowed opacity-50">
+                                                <i class="fa-solid fa-lock mr-2"></i>
+                                                {{ 'Tidak Dapat Menilai' if current_lang == 'id' else 'Cannot Assess' }}
+                                            </button>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="5" class="p-8 text-center text-gray-500">
+                                        <td colspan="6" class="p-8 text-center text-gray-500">
                                             {{ 'Belum ada kegiatan seleksi yang aktif.' if current_lang == 'id' else 'No active selection events.' }}
                                         </td>
                                     </tr>

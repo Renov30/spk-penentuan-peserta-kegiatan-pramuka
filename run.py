@@ -1266,8 +1266,135 @@ def edit_user(user_id):
 @admin_required
 def admin_manajemen_seleksi():
     sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    # Get all events
     kegiatan_list = Event.query.all()
-    return render_template("manajemen_seleksi.html", kegiatan_list=kegiatan_list, sidebar_state=sidebar_state, user=current_user, time=time)
+    
+    # Convert to serializable format if needed
+    kegiatan_data = []
+    for kegiatan in kegiatan_list:
+        kegiatan_data.append({
+            'id': kegiatan.id_kegiatan,
+            'nama': kegiatan.nama_kegiatan,
+            'jenis': kegiatan.jenis_kegiatan,
+            'waktu_mulai': kegiatan.waktu_pelaksanaan_dimulai.strftime('%Y-%m-%d') if kegiatan.waktu_pelaksanaan_dimulai else None,
+            'waktu_selesai': kegiatan.waktu_pelaksanaan_selesai.strftime('%Y-%m-%d') if kegiatan.waktu_pelaksanaan_selesai else None,
+        })
+    
+    return render_template("manajemen_seleksi.html", kegiatan_list=kegiatan_list, kegiatan_data=kegiatan_data, sidebar_state=sidebar_state)
+
+# Route untuk halaman penugasan penilai
+@app.route('/admin/penugasan_penilai')
+@login_required
+@admin_required
+def admin_penugasan_penilai():
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    events = Event.query.all()
+    evaluators = Users.query.filter_by(level='penilai').all()
+    
+    # Build assignment matrix
+    assignments = {}
+    for evaluator in evaluators:
+        # Safely get assigned events, handle if relationship doesn't exist
+        try:
+            assigned_event_ids = [e.id_kegiatan for e in evaluator.assigned_events if e and hasattr(e, 'id_kegiatan')]
+        except:
+            assigned_event_ids = []
+        assignments[evaluator.id] = assigned_event_ids
+    
+    return render_template(
+        "manajemen-seleksi/penugasan_penilai.html", 
+        events=events,
+        evaluators=evaluators,
+        assignments=assignments,
+        sidebar_state=sidebar_state
+    )
+
+# API untuk assign evaluator ke event
+@app.route('/api/assign_evaluator', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def assign_evaluator():
+    try:
+        data = request.get_json()
+        event_id = data.get('event_id')
+        evaluator_id = data.get('evaluator_id')
+        
+        if not event_id or not evaluator_id:
+            return jsonify({'status': 'error', 'message': 'Missing parameters'}), 400
+        
+        event = Event.query.get_or_404(event_id)
+        evaluator = Users.query.get_or_404(evaluator_id)
+        
+        if evaluator.level != 'penilai':
+            return jsonify({'status': 'error', 'message': 'User is not an evaluator'}), 400
+        
+        # Check if already assigned
+        if evaluator in event.evaluators:
+            return jsonify({'status': 'info', 'message': 'Evaluator already assigned'}), 200
+        
+        event.evaluators.append(evaluator)
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': 'Evaluator assigned successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error assigning evaluator:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# API untuk unassign evaluator dari event
+@app.route('/api/unassign_evaluator', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def unassign_evaluator():
+    try:
+        data = request.get_json()
+        event_id = data.get('event_id')
+        evaluator_id = data.get('evaluator_id')
+        
+        if not event_id or not evaluator_id:
+            return jsonify({'status': 'error', 'message': 'Missing parameters'}), 400
+        
+        event = Event.query.get_or_404(event_id)
+        evaluator = Users.query.get_or_404(evaluator_id)
+        
+        # Check if assigned
+        if evaluator not in event.evaluators:
+            return jsonify({'status': 'info', 'message': 'Evaluator not assigned'}), 200
+        
+        event.evaluators.remove(evaluator)
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': 'Evaluator unassigned successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error unassigning evaluator:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# API untuk get assignments
+@app.route('/api/get_assignments')
+@login_required
+@admin_required
+def get_assignments():
+    try:
+        events = Event.query.all()
+        result = []
+        
+        for event in events:
+            event_data = {
+                'id': event.id_kegiatan,
+                'nama': event.nama_kegiatan,
+                'evaluators': [{'id': e.id, 'nama': e.nama_lengkap} for e in event.evaluators]
+            }
+            result.append(event_data)
+        
+        return jsonify({'status': 'success', 'data': result}), 200
+    except Exception as e:
+        current_app.logger.exception('Error getting assignments:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 # Konfigurasi Seleksi
 @app.route('/api/save_config', methods=['POST'])
@@ -2303,9 +2430,12 @@ def penilai_dashboard():
         flash("Anda tidak memiliki akses ke halaman ini.", "error")
         return redirect(url_for('index'))
 
-    # Ambil semua kegiatan yang aktif dan ditugaskan ke penilai ini
-    # Jika tidak ada assignment, tampilkan kosong atau semua (tergantung kebijakan, di sini kita filter)
-    events = Event.query.filter(Event.evaluators.any(id=current_user.id)).order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    # Ambil semua kegiatan yang aktif
+    events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Tambahkan flag is_assigned untuk setiap event
+    for event in events:
+        event.is_assigned = current_user in event.evaluators
     
     # Hitung total peserta (dari tabel participants)
     total_peserta = Participants.query.count()
@@ -2327,6 +2457,12 @@ def penilai_event_participants(event_id):
         return redirect(url_for('index'))
     
     event = Event.query.get_or_404(event_id)
+    
+    # Check if evaluator is assigned to this event
+    if current_user not in event.evaluators:
+        flash("Anda tidak ditugaskan untuk menilai kegiatan ini.", "error")
+        return redirect(url_for('penilai_dashboard'))
+    
     participants = Participants.query.filter_by(kegiatan_id=event_id).all()
     
     # Cek status penilaian untuk setiap peserta oleh penilai ini
