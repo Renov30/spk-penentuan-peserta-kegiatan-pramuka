@@ -2342,6 +2342,125 @@ def peserta_hasil_seleksi():
         user=current_user
     )
 
+@app.route('/peserta/data', methods=['GET', 'POST'])
+@login_required
+def peserta_data():
+    if current_user.level != 'peserta':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+
+    # Ambil data biodata
+    biodata = Participants.query.filter_by(email=current_user.email).first()
+    
+    if request.method == 'POST':
+        try:
+            nama_lengkap = request.form.get('nama_lengkap', '').strip()
+            tanggal_lahir = request.form.get('tanggal_lahir', '').strip()
+            alamat_tinggal = request.form.get('alamat_tinggal', '').strip()
+            golongan = request.form.get('golongan', '').strip()
+            tingkatan = request.form.get('tingkatan', '').strip()
+            asal_gudep = request.form.get('asal_gudep', '').strip()
+            asal_kwarran = request.form.get('asal_kwarran', '').strip()
+            asal_kwarcab = request.form.get('asal_kwarcab', '').strip()
+            asal_kwarda = request.form.get('asal_kwarda', '').strip()
+            usia = request.form.get('usia', '0').strip()
+            jenis_kelamin = request.form.get('jenis_kelamin', '').strip()
+            nomor_hp = request.form.get('nomor_hp', '').strip()
+            
+            # Update Users table
+            current_user.nama_lengkap = nama_lengkap
+            current_user.usia = usia
+            current_user.jenis_kelamin = jenis_kelamin
+            current_user.nomor_hp = nomor_hp
+            
+            # Handle photo upload if any
+            if 'foto' in request.files:
+                file = request.files['foto']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # Rename file to avoid conflict
+                    ext = filename.rsplit('.', 1)[1].lower()
+                    new_filename = f"{current_user.username}_{int(time.time())}.{ext}"
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
+                    current_user.foto = f"img/{new_filename}"
+                    if biodata:
+                        biodata.foto = f"img/{new_filename}"
+
+            if not biodata:
+                # Create new biodata
+                biodata = Participants(
+                    nama_lengkap=nama_lengkap,
+                    email=current_user.email,
+                    tanggal_lahir=datetime.strptime(tanggal_lahir, '%Y-%m-%d').date() if tanggal_lahir else datetime.now().date(),
+                    alamat_tinggal=alamat_tinggal,
+                    golongan=golongan,
+                    tingkatan=tingkatan,
+                    asal_gudep=asal_gudep,
+                    asal_kwarran=asal_kwarran,
+                    asal_kwarcab=asal_kwarcab,
+                    asal_kwarda=asal_kwarda,
+                    usia=int(usia) if usia.isdigit() else 0,
+                    jenis_kelamin=jenis_kelamin,
+                    nomor_hp=nomor_hp,
+                    foto=current_user.foto,
+                    level='peserta'
+                )
+                db.session.add(biodata)
+            else:
+                # Update existing biodata
+                biodata.nama_lengkap = nama_lengkap
+                if tanggal_lahir:
+                    biodata.tanggal_lahir = datetime.strptime(tanggal_lahir, '%Y-%m-%d').date()
+                biodata.alamat_tinggal = alamat_tinggal
+                biodata.golongan = golongan
+                biodata.tingkatan = tingkatan
+                biodata.asal_gudep = asal_gudep
+                biodata.asal_kwarran = asal_kwarran
+                biodata.asal_kwarcab = asal_kwarcab
+                biodata.asal_kwarda = asal_kwarda
+                biodata.usia = int(usia) if usia.isdigit() else 0
+                biodata.jenis_kelamin = jenis_kelamin
+                biodata.nomor_hp = nomor_hp
+            
+            db.session.commit()
+            flash("Data peserta berhasil diperbarui!", "success")
+            return redirect(url_for('peserta_data'))
+            
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error updating participant data: {e}")
+            flash("Terjadi kesalahan saat menyimpan data.", "danger")
+
+    # Check completeness
+    is_complete = False
+    missing_fields = []
+    if biodata:
+        required_fields = [
+            'nama_lengkap', 'tanggal_lahir', 'alamat_tinggal', 'golongan', 
+            'tingkatan', 'asal_gudep', 'asal_kwarran', 'asal_kwarcab', 
+            'asal_kwarda', 'usia', 'jenis_kelamin', 'nomor_hp'
+        ]
+        for field in required_fields:
+            val = getattr(biodata, field)
+            if not val or val == '' or val == 0:
+                missing_fields.append(field)
+        
+        if not missing_fields:
+            is_complete = True
+    else:
+        missing_fields = ['All Data']
+
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    return render_template(
+        'peserta/data_peserta.html',
+        biodata=biodata,
+        user=current_user,
+        sidebar_state=sidebar_state,
+        is_complete=is_complete,
+        missing_fields=missing_fields
+    )
+
 # API untuk mendapatkan kegiatan/seleksi yang tersedia (sedang dibuka)
 @app.route('/api/kegiatan_tersedia')
 @login_required

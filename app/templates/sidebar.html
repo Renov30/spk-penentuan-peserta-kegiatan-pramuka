@@ -53,8 +53,8 @@
         <!-- Data Peserta -->
         <li>
           <a
-            href="{{ url_for('peserta_dashboard') }}#biodata"
-            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }}"
+            href="{{ url_for('peserta_data') }}"
+            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'peserta_data' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
           >
             <i
               class="fas fa-user-check w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
