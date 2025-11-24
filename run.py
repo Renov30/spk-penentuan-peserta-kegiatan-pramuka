@@ -1295,93 +1295,121 @@ def admin_penugasan_penilai():
     # Build assignment matrix
     assignments = {}
     for evaluator in evaluators:
-        # Safely get assigned events, handle if relationship doesn't exist
-        try:
-            assigned_event_ids = [e.id_kegiatan for e in evaluator.assigned_events if e and hasattr(e, 'id_kegiatan')]
-        except:
-            assigned_event_ids = []
-        assignments[evaluator.id] = assigned_event_ids
+        evaluator_assignments = {}
+        
+        # Get assigned criteria grouped by event
+        # We assume evaluator.assigned_criteria exists due to the backref in Criteria model
+        if hasattr(evaluator, 'assigned_criteria'):
+            for criterion in evaluator.assigned_criteria:
+                if criterion.event_id not in evaluator_assignments:
+                    evaluator_assignments[criterion.event_id] = []
+                evaluator_assignments[criterion.event_id].append(criterion.id_kriteria)
+        
+        assignments[evaluator.id] = evaluator_assignments
     
+    # Prepare criteria data for frontend
+    events_criteria = {}
+    for event in events:
+        events_criteria[event.id_kegiatan] = [
+            {'id': c.id_kriteria, 'nama': c.nama_kriteria} 
+            for c in event.kriteria
+        ]
+
     return render_template(
         "manajemen-seleksi/penugasan_penilai.html", 
         events=events,
         evaluators=evaluators,
         assignments=assignments,
+        events_criteria=events_criteria,
         sidebar_state=sidebar_state
     )
 
-# API untuk assign evaluator ke event
+# API untuk update penugasan kriteria penilai
+@app.route('/api/update_evaluator_criteria', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def update_evaluator_criteria():
+    try:
+        data = request.get_json()
+        event_id = data.get('event_id')
+        evaluator_id = data.get('evaluator_id')
+        criteria_ids = data.get('criteria_ids', []) # List of selected criteria IDs
+        
+        if not event_id or not evaluator_id:
+            return jsonify({'status': 'error', 'message': 'Missing parameters'}), 400
+        
+        event = Event.query.get_or_404(event_id)
+        evaluator = Users.query.get_or_404(evaluator_id)
+        
+        # 1. Update Criteria Assignment
+        # Get all criteria for this event
+        event_criteria = Criteria.query.filter_by(event_id=event_id).all()
+        
+        # Remove evaluator from all event criteria first
+        for criterion in event_criteria:
+            if evaluator in criterion.evaluators:
+                criterion.evaluators.remove(evaluator)
+        
+        # Add evaluator to selected criteria
+        for c_id in criteria_ids:
+            criterion = Criteria.query.get(c_id)
+            if criterion and criterion.event_id == int(event_id):
+                criterion.evaluators.append(evaluator)
+        
+        # 2. Sync with Event Assignment (tb_event_evaluator)
+        # If evaluator has ANY criteria assigned, they should be in event.evaluators
+        # If they have NO criteria assigned, they should be removed from event.evaluators (subject to min 3 rule)
+        
+        has_criteria = len(criteria_ids) > 0
+        
+        if has_criteria:
+            if evaluator not in event.evaluators:
+                event.evaluators.append(evaluator)
+        else:
+            # Trying to remove evaluator from event completely
+            if evaluator in event.evaluators:
+                # Check min 3 rule
+                # We need to count how many evaluators are assigned to this event
+                # excluding the current one if we are about to remove them
+                current_evaluator_count = len(event.evaluators)
+                
+                if current_evaluator_count <= 3:
+                     # Revert criteria changes? 
+                     # Or just block the whole operation if it results in < 3 evaluators?
+                     # But wait, maybe they just wanted to change criteria, not remove the user?
+                     # If criteria_ids is empty, it means they are being unassigned.
+                     
+                     db.session.rollback()
+                     return jsonify({
+                         'status': 'error', 
+                         'message': 'Minimal 3 penilai harus ditugaskan! Tidak dapat menghapus penilai ini.'
+                     }), 400
+                
+                event.evaluators.remove(evaluator)
+        
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Penugasan berhasil diperbarui'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error updating evaluator criteria:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Legacy API (kept for reference or fallback, but logic moved to update_evaluator_criteria)
 @app.route('/api/assign_evaluator', methods=['POST'])
 @login_required
 @admin_required
 @csrf.exempt
 def assign_evaluator():
-    try:
-        data = request.get_json()
-        event_id = data.get('event_id')
-        evaluator_id = data.get('evaluator_id')
-        
-        if not event_id or not evaluator_id:
-            return jsonify({'status': 'error', 'message': 'Missing parameters'}), 400
-        
-        event = Event.query.get_or_404(event_id)
-        evaluator = Users.query.get_or_404(evaluator_id)
-        
-        if evaluator.level != 'penilai':
-            return jsonify({'status': 'error', 'message': 'User is not an evaluator'}), 400
-        
-        # Check if already assigned
-        if evaluator in event.evaluators:
-            return jsonify({'status': 'info', 'message': 'Evaluator already assigned'}), 200
-        
-        event.evaluators.append(evaluator)
-        db.session.commit()
-        
-        return jsonify({'status': 'success', 'message': 'Evaluator assigned successfully'}), 200
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.exception('Error assigning evaluator:')
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    return jsonify({'status': 'error', 'message': 'Please use criteria assignment'}), 400
 
-# API untuk unassign evaluator dari event
 @app.route('/api/unassign_evaluator', methods=['POST'])
 @login_required
 @admin_required
 @csrf.exempt
 def unassign_evaluator():
-    try:
-        data = request.get_json()
-        event_id = data.get('event_id')
-        evaluator_id = data.get('evaluator_id')
-        
-        if not event_id or not evaluator_id:
-            return jsonify({'status': 'error', 'message': 'Missing parameters'}), 400
-        
-        event = Event.query.get_or_404(event_id)
-        evaluator = Users.query.get_or_404(evaluator_id)
-        
-        # Check if assigned
-        if evaluator not in event.evaluators:
-            return jsonify({'status': 'info', 'message': 'Evaluator not assigned'}), 200
-            
-        # Validasi minimal 3 penilai
-        # Kita blokir jika jumlah penilai == 3 untuk menjaga batas minimal.
-        # Jika jumlah penilai < 3 (sedang proses input), kita izinkan hapus untuk koreksi.
-        # Jika jumlah penilai > 3, aman untuk dihapus.
-        if len(event.evaluators) == 3:
-             return jsonify({
-                 'status': 'error', 
-                 'message': 'Minimal 3 penilai harus ditugaskan! Tambahkan penilai lain sebelum menghapus.'
-             }), 400
-        
-        event.evaluators.remove(evaluator)
-        db.session.commit()
-        
-        return jsonify({'status': 'success', 'message': 'Evaluator unassigned successfully'}), 200
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.exception('Error unassigning evaluator:')
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+     return jsonify({'status': 'error', 'message': 'Please use criteria assignment'}), 400
 
 # API untuk get assignments
 @app.route('/api/get_assignments')
@@ -2513,7 +2541,14 @@ def penilai_input_score(event_id, participant_id):
     participant_biodata = Participants.query.filter_by(email=participant_user.email).first()
     
     # Ambil kriteria untuk event ini
-    criterias = Criteria.query.filter_by(event_id=event_id).all()
+    # Filter berdasarkan penugasan
+    user_assigned_criteria = [c for c in current_user.assigned_criteria if c.event_id == event_id]
+    
+    if user_assigned_criteria:
+        criterias = user_assigned_criteria
+    else:
+        # Fallback: jika tidak ada assignment spesifik (legacy), tampilkan semua
+        criterias = Criteria.query.filter_by(event_id=event_id).all()
     
     # Ambil himpunan kriteria untuk dropdown
     for c in criterias:

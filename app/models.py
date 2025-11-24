@@ -75,6 +75,12 @@ class Kuota(db.Model):
     putra = db.Column(db.Integer, default=0)
     putri = db.Column(db.Integer, default=0)   
 
+# Association Table for Evaluator and Criteria
+tb_evaluator_criteria = db.Table('tb_evaluator_criteria',
+    db.Column('criteria_id', db.Integer, db.ForeignKey('tb_kriteria.id_kriteria'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
+)
+
 # Access to table tb_kriteria
 class Criteria(db.Model):
     __tablename__ = 'tb_kriteria'
@@ -86,6 +92,10 @@ class Criteria(db.Model):
     deskripsi = db.Column(db.Text, nullable=False)
     jenis_kriteria = db.Column(db.String(255), nullable=False)
     jumlah_soal = db.Column(db.Integer, nullable=True)
+    
+    # Relationship with Evaluators
+    evaluators = db.relationship('Users', secondary=tb_evaluator_criteria, lazy='subquery',
+        backref=db.backref('assigned_criteria', lazy=True))
     
 # Access to table notifications
 class Notification(db.Model):
