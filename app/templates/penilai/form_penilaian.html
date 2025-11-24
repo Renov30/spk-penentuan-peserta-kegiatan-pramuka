@@ -9,6 +9,38 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {% include "script_sidebar.html" %}
     {% include 'script_theme.html' %}
+    <style>
+        /* Likert Scale Radio Button Styles */
+        label.selected {
+            border-color: #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        label.selected .w-4.h-4.rounded-full {
+            border-color: #3b82f6 !important;
+            background-color: #3b82f6 !important;
+        }
+        label.selected .w-4.h-4.rounded-full .w-2.h-2 {
+            opacity: 1 !important;
+        }
+        label.selected span:first-of-type {
+            color: #3b82f6 !important;
+        }
+        /* Initialize checked state on page load */
+        label:has(input:checked) {
+            border-color: #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        label:has(input:checked) .w-4.h-4.rounded-full {
+            border-color: #3b82f6 !important;
+            background-color: #3b82f6 !important;
+        }
+        label:has(input:checked) .w-4.h-4.rounded-full .w-2.h-2 {
+            opacity: 1 !important;
+        }
+        label:has(input:checked) span:first-of-type {
+            color: #3b82f6 !important;
+        }
+    </style>
 </head>
 <body class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
       :class="{ 'dark': $store.theme?.isDark }">
@@ -101,21 +133,19 @@
                                                         ] %}
                                                         
                                                         {% for value, label in likert_scale %}
-                                                        <label class="relative flex flex-col items-center p-3 rounded-lg border cursor-pointer transition-all hover:bg-opacity-50 {{ 'border-gray-600 hover:bg-gray-700' if current_theme == 'dark' else 'border-gray-200 hover:bg-blue-50' }}">
+                                                        <label class="relative flex flex-col items-center p-3 rounded-lg border cursor-pointer transition-all hover:bg-opacity-50 {{ 'border-gray-600 hover:bg-gray-700' if current_theme == 'dark' else 'border-gray-200 hover:bg-blue-50' }}" style="user-select: none;">
                                                             <input type="radio" name="score_{{ criteria.id_kriteria }}" value="{{ value }}" required
                                                                    {{ 'checked' if existing_scores.get(criteria.id_kriteria) == value }}
-                                                                   class="peer sr-only">
+                                                                   class="absolute opacity-0 w-0 h-0"
+                                                                   onchange="this.parentElement.parentElement.querySelectorAll('label').forEach(l => l.classList.remove('selected')); this.parentElement.classList.add('selected');">
                                                             
                                                             <!-- Visual State -->
-                                                            <div class="w-4 h-4 rounded-full border-2 mb-2 flex items-center justify-center peer-checked:border-blue-500 peer-checked:bg-blue-500 {{ 'border-gray-400' if current_theme == 'dark' else 'border-gray-300' }}">
-                                                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                                                            <div class="w-4 h-4 rounded-full border-2 mb-2 flex items-center justify-center {{ 'border-gray-400' if current_theme == 'dark' else 'border-gray-300' }}" style="pointer-events: none;">
+                                                                <div class="w-2 h-2 rounded-full bg-white opacity-0" style="pointer-events: none;"></div>
                                                             </div>
                                                             
-                                                            <span class="text-lg font-bold mb-1 {{ 'peer-checked:text-blue-400' if current_theme == 'dark' else 'peer-checked:text-blue-600' }}">{{ value }}</span>
-                                                            <span class="text-xs text-center leading-tight opacity-80">{{ label }}</span>
-                                                            
-                                                            <!-- Active Border Highlight -->
-                                                            <div class="absolute inset-0 rounded-lg border-2 border-transparent peer-checked:border-blue-500 pointer-events-none"></div>
+                                                            <span class="text-lg font-bold mb-1" style="pointer-events: none;">{{ value }}</span>
+                                                            <span class="text-xs text-center leading-tight opacity-80" style="pointer-events: none;">{{ label }}</span>
                                                         </label>
                                                         {% endfor %}
                                                     </div>
