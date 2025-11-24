@@ -118,7 +118,7 @@
                                             <input 
                                                 type="checkbox" 
                                                 :checked="isAssigned({{ evaluator.id }}, {{ event.id_kegiatan }})"
-                                                @change="toggleAssignment({{ evaluator.id }}, {{ event.id_kegiatan }}, $event.target.checked)"
+                                                @change="toggleAssignment({{ evaluator.id }}, {{ event.id_kegiatan }}, $event.target)"
                                                 class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
                                             >
                                         </td>
@@ -158,10 +158,25 @@
                                                 {{ evaluator.nama_lengkap }}
                                             </div>
                                             {% endfor %}
+                                            
+                                            {% if event.evaluators|length < 3 %}
+                                            <div class="mt-2 pt-2 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+                                                <p class="text-xs text-red-500 font-semibold flex items-center gap-1">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                                    {{ 'Minimal 3 penilai diperlukan' if current_lang == 'id' else 'Minimum 3 evaluators required' }}
+                                                </p>
+                                            </div>
+                                            {% endif %}
                                         {% else %}
                                         <p class="text-sm {{ 'text-gray-500' if current_theme == 'dark' else 'text-gray-400' }}">
                                             {{ 'Belum ada penilai ditugaskan' if current_lang == 'id' else 'No evaluators assigned' }}
                                         </p>
+                                        <div class="mt-2 pt-2 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+                                            <p class="text-xs text-red-500 font-semibold flex items-center gap-1">
+                                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                                {{ 'Minimal 3 penilai diperlukan' if current_lang == 'id' else 'Minimum 3 evaluators required' }}
+                                            </p>
+                                        </div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -183,7 +198,8 @@
                     return this.assignments[evaluatorId] && this.assignments[evaluatorId].includes(eventId);
                 },
                 
-                async toggleAssignment(evaluatorId, eventId, isChecked) {
+                async toggleAssignment(evaluatorId, eventId, target) {
+                    const isChecked = target.checked;
                     const url = isChecked ? '/api/assign_evaluator' : '/api/unassign_evaluator';
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
                     
@@ -230,10 +246,14 @@
                             setTimeout(() => location.reload(), 1500);
                         } else {
                             showNotification(data.message, 'error');
+                            // Revert checkbox state
+                            target.checked = !isChecked;
                         }
                     } catch (error) {
                         console.error('Error:', error);
                         showNotification('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}', 'error');
+                        // Revert checkbox state
+                        target.checked = !isChecked;
                     }
                 }
             }

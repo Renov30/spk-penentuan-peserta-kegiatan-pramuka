@@ -1363,6 +1363,16 @@ def unassign_evaluator():
         # Check if assigned
         if evaluator not in event.evaluators:
             return jsonify({'status': 'info', 'message': 'Evaluator not assigned'}), 200
+            
+        # Validasi minimal 3 penilai
+        # Kita blokir jika jumlah penilai == 3 untuk menjaga batas minimal.
+        # Jika jumlah penilai < 3 (sedang proses input), kita izinkan hapus untuk koreksi.
+        # Jika jumlah penilai > 3, aman untuk dihapus.
+        if len(event.evaluators) == 3:
+             return jsonify({
+                 'status': 'error', 
+                 'message': 'Minimal 3 penilai harus ditugaskan! Tambahkan penilai lain sebelum menghapus.'
+             }), 400
         
         event.evaluators.remove(evaluator)
         db.session.commit()
@@ -2990,3 +3000,4 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
+ 
