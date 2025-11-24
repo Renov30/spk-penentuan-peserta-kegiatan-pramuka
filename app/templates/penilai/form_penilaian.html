@@ -90,11 +90,35 @@
                                                     {% endfor %}
                                                 </select>
                                             {% else %}
-                                                <div class="flex items-center gap-3">
-                                                    <input type="number" step="0.01" name="score_{{ criteria.id_kriteria }}" required
-                                                           value="{{ existing_scores.get(criteria.id_kriteria, '') }}"
-                                                           placeholder="0-100"
-                                                           class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}">
+                                                <div class="space-y-2">
+                                                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                                                        {% set likert_scale = [
+                                                            (1, 'Sangat Buruk/Sangat Tidak Aktif'),
+                                                            (2, 'Buruk/Tidak Aktif'),
+                                                            (3, 'Cukup'),
+                                                            (4, 'Baik/Aktif'),
+                                                            (5, 'Sangat Baik/Sangat Aktif')
+                                                        ] %}
+                                                        
+                                                        {% for value, label in likert_scale %}
+                                                        <label class="relative flex flex-col items-center p-3 rounded-lg border cursor-pointer transition-all hover:bg-opacity-50 {{ 'border-gray-600 hover:bg-gray-700' if current_theme == 'dark' else 'border-gray-200 hover:bg-blue-50' }}">
+                                                            <input type="radio" name="score_{{ criteria.id_kriteria }}" value="{{ value }}" required
+                                                                   {{ 'checked' if existing_scores.get(criteria.id_kriteria) == value }}
+                                                                   class="peer sr-only">
+                                                            
+                                                            <!-- Visual State -->
+                                                            <div class="w-4 h-4 rounded-full border-2 mb-2 flex items-center justify-center peer-checked:border-blue-500 peer-checked:bg-blue-500 {{ 'border-gray-400' if current_theme == 'dark' else 'border-gray-300' }}">
+                                                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                                                            </div>
+                                                            
+                                                            <span class="text-lg font-bold mb-1 {{ 'peer-checked:text-blue-400' if current_theme == 'dark' else 'peer-checked:text-blue-600' }}">{{ value }}</span>
+                                                            <span class="text-xs text-center leading-tight opacity-80">{{ label }}</span>
+                                                            
+                                                            <!-- Active Border Highlight -->
+                                                            <div class="absolute inset-0 rounded-lg border-2 border-transparent peer-checked:border-blue-500 pointer-events-none"></div>
+                                                        </label>
+                                                        {% endfor %}
+                                                    </div>
                                                 </div>
                                             {% endif %}
                                         </div>
