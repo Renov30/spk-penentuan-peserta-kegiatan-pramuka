@@ -101,11 +101,23 @@
                         <div class="rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
                             <div class="p-6">
                                 <!-- Criteria Title -->
-                                <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
-                                        {{ criteria.nama_kriteria }}
-                                    </h3>
-                                    <p class="text-sm opacity-70">{{ criteria.deskripsi }}</p>
+                                <div class="mb-6 flex justify-between items-start">
+                                    <div>
+                                        <h3 class="text-lg font-bold mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                                            {{ criteria.nama_kriteria }}
+                                        </h3>
+                                        <p class="text-sm opacity-70">{{ criteria.deskripsi }}</p>
+                                    </div>
+                                    
+                                    {% if criteria.id_kriteria in assigned_criteria_ids %}
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                        {{ 'Ditugaskan ke Anda' if current_lang == 'id' else 'Assigned to You' }}
+                                    </span>
+                                    {% else %}
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                        {{ 'Read Only' }}
+                                    </span>
+                                    {% endif %}
                                 </div>
 
                                 {% if criteria.jenis_kriteria == 'kualitatif' %}

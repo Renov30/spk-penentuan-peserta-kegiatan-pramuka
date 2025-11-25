@@ -2670,26 +2670,31 @@ def penilai_view_score(event_id, participant_id):
         
         participant_biodata = ParticipantData(participant_user)
     
-    # Ambil kriteria untuk event ini
-    user_assigned_criteria = [c for c in current_user.assigned_criteria if c.event_id == event_id]
+    # Ambil SEMUA kriteria untuk event ini
+    all_criterias = Criteria.query.filter_by(event_id=event_id).all()
     
-    if user_assigned_criteria:
-        criterias = user_assigned_criteria
-    else:
-        criterias = Criteria.query.filter_by(event_id=event_id).all()
+    # Identifikasi kriteria yang ditugaskan ke user ini
+    assigned_criteria_ids = [c.id_kriteria for c in current_user.assigned_criteria if c.event_id == event_id]
     
     # Ambil himpunan kriteria untuk dropdown
-    for c in criterias:
+    for c in all_criterias:
         c.himpunan = HimpunanKriteria.query.filter_by(id_kriteria=c.id_kriteria).all()
         
-    # Ambil nilai yang sudah ada
+    # Ambil SEMUA nilai yang sudah ada untuk peserta ini (dari penilai manapun)
     existing_scores = {}
     scores_query = Penilaian.query.filter_by(
-        id_users=participant_id,
-        evaluator_id=current_user.id
+        id_users=participant_id
     ).all()
+    
+    # Mapping nilai: Prioritaskan nilai dari current_user jika ada, jika tidak pakai nilai orang lain
+    # (Dalam sistem ideal, mungkin kita ingin menampilkan siapa yang menilai, tapi untuk sekarang kita ambil nilai 'terbaru' atau 'milik sendiri')
     for s in scores_query:
-        existing_scores[s.id_kriteria] = s.nilai
+        # Jika belum ada di map, masukkan
+        if s.id_kriteria not in existing_scores:
+            existing_scores[s.id_kriteria] = s.nilai
+        # Jika sudah ada, tapi ini punya current_user, timpa (karena kita ingin lihat nilai kita sendiri jika ada)
+        elif s.evaluator_id == current_user.id:
+            existing_scores[s.id_kriteria] = s.nilai
 
     sidebar_state = current_user.sidebar_state or 'expanded'
 
@@ -2697,7 +2702,8 @@ def penilai_view_score(event_id, participant_id):
         'penilai/view_penilaian.html',
         event=event,
         participant=participant_biodata,
-        criterias=criterias,
+        criterias=all_criterias,
+        assigned_criteria_ids=assigned_criteria_ids,
         existing_scores=existing_scores,
         sidebar_state=sidebar_state
     )
