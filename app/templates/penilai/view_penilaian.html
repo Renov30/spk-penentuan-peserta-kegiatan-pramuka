@@ -204,6 +204,37 @@
                     </p>
                     {% endif %}
                   </div>
+                  {% elif criteria.jenis_kriteria == 'kuantitatif' %}
+                  <!-- Quantitative Criteria (Read-Only) -->
+                  <div
+                    class="p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }}"
+                  >
+                    {% set current_value =
+                    existing_scores.get(criteria.id_kriteria) %} {% if
+                    current_value %}
+                    <div class="flex items-center gap-3">
+                      <i
+                        class="fa-solid fa-check-circle text-green-500 text-xl"
+                      ></i>
+                      <div>
+                        <p
+                          class="font-bold text-2xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                        >
+                          {{ current_value }}
+                        </p>
+                        <p class="text-sm opacity-70">
+                          {{ 'Skor dari 100' if current_lang == 'id' else 'Score
+                          out of 100' }}
+                        </p>
+                      </div>
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 italic">
+                      {{ 'Belum dinilai' if current_lang == 'id' else 'Not
+                      graded yet' }}
+                    </p>
+                    {% endif %}
+                  </div>
                   {% else %}
                   <!-- Likert Scale (Read-Only) -->
                   {% set likert_scale = [ (1, 'Sangat Buruk/Sangat Tidak
