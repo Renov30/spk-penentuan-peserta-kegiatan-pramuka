@@ -138,13 +138,13 @@
               x-show="$store.sidebar.open"
               class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
             >
-              {{ 'Biodata Penilai' if current_lang == 'id' else 'Evaluator Profile' }}
+              {{ 'Data Penilai' if current_lang == 'id' else 'Evaluator Data' }}
             </span>
             <span
               x-show="!$store.sidebar.open"
               class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
             >
-              {{ 'Biodata Penilai' if current_lang == 'id' else 'Evaluator Profile' }}
+              {{ 'Data Penilai' if current_lang == 'id' else 'Evaluator Data' }}
             </span>
           </a>
         </li>

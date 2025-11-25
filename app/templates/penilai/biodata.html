@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html
+  class="transition duration-300 ease-in-out"
+  lang="{{ current_lang }}"
+  x-data
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>
+      {{ 'Data Penilai | SPK Pramuka' if current_lang == 'id' else
+      'Evaluator Data | Scout DSS' }}
+    </title>
+
+    <!-- Tailwind CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/output.css') }}"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    />
+
+    <!-- Alpine.js -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <!-- Script Sidebar -->
+    {% include "script_sidebar.html" %}
+
+    <!-- Script Theme -->
+    {% include 'script_theme.html' %}
+  </head>
+  <body
+    x-data="{ ready: false }"
+    x-init="ready = true"
+    :class="{ 'dark': $store.theme?.isDark }"
+    x-bind:class="{
+        'bg-background-dark text-white': $store.theme?.isDark,
+        'bg-gray-100 text-black': !$store.theme?.isDark
+      }"
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+  >
+    <div
+      class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      <!-- Sidebar -->
+      {% include 'sidebar.html' %}
+
+      <!-- Main content -->
+      <div class="flex flex-col flex-1 overflow-hidden h-full">
+        <!-- Top Navbar -->
+        {% include 'header.html' %}
+
+        <!-- Page Content -->
+        <main
+          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
+        >
+          <section
+            class="flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+          >
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
+            <!-- Content -->
+            <div class="container mx-auto p-6">
+              <div class="flex items-center justify-between mb-6">
+                <h1
+                  class="text-3xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                >
+                  {{ 'Data Penilai' if current_lang == 'id' else 'Evaluator Data' }}
+                </h1>
+              </div>
+
+              <!-- Form Data Penilai -->
+              <div
+                class="rounded-xl shadow-lg p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+              >
+                <form
+                  action="{{ url_for('penilai_biodata') }}"
+                  method="POST"
+                  enctype="multipart/form-data"
+                  class="space-y-6"
+                >
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  
+                  <!-- Foto Profil -->
+                  <div class="flex flex-col items-center mb-6">
+                    <div class="relative mb-4" style="width: 120px; height: 120px;">
+                      <img
+                        src="{{ url_for('static', filename='images/profil-default.jpg') if not user.foto or user.foto == 'img/default-user.png' else url_for('static', filename=user.foto) }}"
+                        alt="Profile Photo"
+                        class="rounded-full object-cover border-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                        style="width: 120px; height: 120px; object-fit: cover;"
+                        id="preview-foto"
+                      />
+                      <label
+                        for="foto"
+                        class="absolute bottom-0 right-0 bg-blue-500 text-white w-12 h-12 flex items-center justify-center rounded-full cursor-pointer hover:bg-blue-600 transition shadow-lg border-2 {{ 'border-gray-900' if current_theme == 'dark' else 'border-white' }}"
+                        style="right: 0px; bottom: 0px;"
+                      >
+                        <i class="fa-solid fa-camera text-lg"></i>
+                      </label>
+                      <input
+                        type="file"
+                        id="foto"
+                        name="foto"
+                        class="hidden"
+                        accept="image/*"
+                        onchange="previewImage(this)"
+                      />
+                    </div>
+                    <p class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}">
+                      {{ 'Klik ikon kamera untuk mengubah foto' if current_lang == 'id' else 'Click camera icon to change photo' }}
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Nama Lengkap -->
+                    <div>
+                      <label class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                        {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }} <span class="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="nama_lengkap"
+                        value="{{ user.nama_lengkap }}"
+                        required
+                        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-50 border-gray-300 text-gray-900' }}"
+                      />
+                    </div>
+
+                    <!-- Email (Read Only) -->
+                    <div>
+                      <label class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value="{{ user.email }}"
+                        readonly
+                        class="w-full px-4 py-2 rounded-lg border cursor-not-allowed {{ 'bg-gray-700 border-gray-600 text-gray-400' if current_theme == 'dark' else 'bg-gray-200 border-gray-300 text-gray-500' }}"
+                      />
+                    </div>
+
+                    <!-- Usia -->
+                    <div>
+                      <label class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                        {{ 'Usia' if current_lang == 'id' else 'Age' }} <span class="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="usia"
+                        value="{{ user.usia }}"
+                        required
+                        min="0"
+                        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-50 border-gray-300 text-gray-900' }}"
+                      />
+                    </div>
+
+                    <!-- Jenis Kelamin -->
+                    <div>
+                      <label class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                        {{ 'Jenis Kelamin' if current_lang == 'id' else 'Gender' }} <span class="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="jenis_kelamin"
+                        required
+                        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-50 border-gray-300 text-gray-900' }}"
+                      >
+                        <option value="">{{ 'Pilih Jenis Kelamin' if current_lang == 'id' else 'Select Gender' }}</option>
+                        <option value="laki-laki" {{ 'selected' if user.jenis_kelamin == 'laki-laki' }}>{{ 'Laki-laki' if current_lang == 'id' else 'Male' }}</option>
+                        <option value="perempuan" {{ 'selected' if user.jenis_kelamin == 'perempuan' }}>{{ 'Perempuan' if current_lang == 'id' else 'Female' }}</option>
+                      </select>
+                    </div>
+
+                    <!-- Nomor HP -->
+                    <div>
+                      <label class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                        {{ 'Nomor HP' if current_lang == 'id' else 'Phone Number' }} <span class="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        name="nomor_hp"
+                        value="{{ user.nomor_hp }}"
+                        required
+                        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-50 border-gray-300 text-gray-900' }}"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex justify-end pt-6 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
+                    <button
+                      type="submit"
+                      class="px-6 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg flex items-center gap-2"
+                    >
+                      <i class="fa-solid fa-save"></i>
+                      {{ 'Simpan Data' if current_lang == 'id' else 'Save Data' }}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      function previewImage(input) {
+        if (input.files && input.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            document.getElementById("preview-foto").src = e.target.result;
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+    </script>
+  </body>
+</html>

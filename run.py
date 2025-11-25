@@ -2708,17 +2708,51 @@ def penilai_view_score(event_id, participant_id):
         sidebar_state=sidebar_state
     )
 
-@app.route('/penilai/biodata')
+@app.route('/penilai/biodata', methods=['GET', 'POST'])
 @login_required
 def penilai_biodata():
     if current_user.level != 'penilai':
         flash("Anda tidak memiliki akses ke halaman ini.", "error")
         return redirect(url_for('index'))
     
+    if request.method == 'POST':
+        try:
+            nama_lengkap = request.form.get('nama_lengkap', '').strip()
+            usia = request.form.get('usia', '0').strip()
+            jenis_kelamin = request.form.get('jenis_kelamin', '').strip()
+            nomor_hp = request.form.get('nomor_hp', '').strip()
+            
+            # Update Users table
+            current_user.nama_lengkap = nama_lengkap
+            current_user.usia = usia
+            current_user.jenis_kelamin = jenis_kelamin
+            current_user.nomor_hp = nomor_hp
+            
+            # Handle photo upload if any
+            if 'foto' in request.files:
+                file = request.files['foto']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # Rename file to avoid conflict
+                    ext = filename.rsplit('.', 1)[1].lower()
+                    new_filename = f"{current_user.username}_{int(time.time())}.{ext}"
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
+                    current_user.foto = f"img/{new_filename}"
+            
+            db.session.commit()
+            flash("Data profil berhasil diperbarui!", "success")
+            return redirect(url_for('penilai_biodata'))
+            
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error updating evaluator data: {e}")
+            flash("Terjadi kesalahan saat menyimpan data.", "danger")
+    
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template(
         'penilai/biodata.html',
-        sidebar_state=sidebar_state
+        sidebar_state=sidebar_state,
+        user=current_user
     )
 
 @app.route('/penilai/hasil-penilaian')
