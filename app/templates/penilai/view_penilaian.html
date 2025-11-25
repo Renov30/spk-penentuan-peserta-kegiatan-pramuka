@@ -132,26 +132,32 @@
                                     </div>
                                 {% else %}
                                     <!-- Likert Scale (Read-Only) -->
-                                    <div class="flex items-center justify-between gap-4">
-                                        {% set likert_scale = [
-                                            (1, 'Sangat Buruk/Sangat Tidak Aktif'),
-                                            (2, 'Buruk/Tidak Aktif'),
-                                            (3, 'Cukup'),
-                                            (4, 'Baik/Aktif'),
-                                            (5, 'Sangat Baik/Sangat Aktif')
-                                        ] %}
-                                        
-                                        {% set current_value = existing_scores.get(criteria.id_kriteria) %}
-                                        
-                                        {% for value, label in likert_scale %}
-                                        <div class="flex flex-col items-center flex-1">
-                                            <div class="likert-circle mb-3 {{ 'selected' if current_value == value }}"></div>
-                                            <span class="text-xs text-center font-medium leading-tight {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
-                                                {{ label }}
-                                            </span>
+                                    {% set likert_scale = [
+                                        (1, 'Sangat Buruk/Sangat Tidak Aktif'),
+                                        (2, 'Buruk/Tidak Aktif'),
+                                        (3, 'Cukup'),
+                                        (4, 'Baik/Aktif'),
+                                        (5, 'Sangat Baik/Sangat Aktif')
+                                    ] %}
+                                    
+                                    {% set current_value = existing_scores.get(criteria.id_kriteria) %}
+                                    
+                                    {% if current_value %}
+                                        <div class="flex items-center justify-between gap-4">
+                                            {% for value, label in likert_scale %}
+                                            <div class="flex flex-col items-center flex-1">
+                                                <div class="likert-circle mb-3 {{ 'selected' if current_value == value }}"></div>
+                                                <span class="text-xs text-center font-medium leading-tight {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                                                    {{ label }}
+                                                </span>
+                                            </div>
+                                            {% endfor %}
                                         </div>
-                                        {% endfor %}
-                                    </div>
+                                    {% else %}
+                                        <div class="p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }}">
+                                            <p class="text-gray-500 italic">{{ 'Belum dinilai' if current_lang == 'id' else 'Not graded yet' }}</p>
+                                        </div>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
