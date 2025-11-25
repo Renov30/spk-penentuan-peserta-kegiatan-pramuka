@@ -2487,6 +2487,28 @@ def penilai_dashboard():
         sidebar_state=sidebar_state
     )
 
+@app.route('/penilai/penilaian')
+@login_required
+def penilai_penilaian():
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+
+    # Ambil semua kegiatan yang aktif
+    events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Tambahkan flag is_assigned untuk setiap event
+    for event in events:
+        event.is_assigned = current_user in event.evaluators
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+
+    return render_template(
+        'penilai/penilaian.html',
+        events=events,
+        sidebar_state=sidebar_state
+    )
+
 @app.route('/penilai/event/<int:event_id>/participants')
 @login_required
 def penilai_event_participants(event_id):
