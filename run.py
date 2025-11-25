@@ -2540,6 +2540,22 @@ def penilai_input_score(event_id, participant_id):
     participant_user = Users.query.get_or_404(participant_id)
     participant_biodata = Participants.query.filter_by(email=participant_user.email).first()
     
+    # If no biodata exists, create a temporary object with user data
+    if not participant_biodata:
+        # Create a simple object to hold the necessary data
+        class ParticipantData:
+            def __init__(self, user):
+                self.id = user.id
+                self.nama_lengkap = user.nama_lengkap or user.username
+                self.email = user.email
+                self.asal_gudep = ''
+                self.golongan = 'N/A'
+                self.tingkatan = 'N/A'
+                self.usia = user.usia or '0'
+                self.foto = user.foto or 'img/default-user.png'
+        
+        participant_biodata = ParticipantData(participant_user)
+    
     # Ambil kriteria untuk event ini
     # Filter berdasarkan penugasan
     user_assigned_criteria = [c for c in current_user.assigned_criteria if c.event_id == event_id]
