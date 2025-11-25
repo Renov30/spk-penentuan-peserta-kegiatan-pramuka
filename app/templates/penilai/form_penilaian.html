@@ -91,7 +91,7 @@
                         {{ 'Kembali ke Daftar Peserta' if current_lang == 'id' else 'Back to Participant List' }}
                     </a>
 
-                    <form action="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=participant.id) }}" method="POST">
+                    <form action="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=participant_user.id) }}" method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
                         <!-- Participant Header Card -->

@@ -1,198 +1,269 @@
 <!DOCTYPE html>
 <html lang="{{ current_lang }}" x-data>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ 'Lihat Penilaian | SPK Pramuka' if current_lang == 'id' else 'View Grading | Scout DSS' }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    {% include "script_sidebar.html" %}
-    {% include 'script_theme.html' %}
-    
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {{ 'Lihat Penilaian | SPK Pramuka' if current_lang == 'id' else 'View
+      Grading | Scout DSS' }}
+    </title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/output.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    {% include "script_sidebar.html" %} {% include 'script_theme.html' %}
+
     <style>
-        .likert-circle {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            border: 2px solid #d1d5db;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-        
-        .likert-circle.selected {
-            border-color: #3b82f6;
-            background: #3b82f6;
-        }
-        
-        .likert-circle.selected::after {
-            content: '';
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: white;
-            position: absolute;
-        }
+      .likert-circle {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        border: 2px solid #d1d5db;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .likert-circle.selected {
+        border-color: #3b82f6;
+        background: #3b82f6;
+      }
+
+      .likert-circle.selected::after {
+        content: "";
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        position: absolute;
+      }
     </style>
-</head>
-<body class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
-      :class="{ 'dark': $store.theme?.isDark }">
-    
-    <div class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}">
-        {% include 'sidebar.html' %}
+  </head>
+  <body
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+    :class="{ 'dark': $store.theme?.isDark }"
+  >
+    <div
+      class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      {% include 'sidebar.html' %}
 
-        <div class="flex flex-col flex-1 overflow-hidden h-full">
-            {% include 'header.html' %}
+      <div class="flex flex-col flex-1 overflow-hidden h-full">
+        {% include 'header.html' %}
 
-            <main class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
-                  :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'">
-                
-                <div class="container mx-auto p-6">
-                    <!-- Back Button -->
-                    <a href="{{ url_for('penilai_event_participants', event_id=event.id_kegiatan) }}" 
-                       class="inline-flex items-center text-sm hover:underline mb-6 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}">
-                        <i class="fa-solid fa-arrow-left"></i>
-                        {{ 'Kembali ke Daftar Peserta' if current_lang == 'id' else 'Back to Participant List' }}
-                    </a>
+        <main
+          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
+        >
+          <div class="container mx-auto p-6">
+            <!-- Back Button -->
+            <a
+              href="{{ url_for('penilai_event_participants', event_id=event.id_kegiatan) }}"
+              class="inline-flex items-center text-sm hover:underline mb-6 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
+            >
+              <i class="fa-solid fa-arrow-left"></i>
+              {{ 'Kembali ke Daftar Peserta' if current_lang == 'id' else 'Back
+              to Participant List' }}
+            </a>
 
-                    <!-- Participant Header Card -->
-                    <div class="rounded-xl shadow-lg overflow-hidden mb-6 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
-                        <div class="p-8 flex items-center gap-6">
-                            <img src="{{ url_for('static', filename=participant.foto) }}" 
-                                 alt="{{ participant.nama_lengkap }}" 
-                                 class="w-24 h-24 rounded-full object-cover border-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}">
-                            <div class="flex-1">
-                                <h1 class="text-2xl font-bold mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
-                                    {{ participant.nama_lengkap }}
-                                </h1>
-                                <p class="text-sm opacity-70 mb-3">{{ participant.asal_gudep }}</p>
-                                <div class="flex gap-6 text-sm">
-                                    <div>
-                                        <span class="opacity-70">{{ 'Golongan' if current_lang == 'id' else 'Group' }}:</span>
-                                        <span class="font-medium ml-1">{{ participant.golongan|title }}</span>
-                                    </div>
-                                    <div>
-                                        <span class="opacity-70">{{ 'Tingkatan' if current_lang == 'id' else 'Level' }}:</span>
-                                        <span class="font-medium ml-1">{{ participant.tingkatan|title }}</span>
-                                    </div>
-                                    <div>
-                                        <span class="opacity-70">{{ 'Usia' if current_lang == 'id' else 'Age' }}:</span>
-                                        <span class="font-medium ml-1">{{ participant.usia }} {{ 'Tahun' if current_lang == 'id' else 'Years' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <a href="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=participant.id) }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition shadow-md">
-                                    <i class="fa-solid fa-pen-to-square mr-2"></i>
-                                    {{ 'Edit Nilai' if current_lang == 'id' else 'Edit Score' }}
-                                </a>
-                            </div>
-                        </div>
+            <!-- Participant Header Card -->
+            <div
+              class="rounded-xl shadow-lg overflow-hidden mb-6 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+            >
+              <div class="p-8 flex items-center gap-6">
+                <img
+                  src="{{ url_for('static', filename=participant.foto) }}"
+                  alt="{{ participant.nama_lengkap }}"
+                  class="w-24 h-24 rounded-full object-cover border-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                />
+                <div class="flex-1">
+                  <h1
+                    class="text-2xl font-bold mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  >
+                    {{ participant.nama_lengkap }}
+                  </h1>
+                  <p class="text-sm opacity-70 mb-3">
+                    {{ participant.asal_gudep }}
+                  </p>
+                  <div class="flex gap-6 text-sm">
+                    <div>
+                      <span class="opacity-70"
+                        >{{ 'Golongan' if current_lang == 'id' else 'Group'
+                        }}:</span
+                      >
+                      <span class="font-medium ml-1"
+                        >{{ participant.golongan|title }}</span
+                      >
                     </div>
-
-                    <!-- Criteria Cards (Read-Only) -->
-                    <div class="space-y-4">
-                        {% for criteria in criterias %}
-                        <div class="rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
-                            <div class="p-6">
-                                <!-- Criteria Title -->
-                                <div class="mb-6 flex justify-between items-start">
-                                    <div>
-                                        <h3 class="text-lg font-bold mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
-                                            {{ criteria.nama_kriteria }}
-                                        </h3>
-                                        <p class="text-sm opacity-70">{{ criteria.deskripsi }}</p>
-                                    </div>
-                                    
-                                    {% if criteria.id_kriteria in assigned_criteria_ids %}
-                                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                                        {{ 'Ditugaskan ke Anda' if current_lang == 'id' else 'Assigned to You' }}
-                                    </span>
-                                    {% else %}
-                                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                                        {{ 'Read Only' }}
-                                    </span>
-                                    {% endif %}
-                                </div>
-
-                                {% if criteria.jenis_kriteria == 'kualitatif' %}
-                                    <!-- Qualitative Criteria (Read-Only) -->
-                                    <div class="p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }}">
-                                        {% set current_value = existing_scores.get(criteria.id_kriteria) %}
-                                        {% if current_value %}
-                                            {% for himpunan in criteria.himpunan %}
-                                                {% if himpunan.nilai_himpunan == current_value %}
-                                                    <div class="flex items-center gap-3">
-                                                        <i class="fa-solid fa-check-circle text-green-500 text-xl"></i>
-                                                        <div>
-                                                            <p class="font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
-                                                                {{ himpunan.nama_himpunan }}
-                                                            </p>
-                                                            <p class="text-sm opacity-70">{{ 'Nilai' if current_lang == 'id' else 'Score' }}: {{ himpunan.nilai_himpunan }}</p>
-                                                        </div>
-                                                    </div>
-                                                {% endif %}
-                                            {% endfor %}
-                                        {% else %}
-                                            <p class="text-gray-500 italic">{{ 'Belum dinilai' if current_lang == 'id' else 'Not graded yet' }}</p>
-                                        {% endif %}
-                                    </div>
-                                {% else %}
-                                    <!-- Likert Scale (Read-Only) -->
-                                    {% set likert_scale = [
-                                        (1, 'Sangat Buruk/Sangat Tidak Aktif'),
-                                        (2, 'Buruk/Tidak Aktif'),
-                                        (3, 'Cukup'),
-                                        (4, 'Baik/Aktif'),
-                                        (5, 'Sangat Baik/Sangat Aktif')
-                                    ] %}
-                                    
-                                    {% set current_value = existing_scores.get(criteria.id_kriteria) %}
-                                    
-                                    {% if current_value %}
-                                        <div class="flex items-center justify-between gap-4">
-                                            {% for value, label in likert_scale %}
-                                            <div class="flex flex-col items-center flex-1">
-                                                <div class="likert-circle mb-3 {{ 'selected' if current_value == value }}"></div>
-                                                <span class="text-xs text-center font-medium leading-tight {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
-                                                    {{ label }}
-                                                </span>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <div class="p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }}">
-                                            <p class="text-gray-500 italic">{{ 'Belum dinilai' if current_lang == 'id' else 'Not graded yet' }}</p>
-                                        </div>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
+                    <div>
+                      <span class="opacity-70"
+                        >{{ 'Tingkatan' if current_lang == 'id' else 'Level'
+                        }}:</span
+                      >
+                      <span class="font-medium ml-1"
+                        >{{ participant.tingkatan|title }}</span
+                      >
                     </div>
-
-                    <!-- Action Buttons -->
-                    <div class="mt-8 flex justify-between">
-                        <a href="{{ url_for('penilai_event_participants', event_id=event.id_kegiatan) }}" 
-                           class="px-8 py-4 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl shadow-lg transition-all hover:shadow-xl flex items-center gap-3">
-                            <i class="fa-solid fa-arrow-left text-lg"></i>
-                            <span>{{ 'Kembali' if current_lang == 'id' else 'Back' }}</span>
-                        </a>
-                        
-                        <a href="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=participant.id) }}" 
-                           class="px-8 py-4 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105 flex items-center gap-3">
-                            <i class="fa-solid fa-pen-to-square text-lg"></i>
-                            <span>{{ 'Edit Penilaian' if current_lang == 'id' else 'Edit Grading' }}</span>
-                        </a>
+                    <div>
+                      <span class="opacity-70"
+                        >{{ 'Usia' if current_lang == 'id' else 'Age' }}:</span
+                      >
+                      <span class="font-medium ml-1"
+                        >{{ participant.usia }} {{ 'Tahun' if current_lang ==
+                        'id' else 'Years' }}</span
+                      >
                     </div>
+                  </div>
                 </div>
-            </main>
-        </div>
+                <div class="text-right">
+                  <a
+                    href="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=participant_user.id) }}"
+                    class="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition shadow-md"
+                  >
+                    <i class="fa-solid fa-pen-to-square mr-2"></i>
+                    {{ 'Edit Nilai' if current_lang == 'id' else 'Edit Score' }}
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Criteria Cards (Read-Only) -->
+            <div class="space-y-4">
+              {% for criteria in criterias %}
+              <div
+                class="rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              >
+                <div class="p-6">
+                  <!-- Criteria Title -->
+                  <div class="mb-6 flex justify-between items-start">
+                    <div>
+                      <h3
+                        class="text-lg font-bold mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                      >
+                        {{ criteria.nama_kriteria }}
+                      </h3>
+                      <p class="text-sm opacity-70">{{ criteria.deskripsi }}</p>
+                    </div>
+
+                    {% if criteria.id_kriteria in assigned_criteria_ids %}
+                    <span
+                      class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200"
+                    >
+                      {{ 'Ditugaskan ke Anda' if current_lang == 'id' else
+                      'Assigned to You' }}
+                    </span>
+                    {% else %}
+                    <span
+                      class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200"
+                    >
+                      {{ 'Read Only' }}
+                    </span>
+                    {% endif %}
+                  </div>
+
+                  {% if criteria.jenis_kriteria == 'kualitatif' %}
+                  <!-- Qualitative Criteria (Read-Only) -->
+                  <div
+                    class="p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }}"
+                  >
+                    {% set current_value =
+                    existing_scores.get(criteria.id_kriteria) %} {% if
+                    current_value %} {% for himpunan in criteria.himpunan %} {%
+                    if himpunan.nilai_himpunan == current_value %}
+                    <div class="flex items-center gap-3">
+                      <i
+                        class="fa-solid fa-check-circle text-green-500 text-xl"
+                      ></i>
+                      <div>
+                        <p
+                          class="font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                        >
+                          {{ himpunan.nama_himpunan }}
+                        </p>
+                        <p class="text-sm opacity-70">
+                          {{ 'Nilai' if current_lang == 'id' else 'Score' }}: {{
+                          himpunan.nilai_himpunan }}
+                        </p>
+                      </div>
+                    </div>
+                    {% endif %} {% endfor %} {% else %}
+                    <p class="text-gray-500 italic">
+                      {{ 'Belum dinilai' if current_lang == 'id' else 'Not
+                      graded yet' }}
+                    </p>
+                    {% endif %}
+                  </div>
+                  {% else %}
+                  <!-- Likert Scale (Read-Only) -->
+                  {% set likert_scale = [ (1, 'Sangat Buruk/Sangat Tidak
+                  Aktif'), (2, 'Buruk/Tidak Aktif'), (3, 'Cukup'), (4,
+                  'Baik/Aktif'), (5, 'Sangat Baik/Sangat Aktif') ] %} {% set
+                  current_value = existing_scores.get(criteria.id_kriteria) %}
+                  {% if current_value %}
+                  <div class="flex items-center justify-between gap-4">
+                    {% for value, label in likert_scale %}
+                    <div class="flex flex-col items-center flex-1">
+                      <div
+                        class="likert-circle mb-3 {{ 'selected' if current_value == value }}"
+                      ></div>
+                      <span
+                        class="text-xs text-center font-medium leading-tight {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
+                      >
+                        {{ label }}
+                      </span>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% else %}
+                  <div
+                    class="p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }}"
+                  >
+                    <p class="text-gray-500 italic">
+                      {{ 'Belum dinilai' if current_lang == 'id' else 'Not
+                      graded yet' }}
+                    </p>
+                  </div>
+                  {% endif %} {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-8 flex justify-between">
+              <a
+                href="{{ url_for('penilai_event_participants', event_id=event.id_kegiatan) }}"
+                class="px-8 py-4 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl shadow-lg transition-all hover:shadow-xl flex items-center gap-3"
+              >
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+                <span>{{ 'Kembali' if current_lang == 'id' else 'Back' }}</span>
+              </a>
+
+              <a
+                href="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=participant_user.id) }}"
+                class="px-8 py-4 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105 flex items-center gap-3"
+              >
+                <i class="fa-solid fa-pen-to-square text-lg"></i>
+                <span
+                  >{{ 'Edit Penilaian' if current_lang == 'id' else 'Edit
+                  Grading' }}</span
+                >
+              </a>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
-</body>
+  </body>
 </html>

@@ -2603,6 +2603,14 @@ def penilai_input_score(event_id, participant_id):
 
     if request.method == 'POST':
         try:
+            # DEBUG LOGGING
+            with open('debug_scores.log', 'a') as f:
+                f.write(f"\n--- SAVING SCORES ---\n")
+                f.write(f"Participant ID (from route): {participant_id}\n")
+                f.write(f"Participant User ID: {participant_user.id}\n")
+                f.write(f"Evaluator ID: {current_user.id}\n")
+                f.write(f"Event ID: {event_id}\n")
+            
             for criteria in criterias:
                 score_val = request.form.get(f'score_{criteria.id_kriteria}')
                 if score_val:
@@ -2623,6 +2631,10 @@ def penilai_input_score(event_id, participant_id):
                             nilai=float(score_val)
                         )
                         db.session.add(penilaian)
+                    
+                    # DEBUG: Log what we're saving
+                    with open('debug_scores.log', 'a') as f:
+                        f.write(f"Saving: Criteria {criteria.id_kriteria}, Score {score_val}, id_users={participant_id}\n")
             
             db.session.commit()
             flash("Penilaian berhasil disimpan!", "success")
@@ -2639,6 +2651,7 @@ def penilai_input_score(event_id, participant_id):
         'penilai/form_penilaian.html',
         event=event,
         participant=participant_biodata,
+        participant_user=participant_user,
         criterias=criterias,
         existing_scores=existing_scores,
         sidebar_state=sidebar_state
@@ -2695,6 +2708,15 @@ def penilai_view_score(event_id, participant_id):
         # Jika sudah ada, tapi ini punya current_user, timpa (karena kita ingin lihat nilai kita sendiri jika ada)
         elif s.evaluator_id == current_user.id:
             existing_scores[s.id_kriteria] = s.nilai
+            
+    # DEBUG LOGGING TO FILE
+    with open('debug_scores.log', 'a') as f:
+        f.write(f"\n--- DEBUG: Viewing scores for Event {event_id}, Participant {participant_id} ---\n")
+        f.write(f"Found {len(all_criterias)} criteria\n")
+        f.write(f"Found {len(scores_query)} raw scores\n")
+        f.write(f"Existing Scores Map: {existing_scores}\n")
+        for c in all_criterias:
+            f.write(f"Criteria {c.id_kriteria} ({c.nama_kriteria}) - Score: {existing_scores.get(c.id_kriteria)}\n")
 
     sidebar_state = current_user.sidebar_state or 'expanded'
 
@@ -2702,6 +2724,7 @@ def penilai_view_score(event_id, participant_id):
         'penilai/view_penilaian.html',
         event=event,
         participant=participant_biodata,
+        participant_user=participant_user,
         criterias=all_criterias,
         assigned_criteria_ids=assigned_criteria_ids,
         existing_scores=existing_scores,
