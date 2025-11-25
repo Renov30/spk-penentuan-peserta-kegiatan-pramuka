@@ -73,11 +73,29 @@
                                             {% endif %}
                                         </td>
                                         <td class="p-4 text-center">
-                                            <a href="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=p.id) }}" 
-                                               class="inline-flex items-center px-4 py-2 {{ 'bg-yellow-500 hover:bg-yellow-600' if p.is_graded else 'bg-blue-600 hover:bg-blue-700' }} text-white text-sm font-medium rounded-lg transition shadow-md">
-                                                <i class="fa-solid fa-pen-to-square mr-2"></i>
-                                                {{ 'Edit Nilai' if p.is_graded else ('Beri Nilai' if current_lang == 'id' else 'Grade') }}
-                                            </a>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <!-- Tombol Beri Nilai / Edit Nilai -->
+                                                <a href="{{ url_for('penilai_input_score', event_id=event.id_kegiatan, participant_id=p.id) }}" 
+                                                   class="inline-flex items-center px-4 py-2 {{ 'bg-yellow-500 hover:bg-yellow-600' if p.is_graded else 'bg-blue-600 hover:bg-blue-700' }} text-white text-sm font-medium rounded-lg transition shadow-md">
+                                                    <i class="fa-solid fa-pen-to-square mr-2"></i>
+                                                    {{ 'Edit Nilai' if p.is_graded else ('Beri Nilai' if current_lang == 'id' else 'Grade') }}
+                                                </a>
+                                                
+                                                <!-- Tombol Lihat Nilai -->
+                                                {% if p.is_graded %}
+                                                <a href="{{ url_for('penilai_view_score', event_id=event.id_kegiatan, participant_id=p.id) }}" 
+                                                   class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition shadow-md">
+                                                    <i class="fa-solid fa-eye mr-2"></i>
+                                                    {{ 'Lihat Nilai' if current_lang == 'id' else 'View Score' }}
+                                                </a>
+                                                {% else %}
+                                                <button disabled
+                                                   class="inline-flex items-center px-4 py-2 bg-gray-400 text-gray-200 text-sm font-medium rounded-lg cursor-not-allowed opacity-50">
+                                                    <i class="fa-solid fa-eye mr-2"></i>
+                                                    {{ 'Lihat Nilai' if current_lang == 'id' else 'View Score' }}
+                                                </button>
+                                                {% endif %}
+                                            </div>
                                         </td>
                                     </tr>
                                     {% else %}

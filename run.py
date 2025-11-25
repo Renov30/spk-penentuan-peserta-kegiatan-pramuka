@@ -2644,6 +2644,64 @@ def penilai_input_score(event_id, participant_id):
         sidebar_state=sidebar_state
     )
 
+@app.route('/penilai/event/<int:event_id>/view/<int:participant_id>')
+@login_required
+def penilai_view_score(event_id, participant_id):
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    event = Event.query.get_or_404(event_id)
+    participant_user = Users.query.get_or_404(participant_id)
+    participant_biodata = Participants.query.filter_by(email=participant_user.email).first()
+    
+    # If no biodata exists, create a temporary object with user data
+    if not participant_biodata:
+        class ParticipantData:
+            def __init__(self, user):
+                self.id = user.id
+                self.nama_lengkap = user.nama_lengkap or user.username
+                self.email = user.email
+                self.asal_gudep = ''
+                self.golongan = 'N/A'
+                self.tingkatan = 'N/A'
+                self.usia = user.usia or '0'
+                self.foto = user.foto or 'img/default-user.png'
+        
+        participant_biodata = ParticipantData(participant_user)
+    
+    # Ambil kriteria untuk event ini
+    user_assigned_criteria = [c for c in current_user.assigned_criteria if c.event_id == event_id]
+    
+    if user_assigned_criteria:
+        criterias = user_assigned_criteria
+    else:
+        criterias = Criteria.query.filter_by(event_id=event_id).all()
+    
+    # Ambil himpunan kriteria untuk dropdown
+    for c in criterias:
+        c.himpunan = HimpunanKriteria.query.filter_by(id_kriteria=c.id_kriteria).all()
+        
+    # Ambil nilai yang sudah ada
+    existing_scores = {}
+    scores_query = Penilaian.query.filter_by(
+        id_users=participant_id,
+        evaluator_id=current_user.id
+    ).all()
+    for s in scores_query:
+        existing_scores[s.id_kriteria] = s.nilai
+
+    sidebar_state = current_user.sidebar_state or 'expanded'
+
+    return render_template(
+        'penilai/view_penilaian.html',
+        event=event,
+        participant=participant_biodata,
+        criterias=criterias,
+        existing_scores=existing_scores,
+        sidebar_state=sidebar_state
+    )
+
 @app.route('/penilai/biodata')
 @login_required
 def penilai_biodata():
