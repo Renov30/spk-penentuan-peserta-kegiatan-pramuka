@@ -2622,6 +2622,96 @@ def penilai_input_score(event_id, participant_id):
         sidebar_state=sidebar_state
     )
 
+@app.route('/penilai/biodata')
+@login_required
+def penilai_biodata():
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template(
+        'penilai/biodata.html',
+        sidebar_state=sidebar_state
+    )
+
+@app.route('/penilai/hasil-penilaian')
+@login_required
+def penilai_hasil_penilaian():
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    # Get all grading results by this evaluator
+    penilaian = db.session.query(
+        Penilaian, 
+        Users, 
+        Criteria,
+        Event
+    ).join(
+        Users, Penilaian.id_users == Users.id
+    ).join(
+        Criteria, Penilaian.id_kriteria == Criteria.id_kriteria
+    ).join(
+        Event, Criteria.event_id == Event.id_kegiatan
+    ).filter(
+        Penilaian.evaluator_id == current_user.id
+    ).order_by(
+        Event.waktu_pelaksanaan_dimulai.desc()
+    ).all()
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template(
+        'penilai/hasil_penilaian.html',
+        penilaian=penilaian,
+        sidebar_state=sidebar_state
+    )
+
+@app.route('/penilai/hasil-seleksi')
+@login_required
+def penilai_hasil_seleksi():
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    # Get all selection results
+    hasil_seleksi = db.session.query(
+        HasilSeleksi,
+        Users
+    ).join(
+        Users, HasilSeleksi.id_users == Users.id
+    ).order_by(
+        HasilSeleksi.ranking.asc()
+    ).all()
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template(
+        'penilai/hasil_seleksi.html',
+        hasil_seleksi=hasil_seleksi,
+        sidebar_state=sidebar_state
+    )
+
+@app.route('/penilai/notifikasi')
+@login_required
+def penilai_notifikasi():
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    # Get notifications for this evaluator
+    notifications = Notification.query.filter_by(
+        user_id=current_user.id
+    ).order_by(
+        Notification.created_at.desc()
+    ).all()
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template(
+        'penilai/notifikasi.html',
+        notifications=notifications,
+        sidebar_state=sidebar_state
+    )
+
 @app.route('/peserta/dashboard')
 @login_required
 def peserta_dashboard():
