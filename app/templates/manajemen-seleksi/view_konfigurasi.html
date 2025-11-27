@@ -1292,10 +1292,6 @@
         openEdit() {
           if (this.configData) {
             this.editData = JSON.parse(JSON.stringify(this.configData));
-            // Ensure batas_lolos has a default value if missing
-            if (!this.editData.event.batas_lolos) {
-              this.editData.event.batas_lolos = 3;
-            }
             this.editMode = true;
           }
         },
