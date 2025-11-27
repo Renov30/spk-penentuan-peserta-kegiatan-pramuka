@@ -2785,28 +2785,62 @@ def penilai_hasil_penilaian():
         flash("Anda tidak memiliki akses ke halaman ini.", "error")
         return redirect(url_for('index'))
     
-    # Get all grading results by this evaluator
-    penilaian = db.session.query(
-        Penilaian, 
-        Users, 
-        Criteria,
+    # 1. Trigger Perhitungan Fuzzy AHP untuk semua event yang dinilai oleh penilai ini
+    # Ambil event yang ditugaskan ke penilai ini
+    assigned_events = Event.query.filter(Event.evaluators.any(id=current_user.id)).all()
+    
+    from app.fuzzy_ahp import calculate_spk
+    
+    for event in assigned_events:
+        # Hitung ulang SPK untuk memastikan data terbaru
+        success, msg = calculate_spk(event.id_kegiatan)
+        if not success:
+            # Log error tapi jangan stop proses render, mungkin cuma belum ada data
+            logging.warning(f"Gagal hitung SPK untuk event {event.id_kegiatan}: {msg}")
+
+    # 2. Ambil Hasil Seleksi
+    # Kita filter berdasarkan user yang ikut event yang ditugaskan ke penilai ini
+    # Karena HasilSeleksi tidak punya event_id, kita join lewat Users -> Participants -> Event
+    
+    # Ambil ID event yang ditugaskan
+    event_ids = [e.id_kegiatan for e in assigned_events]
+    
+    hasil_seleksi = db.session.query(
+        HasilSeleksi,
+        Users,
+        Participants,
         Event
     ).join(
-        Users, Penilaian.id_users == Users.id
+        Users, HasilSeleksi.id_users == Users.id
     ).join(
-        Criteria, Penilaian.id_kriteria == Criteria.id_kriteria
+        Participants, Users.email == Participants.email # Link via email karena Participants terpisah
     ).join(
-        Event, Criteria.event_id == Event.id_kegiatan
+        Event, Participants.kegiatan_id == Event.id_kegiatan
     ).filter(
-        Penilaian.evaluator_id == current_user.id
+        Event.id_kegiatan.in_(event_ids)
     ).order_by(
-        Event.waktu_pelaksanaan_dimulai.desc()
+        Event.waktu_pelaksanaan_dimulai.desc(),
+        HasilSeleksi.ranking.asc()
     ).all()
     
+    # Group by Event for easier display
+    results_by_event = {}
+    for hasil, user, participant, event in hasil_seleksi:
+        if event.id_kegiatan not in results_by_event:
+            results_by_event[event.id_kegiatan] = {
+                'event': event,
+                'results': []
+            }
+        results_by_event[event.id_kegiatan]['results'].append({
+            'hasil': hasil,
+            'user': user,
+            'participant': participant
+        })
+
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template(
         'penilai/hasil_penilaian.html',
-        penilaian=penilaian,
+        results_by_event=results_by_event,
         sidebar_state=sidebar_state
     )
 
