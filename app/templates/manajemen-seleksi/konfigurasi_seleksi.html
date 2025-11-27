@@ -233,481 +233,286 @@
             <i class="fa-solid fa-square-check text-green-600"></i>
           </template>
         </button>
-        <button
-          :disabled="!completed.kontingen"
-          @click="tab = 'kriteria'"
-          :class="['px-4 py-2 font-medium cursor-pointer', tab==='kriteria' ? 'border-b-2 {{ 'border-blue-500 text-blue-500' if current_theme == 'dark' else 'border-blue-700 text-blue-700' }} cursor-not-allowed' : '{{ 'text-gray-200' if current_theme == 'dark' else 'text-gray-900' }}']"
-        >
-          {{ 'Kriteria Seleksi' if current_lang == 'id' else 'Criteria' }}
-          <template x-if="completed.kriteria">
-            <i class="fa-solid fa-square-check text-green-600"></i>
-          </template>
-        </button>
-      </div>
+            <button
+              :disabled="!completed.kontingen"
+              @click="tab = 'kriteria'"
+              :class="['px-4 py-2 font-medium cursor-pointer', tab==='kriteria' ? 'border-b-2 {{ 'border-blue-500 text-blue-500' if current_theme == 'dark' else 'border-blue-700 text-blue-700' }} cursor-not-allowed' : '{{ 'text-gray-200' if current_theme == 'dark' else 'text-gray-900' }}']"
+            >
+              {{ 'Kriteria Seleksi' if current_lang == 'id' else 'Criteria' }}
+              <template x-if="completed.kriteria">
+                <i class="fa-solid fa-square-check text-green-600"></i>
+              </template>
+            </button>
+            <button
+              :disabled="!completed.kriteria"
+              @click="tab = 'ranking'"
+              :class="['px-4 py-2 font-medium cursor-pointer', tab==='ranking' ? 'border-b-2 {{ 'border-blue-500 text-blue-500' if current_theme == 'dark' else 'border-blue-700 text-blue-700' }} cursor-not-allowed' : '{{ 'text-gray-200' if current_theme == 'dark' else 'text-gray-900' }}']"
+            >
+              {{ 'Batas Ranking' if current_lang == 'id' else 'Ranking Limit' }}
+              <template x-if="completed.ranking">
+                <i class="fa-solid fa-square-check text-green-600"></i>
+              </template>
+            </button>
+          </div>
 
-      <!-- Tab Content -->
-      <div>
-        <!-- Periode & Jadwal -->
-        <div x-show="tab==='periode'" x-transition>
-          <h3
-            class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-          >
-            {{ 'Periode Seleksi' if current_lang == 'id' else 'Selection Period'
-            }}
-          </h3>
+          <!-- Tab Content -->
           <div>
-            <template x-for="(act, index) in activities" :key="index">
-              <div class="mb-4 p-3 border rounded-lg dark:border-gray-700">
-                <!-- Nama Kegiatan -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Nama Kegiatan' if current_lang == 'id' else 'Activity
-                  Name' }}
-                </label>
-                <input
-                  type="text"
-                  x-model="act.nama"
-                  @input="errorMessage = ''; contingents[index].nama = act.nama"
-                  @keydown.enter="focusNextField($event, index)"
-                  placeholder="Contoh: Raimuna Nasional"
-                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                />
-                <small x-show="act.errorNama" class="text-red-500 text-xs">
-                  {{ 'Nama kegiatan wajib diisi' if current_lang == 'id' else
-                  'Activity name is required' }}
-                </small>
+            <!-- Periode & Jadwal -->
+            <div x-show="tab==='periode'" x-transition>
+              <!-- ... (Existing Periode Content) ... -->
+              <!-- No changes needed here, just keeping context -->
+              <h3 class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                {{ 'Periode Seleksi' if current_lang == 'id' else 'Selection Period' }}
+              </h3>
+              <div>
+                <template x-for="(act, index) in activities" :key="index">
+                  <div class="mb-4 p-3 border rounded-lg dark:border-gray-700">
+                    <!-- ... (Existing Activity Fields) ... -->
+                    
+                    <!-- Nama Kegiatan -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Nama Kegiatan' if current_lang == 'id' else 'Activity Name' }}
+                    </label>
+                    <input type="text" x-model="act.nama" @input="errorMessage = ''; contingents[index].nama = act.nama" @keydown.enter="focusNextField($event, index)" placeholder="Contoh: Raimuna Nasional" class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                    <small x-show="act.errorNama" class="text-red-500 text-xs">
+                      {{ 'Nama kegiatan wajib diisi' if current_lang == 'id' else 'Activity name is required' }}
+                    </small>
 
-                <!-- Skala Kegiatan -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Skala Kegiatan' if current_lang == 'id' else 'Activity
-                  Scale' }}
-                </label>
-                <select
-                  x-model="act.skala"
-                  @keydown.enter="focusNextField($event, index)"
-                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                >
-                  <option value="Ranting">
-                    {{ 'Ranting' if current_lang == 'id' else 'Branch' }}
-                  </option>
-                  <option value="Cabang">
-                    {{ 'Cabang' if current_lang == 'id' else 'District' }}
-                  </option>
-                  <option value="Daerah">
-                    {{ 'Daerah' if current_lang == 'id' else 'Region' }}
-                  </option>
-                  <option value="Nasional">
-                    {{ 'Nasional' if current_lang == 'id' else 'National' }}
-                  </option>
-                  <option value="Internasional">
-                    {{ 'Internasional' if current_lang == 'id' else
-                    'International' }}
-                  </option>
-                </select>
+                    <!-- ... (Rest of Activity Fields) ... -->
+                    <!-- Skala Kegiatan -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Skala Kegiatan' if current_lang == 'id' else 'Activity Scale' }}
+                    </label>
+                    <select x-model="act.skala" @keydown.enter="focusNextField($event, index)" class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}">
+                      <option value="Ranting">{{ 'Ranting' if current_lang == 'id' else 'Branch' }}</option>
+                      <option value="Cabang">{{ 'Cabang' if current_lang == 'id' else 'District' }}</option>
+                      <option value="Daerah">{{ 'Daerah' if current_lang == 'id' else 'Region' }}</option>
+                      <option value="Nasional">{{ 'Nasional' if current_lang == 'id' else 'National' }}</option>
+                      <option value="Internasional">{{ 'Internasional' if current_lang == 'id' else 'International' }}</option>
+                    </select>
 
-                <!-- Jenis Kegiatan -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Jenis Kegiatan' if current_lang == 'id' else 'Activity
-                  Type' }}
-                </label>
-                <select
-                  x-model="act.jenis"
-                  @keydown.enter="focusNextField($event, index)"
-                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                >
-                  <option value="Siaga">
-                    {{ 'Siaga' if current_lang == 'id' else 'Cub Scout' }}
-                  </option>
-                  <option value="Penggalang">
-                    {{ 'Penggalang' if current_lang == 'id' else 'Scout' }}
-                  </option>
-                  <option value="Penegak">
-                    {{ 'Penegak' if current_lang == 'id' else 'Rover Scout' }}
-                  </option>
-                  <option value="Pandega">
-                    {{ 'Pandega' if current_lang == 'id' else 'Rover' }}
-                  </option>
-                  <option value="Penegak dan Pandega">
-                    {{ 'Penegak dan Pandega' if current_lang == 'id' else 'Rover
-                    Scout and Rover' }}
-                  </option>
-                </select>
+                    <!-- Jenis Kegiatan -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Jenis Kegiatan' if current_lang == 'id' else 'Activity Type' }}
+                    </label>
+                    <select x-model="act.jenis" @keydown.enter="focusNextField($event, index)" class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}">
+                      <option value="Siaga">{{ 'Siaga' if current_lang == 'id' else 'Cub Scout' }}</option>
+                      <option value="Penggalang">{{ 'Penggalang' if current_lang == 'id' else 'Scout' }}</option>
+                      <option value="Penegak">{{ 'Penegak' if current_lang == 'id' else 'Rover Scout' }}</option>
+                      <option value="Pandega">{{ 'Pandega' if current_lang == 'id' else 'Rover' }}</option>
+                      <option value="Penegak dan Pandega">{{ 'Penegak dan Pandega' if current_lang == 'id' else 'Rover Scout and Rover' }}</option>
+                    </select>
 
-                <!-- Kwartir Penyelenggara -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Kwartir Penyelenggara' if current_lang == 'id' else
-                  'Organizing Kwartir' }}
-                </label>
-                <input
-                  type="text"
-                  x-model="act.kwartir"
-                  @keydown.enter="focusNextField($event, index)"
-                  placeholder="Contoh: Kwartir Cabang Merauke"
-                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                />
+                    <!-- Kwartir Penyelenggara -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Kwartir Penyelenggara' if current_lang == 'id' else 'Organizing Kwartir' }}
+                    </label>
+                    <input type="text" x-model="act.kwartir" @keydown.enter="focusNextField($event, index)" placeholder="Contoh: Kwartir Cabang Merauke" class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
 
-                <!-- Waktu Pelaksanaan -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Waktu Pelaksanaan' if current_lang == 'id' else 'Execution
-                  Time' }}
-                </label>
-                <div class="flex gap-3">
-                  <div class="w-1/2">
-                    <small
-                      class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
-                      >{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small
-                    >
-                    <input
-                      type="date"
-                      x-model="act.waktuMulai"
-                      @keydown.enter="focusNextField($event, index)"
-                      class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                    />
+                    <!-- Waktu Pelaksanaan -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Waktu Pelaksanaan' if current_lang == 'id' else 'Execution Time' }}
+                    </label>
+                    <div class="flex gap-3">
+                      <div class="w-1/2">
+                        <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}">{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small>
+                        <input type="date" x-model="act.waktuMulai" @keydown.enter="focusNextField($event, index)" class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                      </div>
+                      <div class="w-1/2">
+                        <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}">{{ 'Selesai' if current_lang == 'id' else 'End' }}</small>
+                        <input type="date" x-model="act.waktuSelesai" @keydown.enter="focusNextField($event, index)" class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                      </div>
+                    </div>
+
+                    <!-- Tempat Pelaksanaan -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Tempat Pelaksanaan' if current_lang == 'id' else 'Execution Date' }}
+                    </label>
+                    <input type="text" x-model="activities[index].tempat" @keydown.enter="focusNextField($event, index)" placeholder="Cari lokasi..." class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+
+                    <!-- Periode Pelaksanaan -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Periode Seleksi' if current_lang == 'id' else 'Selection Period' }}
+                    </label>
+                    <div class="flex gap-3">
+                      <div class="w-1/2">
+                        <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}">{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small>
+                        <input type="date" x-model="act.mulai" @keydown.enter="focusNextField($event, index)" class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                      </div>
+                      <div class="w-1/2">
+                        <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}">{{ 'Selesai' if current_lang == 'id' else 'End' }}</small>
+                        <input type="date" x-model="act.selesai" @keydown.enter="focusNextField($event, index)" class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                      </div>
+                    </div>
+
+                    <!-- Tanggal Tes -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Jadwal Tes' if current_lang == 'id' else 'Test Schedule' }}
+                    </label>
+                    <input type="text" x-model="act.tanggalTes" @keydown.enter="focusNextField($event, index)" placeholder="{{ 'Contoh: Setiap hari jam 07:00 - 15:00' if current_lang == 'id' else 'Example: Every day 07:00 - 15:00' }}" class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+
+                    <!-- Tempat Tes -->
+                    <label class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                      {{ 'Tempat Tes' if current_lang == 'id' else 'Test Location' }}
+                    </label>
+                    <input type="text" x-model="act.tempatTes" @keydown.enter="focusNextField($event, index)" placeholder="{{ 'Masukkan tempat tes' if current_lang == 'id' else 'Enter test location' }}" class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+
+                    <!-- Tombol Aksi -->
+                    <div class="flex gap-2 mt-6">
+                      <button @click="activities.push(JSON.parse(JSON.stringify(activities[index]))); contingents.push(JSON.parse(JSON.stringify(contingents[index])));" type="button" class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-xs cursor-pointer">
+                        <i class="fa-solid fa-copy"></i>
+                        {{ 'Duplikat' if current_lang == 'id' else 'Duplicate' }}
+                      </button>
+                      <button @click="activities.splice(index,1)" type="button" class="px-2 py-1 bg-red-500 hover:bg-red-700 text-white rounded-lg text-xs cursor-pointer">
+                        <i class="fa-solid fa-trash"></i>
+                        {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
+                      </button>
+                    </div>
                   </div>
-                  <div class="w-1/2">
-                    <small
-                      class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
-                      >{{ 'Selesai' if current_lang == 'id' else 'End' }}</small
-                    >
-                    <input
-                      type="date"
-                      x-model="act.waktuSelesai"
-                      @keydown.enter="focusNextField($event, index)"
-                      class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                    />
-                  </div>
-                </div>
+                </template>
 
-                <!-- Tempat Pelaksanaan -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Tempat Pelaksanaan' if current_lang == 'id' else
-                  'Execution Date' }}
-                </label>
-                <input
-                  type="text"
-                  x-model="activities[index].tempat"
-                  @keydown.enter="focusNextField($event, index)"
-                  placeholder="Cari lokasi..."
-                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                />
+                <!-- Tambah Kegiatan -->
+                <button @click="activities.push({ nama:'', mulai:'', selesai:'', waktuMulai: '', waktuSelesai: '', skala:'', jenis:'', kwartir:'', waktu:'', tempat:'', tanggalTes:'', tempatTes:'', putra:0, putri:0, criteria: getDefaultCriteria(), batasLolos: 3 }); contingents.push({ nama:'', umpiPutra: 0, umpiPutri: 0 });" type="button" class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg text-sm cursor-pointer mt-2">
+                  {{ '+ Tambah Kegiatan' if current_lang == 'id' else '+ Add Activity' }}
+                </button>
 
-                <!-- Periode Pelaksanaan -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Periode Seleksi' if current_lang == 'id' else 'Selection
-                  Period' }}
-                </label>
-                <div class="flex gap-3">
-                  <div class="w-1/2">
-                    <small
-                      class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
-                      >{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small
-                    >
-                    <input
-                      type="date"
-                      x-model="act.mulai"
-                      @keydown.enter="focusNextField($event, index)"
-                      class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                    />
-                  </div>
-                  <div class="w-1/2">
-                    <small
-                      class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}"
-                      >{{ 'Selesai' if current_lang == 'id' else 'End' }}</small
-                    >
-                    <input
-                      type="date"
-                      x-model="act.selesai"
-                      @keydown.enter="focusNextField($event, index)"
-                      class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                    />
-                  </div>
-                </div>
-
-                <!-- Tanggal Tes -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Jadwal Tes' if current_lang == 'id' else 'Test Schedule' }}
-                </label>
-                <input
-                  type="text"
-                  x-model="act.tanggalTes"
-                  @keydown.enter="focusNextField($event, index)"
-                  placeholder="{{ 'Contoh: Setiap hari jam 07:00 - 15:00' if current_lang == 'id' else 'Example: Every day 07:00 - 15:00' }}"
-                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                />
-
-                <!-- Tempat Tes -->
-                <label
-                  class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                >
-                  {{ 'Tempat Tes' if current_lang == 'id' else 'Test Location' }}
-                </label>
-                <input
-                  type="text"
-                  x-model="act.tempatTes"
-                  @keydown.enter="focusNextField($event, index)"
-                  placeholder="{{ 'Masukkan tempat tes' if current_lang == 'id' else 'Enter test location' }}"
-                  class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                />
-
-                <!-- Tombol Aksi -->
-                <div class="flex gap-2 mt-6">
-                  <!-- Tombol Duplikat -->
-                  <button
-                    @click="activities.push(JSON.parse(JSON.stringify(activities[index])));
-                            contingents.push(JSON.parse(JSON.stringify(contingents[index])));"
-                    type="button"
-                    class="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-xs cursor-pointer"
-                  >
-                    <i class="fa-solid fa-copy"></i>
-                    {{ 'Duplikat' if current_lang == 'id' else 'Duplicate' }}
+                <!-- Tombol Navigasi -->
+                <div class="flex justify-between mt-6">
+                  <button @click="page = 'main'; $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Seleksi'] : ['Selection Management']" class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}">
+                    <i class="fa-solid fa-backward"></i>
+                    {{ 'Kembali' if current_lang == 'id' else 'Back' }}
                   </button>
-
-                  <!-- Tombol Hapus -->
-                  <button
-                    @click="activities.splice(index,1)"
-                    type="button"
-                    class="px-2 py-1 bg-red-500 hover:bg-red-700 text-white rounded-lg text-xs cursor-pointer"
-                  >
-                    <i class="fa-solid fa-trash"></i>
-                    {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
+                  <button type="button" @click="savePeriode()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                    <i class="fa-solid fa-download"></i>
+                    {{ 'Simpan & Lanjut' if current_lang == 'id' else 'Save & Next' }}
                   </button>
                 </div>
               </div>
-            </template>
-
-            <!-- Tambah Kegiatan -->
-            <button
-              @click="activities.push({ nama:'', mulai:'', selesai:'', waktuMulai: '', waktuSelesai: '', skala:'', jenis:'', kwartir:'', waktu:'', tempat:'', tanggalTes:'', tempatTes:'', putra:0, putri:0, criteria: getDefaultCriteria() }); contingents.push({ nama:'', umpiPutra: 0, umpiPutri: 0 });"
-              type="button"
-              class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg text-sm cursor-pointer mt-2"
-            >
-              {{ '+ Tambah Kegiatan' if current_lang == 'id' else '+ Add
-              Activity' }}
-            </button>
-
-            <!-- Tombol Navigasi -->
-            <div class="flex justify-between mt-6">
-              <button
-                @click="page = 'main'; $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Seleksi'] : ['Selection Management']"
-                class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}"
-              >
-                <i class="fa-solid fa-backward"></i>
-                {{ 'Kembali' if current_lang == 'id' else 'Back' }}
-              </button>
-              <button
-                type="button"
-                @click="savePeriode()"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
-              >
-                <i class="fa-solid fa-download"></i>
-                {{ 'Simpan & Lanjut' if current_lang == 'id' else 'Save & Next'
-                }}
-              </button>
             </div>
-          </div>
-        </div>
 
-        <!-- Komposisi Kotingen -->
-        <div x-show="tab==='kontingen'" x-transition>
-          <h3
-            class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-          >
-            {{ 'Komposisi Kontingen' if current_lang == 'id' else 'Contingent
-            Composition' }}
-          </h3>
-          <template x-for="(cont, index) in contingents" :key="index">
-            <div class="mb-4 p-3 border rounded-lg dark:border-gray-700">
-              <h4
-                class="font-medium mb-2 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-700' }}"
-                x-text="activities[index].nama"
-              ></h4>
-              <div class="flex gap-3">
-                <!-- Umpi Putra -->
-                <div class="w-1/2">
-                  <label
-                    class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                  >
-                    {{ 'Umpi Putra' if current_lang == 'id' else 'Male Umpi' }}
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="12"
-                    x-model.number="cont.umpiPutra"
-                    @keydown.enter="focusNextField($event, index)"
-                    placeholder="5–12"
-                    class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
-                  />
+            <!-- Komposisi Kotingen -->
+            <div x-show="tab==='kontingen'" x-transition>
+               <!-- ... (Existing Kontingen Content) ... -->
+               <!-- Keeping context -->
+               <h3 class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                {{ 'Komposisi Kontingen' if current_lang == 'id' else 'Contingent Composition' }}
+              </h3>
+              <template x-for="(cont, index) in contingents" :key="index">
+                <div class="mb-4 p-3 border rounded-lg dark:border-gray-700">
+                  <h4 class="font-medium mb-2 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-700' }}" x-text="activities[index].nama"></h4>
+                  <div class="flex gap-3">
+                    <div class="w-1/2">
+                      <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                        {{ 'Umpi Putra' if current_lang == 'id' else 'Male Umpi' }}
+                      </label>
+                      <input type="number" min="5" max="12" x-model.number="cont.umpiPutra" @keydown.enter="focusNextField($event, index)" placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                    </div>
+                    <div class="w-1/2">
+                      <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                        {{ 'Umpi Putri' if current_lang == 'id' else 'Female Umpi' }}
+                      </label>
+                      <input type="number" min="5" max="12" x-model.number="cont.umpiPutri" @keydown.enter="focusNextField($event, index)" placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                    </div>
+                  </div>
                 </div>
+              </template>
 
-                <!-- Umpi Putri -->
-                <div class="w-1/2">
-                  <label
-                    class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                  >
-                    {{ 'Umpi Putri' if current_lang == 'id' else 'Female Umpi'
-                    }}
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="12"
-                    x-model.number="cont.umpiPutri"
-                    @keydown.enter="focusNextField($event, index)"
-                    placeholder="5–12"
-                    class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
-                  />
-                </div>
+              <!-- Tombol Navigasi -->
+              <div class="flex justify-between mt-6">
+                <button @click="tab = 'periode'" class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}">
+                  <i class="fa-solid fa-backward"></i>
+                  {{ 'Kembali' if current_lang == 'id' else 'Back' }}
+                </button>
+                <button type="button" @click="if (contingents.some(c => c.umpiPutra < 5 || c.umpiPutra > 12 || c.umpiPutri < 5 || c.umpiPutri > 12)) { errorMessage = '{{ 'Komposisi kontingen harus ditentukan' if current_lang == 'id' else 'Participant quota must be set' }}'; return;} completed.kontingen = true; tab = 'kriteria'" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                  <i class="fa-solid fa-download"></i>
+                  {{ 'Simpan & Lanjut' if current_lang == 'id' else 'Save & Next' }}
+                </button>
               </div>
             </div>
-          </template>
 
-          <!-- Tombol Navigasi -->
-          <div class="flex justify-between mt-6">
-            <button
-              @click="tab = 'periode'"
-              class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}"
-            >
-              <i class="fa-solid fa-backward"></i>
-              {{ 'Kembali' if current_lang == 'id' else 'Back' }}
-            </button>
-            <button
-              type="button"
-              @click="if (contingents.some(c => c.umpiPutra < 5 || c.umpiPutra > 12 || c.umpiPutri < 5 || c.umpiPutri > 12)) { errorMessage = '{{ 'Komposisi kontingen harus ditentukan' if current_lang == 'id' else 'Participant quota must be set' }}'; return;} completed.kontingen = true; tab = 'kriteria'"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
-            >
-              <i class="fa-solid fa-download"></i>
-              {{ 'Simpan & Lanjut' if current_lang == 'id' else 'Save & Next' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Kriteria Seleksi -->
-        <div x-show="tab==='kriteria'" x-transition>
-          <h3
-            class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-          >
-            {{ 'Kriteria Seleksi' if current_lang == 'id' else 'Selection
-            Criteria' }}
-          </h3>
-          <template x-for="(activity, aIndex) in activities" :key="aIndex">
-            <div class="mb-4 p-3 border rounded-lg dark:border-gray-700">
-              <h4
-                class="font-medium mb-4 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-700' }}"
-                x-text="activity.nama"
-              ></h4>
-              <div
-                class="flex items-center gap-2 mb-2 font-semibold text-sm border-b pb-1 {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-300' }}"
-              >
-                <div class="w-1/3">
-                  {{ 'Nama Kriteria' if current_lang == 'id' else 'Criteria
-                  Name' }}
-                </div>
-                <div class="w-1/3 pl-3">
-                  {{ 'Jenis Penilaian' if current_lang == 'id' else 'Type of
-                  Assessment' }}
-                </div>
-                <div class="w-1/3 pl-3">
-                  {{ 'Skala Penilaian' if current_lang == 'id' else 'Assessment
-                  Scale' }}
-                </div>
-                <div class="w-12 text-center">
-                  {{ 'Aksi' if current_lang == 'id' else 'Action' }}
-                </div>
-              </div>
-              <template x-for="(c, index) in activity.criteria" :key="index">
-                <div class="flex items-center gap-2 mb-2">
-                  <!-- Nama -->
-                  <input
-                    type="text"
-                    x-model="c.nama"
-                    class="w-1/3 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
-                  />
-
-                  <!-- Jenis Penilaian -->
-                  <div
-                    class="w-1/3 flex relative group items-center justify-between border px-2 rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-300 dark:text-gray-900' }}"
-                  >
-                    <span
-                      x-text="Array.isArray(c.jenis) ? c.jenis.join(', ') : (c.jenis || 'Belum diatur')"
-                    ></span>
-                    <button
-                      @click="selectedIndex = index; this.aIndex = aIndex; if (!activities[aIndex].criteria[selectedIndex].jenis) activities[aIndex].criteria[selectedIndex].jenis = 'Kualitatif'; showModal = true;"
-                      class="px-2 py-1 bg-yellow-500 hover:bg-amber-500 text-white rounded text-xs cursor-pointer"
-                      title="{{ 'Edit' if current_lang == 'id' else 'Edit' }}"
-                    >
-                      <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
+            <!-- Kriteria Seleksi -->
+            <div x-show="tab==='kriteria'" x-transition>
+               <!-- ... (Existing Kriteria Content) ... -->
+               <!-- Keeping context -->
+               <h3 class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                {{ 'Kriteria Seleksi' if current_lang == 'id' else 'Selection Criteria' }}
+              </h3>
+              <template x-for="(activity, aIndex) in activities" :key="aIndex">
+                <div class="mb-4 p-3 border rounded-lg dark:border-gray-700">
+                  <h4 class="font-medium mb-4 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-700' }}" x-text="activity.nama"></h4>
+                  <div class="flex items-center gap-2 mb-2 font-semibold text-sm border-b pb-1 {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-300' }}">
+                    <div class="w-1/3">{{ 'Nama Kriteria' if current_lang == 'id' else 'Criteria Name' }}</div>
+                    <div class="w-1/3 pl-3">{{ 'Jenis Penilaian' if current_lang == 'id' else 'Type of Assessment' }}</div>
+                    <div class="w-1/3 pl-3">{{ 'Skala Penilaian' if current_lang == 'id' else 'Assessment Scale' }}</div>
+                    <div class="w-12 text-center">{{ 'Aksi' if current_lang == 'id' else 'Action' }}</div>
                   </div>
-
-                  <!-- skala -->
-                  <div class="flex items-center w-1/3">
-                    <input
-                      type="number"
-                      x-model="c.skala"
-                      min="1"
-                      max="10"
-                      placeholder="1-10"
-                      class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}"
-                    />
-                  </div>
-
-                  <!-- Hapus -->
-                  <button
-                    @click="deleteIndex = index; showDeleteModal = true"
-                    class="px-2 py-1 bg-red-500 hover:bg-red-700 text-white rounded-lg text-xs cursor-pointer"
-                    title="{{ 'Hapus' if current_lang == 'id' else 'Delete' }}"
-                  >
-                    <i class="fa-solid fa-trash"></i>
+                  <template x-for="(c, index) in activity.criteria" :key="index">
+                    <div class="flex items-center gap-2 mb-2">
+                      <input type="text" x-model="c.nama" class="w-1/3 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                      <div class="w-1/3 flex relative group items-center justify-between border px-2 rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-300 dark:text-gray-900' }}">
+                        <span x-text="Array.isArray(c.jenis) ? c.jenis.join(', ') : (c.jenis || 'Belum diatur')"></span>
+                        <button @click="selectedIndex = index; this.aIndex = aIndex; if (!activities[aIndex].criteria[selectedIndex].jenis) activities[aIndex].criteria[selectedIndex].jenis = 'Kualitatif'; showModal = true;" class="px-2 py-1 bg-yellow-500 hover:bg-amber-500 text-white rounded text-xs cursor-pointer" title="{{ 'Edit' if current_lang == 'id' else 'Edit' }}">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                      </div>
+                      <div class="flex items-center w-1/3">
+                        <input type="number" x-model="c.skala" min="1" max="10" placeholder="1-10" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                      </div>
+                      <button @click="deleteIndex = index; showDeleteModal = true" class="px-2 py-1 bg-red-500 hover:bg-red-700 text-white rounded-lg text-xs cursor-pointer" title="{{ 'Hapus' if current_lang == 'id' else 'Delete' }}">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+                  </template>
+                  <button @click="activity.criteria.push({ nama:'', skala:0, jenis: 'Kualitatif' })" class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg text-sm mt-2 cursor-pointer">
+                    {{ '+ Tambah Kriteria' if current_lang == 'id' else '+ Add Criteria' }}
                   </button>
                 </div>
               </template>
 
-              <!-- Tambah -->
-              <button
-                @click="activity.criteria.push({ nama:'', skala:0, jenis: 'Kualitatif' })"
-                class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg text-sm mt-2 cursor-pointer"
-              >
-                {{ '+ Tambah Kriteria' if current_lang == 'id' else '+ Add
-                Criteria' }}
-              </button>
+              <!-- Tombol Navigasi -->
+              <div class="flex justify-between mt-6">
+                <button @click="tab = 'kontingen'" class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}">
+                  <i class="fa-solid fa-backward"></i>
+                  {{ 'Kembali' if current_lang == 'id' else 'Back' }}
+                </button>
+                <button type="button" @click="completed.kriteria = true; tab = 'ranking'" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                  <i class="fa-solid fa-download"></i>
+                  {{ 'Simpan & Lanjut' if current_lang == 'id' else 'Save & Next' }}
+                </button>
+              </div>
             </div>
-          </template>
 
-          <!-- Tombol Navigasi -->
-          <div class="flex justify-between mt-6">
-            <button
-              @click="tab = 'kontingen'"
-              class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}"
-            >
-              <i class="fa-solid fa-backward"></i>
-              {{ 'Kembali' if current_lang == 'id' else 'Back' }}
-            </button>
-            <button
-              type="button"
-              @click="saveConfig()"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
-            >
-              <i class="fa-solid fa-download"></i>
-              {{ 'Simpan Konfigurasi' if current_lang == 'id' else 'Save
-              Configuration' }}
-            </button>
-          </div>
+            <!-- Batas Ranking -->
+            <div x-show="tab==='ranking'" x-transition>
+              <h3 class="font-semibold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                {{ 'Batas Ranking' if current_lang == 'id' else 'Ranking Limit' }}
+              </h3>
+              <p class="mb-4 text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                {{ 'Tentukan jumlah peserta yang akan dinyatakan lolos seleksi untuk setiap kegiatan.' if current_lang == 'id' else 'Determine the number of participants who will pass the selection for each activity.' }}
+              </p>
+              
+              <template x-for="(act, index) in activities" :key="index">
+                <div class="mb-4 p-3 border rounded-lg dark:border-gray-700">
+                  <h4 class="font-medium mb-2 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-700' }}" x-text="act.nama"></h4>
+                  <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                    {{ 'Jumlah Peserta Lolos' if current_lang == 'id' else 'Number of Passing Participants' }}
+                  </label>
+                  <input type="number" min="1" x-model.number="act.batasLolos" placeholder="Contoh: 3" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                </div>
+              </template>
+
+              <!-- Tombol Navigasi -->
+              <div class="flex justify-between mt-6">
+                <button @click="tab = 'kriteria'" class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}">
+                  <i class="fa-solid fa-backward"></i>
+                  {{ 'Kembali' if current_lang == 'id' else 'Back' }}
+                </button>
+                <button type="button" @click="completed.ranking = true; saveConfig()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                  <i class="fa-solid fa-download"></i>
+                  {{ 'Simpan Konfigurasi' if current_lang == 'id' else 'Save Configuration' }}
+                </button>
+              </div>
+            </div>
 
           <!-- Modal Dinamis -->
           <div

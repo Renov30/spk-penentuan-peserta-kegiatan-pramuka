@@ -1552,6 +1552,9 @@ def save_config():
             # Parse tempat tes
             tempat_tes = (act.get('tempatTes') or '').strip()
             
+            # Parse batas lolos
+            batas_lolos = int(act.get('batasLolos') or 3)
+            
             event = Event(
                 jenis_kegiatan=jenis_kegiatan,
                 nama_kegiatan=nama,
@@ -1563,7 +1566,8 @@ def save_config():
                 mulai=mulai_date,
                 selesai=selesai_date,
                 tanggal_tes=tanggal_tes if tanggal_tes else None,
-                tempat_tes=tempat_tes if tempat_tes else None
+                tempat_tes=tempat_tes if tempat_tes else None,
+                batas_lolos=batas_lolos
             )
             db.session.add(event)
             db.session.flush()

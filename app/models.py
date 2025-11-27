@@ -60,6 +60,7 @@ class Event(db.Model):
     # New fields for Test Details
     tanggal_tes = db.Column(db.String(255), nullable=True)
     tempat_tes = db.Column(db.String(100), nullable=True)
+    batas_lolos = db.Column(db.Integer, default=3) # Default 3 peserta lolos
     
     kuota = db.relationship("Kuota", backref="event", lazy=True, cascade="all, delete-orphan")
     kriteria = db.relationship("Criteria", backref="event", lazy=True, cascade="all, delete-orphan")
