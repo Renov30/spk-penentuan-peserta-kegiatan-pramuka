@@ -1700,7 +1700,8 @@ def get_config(event_id):
                 'mulai': event.mulai.isoformat() if event.mulai else None,
                 'selesai': event.selesai.isoformat() if event.selesai else None,
                 'tanggal_tes': event.tanggal_tes,
-                'tempat_tes': event.tempat_tes
+                'tempat_tes': event.tempat_tes,
+                'batas_lolos': event.batas_lolos if event.batas_lolos else 3
             },
             'kuota': {
                 'putra': kuota.putra if kuota else 0,
@@ -1790,6 +1791,8 @@ def update_config(event_id):
                 event.tanggal_tes = evt_data['tanggal_tes'].strip() if evt_data['tanggal_tes'] else None
             if 'tempat_tes' in evt_data:
                 event.tempat_tes = evt_data['tempat_tes'].strip() if evt_data['tempat_tes'] else None
+            if 'batas_lolos' in evt_data:
+                event.batas_lolos = int(evt_data['batas_lolos']) if evt_data['batas_lolos'] else 3
         
         # Update Kuota
         if 'kuota' in data:
