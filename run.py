@@ -1792,7 +1792,13 @@ def update_config(event_id):
             if 'tempat_tes' in evt_data:
                 event.tempat_tes = evt_data['tempat_tes'].strip() if evt_data['tempat_tes'] else None
             if 'batas_lolos' in evt_data:
-                event.batas_lolos = int(evt_data['batas_lolos']) if evt_data['batas_lolos'] else 3
+                try:
+                    batas_lolos_value = evt_data['batas_lolos']
+                    event.batas_lolos = int(batas_lolos_value) if batas_lolos_value else 3
+                    current_app.logger.info(f"Updated batas_lolos to {event.batas_lolos}")
+                except Exception as e:
+                    current_app.logger.error(f"Error updating batas_lolos: {e}")
+                    event.batas_lolos = 3
         
         # Update Kuota
         if 'kuota' in data:
@@ -1812,20 +1818,48 @@ def update_config(event_id):
         
         # Update Criteria
         if 'criteria' in data:
-            # Hapus criteria lama
-            Criteria.query.filter_by(event_id=event_id).delete()
-            # Tambah criteria baru
+            # Get existing criteria map {id: object}
+            existing_criteria = {c.id_kriteria: c for c in Criteria.query.filter_by(event_id=event_id).all()}
+            
+            # Process incoming criteria
+            incoming_ids = []
             for c in data['criteria']:
-                crit = Criteria(
-                    event_id=event_id,
-                    nama_kriteria=c.get('nama_kriteria', '').strip() or 'Unnamed Criteria',
-                    bobot=float(c.get('bobot', 0)),
-                    aspek=', '.join(c.get('aspek', [])) if isinstance(c.get('aspek'), list) else (c.get('aspek', '') or ''),
-                    deskripsi=c.get('deskripsi', ''),
-                    jenis_kriteria=c.get('jenis_kriteria', 'Kualitatif'),
-                    jumlah_soal=int(c.get('jumlah_soal')) if c.get('jumlah_soal') else None
-                )
-                db.session.add(crit)
+                crit_id = c.get('id')
+                
+                if crit_id and crit_id in existing_criteria:
+                    # Update existing
+                    crit = existing_criteria[crit_id]
+                    crit.nama_kriteria = c.get('nama_kriteria', '').strip() or 'Unnamed Criteria'
+                    crit.bobot = float(c.get('bobot', 0))
+                    crit.aspek = ', '.join(c.get('aspek', [])) if isinstance(c.get('aspek'), list) else (c.get('aspek', '') or '')
+                    crit.deskripsi = c.get('deskripsi', '')
+                    crit.jenis_kriteria = c.get('jenis_kriteria', 'Kualitatif')
+                    crit.jumlah_soal = int(c.get('jumlah_soal')) if c.get('jumlah_soal') else None
+                    incoming_ids.append(crit_id)
+                else:
+                    # Create new
+                    new_crit = Criteria(
+                        event_id=event_id,
+                        nama_kriteria=c.get('nama_kriteria', '').strip() or 'Unnamed Criteria',
+                        bobot=float(c.get('bobot', 0)),
+                        aspek=', '.join(c.get('aspek', [])) if isinstance(c.get('aspek'), list) else (c.get('aspek', '') or ''),
+                        deskripsi=c.get('deskripsi', ''),
+                        jenis_kriteria=c.get('jenis_kriteria', 'Kualitatif'),
+                        jumlah_soal=int(c.get('jumlah_soal')) if c.get('jumlah_soal') else None
+                    )
+                    db.session.add(new_crit)
+            
+            # Delete removed criteria (only if not referenced)
+            for crit_id, crit in existing_criteria.items():
+                if crit_id not in incoming_ids:
+                    try:
+                        db.session.delete(crit)
+                        db.session.flush() # Check for integrity error immediately
+                    except IntegrityError:
+                        db.session.rollback()
+                        # If referenced, just skip deletion or log warning
+                        current_app.logger.warning(f"Cannot delete criteria {crit_id} because it is referenced.")
+                        pass
         
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Konfigurasi berhasil diperbarui'}), 200

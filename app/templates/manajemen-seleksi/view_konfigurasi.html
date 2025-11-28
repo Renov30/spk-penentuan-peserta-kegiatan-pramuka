@@ -1333,11 +1333,17 @@
         saveEdit() {
           if (!this.selectedEvent || !this.editData) return;
 
+          console.log('=== Starting saveEdit ===');
+          console.log('Selected Event ID:', this.selectedEvent);
+          console.log('Edit Data:', this.editData);
+
           this.loading = true;
           const csrfToken =
             document.querySelector("meta[name=csrf-token]")?.content || "";
 
           const dataToSend = JSON.parse(JSON.stringify(this.editData));
+
+          console.log('Data before date processing:', dataToSend);
 
           if (
             dataToSend.event.waktu_pelaksanaan_dimulai &&
@@ -1363,6 +1369,9 @@
             dataToSend.event.selesai = dataToSend.event.selesai.split("T")[0];
           }
 
+          console.log('Data to send:', dataToSend);
+          console.log('Batas Lolos value:', dataToSend.event.batas_lolos);
+
           fetch(`/api/update_config/${this.selectedEvent}`, {
             method: "POST",
             headers: {
@@ -1371,40 +1380,32 @@
             },
             body: JSON.stringify(dataToSend),
           })
-            .then((res) => res.json())
+            .then((res) => {
+              console.log('Response status:', res.status);
+              console.log('Response ok:', res.ok);
+              return res.json();
+            })
             .then((data) => {
+              console.log('Response data:', data);
               if (data.status === "success") {
-                this.modal = {
-                  show: true,
-                  title:
-                    "{{ 'Berhasil' if current_lang == 'id' else 'Success' }}",
-                  message: data.message,
-                };
+                console.log('✓ Update successful!');
+                alert('✓ Konfigurasi berhasil diperbarui!');
                 this.editMode = false;
                 this.loadConfig(this.selectedEvent);
                 setTimeout(() => {
                   window.location.reload();
                 }, 1000);
               } else {
-                this.modal = {
-                  show: true,
-                  title: "{{ 'Error' if current_lang == 'id' else 'Error' }}",
-                  message:
-                    data.message ||
-                    "{{ 'Gagal memperbarui konfigurasi' if current_lang == 'id' else 'Failed to update configuration' }}",
-                };
+                console.error('✗ Update failed:', data.message);
+                alert('✗ Gagal memperbarui konfigurasi: ' + (data.message || 'Unknown error'));
               }
             })
             .catch((err) => {
-              console.error("Error updating config:", err);
-              this.modal = {
-                show: true,
-                title: "{{ 'Error' if current_lang == 'id' else 'Error' }}",
-                message:
-                  "{{ 'Terjadi kesalahan saat memperbarui data' if current_lang == 'id' else 'An error occurred while updating data' }}",
-              };
+              console.error("✗ Error updating config:", err);
+              alert('✗ Terjadi kesalahan: ' + err.message);
             })
             .finally(() => {
+              console.log('=== Finished saveEdit ===');
               this.loading = false;
             });
         },
