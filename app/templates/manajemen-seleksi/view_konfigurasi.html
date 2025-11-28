@@ -1189,9 +1189,80 @@
     .flex-1.overflow-y-auto {
       overscroll-behavior: contain;
     }
+
+    /* Toast Animations */
+    .toast {
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    .toast.hide {
+      animation: slideOut 0.3s ease-in;
+    }
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
   </style>
 
+  <!-- Toast Notification Container -->
+  <div
+    id="toast-container"
+    class="fixed bottom-4 right-4 z-[9999] space-y-2"
+  ></div>
+
   <script>
+    function showNotification(message, type) {
+      const container = document.getElementById('toast-container');
+
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = `toast flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg min-w-[300px] max-w-md ${
+          type === 'success'
+              ? 'bg-green-500 text-white'
+              : type === 'error'
+              ? 'bg-red-500 text-white'
+              : 'bg-blue-500 text-white'
+      }`;
+
+      // Icon based on type
+      const icon = type === 'success'
+          ? '<i class="fas fa-check-circle text-xl"></i>'
+          : type === 'error'
+          ? '<i class="fas fa-times-circle text-xl"></i>'
+          : '<i class="fas fa-info-circle text-xl"></i>';
+
+      toast.innerHTML = `
+          ${icon}
+          <span class="flex-1 font-medium">${message}</span>
+          <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">
+              <i class="fas fa-times"></i>
+          </button>
+      `;
+
+      container.appendChild(toast);
+
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+          toast.classList.add('hide');
+          setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
     document.addEventListener("alpine:init", () => {
       Alpine.data("viewConfigData", () => ({
         ready: false,
@@ -1333,17 +1404,11 @@
         saveEdit() {
           if (!this.selectedEvent || !this.editData) return;
 
-          console.log('=== Starting saveEdit ===');
-          console.log('Selected Event ID:', this.selectedEvent);
-          console.log('Edit Data:', this.editData);
-
           this.loading = true;
           const csrfToken =
             document.querySelector("meta[name=csrf-token]")?.content || "";
 
           const dataToSend = JSON.parse(JSON.stringify(this.editData));
-
-          console.log('Data before date processing:', dataToSend);
 
           if (
             dataToSend.event.waktu_pelaksanaan_dimulai &&
@@ -1369,9 +1434,6 @@
             dataToSend.event.selesai = dataToSend.event.selesai.split("T")[0];
           }
 
-          console.log('Data to send:', dataToSend);
-          console.log('Batas Lolos value:', dataToSend.event.batas_lolos);
-
           fetch(`/api/update_config/${this.selectedEvent}`, {
             method: "POST",
             headers: {
@@ -1380,32 +1442,24 @@
             },
             body: JSON.stringify(dataToSend),
           })
-            .then((res) => {
-              console.log('Response status:', res.status);
-              console.log('Response ok:', res.ok);
-              return res.json();
-            })
+            .then((res) => res.json())
             .then((data) => {
-              console.log('Response data:', data);
               if (data.status === "success") {
-                console.log('✓ Update successful!');
-                alert('✓ Konfigurasi berhasil diperbarui!');
+                showNotification(data.message, 'success');
                 this.editMode = false;
                 this.loadConfig(this.selectedEvent);
                 setTimeout(() => {
                   window.location.reload();
                 }, 1000);
               } else {
-                console.error('✗ Update failed:', data.message);
-                alert('✗ Gagal memperbarui konfigurasi: ' + (data.message || 'Unknown error'));
+                showNotification(data.message || '{{ "Gagal memperbarui konfigurasi" if current_lang == "id" else "Failed to update configuration" }}', 'error');
               }
             })
             .catch((err) => {
-              console.error("✗ Error updating config:", err);
-              alert('✗ Terjadi kesalahan: ' + err.message);
+              console.error("Error updating config:", err);
+              showNotification('{{ "Terjadi kesalahan saat memperbarui data" if current_lang == "id" else "An error occurred while updating data" }}', 'error');
             })
             .finally(() => {
-              console.log('=== Finished saveEdit ===');
               this.loading = false;
             });
         },
