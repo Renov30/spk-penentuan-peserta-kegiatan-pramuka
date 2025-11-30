@@ -796,6 +796,15 @@ def admin_dashboard():
     total_criteria = Criteria.query.count() if db.inspect(db.engine).has_table("criteria") else 0
     total_notifications = Notification.query.count()
 
+    return render_template(
+        'dashboard_admin.html',
+        total_users=total_users,
+        total_participants=total_participants,
+        total_criteria=total_criteria,
+        total_notifications=total_notifications,
+        user=user,
+        sidebar_state=sidebar_state
+    )
 
 
 # Middleware untuk membatasi akses hanya admin
