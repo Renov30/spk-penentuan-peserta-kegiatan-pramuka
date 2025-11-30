@@ -2644,6 +2644,7 @@ def penilai_penilaian():
     # Tambahkan flag is_assigned untuk setiap event
     for event in events:
         event.is_assigned = current_user in event.evaluators
+        event.jumlah_peserta = event.registered_participants.count()
     
     sidebar_state = current_user.sidebar_state or 'expanded'
 
