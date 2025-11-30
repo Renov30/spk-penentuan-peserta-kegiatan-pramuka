@@ -71,13 +71,13 @@
           :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[1%]'"
         >
           <section
-            class="flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+            class="flex flex-col wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
           >
             <!-- Notification Box -->
             {% include 'notification_box.html' %}
 
             <!-- Content -->
-            <div class="container mx-auto p-6">
+            <div class="w-full px-6 py-6">
               <h1
                 class="text-2xl font-bold mb-8 flex items-center gap-2 transition-all duration-1000 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >
@@ -111,7 +111,9 @@
                 >
                   <div class="flex items-center space-x-3 mb-4">
                     <i class="fa-solid fa-sliders text-blue-500 text-xl"></i>
-                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                    <h2
+                      class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                    >
                       {{ 'Konfigurasi Seleksi' if current_lang == 'id' else
                       'Selection Configuration' }}
                     </h2>
@@ -142,11 +144,11 @@
                       class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-green-500 text-white hover:bg-green-600 active:scale-95 transition-all shadow dark:bg-green-600 dark:hover:bg-green-700 cursor-pointer"
                     >
                       <i class="fa-solid fa-eye mr-2"></i>
-                      {{ 'Lihat Data' if current_lang == 'id' else 'View Data' }}
+                      {{ 'Lihat Data' if current_lang == 'id' else 'View Data'
+                      }}
                     </a>
                   </div>
                 </div>
-
 
                 <!-- Penugasan Penilai -->
                 <div
@@ -156,7 +158,9 @@
                     <i
                       class="fa-solid fa-user-check text-purple-500 text-xl"
                     ></i>
-                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                    <h2
+                      class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                    >
                       {{ 'Penugasan Penilai' if current_lang == 'id' else
                       'Evaluator Assignment' }}
                     </h2>
@@ -173,7 +177,8 @@
                     class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-purple-500 text-white hover:bg-purple-600 active:scale-95 transition-all shadow dark:bg-purple-600 dark:hover:bg-purple-700 cursor-pointer"
                   >
                     <i class="fa-solid fa-users-gear mr-2"></i>
-                    {{ 'Kelola Penugasan' if current_lang == 'id' else 'Manage Assignment' }}
+                    {{ 'Kelola Penugasan' if current_lang == 'id' else 'Manage
+                    Assignment' }}
                   </a>
                 </div>
 
@@ -185,7 +190,9 @@
                     <i
                       class="fa-solid fa-clipboard-check text-orange-500 text-xl"
                     ></i>
-                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                    <h2
+                      class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                    >
                       {{ 'Manajemen Penilaian' if current_lang == 'id' else
                       'Assessment Management' }}
                     </h2>
@@ -220,7 +227,9 @@
                     <i
                       class="fa-solid fa-ranking-star text-yellow-500 text-xl"
                     ></i>
-                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                    <h2
+                      class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                    >
                       {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
                       Results' }}
                     </h2>
@@ -253,7 +262,9 @@
                 >
                   <div class="flex items-center space-x-3 mb-4">
                     <i class="fa-solid fa-folder-open text-red-500 text-xl"></i>
-                    <h2 class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                    <h2
+                      class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                    >
                       {{ 'Laporan & Arsip Seleksi' if current_lang == 'id' else
                       'Reports & Archives' }}
                     </h2>
@@ -282,10 +293,10 @@
               </div>
 
               <!-- === (Tabs) === -->
-              {%include 'manajemen-seleksi/konfigurasi_seleksi.html'%}
-              {%include 'manajemen-seleksi/manajemen_penilaian.html'%}
-              {%include 'manajemen-seleksi/hasil_seleksi.html'%}
-              {%include 'manajemen-seleksi/laporan_arsip_seleksi.html'%}
+              {%include 'manajemen-seleksi/konfigurasi_seleksi.html'%} {%include
+              'manajemen-seleksi/manajemen_penilaian.html'%} {%include
+              'manajemen-seleksi/hasil_seleksi.html'%} {%include
+              'manajemen-seleksi/laporan_arsip_seleksi.html'%}
             </div>
           </section>
         </main>
