@@ -3048,7 +3048,11 @@ def peserta_dashboard():
         ranking = hasil_seleksi.ranking
     elif biodata and biodata.kegiatan_id:
         # Status "Terdaftar" hanya muncul jika peserta sudah mendaftar di salah satu kegiatan
-        status_seleksi = "Terdaftar"
+        kegiatan = Event.query.get(biodata.kegiatan_id)
+        if kegiatan:
+            status_seleksi = f"Terdaftar di {kegiatan.nama_kegiatan}"
+        else:
+            status_seleksi = "Terdaftar"
     
     sidebar_state = current_user.sidebar_state or 'expanded'
     
