@@ -8,7 +8,7 @@ from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
 from markupsafe import escape
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from flask_wtf import CSRFProtect
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from forms import LoginForm, RegisterForm
@@ -3041,16 +3041,19 @@ def peserta_dashboard():
     status_seleksi = "Belum ada status"
     nilai_akhir = None
     ranking = None
+    is_selection_ended = False
     
     if hasil_seleksi:
         status_seleksi = "Selesai"
         nilai_akhir = hasil_seleksi.skor_akhir
         ranking = hasil_seleksi.ranking
-    elif biodata and biodata.kegiatan_id:
+    if biodata and biodata.kegiatan_id:
         # Status "Terdaftar" hanya muncul jika peserta sudah mendaftar di salah satu kegiatan
         kegiatan = Event.query.get(biodata.kegiatan_id)
         if kegiatan:
             status_seleksi = f"Terdaftar di {kegiatan.nama_kegiatan}"
+            if kegiatan.selesai < date.today():
+                is_selection_ended = True
         else:
             status_seleksi = "Terdaftar"
     
@@ -3064,7 +3067,8 @@ def peserta_dashboard():
         nilai_akhir=nilai_akhir,
         ranking=ranking,
         user=current_user,
-        sidebar_state=sidebar_state
+        sidebar_state=sidebar_state,
+        is_selection_ended=is_selection_ended
     )
 
 @app.route('/peserta/notifikasi')

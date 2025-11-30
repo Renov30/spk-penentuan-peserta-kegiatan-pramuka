@@ -167,6 +167,15 @@
                                 <p class="font-medium">{{ biodata.kegiatan.skala_kegiatan }}</p>
                             </div>
                         </div>
+                        
+                        {% if is_selection_ended %}
+                        <div class="mt-3 p-2 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-sm flex items-start gap-2">
+                            <i class="fa-solid fa-clock-rotate-left mt-1"></i>
+                            <span>
+                                {{ 'Periode seleksi telah berakhir. Menunggu hasil pengumuman.' if current_lang == 'id' else 'Selection period has ended. Waiting for announcement.' }}
+                            </span>
+                        </div>
+                        {% endif %}
                     </div>
                   {% else %}
                     <p class="text-2xl font-bold text-gray-500">
