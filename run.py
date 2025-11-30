@@ -1373,7 +1373,7 @@ def admin_manajemen_seleksi():
     kegiatan_data = []
     for kegiatan in kegiatan_list:
         # Hitung jumlah peserta
-        jumlah_peserta = Participants.query.filter_by(kegiatan_id=kegiatan.id_kegiatan).count()
+        jumlah_peserta = kegiatan.registered_participants.count()
         
         kegiatan_data.append({
             'id': kegiatan.id_kegiatan,
@@ -2667,7 +2667,7 @@ def penilai_event_participants(event_id):
         flash("Anda tidak ditugaskan untuk menilai kegiatan ini.", "error")
         return redirect(url_for('penilai_dashboard'))
     
-    participants = Participants.query.filter_by(kegiatan_id=event_id).all()
+    participants = event.registered_participants.all()
     
     # Cek status penilaian untuk setiap peserta oleh penilai ini
     for p in participants:
@@ -2681,10 +2681,10 @@ def penilai_event_participants(event_id):
                 evaluator_id=current_user.id
             ).first()
             p.is_graded = True if existing_score else False
-            p.id = user_peserta.id # Override id participant dengan id user untuk link
+            p.user_id_for_link = user_peserta.id # Use temp attribute for link
         else:
             p.is_graded = False
-            p.id = 0 # Fallback jika user tidak ditemukan
+            p.user_id_for_link = 0 # Fallback
 
     sidebar_state = current_user.sidebar_state or 'expanded'
     
@@ -3162,9 +3162,9 @@ def peserta_data():
                     ext = filename.rsplit('.', 1)[1].lower()
                     new_filename = f"{current_user.username}_{int(time.time())}.{ext}"
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
-                    current_user.foto = f"img/{new_filename}"
+                    current_user.foto = f"uploads/{new_filename}"
                     if biodata:
-                        biodata.foto = f"img/{new_filename}"
+                        biodata.foto = f"uploads/{new_filename}"
 
             if not biodata:
                 # Create new biodata
@@ -3270,15 +3270,9 @@ def api_kegiatan_tersedia():
             kuota = Kuota.query.filter_by(event_id=kegiatan.id_kegiatan).first()
             
             # Hitung jumlah peserta yang sudah terdaftar
-            peserta_terdaftar = Participants.query.filter_by(kegiatan_id=kegiatan.id_kegiatan).count()
-            peserta_putra = Participants.query.filter_by(
-                kegiatan_id=kegiatan.id_kegiatan,
-                jenis_kelamin='laki-laki'
-            ).count()
-            peserta_putri = Participants.query.filter_by(
-                kegiatan_id=kegiatan.id_kegiatan,
-                jenis_kelamin='perempuan'
-            ).count()
+            peserta_terdaftar = kegiatan.registered_participants.count()
+            peserta_putra = kegiatan.registered_participants.filter(Participants.jenis_kelamin == 'laki-laki').count()
+            peserta_putri = kegiatan.registered_participants.filter(Participants.jenis_kelamin == 'perempuan').count()
             
             # Cek apakah peserta sudah terdaftar di kegiatan ini
             sudah_terdaftar = kegiatan.id_kegiatan in peserta_kegiatan_ids
@@ -3356,14 +3350,8 @@ def api_daftar_seleksi():
         # Cek kuota
         kuota = Kuota.query.filter_by(event_id=kegiatan_id).first()
         if kuota:
-            peserta_putra = Participants.query.filter_by(
-                kegiatan_id=kegiatan_id,
-                jenis_kelamin='laki-laki'
-            ).count()
-            peserta_putri = Participants.query.filter_by(
-                kegiatan_id=kegiatan_id,
-                jenis_kelamin='perempuan'
-            ).count()
+            peserta_putra = kegiatan.registered_participants.filter(Participants.jenis_kelamin == 'laki-laki').count()
+            peserta_putri = kegiatan.registered_participants.filter(Participants.jenis_kelamin == 'perempuan').count()
             
             if biodata.jenis_kelamin == 'laki-laki' and peserta_putra >= kuota.putra:
                 return jsonify({
