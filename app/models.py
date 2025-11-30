@@ -43,6 +43,14 @@ tb_event_evaluator = db.Table('tb_event_evaluator',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
 )
 
+# Association Table for Participant and Event (Many-to-Many)
+tb_participant_kegiatan = db.Table('tb_participant_kegiatan',
+    db.Column('id', db.Integer, primary_key=True, autoincrement=True),
+    db.Column('participant_id', db.Integer, db.ForeignKey('participants.id'), nullable=False),
+    db.Column('kegiatan_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), nullable=False),
+    db.Column('tanggal_daftar', db.DateTime, default=db.func.current_timestamp(), nullable=False)
+)
+
 # Access to table tb_kegiatan
 class Event(db.Model):
     __tablename__ = 'tb_kegiatan'
@@ -131,8 +139,16 @@ class Participants(db.Model):
     # kolom yang selalu berisi "peserta"
     level = db.Column(db.String(50), nullable=False, default="peserta", server_default="peserta")
     
-    # Relationship dengan Event
+    # Relationship dengan Event (backward compatibility - deprecated)
     kegiatan = db.relationship("Event", backref="peserta_list", lazy=True)
+    
+    # Many-to-many relationship dengan Event untuk multiple registrations
+    registered_activities = db.relationship(
+        "Event",
+        secondary=tb_participant_kegiatan,
+        backref=db.backref("registered_participants", lazy="dynamic"),
+        lazy="dynamic"
+    )
 
     def __repr__(self):
         return f"<Participant {self.nama_lengkap}>"

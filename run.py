@@ -3042,20 +3042,25 @@ def peserta_dashboard():
     nilai_akhir = None
     ranking = None
     is_selection_ended = False
+    registered_activities = []
     
     if hasil_seleksi:
         status_seleksi = "Selesai"
         nilai_akhir = hasil_seleksi.skor_akhir
         ranking = hasil_seleksi.ranking
-    if biodata and biodata.kegiatan_id:
-        # Status "Terdaftar" hanya muncul jika peserta sudah mendaftar di salah satu kegiatan
-        kegiatan = Event.query.get(biodata.kegiatan_id)
-        if kegiatan:
-            status_seleksi = f"Terdaftar di {kegiatan.nama_kegiatan}"
-            if kegiatan.selesai < date.today():
-                is_selection_ended = True
-        else:
-            status_seleksi = "Terdaftar"
+    
+    if biodata:
+        # Get all registered activities from many-to-many relationship
+        registered_activities = biodata.registered_activities.all()
+        
+        if registered_activities:
+            status_seleksi = f"Terdaftar di {len(registered_activities)} kegiatan"
+            
+            # Check if any selection period has ended
+            for kegiatan in registered_activities:
+                if kegiatan.selesai < date.today():
+                    is_selection_ended = True
+                    break
     
     sidebar_state = current_user.sidebar_state or 'expanded'
     
@@ -3068,7 +3073,8 @@ def peserta_dashboard():
         ranking=ranking,
         user=current_user,
         sidebar_state=sidebar_state,
-        is_selection_ended=is_selection_ended
+        is_selection_ended=is_selection_ended,
+        registered_activities=registered_activities
     )
 
 @app.route('/peserta/notifikasi')
@@ -3246,8 +3252,9 @@ def api_kegiatan_tersedia():
         # Ambil biodata peserta untuk cek apakah sudah terdaftar
         biodata = Participants.query.filter_by(email=current_user.email).first()
         peserta_kegiatan_ids = []
-        if biodata and biodata.kegiatan_id:
-            peserta_kegiatan_ids = [biodata.kegiatan_id]
+        if biodata:
+            # Get all registered activities from many-to-many relationship
+            peserta_kegiatan_ids = [k.id_kegiatan for k in biodata.registered_activities.all()]
         
         result = []
         for kegiatan in kegiatan_list:
@@ -3264,8 +3271,8 @@ def api_kegiatan_tersedia():
                 jenis_kelamin='perempuan'
             ).count()
             
-            # Cek apakah peserta sudah terdaftar
-            sudah_terdaftar = biodata and biodata.kegiatan_id == kegiatan.id_kegiatan
+            # Cek apakah peserta sudah terdaftar di kegiatan ini
+            sudah_terdaftar = kegiatan.id_kegiatan in peserta_kegiatan_ids
             
             result.append({
                 'id_kegiatan': kegiatan.id_kegiatan,
@@ -3330,16 +3337,8 @@ def api_daftar_seleksi():
                 'message': 'Biodata Anda belum terdaftar. Silakan hubungi administrator untuk mendaftarkan biodata.'
             }), 400
         
-        # Cek apakah peserta sudah terdaftar di kegiatan lain
-        if biodata.kegiatan_id and biodata.kegiatan_id != kegiatan_id:
-            kegiatan_lain = Event.query.get(biodata.kegiatan_id)
-            return jsonify({
-                'status': 'error', 
-                'message': f'Anda sudah terdaftar di kegiatan: {kegiatan_lain.nama_kegiatan if kegiatan_lain else "Kegiatan lain"}. Silakan hubungi administrator untuk mengubah pendaftaran.'
-            }), 400
-        
         # Cek apakah sudah terdaftar di kegiatan yang sama
-        if biodata.kegiatan_id == kegiatan_id:
+        if kegiatan in biodata.registered_activities.all():
             return jsonify({
                 'status': 'error', 
                 'message': 'Anda sudah terdaftar di kegiatan ini'
@@ -3368,8 +3367,8 @@ def api_daftar_seleksi():
                     'message': 'Kuota untuk peserta putri sudah penuh'
                 }), 400
         
-        # Daftarkan peserta ke kegiatan
-        biodata.kegiatan_id = kegiatan_id
+        # Daftarkan peserta ke kegiatan menggunakan many-to-many relationship
+        biodata.registered_activities.append(kegiatan)
         db.session.commit()
         
         # Log aktivitas
@@ -3418,7 +3417,7 @@ def api_batal_daftar_seleksi():
             }), 400
         
         # Cek apakah peserta terdaftar di kegiatan ini
-        if not biodata.kegiatan_id or biodata.kegiatan_id != kegiatan_id:
+        if kegiatan not in biodata.registered_activities.all():
             return jsonify({
                 'status': 'error', 
                 'message': 'Anda belum terdaftar di kegiatan ini'
@@ -3432,8 +3431,8 @@ def api_batal_daftar_seleksi():
                 'message': 'Tidak dapat membatalkan pendaftaran karena seleksi sudah selesai'
             }), 400
         
-        # Batalkan pendaftaran (set kegiatan_id menjadi None)
-        biodata.kegiatan_id = None
+        # Batalkan pendaftaran (remove from many-to-many relationship)
+        biodata.registered_activities.remove(kegiatan)
         db.session.commit()
         
         # Log aktivitas
