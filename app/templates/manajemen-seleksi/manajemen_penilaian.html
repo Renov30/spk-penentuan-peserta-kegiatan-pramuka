@@ -107,20 +107,23 @@
   </div>
 
   <!-- View: List Kegiatan -->
-  <div x-show="view === 'list_kegiatan'" class="overflow-x-auto">
+  <div x-show="view === 'list_kegiatan'" class="overflow-x-auto pb-6">
     <table class="w-full text-left border-collapse">
       <thead>
         <tr
           class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-100 text-gray-600' }}"
         >
-          <th scope="col" class="p-4 font-semibold">No</th>
-          <th scope="col" class="p-4 font-semibold">
+          <th scope="col" class="px-6 py-4 font-semibold">No</th>
+          <th scope="col" class="px-6 py-4 font-semibold">
             {{ 'Nama Kegiatan' if current_lang == 'id' else 'Activity Name' }}
           </th>
-          <th scope="col" class="p-4 font-semibold">
+          <th scope="col" class="px-6 py-4 font-semibold">
             {{ 'Jenis' if current_lang == 'id' else 'Type' }}
           </th>
-          <th scope="col" class="p-4 font-semibold text-right">
+          <th scope="col" class="px-6 py-4 font-semibold text-center">
+            {{ 'Jumlah Peserta' if current_lang == 'id' else 'Participants' }}
+          </th>
+          <th scope="col" class="px-6 py-4 font-semibold text-right">
             {{ 'Aksi' if current_lang == 'id' else 'Action' }}
           </th>
         </tr>
@@ -132,18 +135,25 @@
         <tr
           class="hover:bg-opacity-50 transition {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}"
         >
-          <td class="p-4">{{ loop.index }}</td>
+          <td class="px-6 py-4">{{ loop.index }}</td>
           <td
-            class="p-4 font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+            class="px-6 py-4 font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
           >
             {{ kegiatan.nama_kegiatan }}
           </td>
           <td
-            class="p-4 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+            class="px-6 py-4 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
           >
             {{ kegiatan.jenis_kegiatan }}
           </td>
-          <td class="p-4 text-right">
+          <td
+            class="px-6 py-4 text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+          >
+            {% set count = namespace(value=0) %} {% for k in kegiatan_data %} {%
+            if k.id == kegiatan.id_kegiatan %} {{ k.jumlah_peserta }} {% endif
+            %} {% endfor %}
+          </td>
+          <td class="px-6 py-4 text-right">
             <button
               @click="selectKegiatan({ id_kegiatan: {{ kegiatan.id_kegiatan }}, nama_kegiatan: '{{ kegiatan.nama_kegiatan }}' })"
               class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg cursor-pointer transition"
@@ -156,7 +166,7 @@
         </tr>
         {% endfor %} {% if not kegiatan_list %}
         <tr>
-          <td colspan="4" class="p-8 text-center text-gray-500">
+          <td colspan="5" class="p-8 text-center text-gray-500">
             {{ 'Belum ada kegiatan.' if current_lang == 'id' else 'No activities
             found.' }}
           </td>
@@ -167,7 +177,7 @@
   </div>
 
   <!-- View: List Peserta -->
-  <div x-show="view === 'list_peserta'" class="overflow-x-auto">
+  <div x-show="view === 'list_peserta'" class="overflow-x-auto pb-6">
     <div x-show="isLoading" class="text-center py-8">
       <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-500"></i>
       <p class="mt-2 text-gray-500">
@@ -180,18 +190,18 @@
         <tr
           class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-100 text-gray-600' }}"
         >
-          <th scope="col" class="p-4 font-semibold">No</th>
-          <th scope="col" class="p-4 font-semibold">
+          <th scope="col" class="px-6 py-4 font-semibold">No</th>
+          <th scope="col" class="px-6 py-4 font-semibold">
             {{ 'Nama Peserta' if current_lang == 'id' else 'Participant Name' }}
           </th>
-          <th scope="col" class="p-4 font-semibold">
+          <th scope="col" class="px-6 py-4 font-semibold">
             {{ 'Golongan' if current_lang == 'id' else 'Group' }}
           </th>
-          <th scope="col" class="p-4 font-semibold">
+          <th scope="col" class="px-6 py-4 font-semibold">
             {{ 'Nilai Total' if current_lang == 'id' else 'Total Score' }}
           </th>
-          <th scope="col" class="p-4 font-semibold">Status</th>
-          <th scope="col" class="p-4 font-semibold text-right">
+          <th scope="col" class="px-6 py-4 font-semibold">Status</th>
+          <th scope="col" class="px-6 py-4 font-semibold text-right">
             {{ 'Aksi' if current_lang == 'id' else 'Action' }}
           </th>
         </tr>
@@ -206,27 +216,27 @@
           <tr
             class="hover:bg-opacity-50 transition {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}"
           >
-            <td class="p-4" x-text="index + 1"></td>
+            <td class="px-6 py-4" x-text="index + 1"></td>
             <td
-              class="p-4 font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              class="px-6 py-4 font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               x-text="peserta.nama"
             ></td>
             <td
-              class="p-4 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+              class="px-6 py-4 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
               x-text="peserta.golongan"
             ></td>
             <td
-              class="p-4 font-semibold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
+              class="px-6 py-4 font-semibold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
               x-text="peserta.nilai"
             ></td>
-            <td class="p-4">
+            <td class="px-6 py-4">
               <span
                 class="px-2 py-1 text-xs font-medium rounded-full"
                 :class="peserta.has_nilai ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'"
                 x-text="peserta.status"
               ></span>
             </td>
-            <td class="p-4 text-right flex gap-2 justify-end">
+            <td class="px-6 py-4 text-right flex gap-2 justify-end">
               <button
                 x-show="peserta.has_nilai"
                 @click="deletePenilaian(peserta.id)"

@@ -1363,12 +1363,16 @@ def admin_manajemen_seleksi():
     # Convert to serializable format if needed
     kegiatan_data = []
     for kegiatan in kegiatan_list:
+        # Hitung jumlah peserta
+        jumlah_peserta = Participants.query.filter_by(kegiatan_id=kegiatan.id_kegiatan).count()
+        
         kegiatan_data.append({
             'id': kegiatan.id_kegiatan,
             'nama': kegiatan.nama_kegiatan,
             'jenis': kegiatan.jenis_kegiatan,
             'waktu_mulai': kegiatan.waktu_pelaksanaan_dimulai.strftime('%Y-%m-%d') if kegiatan.waktu_pelaksanaan_dimulai else None,
             'waktu_selesai': kegiatan.waktu_pelaksanaan_selesai.strftime('%Y-%m-%d') if kegiatan.waktu_pelaksanaan_selesai else None,
+            'jumlah_peserta': jumlah_peserta
         })
     
     return render_template("manajemen_seleksi.html", kegiatan_list=kegiatan_list, kegiatan_data=kegiatan_data, sidebar_state=sidebar_state)
