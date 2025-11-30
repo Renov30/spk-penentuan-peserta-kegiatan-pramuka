@@ -1,6 +1,66 @@
 <!-- Manajemen Penilaian -->
 <div
   x-show="page === 'assessment_management'"
+  x-data="{
+    view: 'list_kegiatan',
+    selectedKegiatan: null,
+    pesertaList: [],
+    isLoading: false,
+    
+    async selectKegiatan(kegiatan) {
+        this.selectedKegiatan = kegiatan;
+        this.view = 'list_peserta';
+        this.isLoading = true;
+        this.pesertaList = [];
+        
+        try {
+            const response = await fetch(`/api/penilaian/peserta/${kegiatan.id_kegiatan}`);
+            const result = await response.json();
+            if (result.status === 'success') {
+                this.pesertaList = result.data;
+            } else {
+                alert('Gagal memuat data peserta: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error fetching participants:', error);
+            alert('Terjadi kesalahan saat memuat data.');
+        } finally {
+            this.isLoading = false;
+        }
+    },
+    
+    async deletePenilaian(userId) {
+        if (!confirm('Apakah Anda yakin ingin menghapus penilaian peserta ini? Data yang dihapus tidak dapat dikembalikan.')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/penilaian/hapus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    kegiatan_id: this.selectedKegiatan.id_kegiatan
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                alert(result.message);
+                // Refresh list
+                this.selectKegiatan(this.selectedKegiatan);
+            } else {
+                alert('Gagal menghapus penilaian: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error deleting assessment:', error);
+            alert('Terjadi kesalahan saat menghapus penilaian.');
+        }
+    }
+  }"
   x-transition:enter="transition ease-out duration-500"
   x-transition:enter-start="opacity-0 translate-y-5"
   x-transition:enter-end="opacity-100 translate-y-0"
@@ -12,18 +72,18 @@
   <!-- Header -->
   <div class="flex items-center justify-between mb-4">
     <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">
-      {{ 'Manajemen Penilaian' if current_lang == 'id' else 'Assessment
-      Management' }}
+      <span
+        x-text="view === 'list_kegiatan' ? (current_lang == 'id' ? 'Pilih Kegiatan' : 'Select Activity') : (current_lang == 'id' ? 'Daftar Penilaian Peserta' : 'Participant Assessment List')"
+      ></span>
+      <span
+        x-show="view === 'list_peserta' && selectedKegiatan"
+        x-text="' - ' + selectedKegiatan.nama_kegiatan"
+        class="text-sm font-normal text-gray-500"
+      ></span>
     </h2>
     <div class="flex items-end gap-4">
       <button
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer"
-      >
-        <i class="fa-solid fa-plus"></i>
-        {{ 'Tambah Penilaian' if current_lang == 'id' else 'Add Assessment' }}
-      </button>
-      <button
-        @click="page = 'main'; $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Seleksi'] : ['Selection Management']"
+        @click="view === 'list_kegiatan' ? (page = 'main', $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Seleksi'] : ['Selection Management']) : (view = 'list_kegiatan')"
         class="px-4 py-2 bg-gray-300 hover:bg-gray-800 dark:bg-gray-700 rounded-lg cursor-pointer"
       >
         <i class="fa-solid fa-backward"></i>
@@ -32,9 +92,67 @@
     </div>
   </div>
 
-  <!-- Table -->
-  <div class="overflow-x-auto">
+  <!-- View: List Kegiatan -->
+  <div x-show="view === 'list_kegiatan'" class="overflow-x-auto">
     <table class="w-full text-sm text-left text-gray-600 dark:text-gray-300">
+      <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800">
+        <tr>
+          <th scope="col" class="px-4 py-3">No</th>
+          <th scope="col" class="px-4 py-3">
+            {{ 'Nama Kegiatan' if current_lang == 'id' else 'Activity Name' }}
+          </th>
+          <th scope="col" class="px-4 py-3">
+            {{ 'Jenis' if current_lang == 'id' else 'Type' }}
+          </th>
+          <th scope="col" class="px-4 py-3 text-right">
+            {{ 'Aksi' if current_lang == 'id' else 'Action' }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for kegiatan in kegiatan_list %}
+        <tr
+          class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          <td class="px-4 py-3">{{ loop.index }}</td>
+          <td class="px-4 py-3 font-medium">{{ kegiatan.nama_kegiatan }}</td>
+          <td class="px-4 py-3">{{ kegiatan.jenis_kegiatan }}</td>
+          <td class="px-4 py-3 text-right">
+            <button
+              @click="selectKegiatan({ id_kegiatan: {{ kegiatan.id_kegiatan }}, nama_kegiatan: '{{ kegiatan.nama_kegiatan }}' })"
+              class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg cursor-pointer"
+            >
+              <i class="fa-solid fa-list-check"></i>
+              {{ 'Kelola Penilaian' if current_lang == 'id' else 'Manage
+              Assessment' }}
+            </button>
+          </td>
+        </tr>
+        {% endfor %} {% if not kegiatan_list %}
+        <tr>
+          <td colspan="4" class="px-4 py-3 text-center text-gray-500">
+            {{ 'Belum ada kegiatan.' if current_lang == 'id' else 'No activities
+            found.' }}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- View: List Peserta -->
+  <div x-show="view === 'list_peserta'" class="overflow-x-auto">
+    <div x-show="isLoading" class="text-center py-4">
+      <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500"></i>
+      <p class="mt-2 text-gray-500">
+        {{ 'Memuat data...' if current_lang == 'id' else 'Loading data...' }}
+      </p>
+    </div>
+
+    <table
+      x-show="!isLoading"
+      class="w-full text-sm text-left text-gray-600 dark:text-gray-300"
+    >
       <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800">
         <tr>
           <th scope="col" class="px-4 py-3">No</th>
@@ -45,7 +163,7 @@
             {{ 'Golongan' if current_lang == 'id' else 'Group' }}
           </th>
           <th scope="col" class="px-4 py-3">
-            {{ 'Nilai' if current_lang == 'id' else 'Score' }}
+            {{ 'Nilai Total' if current_lang == 'id' else 'Total Score' }}
           </th>
           <th scope="col" class="px-4 py-3">Status</th>
           <th scope="col" class="px-4 py-3 text-right">
@@ -54,88 +172,50 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Row contoh -->
-        <tr
-          class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+        <template
+          x-for="(peserta, index) in pesertaList"
+          :key="peserta.participant_id"
         >
-          <td class="px-4 py-3">1</td>
-          <td class="px-4 py-3 font-medium">Budi Santoso</td>
-          <td class="px-4 py-3">Penegak</td>
-          <td class="px-4 py-3">85</td>
-          <td class="px-4 py-3">
-            <span
-              class="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full"
-              >{{ 'Tervalidasi' if current_lang == 'id' else 'Validated'
-              }}</span
-            >
-          </td>
-          <td class="px-4 py-3 text-right flex gap-2 justify-end">
-            <button
-              class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded-lg cursor-pointer"
-            >
-              <i class="fa-solid fa-pen-to-square"></i>
-              Edit
-            </button>
-            <button
-              class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg cursor-pointer"
-            >
-              <i class="fa-solid fa-trash"></i>
-              {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
-            </button>
-          </td>
-        </tr>
-        <!-- Row contoh -->
-        <tr
-          class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          <td class="px-4 py-3">2</td>
-          <td class="px-4 py-3 font-medium">Siti Aminah</td>
-          <td class="px-4 py-3">Siaga</td>
-          <td class="px-4 py-3">90</td>
-          <td class="px-4 py-3">
-            <span
-              class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 rounded-full"
-            >
-              {{ 'Belum Valid' if current_lang == 'id' else 'Not Validated'
-              }}</span
-            >
-          </td>
-          <td class="px-4 py-3 text-right flex gap-2 justify-end">
-            <button
-              class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded-lg cursor-pointer"
-            >
-              <i class="fa-solid fa-pen-to-square"></i>
-              Edit
-            </button>
-            <button
-              class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg cursor-pointer"
-            >
-              <i class="fa-solid fa-trash"></i>
-              {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
-            </button>
+          <tr
+            class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            <td class="px-4 py-3" x-text="index + 1"></td>
+            <td class="px-4 py-3 font-medium" x-text="peserta.nama"></td>
+            <td class="px-4 py-3" x-text="peserta.golongan"></td>
+            <td class="px-4 py-3" x-text="peserta.nilai"></td>
+            <td class="px-4 py-3">
+              <span
+                class="px-2 py-1 text-xs font-medium rounded-full"
+                :class="peserta.has_nilai ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'"
+                x-text="peserta.status"
+              ></span>
+            </td>
+            <td class="px-4 py-3 text-right flex gap-2 justify-end">
+              <button
+                x-show="peserta.has_nilai"
+                @click="deletePenilaian(peserta.id)"
+                class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg cursor-pointer"
+              >
+                <i class="fa-solid fa-trash"></i>
+                {{ 'Hapus Penilaian' if current_lang == 'id' else 'Delete
+                Assessment' }}
+              </button>
+              <span
+                x-show="!peserta.has_nilai"
+                class="text-gray-400 text-xs italic"
+              >
+                {{ 'Belum ada nilai' if current_lang == 'id' else 'No score' }}
+              </span>
+            </td>
+          </tr>
+        </template>
+        <tr x-show="pesertaList.length === 0 && !isLoading">
+          <td colspan="6" class="px-4 py-3 text-center text-gray-500">
+            {{ 'Belum ada peserta terdaftar.' if current_lang == 'id' else 'No
+            participants registered.' }}
           </td>
         </tr>
       </tbody>
     </table>
-  </div>
-
-  <!-- Pagination -->
-  <div class="flex justify-between items-center mt-4">
-    <span class="text-sm text-gray-500 dark:text-gray-400">
-      {{ 'Menampilkan 1–10 dari 50 peserta' if current_lang == 'id' else
-      'Showing 1–10 of 50 participants' }}</span
-    >
-    <div class="flex gap-2">
-      <button
-        class="px-3 py-1 text-sm border rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200"
-      >
-        {{ 'Sebelumnya' if current_lang == 'id' else 'Previous' }}
-      </button>
-      <button
-        class="px-3 py-1 text-sm border rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200"
-      >
-        {{ 'Berikutnya' if current_lang == 'id' else 'Next' }}
-      </button>
-    </div>
   </div>
 </div>

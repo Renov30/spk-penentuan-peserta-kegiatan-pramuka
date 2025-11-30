@@ -796,8 +796,7 @@ def admin_dashboard():
     total_criteria = Criteria.query.count() if db.inspect(db.engine).has_table("criteria") else 0
     total_notifications = Notification.query.count()
 
-    sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template('dashboard_admin.html', sidebar_state=sidebar_state, user=user, total_users=total_users, total_participants=total_participants, total_criteria=total_criteria, total_notifications=total_notifications, time=time)
+
 
 # Middleware untuk membatasi akses hanya admin
 def admin_required(f):
@@ -808,6 +807,97 @@ def admin_required(f):
             return redirect(url_for('admin_dashboard'))
         return f(*args, **kwargs)
     return decorated_function
+
+# API Get Penilaian Peserta per Kegiatan
+@app.route('/api/penilaian/peserta/<int:kegiatan_id>')
+@login_required
+@admin_required
+def get_penilaian_peserta(kegiatan_id):
+    try:
+        # Ambil semua peserta yang terdaftar di kegiatan ini
+        peserta_list = Participants.query.filter_by(kegiatan_id=kegiatan_id).all()
+        
+        data = []
+        for p in peserta_list:
+            # Cari user yang associated dengan peserta ini (berdasarkan email atau nama)
+            # Note: Idealnya Participants punya relasi ke Users, tapi jika tidak ada kita cari manual
+            # Asumsi: Participants.email match dengan Users.email
+            user = Users.query.filter_by(email=p.email).first()
+            
+            status_validasi = "Belum Dinilai"
+            total_nilai = 0
+            has_nilai = False
+            
+            if user:
+                # Cek penilaian
+                penilaian = Penilaian.query.filter_by(id_users=user.id, id_kriteria=Criteria.query.filter_by(event_id=kegiatan_id).first().id_kriteria if Criteria.query.filter_by(event_id=kegiatan_id).first() else 0).all()
+                
+                # Hitung total nilai (simplifikasi, bisa disesuaikan dengan logika penilaian yang kompleks)
+                nilai_records = Penilaian.query.filter(
+                    Penilaian.id_users == user.id,
+                    Penilaian.id_kriteria.in_([c.id_kriteria for c in Criteria.query.filter_by(event_id=kegiatan_id).all()])
+                ).all()
+                
+                if nilai_records:
+                    has_nilai = True
+                    total_nilai = sum([n.nilai for n in nilai_records])
+                    status_validasi = "Sudah Dinilai" # Bisa dikembangkan lagi logikanya
+            
+            data.append({
+                'id': user.id if user else None, # User ID untuk keperluan hapus penilaian
+                'participant_id': p.id,
+                'nama': p.nama_lengkap,
+                'golongan': p.golongan,
+                'nilai': total_nilai if has_nilai else '-',
+                'status': status_validasi,
+                'has_nilai': has_nilai
+            })
+            
+        return jsonify({'status': 'success', 'data': data}), 200
+    except Exception as e:
+        current_app.logger.exception('Error in /api/penilaian/peserta:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# API Hapus Penilaian Peserta
+@app.route('/api/penilaian/hapus', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def delete_penilaian():
+    try:
+        data = request.get_json(force=True)
+        user_id = data.get('user_id')
+        kegiatan_id = data.get('kegiatan_id')
+        
+        if not user_id or not kegiatan_id:
+            return jsonify({'status': 'error', 'message': 'Parameter tidak lengkap'}), 400
+            
+        # Cari kriteria yang berhubungan dengan kegiatan ini
+        criteria_ids = [c.id_kriteria for c in Criteria.query.filter_by(event_id=kegiatan_id).all()]
+        
+        if not criteria_ids:
+             return jsonify({'status': 'error', 'message': 'Tidak ada kriteria untuk kegiatan ini'}), 404
+
+        # Hapus penilaian
+        deleted_count = Penilaian.query.filter(
+            Penilaian.id_users == user_id,
+            Penilaian.id_kriteria.in_(criteria_ids)
+        ).delete(synchronize_session=False)
+        
+        # Hapus juga hasil seleksi jika ada
+        HasilSeleksi.query.filter_by(id_users=user_id).delete()
+        
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': f'Berhasil menghapus {deleted_count} data penilaian'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/penilaian/hapus:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+
 
 @app.route('/admin/users')
 @login_required
