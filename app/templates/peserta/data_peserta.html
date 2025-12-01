@@ -142,11 +142,12 @@
                   <div class="flex flex-col items-center mb-6">
                     <div class="relative mb-4" style="width: 120px; height: 120px;">
                       <img
-                        src="{{ url_for('static', filename=biodata.foto if biodata and biodata.foto else user.foto) }}"
+                        src="{% if biodata and biodata.foto and biodata.foto != 'img/default-user.png' %}{{ url_for('static', filename=biodata.foto) }}{% elif user.foto and user.foto != 'img/default-user.png' %}{{ url_for('static', filename=user.foto) }}{% else %}{{ url_for('static', filename='images/profil-default.png') }}{% endif %}"
                         alt="Profile Photo"
                         class="rounded-full object-cover border-4 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                         style="width: 120px; height: 120px; object-fit: cover;"
                         id="preview-foto"
+                        onerror="this.src='{{ url_for('static', filename='images/profil-default.png') }}'"
                       />
                       <label
                         for="foto"
