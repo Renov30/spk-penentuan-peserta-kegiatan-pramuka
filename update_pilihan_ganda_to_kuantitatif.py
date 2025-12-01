@@ -9,17 +9,11 @@ import os
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from config import Config
+from app import create_app, db
+from app.models import Criteria
 
 # Initialize Flask app
-app = Flask(__name__)
-app.config.from_object(Config)
-db = SQLAlchemy(app)
-
-# Import models after db is initialized
-from app.models import Criteria
+app = create_app()
 
 def update_pilihan_ganda_to_kuantitatif():
     with app.app_context():
