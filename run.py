@@ -3,7 +3,7 @@ from flask_session import Session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -823,8 +823,13 @@ def admin_required(f):
 @admin_required
 def get_penilaian_peserta(kegiatan_id):
     try:
-        # Ambil semua peserta yang terdaftar di kegiatan ini
-        peserta_list = Participants.query.filter_by(kegiatan_id=kegiatan_id).all()
+        # Ambil semua peserta yang terdaftar di kegiatan ini melalui many-to-many relationship
+        peserta_list = Participants.query.join(
+            tb_participant_kegiatan,
+            Participants.id == tb_participant_kegiatan.c.participant_id
+        ).filter(
+            tb_participant_kegiatan.c.kegiatan_id == kegiatan_id
+        ).all()
         
         data = []
         for p in peserta_list:
