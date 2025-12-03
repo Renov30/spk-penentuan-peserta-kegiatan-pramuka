@@ -241,19 +241,13 @@
                     seleksi.' if current_lang == 'id' else 'View participant
                     rankings and print selection reports.' }}
                   </p>
-                  <button
-                    @click="
-                      page = 'selection_results';
-                      $store.page.breadcrumbs =
-                        current_lang === 'id'
-                          ? ['Manajemen Seleksi', 'Hasil Seleksi']
-                          : ['Selection Management', 'Selection Results']
-                    "
+                  <a
+                    href="{{ url_for('admin_hasil_penilaian') }}"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95 transition-all shadow dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 cursor-pointer"
                   >
                     <i class="fa-solid fa-eye mr-2"></i>
                     {{ 'Lihat' if current_lang == 'id' else 'View' }}
-                  </button>
+                  </a>
                 </div>
 
                 <!-- Laporan & Arsip Seleksi -->

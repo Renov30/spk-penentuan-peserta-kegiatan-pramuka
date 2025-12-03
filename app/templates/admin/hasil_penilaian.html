@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}" x-data>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {{ 'Hasil Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading
+      Results | Scout DSS' }}
+    </title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/output.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    {% include "script_sidebar.html" %} {% include 'script_theme.html' %}
+  </head>
+  <body
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+    :class="{ 'dark': $store.theme?.isDark }"
+  >
+    <div
+      class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      {% include 'sidebar.html' %}
+
+      <div class="flex flex-col flex-1 overflow-hidden h-full">
+        {% include 'header.html' %}
+
+        <main
+          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
+        >
+          <div class="container mx-auto p-6 max-w-7xl">
+            <div class="flex justify-between items-center mb-8">
+              <div>
+                <h1
+                  class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                >
+                  {{ 'Hasil Penilaian & Ranking' if current_lang == 'id' else
+                  'Grading Results & Ranking' }}
+                </h1>
+                <p
+                  class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                >
+                  {{ 'Daftar peringkat peserta berdasarkan metode Fuzzy AHP' if
+                  current_lang == 'id' else 'List of participant rankings based
+                  on Fuzzy AHP method' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Event Selector -->
+            <div class="mb-6 rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }} p-6">
+              <label class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                {{ 'Pilih Kegiatan:' if current_lang == 'id' else 'Select Event:' }}
+              </label>
+              <select 
+                onchange="window.location.href='{{ url_for('penilai_hasil_penilaian') }}?event_id=' + this.value"
+                class="w-full px-4 py-3 rounded-lg border {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Event' }} --</option>
+                {% for event in assigned_events %}
+                <option value="{{ event.id_kegiatan }}" 
+                        {% if selected_event and selected_event.id_kegiatan == event.id_kegiatan %}selected{% endif %}>
+                  {{ event.nama_kegiatan }} ({{ event.waktu_pelaksanaan_dimulai.strftime('%d %b %Y') }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Results Section -->
+            {% if selected_event %}
+            <div
+              class="rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+            >
+              <div
+                class="p-6 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+              >
+                <div class="flex justify-between items-center">
+                  <div>
+                    <h2
+                      class="text-xl font-bold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
+                    >
+                      {{ selected_event.nama_kegiatan }}
+                    </h2>
+                    <p class="text-sm mt-1 opacity-70">
+                      <i class="fa-regular fa-calendar mr-2"></i>
+                      {{ selected_event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') }}
+                    </p>
+                  </div>
+                  <span
+                    class="px-3 py-1 rounded-full text-xs font-medium {{ 'bg-blue-900 text-blue-200' if current_theme == 'dark' else 'bg-blue-100 text-blue-800' }}"
+                  >
+                    {{ results|length }} {{ 'Peserta' if current_lang == 'id' else 'Participants' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr
+                      class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-50 text-gray-600' }} text-sm uppercase tracking-wider"
+                    >
+                      <th class="p-4 font-semibold text-center w-16">Rank</th>
+                      <th class="p-4 font-semibold">Peserta</th>
+                      <th class="p-4 font-semibold">Asal Gudep</th>
+                      <th class="p-4 font-semibold text-center">
+                        Skor Akhir (Fuzzy)
+                      </th>
+                      <th class="p-4 font-semibold text-center">Status</th>
+                      <th class="p-4 font-semibold text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}"
+                  >
+                    {% for item in results %}
+                    <tr
+                      class="transition-colors hover:bg-opacity-50 {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}"
+                    >
+                      <td class="p-4 text-center">
+                        {% if item.hasil.ranking == 1 %}
+                        <div
+                          class="w-8 h-8 rounded-full bg-yellow-400 text-yellow-900 flex items-center justify-center font-bold mx-auto shadow-lg"
+                        >
+                          1
+                        </div>
+                        {% elif item.hasil.ranking == 2 %}
+                        <div
+                          class="w-8 h-8 rounded-full bg-gray-300 text-gray-800 flex items-center justify-center font-bold mx-auto shadow"
+                        >
+                          2
+                        </div>
+                        {% elif item.hasil.ranking == 3 %}
+                        <div
+                          class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold mx-auto shadow"
+                        >
+                          3
+                        </div>
+                        {% else %}
+                        <span class="font-medium opacity-70"
+                          >#{{ item.hasil.ranking }}</span
+                        >
+                        {% endif %}
+                      </td>
+                      <td class="p-4">
+                        <div class="flex items-center gap-3">
+                          <img
+                            src="{{ url_for('static', filename=item.user.foto) }}"
+                            alt="{{ item.user.nama_lengkap }}"
+                            class="w-10 h-10 rounded-full object-cover border-2 {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-200' }}"
+                            style="width: 40px; height: 40px; min-width: 40px"
+                          />
+                          <div>
+                            <div
+                              class="font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ item.user.nama_lengkap }}
+                            </div>
+                            <div class="text-xs opacity-60">
+                              {{ item.participant.golongan|title if
+                              item.participant else '-' }}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="p-4 text-sm opacity-80">
+                        {{ item.participant.asal_gudep if item.participant else
+                        '-' }}
+                      </td>
+                      <td class="p-4 text-center">
+                        <span
+                          class="text-lg font-bold {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
+                        >
+                          {{ "%.4f"|format(item.hasil.skor_akhir) }}
+                        </span>
+                      </td>
+                      <td class="p-4 text-center">
+                        {% if item.hasil.ranking <= selected_event.batas_lolos %}
+                        <span
+                          class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
+                        >
+                          Lolos Seleksi
+                        </span>
+                        {% else %}
+                        <span
+                          class="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800"
+                        >
+                          Peserta
+                        </span>
+                        {% endif %}
+                      </td>
+                      <td class="p-4 text-center">
+                        <a
+                          href="{{ url_for('admin_detail_nilai', user_id=item.user.id, event_id=selected_event.id_kegiatan) }}"
+                          class="inline-block px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition"
+                        >
+                          <i class="fa-solid fa-eye mr-1"></i>
+                          Lihat Nilai
+                        </a>
+                      </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="p-8 text-center opacity-60">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
+                                <p>{{ 'Belum ada hasil penilaian untuk kegiatan ini.' if current_lang == 'id' else 'No grading results for this event yet.' }}</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {% else %}
+            <!-- No Event Selected -->
+            <div
+              class="text-center py-20 rounded-xl border-2 border-dashed {{ 'border-gray-700 bg-gray-800/50' if current_theme == 'dark' else 'border-gray-300 bg-gray-50' }}"
+            >
+              <div
+                class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 text-gray-500 mb-4"
+              >
+                <i class="fa-solid fa-hand-pointer text-2xl"></i>
+              </div>
+              <h3
+                class="text-lg font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
+                {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select an Event' }}
+              </h3>
+              <p
+                class="max-w-md mx-auto {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+              >
+                {{ 'Silakan pilih kegiatan dari dropdown di atas untuk melihat hasil penilaian.' if current_lang == 'id' else
+                'Please select an event from the dropdown above to view grading results.' }}
+              </p>
+            </div>
+            {% endif %}
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
