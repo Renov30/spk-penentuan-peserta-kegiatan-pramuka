@@ -139,6 +139,7 @@
                             src="{{ url_for('static', filename=item.user.foto) }}"
                             alt="{{ item.user.nama_lengkap }}"
                             class="w-10 h-10 rounded-full object-cover border-2 {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-200' }}"
+                            style="width: 40px; height: 40px; min-width: 40px"
                           />
                           <div>
                             <div
