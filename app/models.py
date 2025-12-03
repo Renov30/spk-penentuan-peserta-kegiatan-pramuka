@@ -178,6 +178,9 @@ class HasilSeleksi(db.Model):
     id_users = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     skor_akhir = db.Column(db.Float, nullable=False)
     ranking = db.Column(db.Integer, nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), nullable=True)
+    
+    event = db.relationship('Event', backref='hasil_seleksi')
 
 # Access to table tb_log_aktivitas
 class LogAktivitas(db.Model):

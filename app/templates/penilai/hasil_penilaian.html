@@ -147,13 +147,15 @@
                               {{ item.user.nama_lengkap }}
                             </div>
                             <div class="text-xs opacity-60">
-                              {{ item.participant.golongan|title }}
+                              {{ item.participant.golongan|title if
+                              item.participant else '-' }}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td class="p-4 text-sm opacity-80">
-                        {{ item.participant.asal_gudep }}
+                        {{ item.participant.asal_gudep if item.participant else
+                        '-' }}
                       </td>
                       <td class="p-4 text-center">
                         <span

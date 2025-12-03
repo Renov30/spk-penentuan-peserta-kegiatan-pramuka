@@ -2963,9 +2963,9 @@ def penilai_hasil_penilaian():
     ).join(
         Users, HasilSeleksi.id_users == Users.id
     ).join(
+        Event, HasilSeleksi.event_id == Event.id_kegiatan
+    ).outerjoin(
         Participants, Users.email == Participants.email # Link via email karena Participants terpisah
-    ).join(
-        Event, Participants.kegiatan_id == Event.id_kegiatan
     ).filter(
         Event.id_kegiatan.in_(event_ids)
     ).order_by(

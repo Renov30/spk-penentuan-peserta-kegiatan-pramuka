@@ -26,7 +26,16 @@ def calculate_spk(event_id):
     criteria_weights = {c.id_kriteria: (c.bobot / total_bobot if total_bobot > 0 else 0) for c in criterias}
 
     # 2. Ambil Peserta yang mengikuti kegiatan ini
-    participants = Participants.query.filter_by(kegiatan_id=event_id).all()
+    event = Event.query.get(event_id)
+    if not event:
+        return False, "Kegiatan tidak ditemukan."
+        
+    participants = event.registered_participants.all()
+    
+    # Fallback for backward compatibility or if using old relation
+    if not participants:
+        participants = Participants.query.filter_by(kegiatan_id=event_id).all()
+        
     if not participants:
         return False, "Tidak ada peserta untuk kegiatan ini."
     
@@ -108,17 +117,20 @@ def calculate_spk(event_id):
     
     # 5. Simpan ke Database
     try:
-        # Hapus hasil lama untuk user yang ada di event ini
-        # Note: Idealnya hapus by event_id jika tabel support, tapi skrg by user_id
-        if final_scores:
-            user_ids_to_update = [item['user_id'] for item in final_scores]
-            HasilSeleksi.query.filter(HasilSeleksi.id_users.in_(user_ids_to_update)).delete(synchronize_session=False)
+        # Hapus hasil lama untuk event ini
+        HasilSeleksi.query.filter_by(event_id=event_id).delete()
         
+        # Jika masih ada data lama tanpa event_id untuk user yang sama, hapus juga (opsional, untuk cleanup)
+        if final_scores:
+             user_ids = [x['user_id'] for x in final_scores]
+             HasilSeleksi.query.filter(HasilSeleksi.id_users.in_(user_ids), HasilSeleksi.event_id == None).delete(synchronize_session=False)
+
         for rank, item in enumerate(final_scores, 1):
             hasil = HasilSeleksi(
                 id_users=item['user_id'],
                 skor_akhir=item['score'],
-                ranking=rank
+                ranking=rank,
+                event_id=event_id
             )
             db.session.add(hasil)
             
