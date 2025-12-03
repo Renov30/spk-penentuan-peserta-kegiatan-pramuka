@@ -2935,62 +2935,57 @@ def penilai_hasil_penilaian():
         flash("Anda tidak memiliki akses ke halaman ini.", "error")
         return redirect(url_for('index'))
     
-    # 1. Trigger Perhitungan Fuzzy AHP untuk semua event yang dinilai oleh penilai ini
-    # Ambil event yang ditugaskan ke penilai ini
+    # Get all assigned events
     assigned_events = Event.query.filter(Event.evaluators.any(id=current_user.id)).all()
     
-    from app.fuzzy_ahp import calculate_spk
+    # Get selected event from query parameter
+    selected_event_id = request.args.get('event_id', type=int)
+    selected_event = None
+    results = []
     
-    for event in assigned_events:
-        # Hitung ulang SPK untuk memastikan data terbaru
-        success, msg = calculate_spk(event.id_kegiatan)
-        if not success:
-            # Log error tapi jangan stop proses render, mungkin cuma belum ada data
-            logging.warning(f"Gagal hitung SPK untuk event {event.id_kegiatan}: {msg}")
-
-    # 2. Ambil Hasil Seleksi
-    # Kita filter berdasarkan user yang ikut event yang ditugaskan ke penilai ini
-    # Karena HasilSeleksi tidak punya event_id, kita join lewat Users -> Participants -> Event
-    
-    # Ambil ID event yang ditugaskan
-    event_ids = [e.id_kegiatan for e in assigned_events]
-    
-    hasil_seleksi = db.session.query(
-        HasilSeleksi,
-        Users,
-        Participants,
-        Event
-    ).join(
-        Users, HasilSeleksi.id_users == Users.id
-    ).join(
-        Event, HasilSeleksi.event_id == Event.id_kegiatan
-    ).outerjoin(
-        Participants, Users.email == Participants.email # Link via email karena Participants terpisah
-    ).filter(
-        Event.id_kegiatan.in_(event_ids)
-    ).order_by(
-        Event.waktu_pelaksanaan_dimulai.desc(),
-        HasilSeleksi.ranking.asc()
-    ).all()
-    
-    # Group by Event for easier display
-    results_by_event = {}
-    for hasil, user, participant, event in hasil_seleksi:
-        if event.id_kegiatan not in results_by_event:
-            results_by_event[event.id_kegiatan] = {
-                'event': event,
-                'results': []
-            }
-        results_by_event[event.id_kegiatan]['results'].append({
-            'hasil': hasil,
-            'user': user,
-            'participant': participant
-        })
+    if selected_event_id:
+        # Verify the event is assigned to this evaluator
+        selected_event = Event.query.get(selected_event_id)
+        if selected_event and selected_event in assigned_events:
+            from app.fuzzy_ahp import calculate_spk
+            
+            # Calculate SPK for this event
+            success, msg = calculate_spk(selected_event_id)
+            if not success:
+                logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            
+            # Fetch results for this event only
+            hasil_seleksi = db.session.query(
+                HasilSeleksi,
+                Users,
+                Participants
+            ).join(
+                Users, HasilSeleksi.id_users == Users.id
+            ).outerjoin(
+                Participants, Users.email == Participants.email
+            ).filter(
+                HasilSeleksi.event_id == selected_event_id
+            ).order_by(
+                HasilSeleksi.ranking.asc()
+            ).all()
+            
+            # Build results list
+            for hasil, user, participant in hasil_seleksi:
+                results.append({
+                    'hasil': hasil,
+                    'user': user,
+                    'participant': participant
+                })
+        else:
+            flash("Kegiatan tidak ditemukan atau Anda tidak memiliki akses.", "error")
+            selected_event = None
 
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template(
         'penilai/hasil_penilaian.html',
-        results_by_event=results_by_event,
+        assigned_events=assigned_events,
+        selected_event=selected_event,
+        results=results,
         sidebar_state=sidebar_state
     )
 

@@ -56,10 +56,29 @@
               </div>
             </div>
 
-            {% if results_by_event %} {% for event_id, data in
-            results_by_event.items() %}
+            <!-- Event Selector -->
+            <div class="mb-6 rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }} p-6">
+              <label class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                {{ 'Pilih Kegiatan:' if current_lang == 'id' else 'Select Event:' }}
+              </label>
+              <select 
+                onchange="window.location.href='{{ url_for('penilai_hasil_penilaian') }}?event_id=' + this.value"
+                class="w-full px-4 py-3 rounded-lg border {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Event' }} --</option>
+                {% for event in assigned_events %}
+                <option value="{{ event.id_kegiatan }}" 
+                        {% if selected_event and selected_event.id_kegiatan == event.id_kegiatan %}selected{% endif %}>
+                  {{ event.nama_kegiatan }} ({{ event.waktu_pelaksanaan_dimulai.strftime('%d %b %Y') }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Results Section -->
+            {% if selected_event %}
             <div
-              class="mb-10 rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              class="rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
             >
               <div
                 class="p-6 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
@@ -69,19 +88,17 @@
                     <h2
                       class="text-xl font-bold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
                     >
-                      {{ data.event.nama_kegiatan }}
+                      {{ selected_event.nama_kegiatan }}
                     </h2>
                     <p class="text-sm mt-1 opacity-70">
                       <i class="fa-regular fa-calendar mr-2"></i>
-                      {{ data.event.waktu_pelaksanaan_dimulai.strftime('%d %B
-                      %Y') }}
+                      {{ selected_event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') }}
                     </p>
                   </div>
                   <span
                     class="px-3 py-1 rounded-full text-xs font-medium {{ 'bg-blue-900 text-blue-200' if current_theme == 'dark' else 'bg-blue-100 text-blue-800' }}"
                   >
-                    {{ data.results|length }} {{ 'Peserta' if current_lang ==
-                    'id' else 'Participants' }}
+                    {{ results|length }} {{ 'Peserta' if current_lang == 'id' else 'Participants' }}
                   </span>
                 </div>
               </div>
@@ -104,7 +121,7 @@
                   <tbody
                     class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}"
                   >
-                    {% for item in data.results %}
+                    {% for item in results %}
                     <tr
                       class="transition-colors hover:bg-opacity-50 {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}"
                     >
@@ -166,7 +183,7 @@
                         </span>
                       </td>
                       <td class="p-4 text-center">
-                        {% if item.hasil.ranking <= data.event.batas_lolos %}
+                        {% if item.hasil.ranking <= selected_event.batas_lolos %}
                         <span
                           class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
                         >
@@ -181,41 +198,41 @@
                         {% endif %}
                       </td>
                     </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="p-8 text-center opacity-60">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
+                                <p>{{ 'Belum ada hasil penilaian untuk kegiatan ini.' if current_lang == 'id' else 'No grading results for this event yet.' }}</p>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
             </div>
-            {% endfor %} {% else %}
+            {% else %}
+            <!-- No Event Selected -->
             <div
               class="text-center py-20 rounded-xl border-2 border-dashed {{ 'border-gray-700 bg-gray-800/50' if current_theme == 'dark' else 'border-gray-300 bg-gray-50' }}"
             >
               <div
                 class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 text-gray-500 mb-4"
               >
-                <i class="fa-solid fa-clipboard-list text-2xl"></i>
+                <i class="fa-solid fa-hand-pointer text-2xl"></i>
               </div>
               <h3
                 class="text-lg font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >
-                {{ 'Belum Ada Hasil Penilaian' if current_lang == 'id' else 'No
-                Grading Results Yet' }}
+                {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select an Event' }}
               </h3>
               <p
                 class="max-w-md mx-auto {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
               >
-                {{ 'Silakan lakukan penilaian terhadap peserta terlebih dahulu
-                untuk melihat hasil ranking.' if current_lang == 'id' else
-                'Please grade the participants first to see the ranking
-                results.' }}
+                {{ 'Silakan pilih kegiatan dari dropdown di atas untuk melihat hasil penilaian.' if current_lang == 'id' else
+                'Please select an event from the dropdown above to view grading results.' }}
               </p>
-              <a
-                href="{{ url_for('penilai_dashboard') }}"
-                class="inline-block mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-              >
-                {{ 'Mulai Menilai' if current_lang == 'id' else 'Start Grading'
-                }}
-              </a>
             </div>
             {% endif %}
           </div>
