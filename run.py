@@ -2989,6 +2989,112 @@ def penilai_hasil_penilaian():
         sidebar_state=sidebar_state
     )
 
+@app.route('/penilai/detail-nilai/<int:user_id>/<int:event_id>')
+@login_required
+def penilai_detail_nilai(user_id, event_id):
+    if current_user.level != 'penilai':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    # Verify event is assigned to this evaluator
+    event = Event.query.get_or_404(event_id)
+    if current_user not in event.evaluators:
+        flash("Anda tidak memiliki akses ke kegiatan ini.", "error")
+        return redirect(url_for('penilai_hasil_penilaian'))
+    
+    # Get participant info
+    user = Users.query.get_or_404(user_id)
+    participant = Participants.query.filter_by(email=user.email).first()
+    
+    # Get final result
+    hasil_seleksi = HasilSeleksi.query.filter_by(
+        id_users=user_id,
+        event_id=event_id
+    ).first()
+    
+    # Get all criteria for this event
+    criterias = Criteria.query.filter_by(event_id=event_id).all()
+    
+    # Calculate total weight
+    total_bobot = sum(c.bobot for c in criterias)
+    
+    # Get all scores and calculate breakdown
+    calculation_details = []
+    fuzzy_total_l = 0
+    fuzzy_total_m = 0
+    fuzzy_total_u = 0
+    
+    for criteria in criterias:
+        # Normalized weight
+        weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
+        
+        # Get average score from all evaluators
+        avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(
+            id_users=user_id,
+            id_kriteria=criteria.id_kriteria
+        ).scalar()
+        
+        if avg_score is not None:
+            score = float(avg_score)
+            
+            # Fuzzification logic (same as fuzzy_ahp.py)
+            if score <= 5:  # Likert scale
+                if score <= 1:
+                    l, m, u = 1, 1, 2
+                elif score <= 2:
+                    l, m, u = 1, 2, 3
+                elif score <= 3:
+                    l, m, u = 2, 3, 4
+                elif score <= 4:
+                    l, m, u = 3, 4, 5
+                else:
+                    l, m, u = 4, 5, 5
+            else:  # 0-100 scale
+                l = max(0, score - 5)
+                m = score
+                u = min(100, score + 5)
+            
+            # Weighted fuzzy values
+            weighted_l = l * weight
+            weighted_m = m * weight
+            weighted_u = u * weight
+            
+            # Accumulate totals
+            fuzzy_total_l += weighted_l
+            fuzzy_total_m += weighted_m
+            fuzzy_total_u += weighted_u
+            
+            calculation_details.append({
+                'criteria': criteria,
+                'weight': weight,
+                'raw_score': score,
+                'fuzzy_l': l,
+                'fuzzy_m': m,
+                'fuzzy_u': u,
+                'weighted_l': weighted_l,
+                'weighted_m': weighted_m,
+                'weighted_u': weighted_u
+            })
+    
+    # Final defuzzified score
+    final_score = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3 if calculation_details else 0
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template(
+        'penilai/detail_nilai.html',
+        user=user,
+        participant=participant,
+        event=event,
+        hasil_seleksi=hasil_seleksi,
+        calculation_details=calculation_details,
+        fuzzy_total_l=fuzzy_total_l,
+        fuzzy_total_m=fuzzy_total_m,
+        fuzzy_total_u=fuzzy_total_u,
+        final_score=final_score,
+        sidebar_state=sidebar_state
+    )
+
+
 @app.route('/penilai/hasil-seleksi')
 @login_required
 def penilai_hasil_seleksi():

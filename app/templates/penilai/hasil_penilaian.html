@@ -116,6 +116,7 @@
                         Skor Akhir (Fuzzy)
                       </th>
                       <th class="p-4 font-semibold text-center">Status</th>
+                      <th class="p-4 font-semibold text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody
@@ -197,10 +198,19 @@
                         </span>
                         {% endif %}
                       </td>
+                      <td class="p-4 text-center">
+                        <a
+                          href="{{ url_for('penilai_detail_nilai', user_id=item.user.id, event_id=selected_event.id_kegiatan) }}"
+                          class="inline-block px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition"
+                        >
+                          <i class="fa-solid fa-eye mr-1"></i>
+                          Lihat Nilai
+                        </a>
+                      </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="p-8 text-center opacity-60">
+                        <td colspan="6" class="p-8 text-center opacity-60">
                             <div class="flex flex-col items-center justify-center">
                                 <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
                                 <p>{{ 'Belum ada hasil penilaian untuk kegiatan ini.' if current_lang == 'id' else 'No grading results for this event yet.' }}</p>
