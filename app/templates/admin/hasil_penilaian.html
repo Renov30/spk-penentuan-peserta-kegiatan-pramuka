@@ -62,7 +62,7 @@
                 {{ 'Pilih Kegiatan:' if current_lang == 'id' else 'Select Event:' }}
               </label>
               <select 
-                onchange="window.location.href='{{ url_for('penilai_hasil_penilaian') }}?event_id=' + this.value"
+                onchange="window.location.href='{{ url_for('admin_hasil_penilaian') }}?event_id=' + this.value"
                 class="w-full px-4 py-3 rounded-lg border {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">-- {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Event' }} --</option>
