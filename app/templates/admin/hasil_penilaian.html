@@ -38,7 +38,10 @@
           :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
         >
           <div class="container mx-auto p-6 max-w-7xl">
-            <div class="flex justify-between items-center mb-8">
+            <div class="flex items-center mb-8">
+              <a href="{{ url_for('admin_manajemen_seleksi') }}" class="mr-4 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="{{ 'Kembali' if current_lang == 'id' else 'Back' }}">
+                <i class="fa-solid fa-arrow-left text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"></i>
+              </a>
               <div>
                 <h1
                   class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
