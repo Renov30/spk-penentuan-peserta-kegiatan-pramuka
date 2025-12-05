@@ -3378,10 +3378,29 @@ def peserta_hasil_seleksi():
     hasil_seleksi = HasilSeleksi.query.filter_by(id_users=current_user.id).first()
     biodata = Participants.query.filter_by(email=current_user.email).first()
     
+    status_lulus = False
+    event = None
+    
+    if hasil_seleksi and hasil_seleksi.event:
+        event = hasil_seleksi.event
+        kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
+        
+        if kuota and biodata:
+            limit = 0
+            if biodata.jenis_kelamin == 'laki-laki':
+                limit = kuota.putra
+            elif biodata.jenis_kelamin == 'perempuan':
+                limit = kuota.putri
+                
+            if hasil_seleksi.ranking <= limit:
+                status_lulus = True
+
     return render_template(
         'peserta/hasil_seleksi.html',
         hasil_seleksi=hasil_seleksi,
         biodata=biodata,
+        event=event,
+        status_lulus=status_lulus,
         sidebar_state=sidebar_state,
         user=current_user
     )
