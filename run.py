@@ -3375,32 +3375,38 @@ def peserta_hasil_seleksi():
         return redirect(url_for('index'))
     
     sidebar_state = current_user.sidebar_state or 'expanded'
-    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=current_user.id).first()
+    all_hasil = HasilSeleksi.query.filter_by(id_users=current_user.id).all()
     biodata = Participants.query.filter_by(email=current_user.email).first()
     
-    status_lulus = False
-    event = None
+    results_data = []
     
-    if hasil_seleksi and hasil_seleksi.event:
-        event = hasil_seleksi.event
-        kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
-        
-        if kuota and biodata:
-            limit = 0
-            if biodata.jenis_kelamin == 'laki-laki':
-                limit = kuota.putra
-            elif biodata.jenis_kelamin == 'perempuan':
-                limit = kuota.putri
-                
-            if hasil_seleksi.ranking <= limit:
-                status_lulus = True
+    if all_hasil:
+        for hasil in all_hasil:
+            status_lulus = False
+            event = hasil.event
+            
+            if event:
+                kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
+                if kuota and biodata:
+                    limit = 0
+                    if biodata.jenis_kelamin == 'laki-laki':
+                        limit = kuota.putra
+                    elif biodata.jenis_kelamin == 'perempuan':
+                        limit = kuota.putri
+                        
+                    if hasil.ranking <= limit:
+                        status_lulus = True
+            
+            results_data.append({
+                'hasil': hasil,
+                'event': event,
+                'status_lulus': status_lulus
+            })
 
     return render_template(
         'peserta/hasil_seleksi.html',
-        hasil_seleksi=hasil_seleksi,
+        results_data=results_data,
         biodata=biodata,
-        event=event,
-        status_lulus=status_lulus,
         sidebar_state=sidebar_state,
         user=current_user
     )

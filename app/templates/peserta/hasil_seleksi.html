@@ -72,69 +72,114 @@
             <!-- Content -->
             <div class="container mx-auto p-6">
               <h1
-                    <h2 class="text-lg font-semibold">
-                      {{ 'Skor Akhir' if current_lang == 'id' else 'Final Score'
-                      }}
-                    </h2>
-                    <i class="fa-solid fa-star text-2xl text-yellow-500"></i>
-                  </div>
-                  <p class="text-3xl font-bold text-yellow-600">
-                    {{ "%.2f"|format(hasil_seleksi.skor_akhir) }}
-                  </p>
-                </div>
+                class="text-3xl font-bold mb-6 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+              >
+                {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+                Results' }}
+              </h1>
 
-                <!-- Ranking -->
-                <div
-                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+              {% if results_data %} {% for item in results_data %}
+              <div
+                class="mb-8 border-b pb-6 last:border-0 last:pb-0 border-gray-600"
+              >
+                <h2
+                  class="text-2xl font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
                 >
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold">
-                      {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
-                    </h2>
-                    <i class="fa-solid fa-trophy text-2xl text-blue-500"></i>
-                  </div>
-                  <p class="text-3xl font-bold text-blue-600">
-                    #{{ hasil_seleksi.ranking }}
-                  </p>
-                </div>
+                  {{ item.event.nama_kegiatan if item.event else 'Kegiatan Tidak
+                  Diketahui' }}
+                </h2>
 
-                <!-- Status Kelulusan -->
                 <div
-                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                 >
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold">
-                      {{ 'Status' if current_lang == 'id' else 'Status' }}
-                    </h2>
-                    <i
-                      class="fa-solid {{ 'fa-check-circle text-green-500' if status_lulus else 'fa-times-circle text-red-500' }} text-2xl"
-                    ></i>
-                  </div>
-                  <p
-                    class="text-xl font-bold {{ 'text-green-600' if status_lulus else 'text-red-600' }}"
+                  <!-- Skor Akhir -->
+                  <div
+                    class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
                   >
-                    {{ 'LULUS' if status_lulus else 'TIDAK LULUS' }}
-                  </p>
-                </div>
-
-                <!-- Tanggal Pelaksanaan -->
-                <div
-                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
-                >
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold">
-                      {{ 'Pelaksanaan' if current_lang == 'id' else 'Date' }}
-                    </h2>
-                    <i
-                      class="fa-solid fa-calendar-days text-2xl text-purple-500"
-                    ></i>
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-lg font-semibold">
+                        {{ 'Skor Akhir' if current_lang == 'id' else 'Final
+                        Score' }}
+                      </h3>
+                      <i class="fa-solid fa-star text-2xl text-yellow-500"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-yellow-600">
+                      {{ "%.2f"|format(item.hasil.skor_akhir) }}
+                    </p>
                   </div>
-                  <p class="text-lg font-bold text-purple-600">
-                    {{ event.waktu_pelaksanaan_dimulai.strftime('%d/%m/%Y') if
-                    event and event.waktu_pelaksanaan_dimulai else '-' }}
-                  </p>
+
+                  <!-- Ranking -->
+                  <div
+                    class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                  >
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-lg font-semibold">
+                        {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
+                      </h3>
+                      <i class="fa-solid fa-trophy text-2xl text-blue-500"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-blue-600">
+                      #{{ item.hasil.ranking }}
+                    </p>
+                  </div>
+
+                  <!-- Status Kelulusan -->
+                  <div
+                    class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                  >
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-lg font-semibold">
+                        {{ 'Status' if current_lang == 'id' else 'Status' }}
+                      </h3>
+                      <i
+                        class="fa-solid {{ 'fa-check-circle text-green-500' if item.status_lulus else 'fa-times-circle text-red-500' }} text-2xl"
+                      ></i>
+                    </div>
+                    <p
+                      class="text-xl font-bold {{ 'text-green-600' if item.status_lulus else 'text-red-600' }}"
+                    >
+                      {{ 'LULUS' if item.status_lulus else 'TIDAK LULUS' }}
+                    </p>
+                  </div>
+
+                  <!-- Tanggal Pelaksanaan -->
+                  <div
+                    class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+                  >
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-lg font-semibold">
+                        {{ 'Pelaksanaan' if current_lang == 'id' else 'Date' }}
+                      </h3>
+                      <i
+                        class="fa-solid fa-calendar-days text-2xl text-purple-500"
+                      ></i>
+                    </div>
+                    <p class="text-lg font-bold text-purple-600">
+                      {{
+                      item.event.waktu_pelaksanaan_dimulai.strftime('%d/%m/%Y')
+                      if item.event and item.event.waktu_pelaksanaan_dimulai
+                      else '-' }}
+                    </p>
+                  </div>
                 </div>
               </div>
+              {% endfor %} {% else %}
+              <div
+                class="rounded-xl shadow p-12 text-center {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
+              >
+                <i
+                  class="fa-solid fa-clipboard-question text-6xl text-gray-400 mb-4"
+                ></i>
+                <p
+                  class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                >
+                  {{ 'Hasil seleksi belum tersedia. Silakan tunggu pengumuman
+                  lebih lanjut.' if current_lang == 'id' else 'Selection results
+                  are not available yet. Please wait for further announcement.'
+                  }}
+                </p>
+              </div>
+              {% endif %}
 
               <!-- Informasi Tambahan -->
               {% if biodata %}
@@ -177,22 +222,6 @@
                     </div>
                   </div>
                 </div>
-              </div>
-              {% endif %} {% else %}
-              <div
-                class="rounded-xl shadow p-12 text-center {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
-              >
-                <i
-                  class="fa-solid fa-clipboard-question text-6xl text-gray-400 mb-4"
-                ></i>
-                <p
-                  class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
-                >
-                  {{ 'Hasil seleksi belum tersedia. Silakan tunggu pengumuman
-                  lebih lanjut.' if current_lang == 'id' else 'Selection results
-                  are not available yet. Please wait for further announcement.'
-                  }}
-                </p>
               </div>
               {% endif %}
             </div>
