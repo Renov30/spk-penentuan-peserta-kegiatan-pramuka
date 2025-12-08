@@ -954,6 +954,56 @@ def get_detail_penilaian(user_id, kegiatan_id):
         current_app.logger.exception('Error in /api/penilaian/detail:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# Route View Detail Penilaian Peserta (Halaman)
+@app.route('/admin/penilaian/detail_view/<int:user_id>/<int:kegiatan_id>')
+@login_required
+@admin_required
+def admin_penilaian_detail_view(user_id, kegiatan_id):
+    try:
+        user = Users.query.get_or_404(user_id)
+        participant = Participants.query.filter_by(email=user.email).first()
+        event = Event.query.get_or_404(kegiatan_id)
+        
+        # Ambil semua kriteria untuk kegiatan ini
+        kriteria_list = Criteria.query.filter_by(event_id=kegiatan_id).all()
+        
+        detail_scores = []
+        for kriteria in kriteria_list:
+            # Ambil nilai untuk kriteria ini
+            penilaian = Penilaian.query.filter_by(
+                id_users=user_id,
+                id_kriteria=kriteria.id_kriteria
+            ).first()
+            
+            # Ambil nama penilai jika ada
+            penilai_nama = None
+            if penilaian and penilaian.evaluator_id:
+                evaluator = Users.query.get(penilaian.evaluator_id)
+                if evaluator:
+                    penilai_nama = evaluator.nama_lengkap
+            
+            detail_scores.append({
+                'kriteria': kriteria.nama_kriteria,
+                'bobot': kriteria.bobot,
+                'nilai': penilaian.nilai if penilaian else 0,
+                'penilai': penilai_nama
+            })
+            
+        sidebar_state = current_user.sidebar_state or 'expanded'
+            
+        return render_template(
+            'penilaian_peserta_detail.html',
+            user=current_user,
+            participant=participant,
+            event=event,
+            detail_scores=detail_scores,
+            sidebar_state=sidebar_state
+        )
+    except Exception as e:
+        current_app.logger.exception('Error in admin_penilaian_detail_view:')
+        flash(f"Terjadi kesalahan: {str(e)}", "danger")
+        return redirect(url_for('admin_manajemen_seleksi'))
+
 # API Hapus Penilaian Peserta
 @app.route('/api/penilaian/hapus', methods=['POST'])
 @login_required

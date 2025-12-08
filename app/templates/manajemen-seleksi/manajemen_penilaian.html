@@ -3,12 +3,6 @@
   x-show="page === 'assessment_management'"
   x-data="{
     view: 'list_kegiatan',
-    selectedKegiatan: null,
-    pesertaList: [],
-    isLoading: false,
-    selectedPeserta: null,
-    detailScores: [],
-    
     async selectKegiatan(kegiatan) {
         this.selectedKegiatan = kegiatan;
         this.view = 'list_peserta';
@@ -26,27 +20,6 @@
         } catch (error) {
             console.error('Error fetching participants:', error);
             alert('Terjadi kesalahan saat memuat data.');
-        } finally {
-            this.isLoading = false;
-        }
-    },
-    
-    async viewDetailScores(peserta) {
-        this.selectedPeserta = peserta;
-        this.isLoading = true;
-        this.detailScores = [];
-        
-        try {
-            const response = await fetch(`/api/penilaian/detail/${peserta.id}/${this.selectedKegiatan.id_kegiatan}`);
-            const result = await response.json();
-            if (result.status === 'success') {
-                this.detailScores = result.data;
-            } else {
-                alert('Gagal memuat detail nilai: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error fetching score details:', error);
-            alert('Terjadi kesalahan saat memuat detail nilai.');
         } finally {
             this.isLoading = false;
         }
@@ -260,14 +233,14 @@
               ></span>
             </td>
             <td class="px-6 py-4 text-right flex gap-2 justify-end">
-              <button
+              <a
                 x-show="peserta.has_nilai"
-                @click="viewDetailScores(peserta)"
-                class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg cursor-pointer transition"
+                :href="`/admin/penilaian/detail_view/${peserta.id}/${selectedKegiatan.id_kegiatan}`"
+                class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg cursor-pointer transition inline-flex items-center"
               >
                 <i class="fa-solid fa-eye mr-1"></i>
                 {{ 'Lihat' if current_lang == 'id' else 'View' }}
-              </button>
+              </a>
               <button
                 x-show="peserta.has_nilai"
                 @click="deletePenilaian(peserta.id)"
