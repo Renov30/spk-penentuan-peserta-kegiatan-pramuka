@@ -918,6 +918,42 @@ def get_penilaian_peserta(kegiatan_id):
         current_app.logger.exception('Error in /api/penilaian/peserta:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# API Get Detail Penilaian per Kriteria
+@app.route('/api/penilaian/detail/<int:user_id>/<int:kegiatan_id>')
+@login_required
+@admin_required
+def get_detail_penilaian(user_id, kegiatan_id):
+    try:
+        # Ambil semua kriteria untuk kegiatan ini
+        kriteria_list = Criteria.query.filter_by(event_id=kegiatan_id).all()
+        
+        data = []
+        for kriteria in kriteria_list:
+            # Ambil nilai untuk kriteria ini
+            penilaian = Penilaian.query.filter_by(
+                id_users=user_id,
+                id_kriteria=kriteria.id_kriteria
+            ).first()
+            
+            # Ambil nama penilai jika ada
+            penilai_nama = None
+            if penilaian and penilaian.evaluator_id:
+                evaluator = Users.query.get(penilaian.evaluator_id)
+                if evaluator:
+                    penilai_nama = evaluator.nama_lengkap
+            
+            data.append({
+                'kriteria': kriteria.nama_kriteria,
+                'bobot': kriteria.bobot,
+                'nilai': penilaian.nilai if penilaian else 0,
+                'penilai': penilai_nama
+            })
+        
+        return jsonify({'status': 'success', 'data': data}), 200
+    except Exception as e:
+        current_app.logger.exception('Error in /api/penilaian/detail:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 # API Hapus Penilaian Peserta
 @app.route('/api/penilaian/hapus', methods=['POST'])
 @login_required
