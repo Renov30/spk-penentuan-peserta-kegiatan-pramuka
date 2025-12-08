@@ -34,7 +34,7 @@
     {% include 'script_theme.html' %}
   </head>
   <body
-    x-data="{ ready: false, current_lang: '{{ current_lang }}' }"
+    x-data="{ ready: false, current_lang: '{{ current_lang }}', selectedEvent: null }"
     x-init="ready = true"
     :class="{ 'dark': $store.theme?.isDark }"
     x-bind:class="{
@@ -84,141 +84,286 @@
                 </a>
               </div>
 
-              {% if assignment_data %} {% for event_data in assignment_data %}
-              <div
-                class="mb-8 rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <!-- Event Header -->
-                <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4">
-                  <h2
-                    class="text-xl font-bold text-gray-900 flex items-center gap-2"
+              <!-- Event List View -->
+              <div x-show="selectedEvent === null" x-transition>
+                {% if assignment_data %}
+                <div
+                  class="rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <div class="p-6">
+                    <h2
+                      class="text-lg font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                    >
+                      {{ 'Daftar Kegiatan dengan Penugasan Penilai' if
+                      current_lang == 'id' else 'Events with Evaluator
+                      Assignments' }}
+                    </h2>
+                    <div class="overflow-x-auto">
+                      <table class="w-full">
+                        <thead>
+                          <tr
+                            class="{{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
+                          >
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'No' if current_lang == 'id' else 'No' }}
+                            </th>
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Nama Kegiatan' if current_lang == 'id' else
+                              'Event Name' }}
+                            </th>
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Jenis Kegiatan' if current_lang == 'id' else
+                              'Event Type' }}
+                            </th>
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Waktu Pelaksanaan' if current_lang == 'id'
+                              else 'Event Date' }}
+                            </th>
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Jumlah Penilai' if current_lang == 'id' else
+                              'Evaluators Count' }}
+                            </th>
+                            <th
+                              class="px-4 py-3 text-center text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Aksi' if current_lang == 'id' else 'Action' }}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for event_data in assignment_data %} {% set
+                          evaluator_set = [] %} {% for assignment in
+                          event_data.criteria_assignments %} {% for evaluator in
+                          assignment.evaluators %} {% if evaluator.id not in
+                          evaluator_set %} {% set _ =
+                          evaluator_set.append(evaluator.id) %} {% endif %} {%
+                          endfor %} {% endfor %}
+
+                          <tr
+                            class="border-b {{ 'border-gray-700 hover:bg-gray-800' if current_theme == 'dark' else 'border-gray-200 hover:bg-gray-50' }}"
+                          >
+                            <td
+                              class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ loop.index }}
+                            </td>
+                            <td
+                              class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              <div class="font-medium">
+                                {{ event_data.event.nama_kegiatan }}
+                              </div>
+                            </td>
+                            <td
+                              class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ event_data.event.jenis_kegiatan }}
+                            </td>
+                            <td
+                              class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{
+                              event_data.event.waktu_pelaksanaan_dimulai.strftime('%d/%m/%Y')
+                              if event_data.event.waktu_pelaksanaan_dimulai else
+                              '-' }} - {{
+                              event_data.event.waktu_pelaksanaan_selesai.strftime('%d/%m/%Y')
+                              if event_data.event.waktu_pelaksanaan_selesai else
+                              '-' }}
+                            </td>
+                            <td
+                              class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              <span
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                              >
+                                {{ evaluator_set|length }} {{ 'Penilai' if
+                                current_lang == 'id' else 'Evaluators' }}
+                              </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                              <button
+                                @click="selectedEvent = {{ loop.index0 }}"
+                                class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow cursor-pointer"
+                              >
+                                <i class="fa-solid fa-eye mr-1"></i>
+                                {{ 'Lihat Detail' if current_lang == 'id' else
+                                'View Details' }}
+                              </button>
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                {% else %}
+                <div
+                  class="text-center py-12 rounded-2xl {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <i
+                    class="fa-solid fa-inbox text-6xl {{ 'text-gray-600' if current_theme == 'dark' else 'text-gray-300' }} mb-4"
+                  ></i>
+                  <p
+                    class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }} text-lg"
                   >
-                    <i class="fa-solid fa-calendar-days"></i>
-                    {{ event_data.event.nama_kegiatan }}
-                  </h2>
-                  <p class="text-white text-sm mt-1">
-                    {{ event_data.event.jenis_kegiatan }} | {{
-                    event_data.event.waktu_pelaksanaan_dimulai.strftime('%d/%m/%Y')
-                    if event_data.event.waktu_pelaksanaan_dimulai else '-' }} -
-                    {{
-                    event_data.event.waktu_pelaksanaan_selesai.strftime('%d/%m/%Y')
-                    if event_data.event.waktu_pelaksanaan_selesai else '-' }}
+                    {{ 'Belum ada data penugasan penilai' if current_lang ==
+                    'id' else 'No evaluator assignment data available' }}
                   </p>
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Event Detail View -->
+              {% if assignment_data %} {% for event_data in assignment_data %}
+              <div x-show="selectedEvent === {{ loop.index0 }}" x-transition>
+                <div class="mb-4">
+                  <button
+                    @click="selectedEvent = null"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-gray-500 text-white hover:bg-gray-600 active:scale-95 transition-all shadow cursor-pointer"
+                  >
+                    <i class="fa-solid fa-arrow-left mr-2"></i>
+                    {{ 'Kembali ke Daftar' if current_lang == 'id' else 'Back to
+                    List' }}
+                  </button>
                 </div>
 
-                <!-- Criteria and Evaluators Table -->
-                <div class="p-6">
-                  {% if event_data.criteria_assignments %}
-                  <div class="overflow-x-auto">
-                    <table class="w-full">
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
-                        >
-                          <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-                          >
-                            {{ 'No' if current_lang == 'id' else 'No' }}
-                          </th>
-                          <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-                          >
-                            {{ 'Kriteria Penilaian' if current_lang == 'id' else
-                            'Assessment Criteria' }}
-                          </th>
-                          <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-                          >
-                            {{ 'Aspek' if current_lang == 'id' else 'Aspect' }}
-                          </th>
-                          <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-                          >
-                            {{ 'Penilai Ditugaskan' if current_lang == 'id' else
-                            'Assigned Evaluators' }}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for assignment in event_data.criteria_assignments %}
-                        <tr
-                          class="border-b {{ 'border-gray-700 hover:bg-gray-800' if current_theme == 'dark' else 'border-gray-200 hover:bg-gray-50' }}"
-                        >
-                          <td
-                            class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
-                          >
-                            {{ loop.index }}
-                          </td>
-                          <td
-                            class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
-                          >
-                            <div class="font-medium">
-                              {{ assignment.criteria.nama_kriteria }}
-                            </div>
-                            <div
-                              class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
-                            >
-                              {{ 'Bobot:' if current_lang == 'id' else 'Weight:'
-                              }} {{ assignment.criteria.bobot }}
-                            </div>
-                          </td>
-                          <td
-                            class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
-                          >
-                            {{ assignment.criteria.aspek or '-' }}
-                          </td>
-                          <td class="px-4 py-3 text-sm">
-                            {% if assignment.evaluators %}
-                            <div class="flex flex-wrap gap-2">
-                              {% for evaluator in assignment.evaluators %}
-                              <span
-                                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                              >
-                                <i class="fa-solid fa-user mr-1"></i>
-                                {{ evaluator.nama_lengkap }}
-                              </span>
-                              {% endfor %}
-                            </div>
-                            {% else %}
-                            <span
-                              class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }} italic"
-                            >
-                              {{ 'Belum ada penilai ditugaskan' if current_lang
-                              == 'id' else 'No evaluators assigned' }}
-                            </span>
-                            {% endif %}
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                  {% else %}
-                  <p
-                    class="text-center {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }} py-8"
+                <div
+                  class="rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <!-- Event Header -->
+                  <div
+                    class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4"
                   >
-                    {{ 'Belum ada kriteria penilaian untuk kegiatan ini' if
-                    current_lang == 'id' else 'No assessment criteria for this
-                    event' }}
-                  </p>
-                  {% endif %}
+                    <h2
+                      class="text-xl font-bold text-gray-900 flex items-center gap-2"
+                    >
+                      <i class="fa-solid fa-calendar-days"></i>
+                      {{ event_data.event.nama_kegiatan }}
+                    </h2>
+                    <p class="text-white text-sm mt-1">
+                      {{ event_data.event.jenis_kegiatan }} | {{
+                      event_data.event.waktu_pelaksanaan_dimulai.strftime('%d/%m/%Y')
+                      if event_data.event.waktu_pelaksanaan_dimulai else '-' }}
+                      - {{
+                      event_data.event.waktu_pelaksanaan_selesai.strftime('%d/%m/%Y')
+                      if event_data.event.waktu_pelaksanaan_selesai else '-' }}
+                    </p>
+                  </div>
+
+                  <!-- Criteria and Evaluators Table -->
+                  <div class="p-6">
+                    {% if event_data.criteria_assignments %}
+                    <div class="overflow-x-auto">
+                      <table class="w-full">
+                        <thead>
+                          <tr
+                            class="{{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
+                          >
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'No' if current_lang == 'id' else 'No' }}
+                            </th>
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Kriteria Penilaian' if current_lang == 'id'
+                              else 'Assessment Criteria' }}
+                            </th>
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Aspek' if current_lang == 'id' else 'Aspect'
+                              }}
+                            </th>
+                            <th
+                              class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Penilai Ditugaskan' if current_lang == 'id'
+                              else 'Assigned Evaluators' }}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for assignment in event_data.criteria_assignments
+                          %}
+                          <tr
+                            class="border-b {{ 'border-gray-700 hover:bg-gray-800' if current_theme == 'dark' else 'border-gray-200 hover:bg-gray-50' }}"
+                          >
+                            <td
+                              class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ loop.index }}
+                            </td>
+                            <td
+                              class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              <div class="font-medium">
+                                {{ assignment.criteria.nama_kriteria }}
+                              </div>
+                              <div
+                                class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                              >
+                                {{ 'Bobot:' if current_lang == 'id' else
+                                'Weight:' }} {{ assignment.criteria.bobot }}
+                              </div>
+                            </td>
+                            <td
+                              class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ assignment.criteria.aspek or '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                              {% if assignment.evaluators %}
+                              <div class="flex flex-wrap gap-2">
+                                {% for evaluator in assignment.evaluators %}
+                                <span
+                                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                                >
+                                  <i class="fa-solid fa-user mr-1"></i>
+                                  {{ evaluator.nama_lengkap }}
+                                </span>
+                                {% endfor %}
+                              </div>
+                              {% else %}
+                              <span
+                                class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }} italic"
+                              >
+                                {{ 'Belum ada penilai ditugaskan' if
+                                current_lang == 'id' else 'No evaluators
+                                assigned' }}
+                              </span>
+                              {% endif %}
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    {% else %}
+                    <p
+                      class="text-center {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }} py-8"
+                    >
+                      {{ 'Belum ada kriteria penilaian untuk kegiatan ini' if
+                      current_lang == 'id' else 'No assessment criteria for this
+                      event' }}
+                    </p>
+                    {% endif %}
+                  </div>
                 </div>
               </div>
-              {% endfor %} {% else %}
-              <div
-                class="text-center py-12 rounded-2xl {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <i
-                  class="fa-solid fa-inbox text-6xl {{ 'text-gray-600' if current_theme == 'dark' else 'text-gray-300' }} mb-4"
-                ></i>
-                <p
-                  class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }} text-lg"
-                >
-                  {{ 'Belum ada data penugasan penilai' if current_lang == 'id'
-                  else 'No evaluator assignment data available' }}
-                </p>
-              </div>
-              {% endif %}
+              {% endfor %} {% endif %}
             </div>
           </section>
         </main>
