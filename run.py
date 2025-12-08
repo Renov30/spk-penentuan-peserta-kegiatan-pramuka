@@ -715,6 +715,11 @@ def index():
         user_id = user_data.get('id')
         if user_id:
             notification_count = Notification.query.filter_by(user_id=user_id, is_read=False).count()
+            
+    # Fix broken or missing profile picture - default to profil-default.png
+    if not profile_picture or profile_picture in ['img/default-user.png', '']:
+        profile_picture = 'images/profil-default.png'
+        
     return render_template('index.html', username=username, profile_picture=profile_picture, notification_count=notification_count, user_data=user_data, first_time_login=first_time, debug_theme=session.get("theme"))
 
 @app.route("/clear-first-login-flag", methods=["POST"])

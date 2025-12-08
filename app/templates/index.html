@@ -317,7 +317,7 @@
                     'Account' }}"
               >
                 <img
-                  src="{% if profile_picture and profile_picture.startswith('http') %}{{ profile_picture }}{% else %}{{ url_for('static', filename=profile_picture or 'images/profil-default.jpg') }}{% endif %}"
+                  src="{% if profile_picture and profile_picture.startswith('http') %}{{ profile_picture }}{% else %}{{ url_for('static', filename=profile_picture or 'images/profil-default.png') }}{% endif %}"
                   alt="Foto Profil"
                   class="w-9 h-9 rounded-full border border-gray-300 object-cover"
                 />
