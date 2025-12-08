@@ -107,37 +107,7 @@
             class="w-full p-3 text-[1rem] border rounded-md outline-none box-border {{ 'bg-white focus:border-yellow-500 hover:ring-2 hover:ring-yellow-500' if current_theme == 'dark' else 'bg-gray-100 focus:border-green-500 focus:ring-2 focus:ring-green-300' }}"
           />
         </div>
-        <!-- Role Dropdown -->
-        <div class="mb-4">
-          <label
-            class="block mb-2 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-800' }}"
-            for="role"
-          >
-            {{ 'Masuk sebagai:' if current_lang == 'id' else 'Login as:' }}
-          </label>
-          <select
-            id="role"
-            name="role"
-            required
-            class="w-full p-3 text-[1rem] border rounded-md outline-none box-border {{ 'bg-white focus:border-yellow-500 hover:ring-2 hover:ring-yellow-500' if current_theme == 'dark' else 'bg-gray-100 focus:border-green-500 focus:ring-2 focus:ring-green-300' }}"
-          >
-            <option
-              value=""
-              disabled
-              selected
-              class="text-gray-950 font-semibold"
-            >
-              {{ 'Pilih Role' if current_lang == 'id' else 'Select Role' }}
-            </option>
-            <option value="admin" class="text-gray-950">Admin</option>
-            <option value="penilai" class="text-gray-950">
-              {{ 'Penilai' if current_lang == 'id' else 'Evaluator' }}
-            </option>
-            <option value="peserta" class="text-gray-950">
-              {{ 'Peserta' if current_lang == 'id' else 'Participant' }}
-            </option>
-          </select>
-        </div>
+
         <p class="text-[0.9rem] mt-2 mb-6">
           <a
             href="/find_account/"

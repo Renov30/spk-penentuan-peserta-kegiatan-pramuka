@@ -207,7 +207,6 @@ def login():
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
-        role = request.form.get("role")
         
         # Query user dari database
         user = Users.query.filter_by(username=username).first()
@@ -218,10 +217,6 @@ def login():
         elif not check_password_hash(user.password, password):
             logging.warning(f"Login gagal: password salah untuk user '{username}'.")
             flash("Password salah!", "danger")
-        if not role or role.lower() != user.level.lower(): 
-            # Validasi role dari dropdown dengan role di database
-            logging.warning(f"Login gagal: role '{role}' tidak sesuai untuk user '{username}'.")
-            flash("Role tidak sesuai!", "danger")
         else:
             login_user(user)
             session['username'] = username  
