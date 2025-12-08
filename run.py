@@ -806,6 +806,52 @@ def admin_dashboard():
         sidebar_state=sidebar_state
     )
 
+# Route untuk melihat data penugasan penilai
+@app.route('/admin/view_penugasan_penilai')
+@login_required
+def admin_view_penugasan_penilai():
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    if 'username' not in session:
+        flash("Silakan login terlebih dahulu", "warning")
+        return redirect(url_for('login'))
+    
+    user = current_user
+    if not user or user.level != 'admin':
+        flash("Akses ditolak!", "danger")
+        return redirect(url_for('index'))
+    
+    # Ambil semua event beserta kriteria dan evaluator yang ditugaskan
+    events = Event.query.all()
+    
+    # Siapkan data untuk ditampilkan
+    assignment_data = []
+    for event in events:
+        event_info = {
+            'event': event,
+            'criteria_assignments': []
+        }
+        
+        # Ambil semua kriteria untuk event ini
+        criteria_list = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
+        
+        for criteria in criteria_list:
+            # Ambil evaluator yang ditugaskan untuk kriteria ini
+            evaluators = criteria.evaluators  # Menggunakan relationship yang sudah didefinisikan
+            
+            event_info['criteria_assignments'].append({
+                'criteria': criteria,
+                'evaluators': evaluators
+            })
+        
+        assignment_data.append(event_info)
+    
+    return render_template(
+        'penugasan_penilai_view.html',
+        assignment_data=assignment_data,
+        user=user,
+        sidebar_state=sidebar_state
+    )
+
 
 # Middleware untuk membatasi akses hanya admin
 def admin_required(f):
