@@ -3432,54 +3432,80 @@ def penilai_notifikasi():
 @app.route('/peserta/dashboard')
 @login_required
 def peserta_dashboard():
+    """Dashboard for participants showing scores and rankings for all registered activities"""
+    
     if current_user.level != 'peserta':
         flash("Anda tidak memiliki akses ke halaman ini.", "error")
         return redirect(url_for('index'))
-
-    # Gunakan email untuk menghubungkan Participants dengan Users
-    biodata = Participants.query.filter_by(email=current_user.email).first()
     
-    # Ambil hasil seleksi jika ada
-    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=current_user.id).first()
+    # Get current user's participant record
+    participant = Participants.query.filter_by(email=current_user.email).first()
     
-    # Status seleksi dan nilai
-    status_seleksi = "Belum ada status"
-    nilai_akhir = None
-    ranking = None
-    is_selection_ended = False
+    # Get all registered activities for this participant
     registered_activities = []
+    if participant:
+        registered_activities = Event.query.join(
+            tb_participant_kegiatan,
+            Event.id_kegiatan == tb_participant_kegiatan.c.kegiatan_id
+        ).filter(
+            tb_participant_kegiatan.c.participant_id == participant.id
+        ).all()
     
-    if hasil_seleksi:
-        status_seleksi = "Selesai"
-        nilai_akhir = hasil_seleksi.skor_akhir
-        ranking = hasil_seleksi.ranking
-    
-    if biodata:
-        # Get all registered activities from many-to-many relationship
-        registered_activities = biodata.registered_activities.all()
+    # Calculate scores for each activity
+    activity_scores = []
+    for event in registered_activities:
+        # Get all criteria for this event
+        criteria_list = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
         
-        if registered_activities:
-            status_seleksi = f"Terdaftar di {len(registered_activities)} kegiatan"
+        # Calculate total score
+        total_score = 0
+        has_scores = False
+        
+        for criterion in criteria_list:
+            penilaian = Penilaian.query.filter_by(
+                id_users=current_user.id,
+                id_kriteria=criterion.id_kriteria
+            ).first()
             
-            # Check if any selection period has ended
-            for kegiatan in registered_activities:
-                if kegiatan.selesai < date.today():
-                    is_selection_ended = True
-                    break
+            if penilaian:
+                # Calculate weighted score
+                weighted_score = penilaian.nilai * (criterion.bobot / 100)
+                total_score += weighted_score
+                has_scores = True
+        
+        # Get ranking from HasilSeleksi table
+        hasil = HasilSeleksi.query.filter_by(
+            id_users=current_user.id,
+            event_id=event.id_kegiatan
+        ).first()
+        
+        activity_scores.append({
+            'event': event,
+            'final_score': round(total_score, 2) if has_scores else None,
+            'ranking': hasil.ranking if hasil else None,
+            'has_scores': has_scores
+        })
+    
+    # Check if any selection period has ended
+    is_selection_ended = any(
+        event.selesai and event.selesai < date.today()
+        for event in registered_activities
+    )
+    
+    # Determine status
+    status_seleksi = 'Terdaftar' if registered_activities else 'Belum ada status'
     
     sidebar_state = current_user.sidebar_state or 'expanded'
     
     return render_template(
         'peserta/dashboard.html',
-        biodata=biodata,
-        hasil_seleksi=hasil_seleksi,
-        status_seleksi=status_seleksi,
-        nilai_akhir=nilai_akhir,
-        ranking=ranking,
-        user=current_user,
-        sidebar_state=sidebar_state,
+        biodata=participant,
+        registered_activities=registered_activities,
+        activity_scores=activity_scores,
         is_selection_ended=is_selection_ended,
-        registered_activities=registered_activities
+        status_seleksi=status_seleksi,
+        user=current_user,
+        sidebar_state=sidebar_state
     )
 
 @app.route('/peserta/notifikasi')

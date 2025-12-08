@@ -192,39 +192,46 @@
                   {% endif %}
                 </div>
 
-                <!-- Nilai Akhir -->
-                {% if nilai_akhir is not none %}
-                <div
-                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
-                >
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold">
-                      {{ 'Nilai Akhir' if current_lang == 'id' else 'Final
-                      Score' }}
-                    </h2>
-                    <i class="fa-solid fa-star text-2xl text-yellow-500"></i>
-                  </div>
-                  <p class="text-2xl font-bold text-yellow-600">
-                    {{ "%.2f"|format(nilai_akhir) }}
-                  </p>
-                </div>
-
-                <!-- Ranking -->
-                {% if ranking is not none %}
-                <div
-                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
-                >
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold">
-                      {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
-                    </h2>
-                    <i class="fa-solid fa-trophy text-2xl text-green-500"></i>
-                  </div>
-                  <p class="text-2xl font-bold text-green-600">
-                    #{{ ranking }}
-                  </p>
-                </div>
-                {% endif %} 
+                <!-- Nilai Akhir & Ranking per Kegiatan -->
+                {% if activity_scores %}
+                  {% for activity in activity_scores %}
+                    {% if activity.has_scores %}
+                    <div
+                      class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+                    >
+                      <div class="flex items-center justify-between mb-4">
+                        <div class="flex-1">
+                          <h2 class="text-lg font-semibold mb-1">
+                            {{ activity.event.nama_kegiatan }}
+                          </h2>
+                          <p class="text-xs opacity-70">
+                            {{ activity.event.jenis_kegiatan }} • {{ activity.event.skala_kegiatan }}
+                          </p>
+                        </div>
+                        <i class="fa-solid fa-trophy text-2xl text-yellow-500"></i>
+                      </div>
+                      
+                      <div class="grid grid-cols-2 gap-4">
+                        <div>
+                          <p class="text-sm opacity-70 mb-1">
+                            {{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}
+                          </p>
+                          <p class="text-2xl font-bold text-yellow-600">
+                            {{ "%.2f"|format(activity.final_score) if activity.final_score is not none else '-' }}
+                          </p>
+                        </div>
+                        <div>
+                          <p class="text-sm opacity-70 mb-1">
+                            {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
+                          </p>
+                          <p class="text-2xl font-bold text-green-600">
+                            {{ '#' + activity.ranking|string if activity.ranking is not none else '-' }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
+                  {% endfor %}
                 {% endif %}
 
                 <!-- Jadwal Seleksi -->
