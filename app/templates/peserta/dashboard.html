@@ -197,54 +197,61 @@
                 <div
                   class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
                 >
+                  <!-- Card Title -->
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">
+                      {{ 'Nilai dan Ranking' if current_lang == 'id' else 'Scores and Ranking' }}
+                    </h2>
+                    <i class="fa-solid fa-trophy text-2xl text-yellow-500"></i>
+                  </div>
+
+                  <!-- Header Row -->
+                  <div class="flex items-center justify-between mb-4 pb-2 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}">
+                     <div class="text-sm font-semibold opacity-70">{{ 'Nama Kegiatan' if current_lang == 'id' else 'Activity Name' }}</div>
+                     <div class="flex gap-8 text-right">
+                         <div class="text-sm font-semibold opacity-70 w-24">{{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}</div>
+                         <div class="text-sm font-semibold opacity-70 w-16">{{ 'Ranking' if current_lang == 'id' else 'Ranking' }}</div>
+                     </div>
+                  </div>
+
+                  <div class="space-y-4 max-h-60 overflow-y-auto pr-1">
                   {% for activity in activity_scores %}
-                    <div class="{{ 'border-b border-gray-700' if current_theme == 'dark' else 'border-b border-gray-300' }} pb-6 mb-6 last:border-0 last:pb-0 last:mb-0">
-                      <div class="flex items-center justify-between mb-4">
-                        <div class="flex-1">
-                          <h2 class="text-lg font-semibold mb-1">
+                    <div class="flex items-center justify-between py-1">
+                      <!-- Left: Name & Category -->
+                      <div class="flex-1 pr-4">
+                        <h3 class="text-lg font-bold leading-tight line-clamp-1" title="{{ activity.event.nama_kegiatan }}">
                             {{ activity.event.nama_kegiatan }}
-                          </h2>
-                          <p class="text-xs opacity-70">
-                            {{ activity.event.jenis_kegiatan }} • {{ activity.event.skala_kegiatan }}
-                          </p>
-                        </div>
-                        <i class="fa-solid fa-trophy text-2xl text-yellow-500"></i>
+                        </h3>
+                        <p class="text-xs opacity-70 mt-1">
+                          {{ activity.event.jenis_kegiatan }} • {{ activity.event.skala_kegiatan }}
+                        </p>
                       </div>
                       
-                      {% if activity.final_score is not none and activity.ranking is not none %}
-                      <div class="flex items-center justify-between">
-                        <div>
-                          <p class="text-sm opacity-70 mb-1">
-                            {{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}
-                          </p>
-                          <p class="text-2xl font-bold text-yellow-600">
-                            {{ "%.2f"|format(activity.final_score) if activity.final_score is not none else '-' }}
-                          </p>
-                        </div>
-                        <div class="text-right">
-                          <p class="text-sm opacity-70 mb-1">
-                            {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
-                          </p>
-                          <p class="text-2xl font-bold text-green-600">
-                            {{ '#' + activity.ranking|string if activity.ranking is not none else '-' }}
-                          </p>
-                        </div>
+                      <!-- Right: Score & Rank -->
+                      <div class="flex gap-8 text-right items-center">
+                         {% if activity.final_score is not none and activity.ranking is not none %}
+                           <div class="w-24">
+                             <span class="text-3xl font-bold">{{ "%.2f"|format(activity.final_score) }}</span>
+                           </div>
+                           <div class="w-16">
+                             <span class="text-3xl font-bold text-green-500">#{{ activity.ranking }}</span>
+                           </div>
+                         {% else %}
+                           <!-- Compact Pending State -->
+                           <div class="w-48 text-right flex flex-col items-end justify-center">
+                                <span class="text-sm font-semibold opacity-70 italic flex items-center gap-2">
+                                    <i class="fa-solid fa-clock text-orange-500"></i>
+                                    {{ 'Belum Selesai' if current_lang == 'id' else 'Pending' }}
+                                </span>
+                           </div>
+                         {% endif %}
                       </div>
-                      {% else %}
-                      <div class="flex items-center justify-center py-4">
-                        <div class="text-center">
-                          <i class="fa-solid fa-clock text-3xl text-orange-500 mb-2"></i>
-                          <p class="text-lg font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
-                            {{ 'Penilaian belum selesai' if current_lang == 'id' else 'Assessment not yet completed' }}
-                          </p>
-                          <p class="text-sm opacity-70 mt-1">
-                            {{ 'Nilai dan ranking akan ditampilkan setelah penilaian selesai' if current_lang == 'id' else 'Score and ranking will be displayed after assessment is completed' }}
-                          </p>
-                        </div>
-                      </div>
-                      {% endif %}
                     </div>
+                    {% if not loop.last %}
+                        <hr class="border-gray-300 dark:border-gray-700 opacity-50 my-1">
+                    {% endif %}
                   {% endfor %}
+                  </div>
                 </div>
                 {% endif %}
 
