@@ -3519,7 +3519,8 @@ def peserta_dashboard():
         is_selection_ended=is_selection_ended,
         status_seleksi=status_seleksi,
         user=current_user,
-        sidebar_state=sidebar_state
+        sidebar_state=sidebar_state,
+        today=date.today()
     )
 
 @app.route('/peserta/notifikasi')
