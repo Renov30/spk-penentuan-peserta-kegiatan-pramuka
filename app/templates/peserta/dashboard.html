@@ -205,51 +205,72 @@
                     <i class="fa-solid fa-trophy text-2xl text-yellow-500"></i>
                   </div>
 
-                  <!-- Header Row -->
-                  <div class="flex items-center justify-between mb-4 pb-2 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}">
-                     <div class="text-sm font-semibold opacity-70">{{ 'Nama Kegiatan' if current_lang == 'id' else 'Activity Name' }}</div>
-                     <div class="flex gap-8 text-right">
-                         <div class="text-sm font-semibold opacity-70 w-24">{{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}</div>
-                         <div class="text-sm font-semibold opacity-70 w-16">{{ 'Ranking' if current_lang == 'id' else 'Ranking' }}</div>
-                     </div>
-                  </div>
-
-                  <div class="space-y-4 max-h-60 overflow-y-auto pr-1">
+                  <div class="space-y-3 max-h-60 overflow-y-auto pr-1">
                   {% for activity in activity_scores %}
-                    <div class="flex items-center justify-between py-1">
-                      <!-- Left: Name & Category -->
-                      <div class="flex-1 pr-4">
-                        <h3 class="text-lg font-bold leading-tight line-clamp-1" title="{{ activity.event.nama_kegiatan }}">
-                            {{ activity.event.nama_kegiatan }}
-                        </h3>
-                        <p class="text-xs opacity-70 mt-1">
-                          {{ activity.event.jenis_kegiatan }} • {{ activity.event.skala_kegiatan }}
-                        </p>
-                      </div>
+                    <div class="p-4 rounded-lg border {{ 'bg-gray-800 border-gray-700' if current_theme == 'dark' else 'bg-white border-gray-200' }}">
+                      <!-- Title -->
+                      <h3 class="text-base font-semibold mb-3 leading-tight" title="{{ activity.event.nama_kegiatan }}">
+                          {{ activity.event.nama_kegiatan }}
+                      </h3>
                       
-                      <!-- Right: Score & Rank -->
-                      <div class="flex gap-8 text-right items-center">
-                         {% if activity.final_score is not none and activity.ranking is not none %}
-                           <div class="w-24">
-                             <span class="text-3xl font-bold">{{ "%.2f"|format(activity.final_score) }}</span>
+                      {% if activity.final_score is not none and activity.ranking is not none %}
+                         <!-- Scores, Ranking, & Status -->
+                         <div class="flex items-center justify-between mb-3">
+                           <!-- Final Score -->
+                           <div>
+                               <p class="text-xs font-medium opacity-60 uppercase mb-1">
+                                   {{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}
+                               </p>
+                               <p class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
+                                   {{ "%.2f"|format(activity.final_score) }}
+                               </p>
                            </div>
-                           <div class="w-16">
-                             <span class="text-3xl font-bold text-green-500">#{{ activity.ranking }}</span>
+                           
+                           <!-- Vertical Separator -->
+                           <div class="h-8 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                           
+                           <!-- Ranking -->
+                           <div class="text-right">
+                               <p class="text-xs font-medium opacity-60 uppercase mb-1">
+                                   {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
+                               </p>
+                               <p class="text-2xl font-bold text-green-500">
+                                   #{{ activity.ranking }}
+                               </p>
                            </div>
-                         {% else %}
-                           <!-- Compact Pending State -->
-                           <div class="w-48 text-right flex flex-col items-end justify-center">
-                                <span class="text-sm font-semibold opacity-70 italic flex items-center gap-2">
-                                    <i class="fa-solid fa-clock text-orange-500"></i>
-                                    {{ 'Belum Selesai' if current_lang == 'id' else 'Pending' }}
-                                </span>
+
+                           {% if activity.status_lulus is not none %}
+                               <!-- Vertical Separator -->
+                               <div class="h-8 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
+
+                               <!-- Status Lulus -->
+                               <div class="text-right">
+                                     <p class="text-xs font-medium opacity-60 uppercase mb-1">
+                                        {{ 'Status' if current_lang == 'id' else 'Status' }}
+                                     </p>
+                                     {% if activity.status_lulus %}
+                                         <span class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-bold text-lg">
+                                             <i class="fa-solid fa-circle-check"></i>
+                                             {{ 'LULUS' if current_lang == 'id' else 'PASSED' }}
+                                         </span>
+                                     {% else %}
+                                         <span class="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-bold text-lg">
+                                             <i class="fa-solid fa-circle-xmark"></i>
+                                             {{ 'TIDAK' if current_lang == 'id' else 'FAILED' }}
+                                         </span>
+                                     {% endif %}
+                               </div>
+                           {% endif %}
+                         </div>
+
+                      {% else %}
+                           <!-- Pending State -->
+                           <div class="flex items-center gap-2 text-sm italic opacity-70 py-2">
+                                <i class="fa-solid fa-clock text-orange-500"></i>
+                                <span>{{ 'Belum Selesai' if current_lang == 'id' else 'Pending' }}</span>
                            </div>
-                         {% endif %}
-                      </div>
+                      {% endif %}
                     </div>
-                    {% if not loop.last %}
-                        <hr class="border-gray-300 dark:border-gray-700 opacity-50 my-1">
-                    {% endif %}
                   {% endfor %}
                   </div>
                 </div>

@@ -3478,12 +3478,26 @@ def peserta_dashboard():
             id_users=current_user.id,
             event_id=event.id_kegiatan
         ).first()
+
+        # Calculate pass/fail status
+        status_lulus = None
+        if hasil and hasil.ranking:
+            kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
+            if kuota and participant:
+                limit = 0
+                if participant.jenis_kelamin == 'laki-laki':
+                    limit = kuota.putra
+                elif participant.jenis_kelamin == 'perempuan':
+                    limit = kuota.putri
+                
+                status_lulus = hasil.ranking <= limit
         
         activity_scores.append({
             'event': event,
             'final_score': round(total_score, 2) if has_scores else None,
             'ranking': hasil.ranking if hasil else None,
-            'has_scores': has_scores
+            'has_scores': has_scores,
+            'status_lulus': status_lulus
         })
     
     # Check if any selection period has ended
