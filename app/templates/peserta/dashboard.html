@@ -195,7 +195,6 @@
                 <!-- Nilai Akhir & Ranking per Kegiatan -->
                 {% if activity_scores %}
                   {% for activity in activity_scores %}
-                    {% if activity.has_scores %}
                     <div
                       class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
                     >
@@ -211,7 +210,8 @@
                         <i class="fa-solid fa-trophy text-2xl text-yellow-500"></i>
                       </div>
                       
-                      <div class="grid grid-cols-2 gap-4">
+                      {% if activity.final_score is not none and activity.ranking is not none %}
+                      <div class="flex items-center justify-between">
                         <div>
                           <p class="text-sm opacity-70 mb-1">
                             {{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}
@@ -220,7 +220,7 @@
                             {{ "%.2f"|format(activity.final_score) if activity.final_score is not none else '-' }}
                           </p>
                         </div>
-                        <div>
+                        <div class="text-right">
                           <p class="text-sm opacity-70 mb-1">
                             {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
                           </p>
@@ -229,8 +229,20 @@
                           </p>
                         </div>
                       </div>
+                      {% else %}
+                      <div class="flex items-center justify-center py-4">
+                        <div class="text-center">
+                          <i class="fa-solid fa-clock text-3xl text-orange-500 mb-2"></i>
+                          <p class="text-lg font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
+                            {{ 'Penilaian belum selesai' if current_lang == 'id' else 'Assessment not yet completed' }}
+                          </p>
+                          <p class="text-sm opacity-70 mt-1">
+                            {{ 'Nilai dan ranking akan ditampilkan setelah penilaian selesai' if current_lang == 'id' else 'Score and ranking will be displayed after assessment is completed' }}
+                          </p>
+                        </div>
+                      </div>
+                      {% endif %}
                     </div>
-                    {% endif %}
                   {% endfor %}
                 {% endif %}
 
