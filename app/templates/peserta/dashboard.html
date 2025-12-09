@@ -194,10 +194,11 @@
 
                 <!-- Nilai Akhir & Ranking per Kegiatan -->
                 {% if activity_scores %}
+                <div
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+                >
                   {% for activity in activity_scores %}
-                    <div
-                      class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
-                    >
+                    <div class="{{ 'border-b border-gray-700' if current_theme == 'dark' else 'border-b border-gray-300' }} pb-6 mb-6 last:border-0 last:pb-0 last:mb-0">
                       <div class="flex items-center justify-between mb-4">
                         <div class="flex-1">
                           <h2 class="text-lg font-semibold mb-1">
@@ -244,6 +245,7 @@
                       {% endif %}
                     </div>
                   {% endfor %}
+                </div>
                 {% endif %}
 
                 <!-- Jadwal Seleksi -->
