@@ -3649,15 +3649,8 @@ def peserta_hasil_seleksi():
                 # If no final result, calculate temporary score from Penilaian
                 criteria_list = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
                 current_score = 0
-                count_rated = 0
                 
                 # Check directly in Penilaian table
-                # We need to sum (nilai * bobot) / 100 or similar based on formula
-                # Using simple weighted sum for display
-                # Note: This is an approximation if the final formula is Fuzzy AHP
-                # But good enough for "Temporary Score"
-                
-                # Retrieve all ratings for this user and event criterias
                 if criteria_list:
                     criteria_ids = [c.id_kriteria for c in criteria_list]
                     ratings = Penilaian.query.filter(
@@ -3666,23 +3659,14 @@ def peserta_hasil_seleksi():
                     ).all()
                     
                     rating_map = {r.id_kriteria: r.nilai for r in ratings}
-                    
                     total_bobot = sum(c.bobot for c in criteria_list)
                     
                     if ratings:
                          has_temp_score = True
                          for c in criteria_list:
                              if c.id_kriteria in rating_map:
-                                 # Normalize weight usually happens in calculation, 
-                                 # here we assume simple weighted sum: value * (bobot/total_bobot)
-                                 # or just value * bobot if bobot is percentage.
-                                 # Let's align with dashboard logic: weighted_score = nilai * (bobot / 100)
-                                 # Assuming bobot is 0-100.
                                  if total_bobot > 0:
                                      val = rating_map[c.id_kriteria]
-                                     # Simple weighted average 
-                                     # (value * weight) / total_weight
-                                     # This keeps result in same scale as value (e.g. 1-100)
                                      current_score += val * (c.bobot / total_bobot)
 
                     temp_score = current_score
@@ -3700,6 +3684,67 @@ def peserta_hasil_seleksi():
         'peserta/hasil_seleksi.html',
         results_data=results_data,
         biodata=biodata,
+        sidebar_state=sidebar_state,
+        user=current_user
+    )
+
+@app.route('/peserta/detail-seleksi/<int:event_id>')
+@login_required
+def peserta_detail_seleksi(event_id):
+    if current_user.level != 'peserta':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    event = Event.query.get_or_404(event_id)
+    
+    # Get all results for this event
+    hasil_seleksi = db.session.query(
+        HasilSeleksi,
+        Users,
+        Participants
+    ).join(
+        Users, HasilSeleksi.id_users == Users.id
+    ).outerjoin(
+        Participants, Users.email == Participants.email
+    ).filter(
+        HasilSeleksi.event_id == event_id
+    ).order_by(
+        HasilSeleksi.ranking.asc()
+    ).all()
+    
+    # Process results to determine pass/fail for everyone
+    results_processed = []
+    kuota = Kuota.query.filter_by(event_id=event_id).first()
+    
+    for hasil, user, participant in hasil_seleksi:
+        is_passed = False
+        limit = 0
+        
+        if kuota and participant:
+            if participant.jenis_kelamin == 'laki-laki':
+                limit = kuota.putra
+            elif participant.jenis_kelamin == 'perempuan':
+                limit = kuota.putri
+            
+            if hasil.ranking <= limit:
+                is_passed = True
+        elif event.batas_lolos:
+             if hasil.ranking <= event.batas_lolos:
+                is_passed = True
+        
+        results_processed.append({
+            'hasil': hasil,
+            'user': user,
+            'participant': participant,
+            'is_passed': is_passed
+        })
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    return render_template(
+        'peserta/detail_seleksi.html',
+        event=event,
+        results=results_processed,
         sidebar_state=sidebar_state,
         user=current_user
     )

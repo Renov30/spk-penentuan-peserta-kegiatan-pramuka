@@ -121,6 +121,9 @@
                         <th class="p-4 font-semibold text-center">
                           {{ 'Status' if current_lang == 'id' else 'Status' }}
                         </th>
+                        <th class="p-4 font-semibold text-center w-32">
+                          {{ 'Aksi' if current_lang == 'id' else 'Action' }}
+                        </th>
                       </tr>
                     </thead>
                     <tbody
@@ -170,14 +173,15 @@
                           {% endif %}
                         </td>
                         <td class="p-4 text-center">
-                          {% if item.hasil %}
-                          <span>{{ item.hasil.ranking }}</span>
                           <span
-                            class="inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm {% if item.hasil.ranking == 1 %} bg-yellow-400 text-yellow-900 {% elif item.hasil.ranking == 2 %} bg-gray-300 text-gray-800 {% elif item.hasil.ranking == 3 %} bg-amber-600 text-white {% else %} bg-gray-200 text-gray-600 {% endif %}"
+                            class="inline-flex items-center justify-center w-8 h-8 rounded-full font-bold
+                            {{ 'bg-yellow-400 text-yellow-900' if item.hasil.ranking == 1 else '' }}
+                            {{ 'bg-gray-300 text-gray-800' if item.hasil.ranking == 2 else '' }}
+                            {{ 'bg-amber-600 text-white' if item.hasil.ranking == 3 else '' }}
+                            {{ 'bg-gray-200 text-gray-800' if item.hasil.ranking > 3 else '' }}"
                           >
                             {{ item.hasil.ranking }}
                           </span>
-                          {% else %}
                           <span class="text-gray-400">-</span>
                           {% endif %}
                         </td>
@@ -210,6 +214,25 @@
                             <i class="fas fa-hourglass-half mr-1"></i> {{
                             item.status_text }}
                           </span>
+                          {% endif %}
+                        </td>
+                        <td class="p-4 text-center">
+                          {% if item.hasil %}
+                          <a
+                            href="{{ url_for('peserta_detail_seleksi', event_id=item.event.id_kegiatan) }}"
+                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-colors bg-blue-600 hover:bg-blue-700 shadow-sm"
+                          >
+                            <i class="fas fa-eye"></i> {{ 'Detail' if
+                            current_lang == 'id' else 'View' }}
+                          </a>
+                          {% else %}
+                          <button
+                            disabled
+                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed opacity-50"
+                          >
+                            <i class="fas fa-eye-slash"></i> {{ 'Detail' if
+                            current_lang == 'id' else 'View' }}
+                          </button>
                           {% endif %}
                         </td>
                       </tr>
