@@ -3391,20 +3391,71 @@ def penilai_hasil_seleksi():
         flash("Anda tidak memiliki akses ke halaman ini.", "error")
         return redirect(url_for('index'))
     
-    # Get all selection results
-    hasil_seleksi = db.session.query(
-        HasilSeleksi,
-        Users
-    ).join(
-        Users, HasilSeleksi.id_users == Users.id
-    ).order_by(
-        HasilSeleksi.ranking.asc()
-    ).all()
+    # Get all assigned events
+    assigned_events = Event.query.filter(Event.evaluators.any(id=current_user.id)).all()
+    
+    # Get selected event from query parameter
+    selected_event_id = request.args.get('event_id', type=int)
+    selected_event = None
+    results = []
+    
+    if selected_event_id:
+        # Verify the event is assigned to this evaluator
+        selected_event = Event.query.get(selected_event_id)
+        if selected_event and selected_event in assigned_events:
+            # Fetch results for this event only
+            # Join with Participants to get gender (for quota check if needed in template)
+            hasil_seleksi_query = db.session.query(
+                HasilSeleksi,
+                Users,
+                Participants
+            ).join(
+                Users, HasilSeleksi.id_users == Users.id
+            ).outerjoin(
+                Participants, Users.email == Participants.email
+            ).filter(
+                HasilSeleksi.event_id == selected_event_id
+            ).order_by(
+                HasilSeleksi.ranking.asc()
+            ).all()
+            
+            # Process results to include passing status logic explicitly if needed
+            # Although template can do it, it's good to have it ready.
+            # Using simple query logic for now.
+            
+            kuota = Kuota.query.filter_by(event_id=selected_event_id).first()
+            
+            for hasil, user, participant in hasil_seleksi_query:
+                is_passed = False
+                if kuota and participant:
+                    limit = 0
+                    if participant.jenis_kelamin == 'laki-laki':
+                        limit = kuota.putra
+                    elif participant.jenis_kelamin == 'perempuan':
+                        limit = kuota.putri
+                    
+                    if hasil.ranking <= limit:
+                        is_passed = True
+                elif selected_event.batas_lolos: # Fallback to simple limit if no quota
+                     if hasil.ranking <= selected_event.batas_lolos:
+                        is_passed = True
+
+                results.append({
+                    'hasil': hasil,
+                    'user': user,
+                    'participant': participant,
+                    'is_passed': is_passed
+                })
+        else:
+            flash("Kegiatan tidak ditemukan atau Anda tidak memiliki akses.", "error")
+            selected_event = None
     
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template(
         'penilai/hasil_seleksi.html',
-        hasil_seleksi=hasil_seleksi,
+        assigned_events=assigned_events,
+        selected_event=selected_event,
+        results=results,
         sidebar_state=sidebar_state
     )
 
