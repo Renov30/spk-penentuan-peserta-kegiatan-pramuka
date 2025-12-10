@@ -3599,19 +3599,29 @@ def peserta_hasil_seleksi():
         return redirect(url_for('index'))
     
     sidebar_state = current_user.sidebar_state or 'expanded'
-    all_hasil = HasilSeleksi.query.filter_by(id_users=current_user.id).all()
     biodata = Participants.query.filter_by(email=current_user.email).first()
     
     results_data = []
     
-    if all_hasil:
-        for hasil in all_hasil:
-            status_lulus = False
-            event = hasil.event
+    if biodata:
+        # Get all registered activities via the many-to-many relationship
+        # Assuming biodata.registered_activities is the relationship to Event
+        registered_activities = biodata.registered_activities.all()
+        
+        for event in registered_activities:
+            # Check for existing result
+            hasil = HasilSeleksi.query.filter_by(
+                id_users=current_user.id,
+                event_id=event.id_kegiatan
+            ).first()
             
-            if event:
+            status_lulus = None
+            status_text = "Dalam Proses"
+            
+            if hasil:
+                # Determine pass/fail if result exists
                 kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
-                if kuota and biodata:
+                if kuota:
                     limit = 0
                     if biodata.jenis_kelamin == 'laki-laki':
                         limit = kuota.putra
@@ -3620,11 +3630,28 @@ def peserta_hasil_seleksi():
                         
                     if hasil.ranking <= limit:
                         status_lulus = True
-            
+                        status_text = "Lolos Seleksi"
+                    else:
+                        status_lulus = False
+                        status_text = "Tidak Lolos"
+                elif event.batas_lolos: # Fallback if no quota but cutoff exists
+                     if hasil.ranking <= event.batas_lolos:
+                        status_lulus = True
+                        status_text = "Lolos Seleksi"
+                     else:
+                        status_lulus = False
+                        status_text = "Tidak Lolos"
+                else:
+                    # If result exists but no quota/cutoff logic found, implied passed or just "Finished"
+                    # But usually there is a logic. Let's assume it requires quota check.
+                    # If truly no quota, maybe just show "Selesai"
+                    status_text = "Selesai"
+
             results_data.append({
-                'hasil': hasil,
                 'event': event,
-                'status_lulus': status_lulus
+                'hasil': hasil,
+                'status_lulus': status_lulus,
+                'status_text': status_text
             })
 
     return render_template(
