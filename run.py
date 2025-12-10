@@ -3617,6 +3617,8 @@ def peserta_hasil_seleksi():
             
             status_lulus = None
             status_text = "Dalam Proses"
+            temp_score = 0
+            has_temp_score = False
             
             if hasil:
                 # Determine pass/fail if result exists
@@ -3642,16 +3644,56 @@ def peserta_hasil_seleksi():
                         status_lulus = False
                         status_text = "Tidak Lolos"
                 else:
-                    # If result exists but no quota/cutoff logic found, implied passed or just "Finished"
-                    # But usually there is a logic. Let's assume it requires quota check.
-                    # If truly no quota, maybe just show "Selesai"
                     status_text = "Selesai"
+            else:
+                # If no final result, calculate temporary score from Penilaian
+                criteria_list = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
+                current_score = 0
+                count_rated = 0
+                
+                # Check directly in Penilaian table
+                # We need to sum (nilai * bobot) / 100 or similar based on formula
+                # Using simple weighted sum for display
+                # Note: This is an approximation if the final formula is Fuzzy AHP
+                # But good enough for "Temporary Score"
+                
+                # Retrieve all ratings for this user and event criterias
+                if criteria_list:
+                    criteria_ids = [c.id_kriteria for c in criteria_list]
+                    ratings = Penilaian.query.filter(
+                        Penilaian.id_users == current_user.id,
+                        Penilaian.id_kriteria.in_(criteria_ids)
+                    ).all()
+                    
+                    rating_map = {r.id_kriteria: r.nilai for r in ratings}
+                    
+                    total_bobot = sum(c.bobot for c in criteria_list)
+                    
+                    if ratings:
+                         has_temp_score = True
+                         for c in criteria_list:
+                             if c.id_kriteria in rating_map:
+                                 # Normalize weight usually happens in calculation, 
+                                 # here we assume simple weighted sum: value * (bobot/total_bobot)
+                                 # or just value * bobot if bobot is percentage.
+                                 # Let's align with dashboard logic: weighted_score = nilai * (bobot / 100)
+                                 # Assuming bobot is 0-100.
+                                 if total_bobot > 0:
+                                     val = rating_map[c.id_kriteria]
+                                     # Simple weighted average 
+                                     # (value * weight) / total_weight
+                                     # This keeps result in same scale as value (e.g. 1-100)
+                                     current_score += val * (c.bobot / total_bobot)
+
+                    temp_score = current_score
 
             results_data.append({
                 'event': event,
                 'hasil': hasil,
                 'status_lulus': status_lulus,
-                'status_text': status_text
+                'status_text': status_text,
+                'temp_score': temp_score,
+                'has_temp_score': has_temp_score
             })
 
     return render_template(

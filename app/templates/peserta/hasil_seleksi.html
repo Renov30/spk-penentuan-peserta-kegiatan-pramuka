@@ -155,19 +155,25 @@
                           >
                             {{ "%.2f"|format(item.hasil.skor_akhir) }}
                           </span>
+                          {% elif item.has_temp_score %}
+                          <span
+                            class="font-bold {{ 'text-yellow-400' if current_theme == 'dark' else 'text-yellow-600' }}"
+                            title="Nilai Sementara (Belum Final)"
+                          >
+                            {{ "%.2f"|format(item.temp_score) }}
+                            <i
+                              class="fas fa-info-circle text-xs ml-1 opacity-50"
+                            ></i>
+                          </span>
                           {% else %}
                           <span class="text-gray-400">-</span>
                           {% endif %}
                         </td>
                         <td class="p-4 text-center">
                           {% if item.hasil %}
+                          <span>{{ item.hasil.ranking }}</span>
                           <span
-                            class="inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm 
-                                                {% if item.hasil.ranking == 1 %} bg-yellow-400 text-yellow-900
-                                                {% elif item.hasil.ranking == 2 %} bg-gray-300 text-gray-800
-                                                {% elif item.hasil.ranking == 3 %} bg-amber-600 text-white
-                                                {% else %} {{ 'bg-gray-700 text-gray-300' if current_theme == 'dark' else 'bg-gray-200 text-gray-600' }}
-                                                {% endif %}"
+                            class="inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm {% if item.hasil.ranking == 1 %} bg-yellow-400 text-yellow-900 {% elif item.hasil.ranking == 2 %} bg-gray-300 text-gray-800 {% elif item.hasil.ranking == 3 %} bg-amber-600 text-white {% else %} bg-gray-200 text-gray-600 {% endif %}"
                           >
                             {{ item.hasil.ranking }}
                           </span>
