@@ -174,7 +174,6 @@
                         </td>
                         <td class="p-4 text-center">
                           {% if item.hasil %}
-                          <span>{{ item.hasil.ranking }}</span>
                           <span
                             class="inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm {% if item.hasil.ranking == 1 %} bg-yellow-400 text-yellow-900 {% elif item.hasil.ranking == 2 %} bg-gray-300 text-gray-800 {% elif item.hasil.ranking == 3 %} bg-amber-600 text-white {% else %} bg-gray-200 text-gray-600 {% endif %}"
                           >
