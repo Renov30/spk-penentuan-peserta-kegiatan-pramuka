@@ -121,6 +121,9 @@
                         <th class="p-4 font-semibold text-center">
                           {{ 'Status' if current_lang == 'id' else 'Status' }}
                         </th>
+                        <th class="p-4 font-semibold text-center">
+                          {{ 'Aksi' if current_lang == 'id' else 'Action' }}
+                        </th>
                       </tr>
                     </thead>
                     <tbody
@@ -212,10 +215,19 @@
                           </span>
                           {% endif %}
                         </td>
+                        <td class="p-4 text-center">
+                          <a
+                            href="{{ url_for('peserta_detail_nilai', event_id=item.event.id_kegiatan) }}"
+                            class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors {{ 'bg-blue-600 hover:bg-blue-700 text-white' if current_theme == 'dark' else 'bg-blue-500 hover:bg-blue-600 text-white' }}"
+                          >
+                            <i class="fas fa-eye mr-1.5"></i>
+                            {{ 'Lihat' if current_lang == 'id' else 'View' }}
+                          </a>
+                        </td>
                       </tr>
                       {% endfor %} {% else %}
                       <tr>
-                        <td colspan="6" class="p-8 text-center opacity-60">
+                        <td colspan="7" class="p-8 text-center opacity-60">
                           <div
                             class="flex flex-col items-center justify-center"
                           >

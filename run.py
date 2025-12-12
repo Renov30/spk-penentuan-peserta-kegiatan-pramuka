@@ -3704,6 +3704,78 @@ def peserta_hasil_seleksi():
         user=current_user
     )
 
+@app.route('/peserta/hasil_seleksi/<int:event_id>')
+@login_required
+def peserta_detail_nilai(event_id):
+    """Halaman detail nilai semua peserta untuk kegiatan tertentu"""
+    if current_user.level != 'peserta':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    # Verify that the current user is registered for this event
+    biodata = Participants.query.filter_by(email=current_user.email).first()
+    if not biodata:
+        flash("Data peserta tidak ditemukan.", "error")
+        return redirect(url_for('peserta_hasil_seleksi'))
+    
+    # Check if user is registered for this event
+    event = Event.query.get_or_404(event_id)
+    if event not in biodata.registered_activities.all():
+        flash("Anda tidak terdaftar untuk kegiatan ini.", "error")
+        return redirect(url_for('peserta_hasil_seleksi'))
+    
+    # Get all results for this event, ordered by ranking
+    hasil_seleksi_query = db.session.query(
+        HasilSeleksi,
+        Users,
+        Participants
+    ).join(
+        Users, HasilSeleksi.id_users == Users.id
+    ).outerjoin(
+        Participants, Users.email == Participants.email
+    ).filter(
+        HasilSeleksi.event_id == event_id
+    ).order_by(
+        HasilSeleksi.ranking.asc()
+    ).all()
+    
+    # Process results
+    results = []
+    kuota = Kuota.query.filter_by(event_id=event_id).first()
+    
+    for hasil, user, participant in hasil_seleksi_query:
+        is_passed = False
+        if kuota and participant:
+            limit = 0
+            if participant.jenis_kelamin == 'laki-laki':
+                limit = kuota.putra
+            elif participant.jenis_kelamin == 'perempuan':
+                limit = kuota.putri
+            
+            if hasil.ranking <= limit:
+                is_passed = True
+        elif event.batas_lolos:
+            if hasil.ranking <= event.batas_lolos:
+                is_passed = True
+        
+        results.append({
+            'hasil': hasil,
+            'user': user,
+            'participant': participant,
+            'is_passed': is_passed
+        })
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template(
+        'peserta/detail_nilai.html',
+        event=event,
+        results=results,
+        kuota=kuota,
+        sidebar_state=sidebar_state,
+        user=current_user,
+        biodata=biodata
+    )
+
 @app.route('/peserta/data', methods=['GET', 'POST'])
 @login_required
 def peserta_data():
