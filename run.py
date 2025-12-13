@@ -1801,6 +1801,28 @@ def save_config():
                     'message': f'Periode Seleksi (selesai) untuk kegiatan "{nama}" harus sebelum Waktu Pelaksanaan dimulai'
                 }), 400
             
+            # Validasi: Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi
+            # Cek apakah waktu pelaksanaan mulai dalam periode seleksi
+            if waktu_pelaksanaan_dimulai_date >= mulai_date and waktu_pelaksanaan_dimulai_date <= selesai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Waktu Pelaksanaan (mulai) untuk kegiatan "{nama}" tidak boleh dalam kurun waktu Periode Seleksi'
+                }), 400
+            
+            # Cek apakah waktu pelaksanaan selesai dalam periode seleksi
+            if waktu_pelaksanaan_selesai_date >= mulai_date and waktu_pelaksanaan_selesai_date <= selesai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Waktu Pelaksanaan (selesai) untuk kegiatan "{nama}" tidak boleh dalam kurun waktu Periode Seleksi'
+                }), 400
+            
+            # Cek apakah waktu pelaksanaan overlap dengan periode seleksi (waktu pelaksanaan mencakup seluruh periode seleksi)
+            if waktu_pelaksanaan_dimulai_date <= mulai_date and waktu_pelaksanaan_selesai_date >= selesai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Waktu Pelaksanaan untuk kegiatan "{nama}" tidak boleh mencakup seluruh Periode Seleksi'
+                }), 400
+            
             # Parse jadwal tes (now as text)
             tanggal_tes = (act.get('tanggalTes') or '').strip()
             

@@ -75,11 +75,47 @@
       return false;
     },
 
+    // Fungsi untuk mengecek apakah waktu pelaksanaan dalam kurun waktu periode seleksi
+    checkWaktuPelaksanaanInPeriod(act) {
+      if (!act.mulai || !act.selesai) {
+        return false;
+      }
+      const mulai = new Date(act.mulai);
+      const selesai = new Date(act.selesai);
+      
+      // Cek apakah waktu pelaksanaan mulai dalam periode seleksi
+      if (act.waktuMulai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        if (waktuMulai >= mulai && waktuMulai <= selesai) {
+          return true;
+        }
+      }
+      
+      // Cek apakah waktu pelaksanaan selesai dalam periode seleksi
+      if (act.waktuSelesai) {
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuSelesai >= mulai && waktuSelesai <= selesai) {
+          return true;
+        }
+      }
+      
+      // Cek apakah waktu pelaksanaan overlap dengan periode seleksi (waktu pelaksanaan mencakup seluruh periode seleksi)
+      if (act.waktuMulai && act.waktuSelesai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuMulai <= mulai && waktuSelesai >= selesai) {
+          return true;
+        }
+      }
+      
+      return false;
+    },
+
     // Fungsi untuk validasi dan mencegah pemilihan tanggal yang tidak valid
     validateDateChange(act, fieldType) {
       // Tunggu sejenak untuk memastikan nilai sudah ter-update
       setTimeout(() => {
-        // Jika periode tidak valid terdeteksi, reset field yang baru diubah dan tampilkan pesan
+        // Cek validasi periode seleksi
         if (this.checkInvalidPeriod(act)) {
           // Simpan nilai lama sebelum reset
           const oldValue = act[fieldType];
@@ -100,6 +136,32 @@
             } else {
               // Fallback jika modal tidak tersedia
               alert('Periode Seleksi harus selesai sebelum Waktu Pelaksanaan dimulai. Silakan pilih tanggal yang berbeda.');
+            }
+          }, 50);
+          return;
+        }
+        
+        // Cek validasi waktu pelaksanaan dalam periode seleksi
+        if (this.checkWaktuPelaksanaanInPeriod(act)) {
+          // Simpan nilai lama sebelum reset
+          const oldValue = act[fieldType];
+          
+          // Reset field yang baru diubah
+          act[fieldType] = '';
+          
+          // Tunggu sedikit sebelum menampilkan pesan agar UI update dulu
+          setTimeout(() => {
+            // Tampilkan pesan error
+            const bodyState = Alpine.$data(document.body);
+            if (bodyState && bodyState.modal) {
+              bodyState.modal = {
+                show: true,
+                title: 'Peringatan',
+                message: 'Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi. Silakan pilih tanggal yang berbeda.'
+              };
+            } else {
+              // Fallback jika modal tidak tersedia
+              alert('Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi. Silakan pilih tanggal yang berbeda.');
             }
           }, 50);
         }
@@ -135,6 +197,14 @@
               return;
             }
           }
+        }
+      }
+      
+      // Validasi: Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi
+      for (let act of this.activities) {
+        if (this.checkWaktuPelaksanaanInPeriod(act)) {
+          this.errorMessage = 'Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi';
+          return;
         }
       }
       
@@ -402,9 +472,11 @@
                         <input 
                           type="date" 
                           x-model="act.waktuMulai" 
+                          :min="act.selesai ? (() => { const date = new Date(act.selesai); date.setDate(date.getDate() + 1); return date.toISOString().split('T')[0]; })() : ''"
                           @change="validateDateChange(act, 'waktuMulai')"
                           @keydown.enter="focusNextField($event, index)" 
-                          class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" 
+                          :class="checkWaktuPelaksanaanInPeriod(act) ? 'border-red-500 border-2 focus:border-red-500 focus:ring-red-500' : '{{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}'"
+                          class="w-full rounded-lg mb-2" 
                         />
                       </div>
                       <div class="w-1/2">
@@ -412,10 +484,27 @@
                         <input 
                           type="date" 
                           x-model="act.waktuSelesai" 
+                          :min="act.waktuMulai || (act.selesai ? (() => { const date = new Date(act.selesai); date.setDate(date.getDate() + 1); return date.toISOString().split('T')[0]; })() : '')"
                           @change="validateDateChange(act, 'waktuSelesai')"
                           @keydown.enter="focusNextField($event, index)" 
-                          class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" 
+                          :class="checkWaktuPelaksanaanInPeriod(act) ? 'border-red-500 border-2 focus:border-red-500 focus:ring-red-500' : '{{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}'"
+                          class="w-full rounded-lg mb-2" 
                         />
+                      </div>
+                    </div>
+                    <!-- Pesan Error Waktu Pelaksanaan dalam Periode Seleksi -->
+                    <div x-show="checkWaktuPelaksanaanInPeriod(act)" x-transition class="mt-1 mb-2">
+                      <div class="relative inline-block w-full">
+                        <div class="bg-red-50 dark:bg-red-900/20 rounded-md px-3 py-2 shadow-sm border border-red-200 dark:border-red-800">
+                          <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-sm text-red-700 dark:text-red-300 leading-relaxed">
+                              {{ 'Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi' if current_lang == 'id' else 'Execution Time cannot be within Selection Period' }}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 

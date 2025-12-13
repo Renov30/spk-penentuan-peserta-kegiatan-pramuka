@@ -53,6 +53,58 @@ async function saveConfig() {
       }
     }
 
+    // Validasi: Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi
+    if (act.mulai && act.selesai) {
+      const mulai = new Date(act.mulai);
+      const selesai = new Date(act.selesai);
+
+      // Cek apakah waktu pelaksanaan mulai dalam periode seleksi
+      if (act.waktuMulai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        if (waktuMulai >= mulai && waktuMulai <= selesai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Waktu Pelaksanaan (mulai) untuk kegiatan "${
+              act.nama || "ini"
+            }" tidak boleh dalam kurun waktu Periode Seleksi`,
+          };
+          return;
+        }
+      }
+
+      // Cek apakah waktu pelaksanaan selesai dalam periode seleksi
+      if (act.waktuSelesai) {
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuSelesai >= mulai && waktuSelesai <= selesai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Waktu Pelaksanaan (selesai) untuk kegiatan "${
+              act.nama || "ini"
+            }" tidak boleh dalam kurun waktu Periode Seleksi`,
+          };
+          return;
+        }
+      }
+
+      // Cek apakah waktu pelaksanaan overlap dengan periode seleksi (waktu pelaksanaan mencakup seluruh periode seleksi)
+      if (act.waktuMulai && act.waktuSelesai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuMulai <= mulai && waktuSelesai >= selesai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Waktu Pelaksanaan untuk kegiatan "${
+              act.nama || "ini"
+            }" tidak boleh mencakup seluruh Periode Seleksi`,
+          };
+          return;
+        }
+      }
+    }
+
     for (let c of act.criteria || []) {
       if (!c.nama) {
         bodyState.modal = {
@@ -179,6 +231,45 @@ function savePeriode() {
         if (selesai >= waktuMulai) {
           state.errorMessage =
             "Periode Seleksi (selesai) harus sebelum Waktu Pelaksanaan dimulai";
+          return;
+        }
+      }
+    }
+  }
+
+  // Validasi: Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi
+  for (let act of state.activities) {
+    if (act.mulai && act.selesai) {
+      const mulai = new Date(act.mulai);
+      const selesai = new Date(act.selesai);
+
+      // Cek apakah waktu pelaksanaan mulai dalam periode seleksi
+      if (act.waktuMulai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        if (waktuMulai >= mulai && waktuMulai <= selesai) {
+          state.errorMessage =
+            "Waktu Pelaksanaan (mulai) tidak boleh dalam kurun waktu Periode Seleksi";
+          return;
+        }
+      }
+
+      // Cek apakah waktu pelaksanaan selesai dalam periode seleksi
+      if (act.waktuSelesai) {
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuSelesai >= mulai && waktuSelesai <= selesai) {
+          state.errorMessage =
+            "Waktu Pelaksanaan (selesai) tidak boleh dalam kurun waktu Periode Seleksi";
+          return;
+        }
+      }
+
+      // Cek apakah waktu pelaksanaan overlap dengan periode seleksi (waktu pelaksanaan mencakup seluruh periode seleksi)
+      if (act.waktuMulai && act.waktuSelesai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuMulai <= mulai && waktuSelesai >= selesai) {
+          state.errorMessage =
+            "Waktu Pelaksanaan tidak boleh mencakup seluruh Periode Seleksi";
           return;
         }
       }
