@@ -1786,12 +1786,19 @@ def save_config():
             if not waktu_pelaksanaan_selesai_date:
                 waktu_pelaksanaan_selesai_date = waktu_pelaksanaan_dimulai_date
             
-            # Validasi: Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama/overlap
-            # Dua periode overlap jika: waktu_pelaksanaan_dimulai <= selesai AND waktu_pelaksanaan_selesai >= mulai
-            if waktu_pelaksanaan_dimulai_date <= selesai_date and waktu_pelaksanaan_selesai_date >= mulai_date:
+            # Validasi: Periode Seleksi harus selesai sebelum Waktu Pelaksanaan dimulai
+            # Cek apakah mulai periode seleksi >= waktu pelaksanaan
+            if mulai_date >= waktu_pelaksanaan_dimulai_date:
                 return jsonify({
                     'status': 'error', 
-                    'message': f'Waktu Pelaksanaan dan Periode Seleksi untuk kegiatan "{nama}" tidak boleh sama atau overlap'
+                    'message': f'Periode Seleksi (mulai) untuk kegiatan "{nama}" harus sebelum Waktu Pelaksanaan dimulai'
+                }), 400
+            
+            # Cek apakah selesai periode seleksi >= waktu pelaksanaan
+            if selesai_date >= waktu_pelaksanaan_dimulai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Periode Seleksi (selesai) untuk kegiatan "{nama}" harus sebelum Waktu Pelaksanaan dimulai'
                 }), 400
             
             # Parse jadwal tes (now as text)

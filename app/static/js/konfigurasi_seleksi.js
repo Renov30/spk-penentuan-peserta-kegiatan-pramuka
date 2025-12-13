@@ -18,24 +18,38 @@ async function saveConfig() {
       return;
     }
 
-    // Validasi: Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama/overlap
-    if (act.waktuMulai && act.waktuSelesai && act.mulai && act.selesai) {
+    // Validasi: Periode Seleksi harus selesai sebelum Waktu Pelaksanaan dimulai
+    if (act.waktuMulai) {
       const waktuMulai = new Date(act.waktuMulai);
-      const waktuSelesai = new Date(act.waktuSelesai);
-      const mulai = new Date(act.mulai);
-      const selesai = new Date(act.selesai);
 
-      // Cek apakah kedua periode overlap
-      // Dua periode overlap jika: waktuMulai <= selesai AND waktuSelesai >= mulai
-      if (waktuMulai <= selesai && waktuSelesai >= mulai) {
-        bodyState.modal = {
-          show: true,
-          title: "Peringatan",
-          message: `Waktu Pelaksanaan dan Periode Seleksi untuk kegiatan "${
-            act.nama || "ini"
-          }" tidak boleh sama atau overlap`,
-        };
-        return;
+      // Cek apakah mulai periode seleksi >= waktu pelaksanaan
+      if (act.mulai) {
+        const mulai = new Date(act.mulai);
+        if (mulai >= waktuMulai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Periode Seleksi (mulai) untuk kegiatan "${
+              act.nama || "ini"
+            }" harus sebelum Waktu Pelaksanaan dimulai`,
+          };
+          return;
+        }
+      }
+
+      // Cek apakah selesai periode seleksi >= waktu pelaksanaan
+      if (act.selesai) {
+        const selesai = new Date(act.selesai);
+        if (selesai >= waktuMulai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Periode Seleksi (selesai) untuk kegiatan "${
+              act.nama || "ini"
+            }" harus sebelum Waktu Pelaksanaan dimulai`,
+          };
+          return;
+        }
       }
     }
 
@@ -144,20 +158,29 @@ function savePeriode() {
     return;
   }
 
-  // Validasi: Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama/overlap
+  // Validasi: Periode Seleksi harus selesai sebelum Waktu Pelaksanaan dimulai
   for (let act of state.activities) {
-    if (act.waktuMulai && act.waktuSelesai && act.mulai && act.selesai) {
+    if (act.waktuMulai) {
       const waktuMulai = new Date(act.waktuMulai);
-      const waktuSelesai = new Date(act.waktuSelesai);
-      const mulai = new Date(act.mulai);
-      const selesai = new Date(act.selesai);
 
-      // Cek apakah kedua periode overlap
-      // Dua periode overlap jika: waktuMulai <= selesai AND waktuSelesai >= mulai
-      if (waktuMulai <= selesai && waktuSelesai >= mulai) {
-        state.errorMessage =
-          "Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama atau overlap";
-        return;
+      // Cek apakah mulai periode seleksi >= waktu pelaksanaan
+      if (act.mulai) {
+        const mulai = new Date(act.mulai);
+        if (mulai >= waktuMulai) {
+          state.errorMessage =
+            "Periode Seleksi (mulai) harus sebelum Waktu Pelaksanaan dimulai";
+          return;
+        }
+      }
+
+      // Cek apakah selesai periode seleksi >= waktu pelaksanaan
+      if (act.selesai) {
+        const selesai = new Date(act.selesai);
+        if (selesai >= waktuMulai) {
+          state.errorMessage =
+            "Periode Seleksi (selesai) harus sebelum Waktu Pelaksanaan dimulai";
+          return;
+        }
       }
     }
   }
