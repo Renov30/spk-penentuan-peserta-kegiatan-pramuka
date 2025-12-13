@@ -18,6 +18,27 @@ async function saveConfig() {
       return;
     }
 
+    // Validasi: Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama/overlap
+    if (act.waktuMulai && act.waktuSelesai && act.mulai && act.selesai) {
+      const waktuMulai = new Date(act.waktuMulai);
+      const waktuSelesai = new Date(act.waktuSelesai);
+      const mulai = new Date(act.mulai);
+      const selesai = new Date(act.selesai);
+
+      // Cek apakah kedua periode overlap
+      // Dua periode overlap jika: waktuMulai <= selesai AND waktuSelesai >= mulai
+      if (waktuMulai <= selesai && waktuSelesai >= mulai) {
+        bodyState.modal = {
+          show: true,
+          title: "Peringatan",
+          message: `Waktu Pelaksanaan dan Periode Seleksi untuk kegiatan "${
+            act.nama || "ini"
+          }" tidak boleh sama atau overlap`,
+        };
+        return;
+      }
+    }
+
     for (let c of act.criteria || []) {
       if (!c.nama) {
         bodyState.modal = {
@@ -121,6 +142,24 @@ function savePeriode() {
   if (invalidAct) {
     state.errorMessage = "Nama kegiatan dan periode harus diisi";
     return;
+  }
+
+  // Validasi: Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama/overlap
+  for (let act of state.activities) {
+    if (act.waktuMulai && act.waktuSelesai && act.mulai && act.selesai) {
+      const waktuMulai = new Date(act.waktuMulai);
+      const waktuSelesai = new Date(act.waktuSelesai);
+      const mulai = new Date(act.mulai);
+      const selesai = new Date(act.selesai);
+
+      // Cek apakah kedua periode overlap
+      // Dua periode overlap jika: waktuMulai <= selesai AND waktuSelesai >= mulai
+      if (waktuMulai <= selesai && waktuSelesai >= mulai) {
+        state.errorMessage =
+          "Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama atau overlap";
+        return;
+      }
+    }
   }
 
   // ✅ Sinkronisasi array contingents agar sama panjang dengan activities

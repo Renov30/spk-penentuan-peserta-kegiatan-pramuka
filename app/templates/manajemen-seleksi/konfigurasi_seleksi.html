@@ -55,6 +55,24 @@
         this.errorMessage = 'Nama kegiatan dan periode harus diisi';
         return;
       }
+      
+      // Validasi: Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama/overlap
+      for (let act of this.activities) {
+        if (act.waktuMulai && act.waktuSelesai && act.mulai && act.selesai) {
+          const waktuMulai = new Date(act.waktuMulai);
+          const waktuSelesai = new Date(act.waktuSelesai);
+          const mulai = new Date(act.mulai);
+          const selesai = new Date(act.selesai);
+          
+          // Cek apakah kedua periode overlap
+          // Dua periode overlap jika: waktuMulai <= selesai AND waktuSelesai >= mulai
+          if (waktuMulai <= selesai && waktuSelesai >= mulai) {
+            this.errorMessage = 'Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama atau overlap';
+            return;
+          }
+        }
+      }
+      
       this.completed.periode = true;
       this.tab = 'kontingen';
       this.errorMessage = '';
