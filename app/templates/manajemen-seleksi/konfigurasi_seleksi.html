@@ -49,6 +49,51 @@
       }
     },
 
+    // Fungsi untuk mengecek apakah waktu pelaksanaan dan periode seleksi overlap
+    checkOverlap(act) {
+      if (!act.waktuMulai || !act.waktuSelesai || !act.mulai || !act.selesai) {
+        return false;
+      }
+      const waktuMulai = new Date(act.waktuMulai);
+      const waktuSelesai = new Date(act.waktuSelesai);
+      const mulai = new Date(act.mulai);
+      const selesai = new Date(act.selesai);
+      
+      // Dua periode overlap jika: waktuMulai <= selesai AND waktuSelesai >= mulai
+      return waktuMulai <= selesai && waktuSelesai >= mulai;
+    },
+
+    // Fungsi untuk validasi dan mencegah pemilihan tanggal yang overlap
+    validateDateChange(act, fieldType) {
+      // Tunggu sejenak untuk memastikan nilai sudah ter-update
+      setTimeout(() => {
+        // Jika overlap terdeteksi, reset field yang baru diubah dan tampilkan pesan
+        if (this.checkOverlap(act)) {
+          // Simpan nilai lama sebelum reset
+          const oldValue = act[fieldType];
+          
+          // Reset field yang baru diubah
+          act[fieldType] = '';
+          
+          // Tunggu sedikit sebelum menampilkan pesan agar UI update dulu
+          setTimeout(() => {
+            // Tampilkan pesan error
+            const bodyState = Alpine.$data(document.body);
+            if (bodyState && bodyState.modal) {
+              bodyState.modal = {
+                show: true,
+                title: 'Peringatan',
+                message: 'Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama atau overlap. Silakan pilih tanggal yang berbeda.'
+              };
+            } else {
+              // Fallback jika modal tidak tersedia
+              alert('Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama atau overlap. Silakan pilih tanggal yang berbeda.');
+            }
+          }, 50);
+        }
+      }, 10);
+    },
+
     savePeriode() {
       const invalidAct = this.activities.find(a => !a.nama || !a.mulai || !a.selesai);
       if (invalidAct) {
@@ -334,11 +379,40 @@
                     <div class="flex gap-3">
                       <div class="w-1/2">
                         <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}">{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small>
-                        <input type="date" x-model="act.waktuMulai" @keydown.enter="focusNextField($event, index)" class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                        <input 
+                          type="date" 
+                          x-model="act.waktuMulai" 
+                          @change="validateDateChange(act, 'waktuMulai')"
+                          @keydown.enter="focusNextField($event, index)" 
+                          :class="checkOverlap(act) ? 'border-red-500 border-2 focus:border-red-500 focus:ring-red-500' : '{{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}'"
+                          class="w-full rounded-lg mb-2" 
+                        />
                       </div>
                       <div class="w-1/2">
                         <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}">{{ 'Selesai' if current_lang == 'id' else 'End' }}</small>
-                        <input type="date" x-model="act.waktuSelesai" @keydown.enter="focusNextField($event, index)" class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                        <input 
+                          type="date" 
+                          x-model="act.waktuSelesai" 
+                          @change="validateDateChange(act, 'waktuSelesai')"
+                          @keydown.enter="focusNextField($event, index)" 
+                          :class="checkOverlap(act) ? 'border-red-500 border-2 focus:border-red-500 focus:ring-red-500' : '{{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}'"
+                          class="w-full rounded-lg mb-2" 
+                        />
+                      </div>
+                    </div>
+                    <!-- Pesan Error Overlap -->
+                    <div x-show="checkOverlap(act)" x-transition class="mt-1 mb-2">
+                      <div class="relative inline-block w-full">
+                        <div class="bg-red-50 dark:bg-red-900/20 rounded-md px-3 py-2 shadow-sm border border-red-200 dark:border-red-800">
+                          <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-sm text-red-700 dark:text-red-300 leading-relaxed">
+                              {{ 'Waktu Pelaksanaan dan Periode Seleksi tidak boleh sama atau overlap' if current_lang == 'id' else 'Execution Time and Selection Period cannot be the same or overlap' }}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -355,11 +429,25 @@
                     <div class="flex gap-3">
                       <div class="w-1/2">
                         <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}">{{ 'Mulai' if current_lang == 'id' else 'Start' }}</small>
-                        <input type="date" x-model="act.mulai" @keydown.enter="focusNextField($event, index)" class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                        <input 
+                          type="date" 
+                          x-model="act.mulai" 
+                          @change="validateDateChange(act, 'mulai')"
+                          @keydown.enter="focusNextField($event, index)" 
+                          :class="checkOverlap(act) ? 'border-red-500 border-2 focus:border-red-500 focus:ring-red-500' : '{{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}'"
+                          class="w-full rounded-lg mb-2" 
+                        />
                       </div>
                       <div class="w-1/2">
                         <small class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-700' }}">{{ 'Selesai' if current_lang == 'id' else 'End' }}</small>
-                        <input type="date" x-model="act.selesai" @keydown.enter="focusNextField($event, index)" class="w-full rounded-lg mb-2 {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}" />
+                        <input 
+                          type="date" 
+                          x-model="act.selesai" 
+                          @change="validateDateChange(act, 'selesai')"
+                          @keydown.enter="focusNextField($event, index)" 
+                          :class="checkOverlap(act) ? 'border-red-500 border-2 focus:border-red-500 focus:ring-red-500' : '{{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}'"
+                          class="w-full rounded-lg mb-2" 
+                        />
                       </div>
                     </div>
 
