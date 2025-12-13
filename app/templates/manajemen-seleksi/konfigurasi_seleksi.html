@@ -658,7 +658,7 @@
                   <div class="flex items-center gap-2 mb-2 font-semibold text-sm border-b pb-1 {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-300' }}">
                     <div class="w-1/3">{{ 'Nama Kriteria' if current_lang == 'id' else 'Criteria Name' }}</div>
                     <div class="w-1/3 pl-3">{{ 'Jenis Penilaian' if current_lang == 'id' else 'Type of Assessment' }}</div>
-                    <div class="w-1/3 pl-3">{{ 'Skala Penilaian' if current_lang == 'id' else 'Assessment Scale' }}</div>
+                    <div class="w-1/3 pl-3">{{ 'Bobot Penilaian' if current_lang == 'id' else 'Assessment Weight' }}</div>
                     <div class="w-12 text-center">{{ 'Aksi' if current_lang == 'id' else 'Action' }}</div>
                   </div>
                   <template x-for="(c, index) in activity.criteria" :key="index">
