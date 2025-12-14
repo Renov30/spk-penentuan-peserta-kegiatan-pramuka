@@ -1549,7 +1549,7 @@ def admin_penugasan_penilai():
     
     # Prepare criteria data for frontend
     events_criteria = {}
-    for event in events:
+    for event in events:    
         events_criteria[event.id_kegiatan] = [
             {'id': c.id_kriteria, 'nama': c.nama_kriteria} 
             for c in event.kriteria
