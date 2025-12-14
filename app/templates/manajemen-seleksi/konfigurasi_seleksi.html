@@ -616,18 +616,18 @@
                 <div class="mb-6 p-4 border rounded-lg dark:border-gray-700">
                   <h4 class="font-medium mb-4 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-700' }}" x-text="activity.nama"></h4>
                   
-                  <!-- Batch List -->
-                  <template x-for="(batch, batchIndex) in contingents[actIndex]" :key="batchIndex">
+                  <!-- Daftar Umpi -->
+                  <template x-for="(umpi, umpiIndex) in contingents[actIndex]" :key="umpiIndex">
                     <div class="mb-4 p-3 border rounded-lg {{ 'border-gray-600 bg-gray-800' if current_theme == 'dark' else 'border-gray-300 bg-gray-50' }}">
                       <div class="flex items-center justify-between mb-3">
                         <span class="text-sm font-medium {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
-                          {{ 'Batch' if current_lang == 'id' else 'Batch' }} <span x-text="batchIndex + 1"></span>
+                          {{ 'Umpi' if current_lang == 'id' else 'Umpi' }} <span x-text="umpiIndex + 1"></span>
                         </span>
                         <button 
                           x-show="contingents[actIndex].length > 1"
-                          @click="contingents[actIndex].splice(batchIndex, 1)" 
+                          @click="contingents[actIndex].splice(umpiIndex, 1)" 
                           class="px-2 py-1 bg-red-500 hover:bg-red-700 text-white rounded text-xs cursor-pointer"
-                          title="{{ 'Hapus Batch' if current_lang == 'id' else 'Delete Batch' }}"
+                          title="{{ 'Hapus Umpi' if current_lang == 'id' else 'Delete Umpi' }}"
                         >
                           <i class="fa-solid fa-trash"></i>
                         </button>
@@ -637,26 +637,26 @@
                           <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                             {{ 'Umpi Putra' if current_lang == 'id' else 'Male Umpi' }}
                           </label>
-                          <input type="number" min="5" max="12" x-model.number="batch.umpiPutra" placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                          <input type="number" min="5" max="12" x-model.number="umpi.umpiPutra" placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
                         </div>
                         <div class="w-1/2">
                           <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                             {{ 'Umpi Putri' if current_lang == 'id' else 'Female Umpi' }}
                           </label>
-                          <input type="number" min="5" max="12" x-model.number="batch.umpiPutri" placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                          <input type="number" min="5" max="12" x-model.number="umpi.umpiPutri" placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
                         </div>
                       </div>
                     </div>
                   </template>
                   
-                  <!-- Tombol Tambah Batch -->
+                  <!-- Tombol Tambah Umpi -->
                   <button 
                     @click="contingents[actIndex].push({ umpiPutra: 0, umpiPutri: 0 })" 
                     type="button" 
                     class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg text-sm cursor-pointer mt-2"
                   >
                     <i class="fa-solid fa-plus mr-1"></i>
-                    {{ '+ Tambah Batch' if current_lang == 'id' else '+ Add Batch' }}
+                    {{ '+ Tambah Umpi' if current_lang == 'id' else '+ Add Umpi' }}
                   </button>
                 </div>
               </template>
@@ -667,7 +667,7 @@
                   <i class="fa-solid fa-backward"></i>
                   {{ 'Kembali' if current_lang == 'id' else 'Back' }}
                 </button>
-                <button type="button" @click="if (contingents.some(batches => batches.some(b => b.umpiPutra < 5 || b.umpiPutra > 12 || b.umpiPutri < 5 || b.umpiPutri > 12))) { errorMessage = '{{ 'Komposisi kontingen harus ditentukan' if current_lang == 'id' else 'Participant quota must be set' }}'; return;} completed.kontingen = true; tab = 'kriteria'" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                <button type="button" @click="if (contingents.some(umpiList => umpiList.some(umpi => umpi.umpiPutra < 5 || umpi.umpiPutra > 12 || umpi.umpiPutri < 5 || umpi.umpiPutri > 12))) { errorMessage = '{{ 'Komposisi kontingen harus ditentukan' if current_lang == 'id' else 'Participant quota must be set' }}'; return;} completed.kontingen = true; tab = 'kriteria'" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
                   <i class="fa-solid fa-download"></i>
                   {{ 'Simpan & Lanjut' if current_lang == 'id' else 'Save & Next' }}
                 </button>

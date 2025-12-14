@@ -138,12 +138,12 @@ async function saveConfig() {
     }
   }
 
-  // Sinkronkan data contingents ke activities (jumlahkan semua batch)
+  // Sinkronkan data contingents ke activities (jumlahkan semua umpi)
   for (let i = 0; i < state.activities.length; i++) {
     if (state.contingents[i] && Array.isArray(state.contingents[i])) {
-      // Jumlahkan semua batch untuk activity ini
-      const totalPutra = state.contingents[i].reduce((sum, batch) => sum + (batch.umpiPutra || 0), 0);
-      const totalPutri = state.contingents[i].reduce((sum, batch) => sum + (batch.umpiPutri || 0), 0);
+      // Jumlahkan semua umpi untuk activity ini
+      const totalPutra = state.contingents[i].reduce((sum, umpi) => sum + (umpi.umpiPutra || 0), 0);
+      const totalPutri = state.contingents[i].reduce((sum, umpi) => sum + (umpi.umpiPutri || 0), 0);
       state.activities[i].putra = totalPutra;
       state.activities[i].putri = totalPutri;
     } else if (state.contingents[i]) {
