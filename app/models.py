@@ -36,19 +36,21 @@ class Users(db.Model, UserMixin):
             'foto': self.foto
         }
 
+# Access to table tb_event_evaluator
+class EventEvaluator(db.Model):
+    __tablename__ = 'tb_event_evaluator'
+    event_id = db.Column(db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 
-# Association Table for Event and Evaluator
-tb_event_evaluator = db.Table('tb_event_evaluator',
-    db.Column('event_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), primary_key=True),
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
-)
+    # Relationship
+    kegiatan = db.relationship("Event", backref=db.backref("assigned_evaluators", lazy=True))
+    evaluator = db.relationship("Users", backref=db.backref("events_assigned", lazy=True))
 
-# Association Table for Participant and Event (Many-to-Many)
-tb_participant_kegiatan = db.Table('tb_participant_kegiatan',
-    db.Column('id', db.Integer, primary_key=True, autoincrement=True),
-    db.Column('participant_id', db.Integer, db.ForeignKey('participants.id'), nullable=False),
-    db.Column('kegiatan_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), nullable=False),
-    db.Column('tanggal_daftar', db.DateTime, default=db.func.current_timestamp(), nullable=False)
+# Access to table tb_participant_kegiatan
+ParticipantKegiatan = db.Table(
+    'tb_participant_kegiatan',
+    db.Column('participant_id', db.Integer, db.ForeignKey('participants.id'), primary_key=True),
+    db.Column('kegiatan_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), primary_key=True)
 )
 
 # Access to table tb_kegiatan
@@ -64,19 +66,17 @@ class Event(db.Model):
     kwartir_penyelenggara = db.Column(db.String(255), nullable=False)
     mulai = db.Column(db.Date, nullable=False)
     selesai = db.Column(db.Date, nullable=False)
-    
-    # New fields for Test Details
     tanggal_tes = db.Column(db.String(255), nullable=True)
     tempat_tes = db.Column(db.String(100), nullable=True)
     batas_lolos = db.Column(db.Integer, default=3) # Default 3 peserta lolos
-    
     kuota = db.relationship("Kuota", backref="event", lazy=True, cascade="all, delete-orphan")
     kriteria = db.relationship("Criteria", backref="event", lazy=True, cascade="all, delete-orphan")
     
     # Relationship with Evaluators
-    evaluators = db.relationship('Users', secondary=tb_event_evaluator, lazy='subquery',
-        backref=db.backref('assigned_events', lazy=True))
+    evaluators = db.relationship('Users', secondary='tb_event_evaluator', lazy='subquery', backref=db.backref('assigned_events', lazy=True))
 
+
+# Access to table tb_kuota
 class Kuota(db.Model):
     __tablename__ = 'tb_kuota'
     id = db.Column(db.Integer, primary_key=True)
@@ -84,8 +84,9 @@ class Kuota(db.Model):
     putra = db.Column(db.Integer, default=0)
     putri = db.Column(db.Integer, default=0)   
 
-# Association Table for Evaluator and Criteria
-tb_evaluator_criteria = db.Table('tb_evaluator_criteria',
+# Access to table tb_evaluator_criteria
+EvaluatorCriteria = db.Table(
+    'tb_evaluator_criteria',
     db.Column('criteria_id', db.Integer, db.ForeignKey('tb_kriteria.id_kriteria'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
 )
@@ -103,8 +104,12 @@ class Criteria(db.Model):
     jumlah_soal = db.Column(db.Integer, nullable=True)
     
     # Relationship with Evaluators
-    evaluators = db.relationship('Users', secondary=tb_evaluator_criteria, lazy='subquery',
-        backref=db.backref('assigned_criteria', lazy=True))
+    evaluators = db.relationship(
+        'Users',
+        secondary=EvaluatorCriteria,
+        lazy='subquery',
+        backref=db.backref('assigned_criteria', lazy=True)
+    )
     
 # Access to table notifications
 class Notification(db.Model):
@@ -143,15 +148,10 @@ class Participants(db.Model):
     kegiatan = db.relationship("Event", backref="peserta_list", lazy=True)
     
     # Many-to-many relationship dengan Event untuk multiple registrations
-    registered_activities = db.relationship(
-        "Event",
-        secondary=tb_participant_kegiatan,
-        backref=db.backref("registered_participants", lazy="dynamic"),
-        lazy="dynamic"
-    )
+    registered_activities = db.relationship("Event", secondary=ParticipantKegiatan, backref=db.backref("registered_participants", lazy="dynamic"), lazy="dynamic")
 
     def __repr__(self):
-        return f"<Participant {self.nama_lengkap}>"
+        return f"<Participants {self.nama_lengkap}>"
 
 # Access to table himpunan_kriteria
 class HimpunanKriteria(db.Model):

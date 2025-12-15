@@ -29,13 +29,11 @@ def calculate_spk(event_id):
     event = Event.query.get(event_id)
     if not event:
         return False, "Kegiatan tidak ditemukan."
-        
     participants = event.registered_participants.all()
     
     # Fallback for backward compatibility or if using old relation
     if not participants:
         participants = Participants.query.filter_by(kegiatan_id=event_id).all()
-        
     if not participants:
         return False, "Tidak ada peserta untuk kegiatan ini."
     
@@ -43,29 +41,23 @@ def calculate_spk(event_id):
     participant_emails = [p.email for p in participants]
     users = Users.query.filter(Users.email.in_(participant_emails)).all()
     user_map = {u.email: u.id for u in users}
-    
     participant_ids = [user_map[p.email] for p in participants if p.email in user_map]
-
     if not participant_ids:
         return False, "Data user peserta tidak ditemukan."
 
     # 3. Proses Penilaian (Fuzzifikasi & Agregasi)
     final_scores = []
-    
     for uid in participant_ids:
         fuzzy_total_l = 0
         fuzzy_total_m = 0
         fuzzy_total_u = 0
-        
         has_score = False
-        
         for cid, weight in criteria_weights.items():
             # Ambil rata-rata nilai dari semua penilai untuk kriteria ini
             avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(
                 id_users=uid,
                 id_kriteria=cid
             ).scalar()
-            
             if avg_score is not None:
                 has_score = True
                 score = float(avg_score)
@@ -75,7 +67,6 @@ def calculate_spk(event_id):
                 # Asumsi range nilai input bisa 1-5 (Likert) atau 1-100
                 
                 l, m, u = 0, 0, 0
-                
                 if score <= 5: # Asumsi Skala Likert 1-5
                     if score <= 1:      # Sangat Kurang
                         l, m, u = 1, 1, 2
@@ -101,7 +92,6 @@ def calculate_spk(event_id):
                 fuzzy_total_l += l * weight
                 fuzzy_total_m += m * weight
                 fuzzy_total_u += u * weight
-        
         if has_score:
             # --- DEFUZZIFIKASI (Center of Area) ---
             # Score = (L + M + U) / 3
@@ -124,7 +114,6 @@ def calculate_spk(event_id):
         if final_scores:
              user_ids = [x['user_id'] for x in final_scores]
              HasilSeleksi.query.filter(HasilSeleksi.id_users.in_(user_ids), HasilSeleksi.event_id == None).delete(synchronize_session=False)
-
         for rank, item in enumerate(final_scores, 1):
             hasil = HasilSeleksi(
                 id_users=item['user_id'],
@@ -133,10 +122,8 @@ def calculate_spk(event_id):
                 event_id=event_id
             )
             db.session.add(hasil)
-            
         db.session.commit()
         return True, "Perhitungan Fuzzy AHP berhasil."
-        
     except Exception as e:
         db.session.rollback()
         return False, f"Error menyimpan hasil: {str(e)}"

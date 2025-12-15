@@ -3,7 +3,7 @@ from flask_session import Session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, ParticipantKegiatan
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -210,7 +210,7 @@ def login():
         
         # Query user dari database
         user = Users.query.filter_by(username=username).first()
-        
+
         if not user:
             logging.warning(f"Login gagal: username '{username}' tidak ditemukan.")
             flash("Username salah!", "danger")
@@ -278,7 +278,9 @@ def login_google_callback():
         if not user.foto or user.foto == "img/default-user.png":
             user.foto = user_info.get('picture') or "img/default-user.png"
             db.session.commit()
-            
+        
+        login_user(user)
+        
         session['username'] = user.username
         session['user'] = {
             'id': user.id,
@@ -302,7 +304,7 @@ def login_google_callback():
         elif user.level == "peserta":
             return redirect(url_for('peserta_dashboard'))
         else:
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('login'))
     else:
         # Jika belum ada, arahkan ke konfirmasi registrasi
         session['pending_user'] = user_info
@@ -871,10 +873,10 @@ def get_penilaian_peserta(kegiatan_id):
     try:
         # Ambil semua peserta yang terdaftar di kegiatan ini melalui many-to-many relationship
         peserta_list = Participants.query.join(
-            tb_participant_kegiatan,
-            Participants.id == tb_participant_kegiatan.c.participant_id
+            ParticipantKegiatan,
+            Participants.id == ParticipantKegiatan.c.participant_id
         ).filter(
-            tb_participant_kegiatan.c.kegiatan_id == kegiatan_id
+            ParticipantKegiatan.c.kegiatan_id == kegiatan_id
         ).all()
         
         data = []
@@ -3496,10 +3498,10 @@ def peserta_dashboard():
     registered_activities = []
     if participant:
         registered_activities = Event.query.join(
-            tb_participant_kegiatan,
-            Event.id_kegiatan == tb_participant_kegiatan.c.kegiatan_id
+            ParticipantKegiatan,
+            Event.id_kegiatan == ParticipantKegiatan.c.kegiatan_id
         ).filter(
-            tb_participant_kegiatan.c.participant_id == participant.id
+            ParticipantKegiatan.c.participant_id == participant.id
         ).all()
     
     # Calculate scores for each activity
