@@ -1,5 +1,6 @@
 from flask import Flask, Response, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app
 from flask_session import Session
+from flask_session.sessions import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
@@ -38,8 +39,62 @@ app.config['SESSION_FILE_PATH'] = os.path.join(app.root_path, 'flask_session')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
-app.secret_key = os.getenv("APP_SECRET_KEY")
+secret_key = os.getenv("APP_SECRET_KEY")
+# Ensure secret_key is a string, not bytes
+if isinstance(secret_key, bytes):
+    secret_key = secret_key.decode('utf-8')
+app.secret_key = secret_key or secrets.token_hex(32)
+
+# Custom Session Interface to fix bytes/string issue
+class FixedFileSystemSessionInterface(FileSystemSessionInterface):
+    def generate_sid(self):
+        """Generate session ID and ensure it's always a string"""
+        sid = super().generate_sid()
+        if isinstance(sid, bytes):
+            # Convert bytes to string if needed
+            try:
+                sid = sid.decode('utf-8')
+            except (UnicodeDecodeError, AttributeError):
+                # If decode fails, use base64 or hex encoding
+                import base64
+                sid = base64.urlsafe_b64encode(sid).decode('utf-8').rstrip('=')
+        return sid
+    
+    def save_session(self, app, session, response):
+        """Override save_session to ensure session_id is always a string"""
+        # Monkey-patch response.set_cookie to ensure value is always string
+        original_set_cookie = response.set_cookie
+        
+        def patched_set_cookie(key, value='', *args, **kwargs):
+            # Ensure value is always a string
+            if isinstance(value, bytes):
+                try:
+                    value = value.decode('utf-8')
+                except (UnicodeDecodeError, AttributeError):
+                    import base64
+                    value = base64.urlsafe_b64encode(value).decode('utf-8').rstrip('=')
+            return original_set_cookie(key, value, *args, **kwargs)
+        
+        # Temporarily replace set_cookie
+        response.set_cookie = patched_set_cookie
+        
+        try:
+            # Call parent save_session
+            super().save_session(app, session, response)
+        finally:
+            # Restore original set_cookie
+            response.set_cookie = original_set_cookie
+
+# Initialize Flask-Session first to set up configuration
 Session(app)
+
+# Replace with custom session interface that fixes bytes/string issue
+# Simply change the class of existing interface to our custom class
+existing_interface = app.session_interface
+
+# Change the class of the existing interface instance to our custom class
+# This preserves all attributes and methods while adding our overrides
+existing_interface.__class__ = FixedFileSystemSessionInterface
 
 csrf = CSRFProtect(app)
 app.config.from_object(Config)
