@@ -2,13 +2,15 @@
 from app import db
 from sqlalchemy.dialects.mysql import ENUM
 from flask_login import UserMixin
+from datetime import datetime
+from slugify import slugify
     
 # Access to table users
 class Users(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column('id', db.Integer, primary_key=True)
     username = db.Column(db.String(255), nullable=False)
-    password = db.Column(db.String(255), nullable=False)
+    password = db.Column(db.String(255), nullable=True)
     nama_lengkap = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     jenis_kelamin = db.Column(ENUM('laki-laki', 'perempuan', name='jenis_kelamin'), nullable=False, default="laki-laki")
@@ -21,6 +23,8 @@ class Users(db.Model, UserMixin):
     login_method = db.Column(db.String(100), nullable=False, default="manual")
     sidebar_state = db.Column(db.String(10), nullable=False, default='expanded')
     status = db.Column(ENUM('aktif', 'non-aktif', '', '', name='user_status'), nullable=False, default='aktif', server_default='aktif')
+    
+    news = db.relationship('News', backref='author', lazy=True)
     
     def to_dict(self):
         return {
@@ -201,3 +205,18 @@ class Informasi(db.Model):
     judul = db.Column(db.String(255), nullable=False)
     isi = db.Column(db.Text, nullable=False)
     tanggal = db.Column(db.Date, server_default=db.func.current_date())
+
+# Access to table tb_news
+class News(db.Model):
+    __tablename__ = 'tb_news'
+    id_news = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(255), unique=True, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    excerpt = db.Column(db.Text)
+    thumbnail = db.Column(db.String(255), nullable=False, default='images/default-news.jpg')
+    status = db.Column(ENUM('draft', 'published', 'archived', name='news_status'), default='draft')
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    published_at = db.Column(db.DateTime)

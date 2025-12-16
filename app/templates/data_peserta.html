@@ -141,18 +141,19 @@
                     <tr>
                       <th class="px-4 py-3">No.</th>
                       <th class="px-4 py-3">
-                        {{ 'Nama' if current_lang == 'id' else 'Name' }}
+                        {{ 'Nama Lengkap' if current_lang == 'id' else 'Full
+                        Name' }}
                       </th>
                       <th class="px-4 py-3">
-                        {{ 'Asal Sekolah' if current_lang == 'id' else 'School'
-                        }}
+                        {{ 'Asal Gugus Depan' if current_lang == 'id' else
+                        'School' }}
                       </th>
                       <th class="px-4 py-3">
                         {{ 'Status Seleksi' if current_lang == 'id' else
                         'Selection Status' }}
                       </th>
                       <th class="px-4 py-3">
-                        {{ 'Nilai' if current_lang == 'id' else 'Score' }}
+                        {{ 'Usia' if current_lang == 'id' else 'Age' }}
                       </th>
                       <th class="px-4 py-3">
                         {{ 'Aksi' if current_lang == 'id' else 'Actions' }}
@@ -160,13 +161,18 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <!-- Contoh Data Peserta -->
+                    {% for p in participants %}
                     <tr
                       class="border-b {{ 'hover:bg-gray-50 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50 dark:hover:bg-gray-100' }}"
                     >
-                      <td class="px-4 py-3">1</td>
-                      <td class="px-4 py-3">Adi Prasetyo</td>
-                      <td class="px-4 py-3">SMA N 1 Merauke</td>
+                      <td class="px-4 py-3">{{ loop.index }}</td>
+
+                      <td class="px-4 py-3 font-medium">
+                        {{ p.nama_lengkap }}
+                      </td>
+
+                      <td class="px-4 py-3">{{ p.asal_gudep }}</td>
+
                       <td class="px-4 py-3">
                         <span
                           class="px-3 py-1 text-xs rounded-full bg-yellow-200 text-yellow-800"
@@ -175,34 +181,47 @@
                           'Pending Verification' }}
                         </span>
                       </td>
-                      <td class="px-4 py-3">85</td>
+
+                      <td class="px-4 py-3">{{ p.usia }}</td>
+
                       <td class="px-4 py-3 flex gap-2">
-                        <button
-                          class="px-3 py-1 bg-gray-400 text-white rounded-lg hover:bg-gray-500 flex items-center cursor-pointer"
-                          aria-label="Lihat Detail"
+                        <a
+                          href="{{ url_for('admin_peserta', id=p.id) }}"
+                          class="px-3 py-1 bg-gray-400 text-white rounded-lg hover:bg-gray-500 cursor-pointer"
+                          title="Detail"
                         >
                           <i class="fa-solid fa-eye"></i>
-                        </button>
-                        <button
-                          class="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center cursor-pointer"
-                          aria-label="Edit"
+                        </a>
+
+                        <a
+                          class="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
+                          title="Edit"
                         >
                           <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button
-                          class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center cursor-pointer"
-                          aria-label="Hapus"
+                        </a>
+
+                        <form
+                          method="POST"
+                          onsubmit="return confirm('Yakin ingin menghapus peserta ini?')"
                         >
-                          <i class="fa-solid fa-trash"></i>
-                        </button>
-                        <button
-                          class="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 flex items-center cursor-pointer"
-                          aria-label="Cetak Kartu Peserta"
-                        >
-                          <i class="fa-solid fa-id-card"></i>
-                        </button>
+                          <button
+                            type="submit"
+                            class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer"
+                            title="Hapus"
+                          >
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </form>
                       </td>
                     </tr>
+                    {% else %}
+                    <tr>
+                      <td colspan="6" class="text-center py-6 text-gray-500">
+                        {{ 'Belum ada data peserta' if current_lang == 'id' else
+                        'No participant data available' }}
+                      </td>
+                    </tr>
+                    {% endfor %}
                   </tbody>
                 </table>
               </div>

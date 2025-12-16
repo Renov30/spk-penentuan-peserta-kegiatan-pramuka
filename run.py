@@ -3,7 +3,7 @@ from flask_session import Session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, ParticipantKegiatan
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, News, ParticipantKegiatan
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -19,6 +19,7 @@ from flask_login import current_user, LoginManager, login_user, login_required
 from functools import wraps
 from app.utils.utils import log_activity
 from sqlalchemy.exc import IntegrityError
+from slugify import slugify
 import io
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -722,7 +723,15 @@ def index():
     if not profile_picture or profile_picture in ['img/default-user.png', '']:
         profile_picture = 'images/profil-default.png'
         
-    return render_template('index.html', username=username, profile_picture=profile_picture, notification_count=notification_count, user_data=user_data, first_time_login=first_time, debug_theme=session.get("theme"))
+    latest_news = (
+        News.query
+        .filter(News.status == 'published')
+        .order_by(News.published_at.desc())
+        .limit(3)
+        .all()
+    )
+        
+    return render_template('index.html', username=username, profile_picture=profile_picture, notification_count=notification_count, user_data=user_data, first_time_login=first_time, debug_theme=session.get("theme"), latest_news=latest_news)
 
 @app.route("/clear-first-login-flag", methods=["POST"])
 @csrf.exempt
@@ -775,16 +784,9 @@ def save_sidebar_state():
 @login_required
 def admin_dashboard():
     sidebar_state = current_user.sidebar_state or 'expanded'
-    if 'username' not in session:
-        flash("Silakan login terlebih dahulu", "warning")
-        return redirect(url_for('login'))
-    
     user = current_user
-    if not user:
-        flash("Akses ditolak. User tidak valid!", "danger")
-        return redirect(url_for('index'))
-    
-    # Cek level user
+
+    # Validasi role admin
     if user.level == 'penilai':
         return redirect(url_for('penilai_dashboard'))
     elif user.level == 'peserta':
@@ -792,7 +794,7 @@ def admin_dashboard():
     elif user.level != 'admin':
         flash("Akses ditolak. Anda bukan admin!", "danger")
         return redirect(url_for('index'))
-    
+
     total_users = Users.query.count()
     total_participants = Participants.query.count() if db.inspect(db.engine).has_table("participants") else 0
     total_criteria = Criteria.query.count() if db.inspect(db.engine).has_table("criteria") else 0
@@ -859,9 +861,14 @@ def admin_view_penugasan_penilai():
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'role' not in session or session['role'] != 'admin':
-            flash("Akses ditolak! Hanya admin yang bisa membuka halaman ini.", "error")
-            return redirect(url_for('admin_dashboard'))
+        if not current_user.is_authenticated:
+            flash("Silakan login terlebih dahulu.", "warning")
+            return redirect(url_for('login'))
+
+        if current_user.level != 'admin':
+            flash("Akses ditolak! Hanya admin yang bisa membuka halaman ini.", "danger")
+            return redirect(url_for('index'))
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -1043,9 +1050,6 @@ def delete_penilaian():
         db.session.rollback()
         current_app.logger.exception('Error in /api/penilaian/hapus:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
-
-
 
 @app.route('/admin/users')
 @login_required
@@ -2709,8 +2713,8 @@ def admin_pembobotan_kriteria():
 @admin_required
 def admin_peserta():
     sidebar_state = current_user.sidebar_state or 'expanded'
-    users = Users.query.count()
-    return render_template('data_peserta.html', sidebar_state=sidebar_state, user=users, time=time)
+    participants = Participants.query.order_by(Participants.id.asc()).all()
+    return render_template('data_peserta.html', sidebar_state=sidebar_state, participants=participants, time=time)
     
 @app.route('/admin/hasil_seleksi')
 @login_required
@@ -2719,6 +2723,155 @@ def admin_hasil_seleksi():
     sidebar_state = current_user.sidebar_state or 'expanded'
     users = Users.query.count()
     return render_template('hasil_seleksi.html', sidebar_state=sidebar_state, user=users, time=time)
+
+# Manajemen Berita
+@app.route('/admin/manajemen_berita')
+@login_required
+@admin_required
+def admin_manajemen_berita():
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    search = request.args.get('search', '').strip()
+    status = request.args.get('status', '').strip()
+    
+    query = News.query
+    
+    # 🔍 Filter judul
+    if search:
+        query = query.filter(News.title.ilike(f"%{search}%"))
+
+    # 🏷️ Filter status
+    if status in ['published', 'draft', 'archived']:
+        query = query.filter(News.status == status)
+
+    # Ambil semua berita
+    news_list = News.query.order_by(News.created_at.desc()).all()
+
+    total_news = len(news_list)
+    published_news = News.query.filter_by(status='published').count()
+    draft_news = News.query.filter_by(status='draft').count()
+
+    # Ambil berita terakhir (updated_at fallback ke created_at)
+    last_news = (
+        News.query
+        .order_by(
+            db.func.coalesce(News.updated_at, News.created_at).desc()
+        )
+        .first()
+    )
+
+    last_update = (
+        last_news.updated_at or last_news.created_at
+        if last_news else '-'
+    )
+
+    return render_template(
+        'news_management.html',
+        news_list=news_list,
+        total_news=total_news,
+        published_news=published_news,
+        draft_news=draft_news,
+        last_update=last_update,
+        sidebar_state=sidebar_state,
+        user=current_user,
+        search=search,
+        status=status,
+        time=time
+    )
+
+# Tambah Berita
+@app.route('/admin/news/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_news():
+    title = request.form['title']
+    content = request.form['content']
+    status = request.form['status']
+    
+    file = request.files.get('thumbnail')
+    thumbnail_path = "images/default-news.jpg"
+
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+        upload_dir = os.path.join(app.static_folder, 'uploads/news')
+        os.makedirs(upload_dir, exist_ok=True)
+
+        filepath = os.path.join(upload_dir, filename)
+        file.save(filepath)
+
+        thumbnail_path = f"uploads/news/{filename}"
+
+    
+    # Validasi dasar
+    if not title or not content or not status:
+        flash('Semua field wajib diisi!', 'error')
+        return redirect(url_for('admin_manajemen_berita'))
+    
+    base_slug = slugify(title)
+    slug = base_slug
+    
+    # Cegah slug duplikat
+    counter = 1
+    while News.query.filter_by(slug=slug).first():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
+    # Excerpt otomatis
+    excerpt = content[:200] + '...' if len(content) > 200 else content
+    news = News(
+        title=title,
+        slug=slug,
+        content=content,
+        excerpt=excerpt,
+        status=status,
+        author_id=current_user.id,
+        thumbnail=thumbnail_path
+    )
+
+    if status == 'published':
+        news.published_at = datetime.utcnow()
+    db.session.add(news)
+    db.session.commit()
+    flash('Berita berhasil ditambahkan!', 'success')
+    return redirect(url_for('admin_manajemen_berita'))
+
+# Edit Berita
+@app.route('/admin/news/edit/<int:id_news>', methods=['POST'])
+@login_required
+@admin_required
+def admin_edit_news(id_news):
+    news = News.query.get_or_404(id_news)
+    news.title = request.form['title']
+    news.content = request.form['content']
+    news.status = request.form['status']
+    news.slug = slugify(news.title)
+    news.excerpt = news.content[:200] + '...'
+    if news.status == 'published' and not news.published_at:
+        news.published_at = datetime.utcnow()
+    db.session.commit()
+    flash('Berita berhasil diperbarui!', 'success')
+    return redirect(url_for('admin_manajemen_berita'))
+
+# Hapus Berita
+@app.route('/admin/news/delete/<int:id_news>')
+@login_required
+@admin_required
+def admin_delete_news(id_news):
+    news = News.query.get_or_404(id_news)
+    db.session.delete(news)
+    db.session.commit()
+    flash('Berita berhasil dihapus!', 'success')
+    return redirect(url_for('admin_manajemen_berita'))
+
+# Detail Berita
+@app.route('/news/<slug>')
+def news_detail(slug):
+    news = News.query.filter_by(
+        slug=slug,
+        status='published'
+    ).first_or_404()
+
+    return render_template('news_detail.html', news=news)
 
 @app.route('/admin/notifikasi')
 @login_required
