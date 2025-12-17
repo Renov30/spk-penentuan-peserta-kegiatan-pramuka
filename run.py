@@ -1884,9 +1884,6 @@ def save_config():
             # Parse tempat tes
             tempat_tes = (act.get('tempatTes') or '').strip()
             
-            # Parse batas lolos
-            batas_lolos = int(act.get('batasLolos') or 3)
-            
             event = Event(
                 jenis_kegiatan=jenis_kegiatan,
                 nama_kegiatan=nama,
@@ -1898,8 +1895,7 @@ def save_config():
                 mulai=mulai_date,
                 selesai=selesai_date,
                 tanggal_tes=tanggal_tes if tanggal_tes else None,
-                tempat_tes=tempat_tes if tempat_tes else None,
-                batas_lolos=batas_lolos
+                tempat_tes=tempat_tes if tempat_tes else None
             )
             db.session.add(event)
             db.session.flush()
@@ -2032,8 +2028,7 @@ def get_config(event_id):
                 'mulai': event.mulai.isoformat() if event.mulai else None,
                 'selesai': event.selesai.isoformat() if event.selesai else None,
                 'tanggal_tes': event.tanggal_tes,
-                'tempat_tes': event.tempat_tes,
-                'batas_lolos': event.batas_lolos if event.batas_lolos else 3
+                'tempat_tes': event.tempat_tes
             },
             'kuota': {
                 'putra': kuota.putra if kuota else 0,
@@ -2123,14 +2118,6 @@ def update_config(event_id):
                 event.tanggal_tes = evt_data['tanggal_tes'].strip() if evt_data['tanggal_tes'] else None
             if 'tempat_tes' in evt_data:
                 event.tempat_tes = evt_data['tempat_tes'].strip() if evt_data['tempat_tes'] else None
-            if 'batas_lolos' in evt_data:
-                try:
-                    batas_lolos_value = evt_data['batas_lolos']
-                    event.batas_lolos = int(batas_lolos_value) if batas_lolos_value else 3
-                    current_app.logger.info(f"Updated batas_lolos to {event.batas_lolos}")
-                except Exception as e:
-                    current_app.logger.error(f"Error updating batas_lolos: {e}")
-                    event.batas_lolos = 3
         
         # Update Kuota
         if 'kuota' in data:
@@ -3554,25 +3541,10 @@ def penilai_hasil_seleksi():
             kuota = Kuota.query.filter_by(event_id=selected_event_id).first()
             
             for hasil, user, participant in hasil_seleksi_query:
-                is_passed = False
-                if kuota and participant:
-                    limit = 0
-                    if participant.jenis_kelamin == 'laki-laki':
-                        limit = kuota.putra
-                    elif participant.jenis_kelamin == 'perempuan':
-                        limit = kuota.putri
-                    
-                    if hasil.ranking <= limit:
-                        is_passed = True
-                elif selected_event.batas_lolos: # Fallback to simple limit if no quota
-                     if hasil.ranking <= selected_event.batas_lolos:
-                        is_passed = True
-
                 results.append({
                     'hasil': hasil,
                     'user': user,
-                    'participant': participant,
-                    'is_passed': is_passed
+                    'participant': participant
                 })
         else:
             flash("Kegiatan tidak ditemukan atau Anda tidak memiliki akses.", "error")
@@ -3658,25 +3630,11 @@ def peserta_dashboard():
             event_id=event.id_kegiatan
         ).first()
 
-        # Calculate pass/fail status
-        status_lulus = None
-        if hasil and hasil.ranking:
-            kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
-            if kuota and participant:
-                limit = 0
-                if participant.jenis_kelamin == 'laki-laki':
-                    limit = kuota.putra
-                elif participant.jenis_kelamin == 'perempuan':
-                    limit = kuota.putri
-                
-                status_lulus = hasil.ranking <= limit
-        
         activity_scores.append({
             'event': event,
             'final_score': round(total_score, 2) if has_scores else None,
             'ranking': hasil.ranking if hasil else None,
-            'has_scores': has_scores,
-            'status_lulus': status_lulus
+            'has_scores': has_scores
         })
     
     # Check if any selection period has ended
@@ -3743,36 +3701,12 @@ def peserta_hasil_seleksi():
                 event_id=event.id_kegiatan
             ).first()
             
-            status_lulus = None
             status_text = "Dalam Proses"
             temp_score = 0
             has_temp_score = False
             
             if hasil:
-                # Determine pass/fail if result exists
-                kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
-                if kuota:
-                    limit = 0
-                    if biodata.jenis_kelamin == 'laki-laki':
-                        limit = kuota.putra
-                    elif biodata.jenis_kelamin == 'perempuan':
-                        limit = kuota.putri
-                        
-                    if hasil.ranking <= limit:
-                        status_lulus = True
-                        status_text = "Lolos Seleksi"
-                    else:
-                        status_lulus = False
-                        status_text = "Tidak Lolos"
-                elif event.batas_lolos: # Fallback if no quota but cutoff exists
-                     if hasil.ranking <= event.batas_lolos:
-                        status_lulus = True
-                        status_text = "Lolos Seleksi"
-                     else:
-                        status_lulus = False
-                        status_text = "Tidak Lolos"
-                else:
-                    status_text = "Selesai"
+                status_text = "Selesai"
             else:
                 # If no final result, calculate temporary score from Penilaian
                 criteria_list = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
@@ -3818,7 +3752,6 @@ def peserta_hasil_seleksi():
             results_data.append({
                 'event': event,
                 'hasil': hasil,
-                'status_lulus': status_lulus,
                 'status_text': status_text,
                 'temp_score': temp_score,
                 'has_temp_score': has_temp_score
@@ -3872,25 +3805,10 @@ def peserta_detail_nilai(event_id):
     kuota = Kuota.query.filter_by(event_id=event_id).first()
     
     for hasil, user, participant in hasil_seleksi_query:
-        is_passed = False
-        if kuota and participant:
-            limit = 0
-            if participant.jenis_kelamin == 'laki-laki':
-                limit = kuota.putra
-            elif participant.jenis_kelamin == 'perempuan':
-                limit = kuota.putri
-            
-            if hasil.ranking <= limit:
-                is_passed = True
-        elif event.batas_lolos:
-            if hasil.ranking <= event.batas_lolos:
-                is_passed = True
-        
         results.append({
             'hasil': hasil,
             'user': user,
-            'participant': participant,
-            'is_passed': is_passed
+            'participant': participant
         })
     
     sidebar_state = current_user.sidebar_state or 'expanded'

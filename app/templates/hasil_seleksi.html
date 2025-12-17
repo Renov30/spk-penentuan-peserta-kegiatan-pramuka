@@ -91,14 +91,6 @@
                     <option>Tahap 2</option>
                     <option>Final</option>
                   </select>
-                  <select class="px-4 py-2 rounded-lg border shadow">
-                    <option>
-                      {{ 'Semua Status' if current_lang == 'id' else 'All
-                      Status' }}
-                    </option>
-                    <option>Lolos</option>
-                    <option>Tidak Lolos</option>
-                  </select>
                 </div>
                 <input
                   type="text"
@@ -123,9 +115,6 @@
                       <th class="px-4 py-2">Gudep</th>
                       <th class="px-4 py-2">Skor</th>
                       <th class="px-4 py-2">
-                        {{ 'Status' if current_lang == 'id' else 'Status' }}
-                      </th>
-                      <th class="px-4 py-2">
                         {{ 'Aksi' if current_lang == 'id' else 'Action' }}
                       </th>
                     </tr>
@@ -138,12 +127,6 @@
                       <td class="px-4 py-2">Andi</td>
                       <td class="px-4 py-2">01.045</td>
                       <td class="px-4 py-2 font-bold">92.5</td>
-                      <td class="px-4 py-2">
-                        <span
-                          class="px-2 py-1 text-xs rounded bg-green-100 text-green-700"
-                          >Lolos</span
-                        >
-                      </td>
                       <td class="px-4 py-2">
                         <button
                           @click="openDetail = true; selectedPeserta = 'Andi'"
@@ -160,12 +143,6 @@
                       <td class="px-4 py-2">Budi</td>
                       <td class="px-4 py-2">01.056</td>
                       <td class="px-4 py-2 font-bold">85.0</td>
-                      <td class="px-4 py-2">
-                        <span
-                          class="px-2 py-1 text-xs rounded bg-red-100 text-red-700"
-                          >Tidak Lolos</span
-                        >
-                      </td>
                       <td class="px-4 py-2">
                         <button
                           @click="openDetail = true; selectedPeserta = 'Budi'"
@@ -184,7 +161,7 @@
                 <div
                   class="bg-white p-4 rounded-xl shadow {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
                 >
-                  <h2 class="font-semibold mb-2">Distribusi Status</h2>
+                  <h2 class="font-semibold mb-2">Distribusi Skor</h2>
                   <canvas id="chartStatus"></canvas>
                 </div>
                 <div
@@ -276,10 +253,10 @@
       new Chart(ctxStatus, {
         type: "pie",
         data: {
-          labels: ["Lolos", "Tidak Lolos"],
+          labels: ["Skor Tinggi", "Skor Sedang", "Skor Rendah"],
           datasets: [
             {
-              data: [60, 40],
+              data: [40, 35, 25],
             },
           ],
         },

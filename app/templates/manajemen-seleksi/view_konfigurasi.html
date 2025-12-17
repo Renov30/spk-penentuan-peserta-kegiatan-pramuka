@@ -409,18 +409,6 @@
                                   x-text="configData.event.tempat_tes || '-'"
                                 ></p>
                               </div>
-                              <div>
-                                <label
-                                  class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                >
-                                  {{ 'Batas Ranking' if current_lang == 'id'
-                                  else 'Ranking Limit' }}
-                                </label>
-                                <p
-                                  class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                                  x-text="configData.event.batas_lolos || 3"
-                                ></p>
-                              </div>
                             </div>
                           </div>
 
@@ -759,20 +747,6 @@
                               class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                             />
 
-                            <!-- Batas Ranking -->
-                            <label
-                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                            >
-                              {{ 'Batas Ranking' if current_lang == 'id' else
-                              'Ranking Limit' }}
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              x-model.number="editData.event.batas_lolos"
-                              placeholder="Contoh: 3"
-                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                            />
                           </div>
 
                           <!-- Komposisi Kontingen -->
