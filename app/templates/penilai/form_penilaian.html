@@ -136,19 +136,7 @@
                                         <p class="text-sm opacity-70">{{ criteria.deskripsi }}</p>
                                     </div>
 
-                                    {% if criteria.jenis_kriteria == 'kualitatif' %}
-                                        <!-- Qualitative Criteria -->
-                                        <select name="score_{{ criteria.id_kriteria }}" required
-                                                class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-50 border-gray-300 text-gray-900' }}">
-                                            <option value="">{{ 'Pilih Nilai' if current_lang == 'id' else 'Select Score' }}</option>
-                                            {% for himpunan in criteria.himpunan %}
-                                            <option value="{{ himpunan.nilai_himpunan }}" 
-                                                    {{ 'selected' if existing_scores.get(criteria.id_kriteria) == himpunan.nilai_himpunan }}>
-                                                {{ himpunan.nama_himpunan }}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
-                                    {% elif criteria.jenis_kriteria == 'kuantitatif' %}
+                                    {% if criteria.jenis_kriteria|lower == 'kuantitatif' %}
                                         <!-- Quantitative Criteria (Numeric Input 1-100) -->
                                         <div class="flex flex-col gap-2">
                                             <label class="text-sm font-medium {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
@@ -163,16 +151,19 @@
                                                    required
                                                    placeholder="{{ 'Contoh: 85' if current_lang == 'id' else 'Example: 85' }}"
                                                    class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-50 border-gray-300 text-gray-900' }}">
+                                            <p class="text-xs opacity-60 mt-1">
+                                                {{ 'Nilai harus antara 1 sampai 100' if current_lang == 'id' else 'Score must be between 1 and 100' }}
+                                            </p>
                                         </div>
                                     {% else %}
-                                        <!-- Likert Scale (for other types) -->
+                                        <!-- Qualitative Criteria - Likert Scale -->
                                         <div class="flex items-center justify-between gap-4">
                                             {% set likert_scale = [
-                                                (1, 'Sangat Buruk/Sangat Tidak Aktif'),
-                                                (2, 'Buruk/Tidak Aktif'),
-                                                (3, 'Cukup'),
-                                                (4, 'Baik/Aktif'),
-                                                (5, 'Sangat Baik/Sangat Aktif')
+                                                (1, 'Sangat Buruk' if current_lang == 'id' else 'Very Poor'),
+                                                (2, 'Buruk' if current_lang == 'id' else 'Poor'),
+                                                (3, 'Cukup' if current_lang == 'id' else 'Fair'),
+                                                (4, 'Baik' if current_lang == 'id' else 'Good'),
+                                                (5, 'Sangat Baik' if current_lang == 'id' else 'Excellent')
                                             ] %}
                                             
                                             {% for value, label in likert_scale %}
@@ -188,6 +179,10 @@
                                                 </span>
                                             </label>
                                             {% endfor %}
+                                        </div>
+                                        <div class="flex justify-between text-xs opacity-50 mt-2 px-2">
+                                            <span>{{ 'Rendah' if current_lang == 'id' else 'Low' }}</span>
+                                            <span>{{ 'Tinggi' if current_lang == 'id' else 'High' }}</span>
                                         </div>
                                     {% endif %}
                                 </div>

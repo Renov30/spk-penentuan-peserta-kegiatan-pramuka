@@ -1546,7 +1546,7 @@
             .catch((err) => {
               console.error("Error deleting bulk config:", err);
               showNotification(
-                "{{ 'Terjadi kesalahan saat menghapus data' if current_lang == 'id' else 'An error occurred while deleting data' }}", 
+                  "{{ 'Terjadi kesalahan saat menghapus data' if current_lang == 'id' else 'An error occurred while deleting data' }}",
                 'error'
               );
             })

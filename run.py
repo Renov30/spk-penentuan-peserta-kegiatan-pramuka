@@ -3629,7 +3629,7 @@ def peserta_dashboard():
             id_users=current_user.id,
             event_id=event.id_kegiatan
         ).first()
-
+        
         activity_scores.append({
             'event': event,
             'final_score': round(total_score, 2) if has_scores else None,
@@ -3706,7 +3706,7 @@ def peserta_hasil_seleksi():
             has_temp_score = False
             
             if hasil:
-                status_text = "Selesai"
+                    status_text = "Selesai"
             else:
                 # If no final result, calculate temporary score from Penilaian
                 criteria_list = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
