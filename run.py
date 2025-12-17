@@ -2210,6 +2210,17 @@ def delete_config(event_id):
         event = Event.query.get_or_404(event_id)
         event_name = event.nama_kegiatan
         
+        # Ambil semua kriteria ID dari kegiatan
+        criteria = Criteria.query.filter_by(event_id=event_id).all()
+        criteria_ids = [c.id_kriteria for c in criteria]
+        
+        # Hapus penilaian yang terkait dengan kriteria tersebut
+        if criteria_ids:
+            Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+        
+        # Hapus hasil seleksi yang terkait dengan kegiatan
+        HasilSeleksi.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
         # Hapus akan cascade otomatis ke Kuota dan Criteria karena cascade="all, delete-orphan"
         db.session.delete(event)
         db.session.commit()
@@ -2251,6 +2262,19 @@ def delete_config_bulk():
         # Simpan nama-nama event untuk pesan sukses
         event_names = [event.nama_kegiatan for event in events]
         deleted_count = len(events)
+        
+        # Ambil semua kriteria ID dari kegiatan yang akan dihapus
+        criteria_ids = []
+        for event in events:
+            criteria = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
+            criteria_ids.extend([c.id_kriteria for c in criteria])
+        
+        # Hapus penilaian yang terkait dengan kriteria tersebut
+        if criteria_ids:
+            Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+        
+        # Hapus hasil seleksi yang terkait dengan kegiatan
+        HasilSeleksi.query.filter(HasilSeleksi.event_id.in_(event_ids)).delete(synchronize_session=False)
         
         # Hapus semua event (cascade akan menghapus Kuota dan Criteria secara otomatis)
         for event in events:
@@ -2766,6 +2790,18 @@ def edit_kegiatan(id):
 @admin_required
 def hapus_kegiatan(id):
     event = Event.query.get_or_404(id)
+    
+    # Ambil semua kriteria ID dari kegiatan
+    criteria = Criteria.query.filter_by(event_id=id).all()
+    criteria_ids = [c.id_kriteria for c in criteria]
+    
+    # Hapus penilaian yang terkait dengan kriteria tersebut
+    if criteria_ids:
+        Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+    
+    # Hapus hasil seleksi yang terkait dengan kegiatan
+    HasilSeleksi.query.filter_by(event_id=id).delete(synchronize_session=False)
+    
     db.session.delete(event)
     db.session.commit()
     flash('Kegiatan berhasil dihapus!', 'danger')
