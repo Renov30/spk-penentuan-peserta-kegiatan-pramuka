@@ -637,13 +637,13 @@
                           <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                             {{ 'Umpi Putra' if current_lang == 'id' else 'Male Umpi' }}
                           </label>
-                          <input type="number" min="5" max="12" x-model.number="umpi.umpiPutra" placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                          <input type="number" min="5" max="12" x-model.number="umpi.umpiPutra" @keydown.enter.prevent placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
                         </div>
                         <div class="w-1/2">
                           <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                             {{ 'Umpi Putri' if current_lang == 'id' else 'Female Umpi' }}
                           </label>
-                          <input type="number" min="5" max="12" x-model.number="umpi.umpiPutri" placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                          <input type="number" min="5" max="12" x-model.number="umpi.umpiPutri" @keydown.enter.prevent placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
                         </div>
                       </div>
                     </div>
