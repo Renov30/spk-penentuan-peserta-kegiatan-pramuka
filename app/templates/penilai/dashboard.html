@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ 'Dashboard Penilai | SPK Pramuka' if current_lang == 'id' else 'Evaluator Dashboard | Scout DSS' }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {% include "script_sidebar.html" %}
     {% include 'script_theme.html' %}
@@ -41,8 +41,8 @@
                                     <p class="text-sm opacity-70">{{ 'Total Kegiatan' if current_lang == 'id' else 'Total Events' }}</p>
                                     <h3 class="text-3xl font-bold">{{ events|length }}</h3>
                                 </div>
-                                <div class="p-3 rounded-full bg-blue-500 bg-opacity-20 text-blue-500">
-                                    <i class="fa-solid fa-calendar-check text-2xl"></i>
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full bg-blue-500 text-white">
+                                    <i class="fas fa-calendar-check text-xl"></i>
                                 </div>
                             </div>
                         </div>
@@ -53,8 +53,8 @@
                                     <p class="text-sm opacity-70">{{ 'Kegiatan Ditugaskan' if current_lang == 'id' else 'Assigned Events' }}</p>
                                     <h3 class="text-3xl font-bold">{{ events|selectattr('is_assigned')|list|length }}</h3>
                                 </div>
-                                <div class="p-3 rounded-full bg-green-500 bg-opacity-20 text-green-500">
-                                    <i class="fa-solid fa-clipboard-check text-2xl"></i>
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full bg-green-500 text-white">
+                                    <i class="fas fa-clipboard-check text-xl"></i>
                                 </div>
                             </div>
                         </div>
@@ -65,8 +65,8 @@
                                     <p class="text-sm opacity-70">{{ 'Total Peserta' if current_lang == 'id' else 'Total Participants' }}</p>
                                     <h3 class="text-3xl font-bold">{{ total_peserta }}</h3>
                                 </div>
-                                <div class="p-3 rounded-full bg-purple-500 bg-opacity-20 text-purple-500">
-                                    <i class="fa-solid fa-users text-2xl"></i>
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full bg-purple-500 text-white">
+                                    <i class="fas fa-users text-xl"></i>
                                 </div>
                             </div>
                         </div>
@@ -76,8 +76,8 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
                             <div class="flex items-center gap-4 mb-4">
-                                <div class="p-3 rounded-full bg-blue-500 bg-opacity-20 text-blue-500">
-                                    <i class="fa-solid fa-clipboard-list text-2xl"></i>
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full bg-blue-500 text-white">
+                                    <i class="fas fa-clipboard-list text-xl"></i>
                                 </div>
                                 <div>
                                     <h3 class="text-xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-800' }}">
@@ -90,15 +90,15 @@
                             </div>
                             <a href="{{ url_for('penilai_penilaian') }}" 
                                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition shadow-md">
-                                <i class="fa-solid fa-arrow-right mr-2"></i>
+                                <i class="fas fa-arrow-right mr-2"></i>
                                 {{ 'Ke Halaman Penilaian' if current_lang == 'id' else 'Go to Grading' }}
                             </a>
                         </div>
 
                         <div class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
                             <div class="flex items-center gap-4 mb-4">
-                                <div class="p-3 rounded-full bg-green-500 bg-opacity-20 text-green-500">
-                                    <i class="fa-solid fa-chart-bar text-2xl"></i>
+                                <div class="w-12 h-12 flex items-center justify-center rounded-full bg-green-500 text-white">
+                                    <i class="fas fa-chart-bar text-xl"></i>
                                 </div>
                                 <div>
                                     <h3 class="text-xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-800' }}">
@@ -111,7 +111,7 @@
                             </div>
                             <a href="{{ url_for('penilai_hasil_penilaian') }}" 
                                class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-md">
-                                <i class="fa-solid fa-arrow-right mr-2"></i>
+                                <i class="fas fa-arrow-right mr-2"></i>
                                 {{ 'Lihat Hasil' if current_lang == 'id' else 'View Results' }}
                             </a>
                         </div>
