@@ -104,9 +104,6 @@ class Criteria(db.Model):
     # Relationship with Evaluators
     evaluators = db.relationship('Users', secondary=tb_evaluator_criteria, lazy='subquery',
         backref=db.backref('assigned_criteria', lazy=True))
-    
-    # Relationship with pairwise comparison matrix
-    pairwise_comparisons = db.relationship('PairwiseComparison', backref='criteria', lazy=True, cascade='all, delete-orphan')
 
 # Access to table tb_pairwise_comparison (untuk menyimpan matriks perbandingan AHP)
 class PairwiseComparison(db.Model):
