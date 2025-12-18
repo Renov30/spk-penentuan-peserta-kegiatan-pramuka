@@ -235,3 +235,20 @@ class Informasi(db.Model):
     judul = db.Column(db.String(255), nullable=False)
     isi = db.Column(db.Text, nullable=False)
     tanggal = db.Column(db.Date, server_default=db.func.current_date())
+
+# Access to table tb_arsip_seleksi (untuk menyimpan arsip laporan seleksi)
+class ArsipSeleksi(db.Model):
+    __tablename__ = 'tb_arsip_seleksi'
+    id_arsip = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), nullable=False)
+    nama_arsip = db.Column(db.String(255), nullable=False)
+    deskripsi = db.Column(db.Text, nullable=True)
+    file_path = db.Column(db.String(500), nullable=True)  # Path file PDF/Excel
+    file_type = db.Column(db.String(50), nullable=False, default='pdf')  # pdf atau excel
+    tanggal_arsip = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
+    dibuat_oleh = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='aktif')  # aktif, diarsipkan
+    
+    # Relationship
+    event = db.relationship('Event', backref='arsip_seleksi')
+    pembuat = db.relationship('Users', backref='arsip_yang_dibuat')

@@ -1,10 +1,10 @@
-from flask import Flask, Response, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app
+from flask import Flask, Response, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app, send_file
 from flask_session import Session
 from flask_session.sessions import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan, PairwiseComparison, AHPResults
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan, PairwiseComparison, AHPResults, ArsipSeleksi
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -1576,7 +1576,30 @@ def admin_manajemen_seleksi():
             'jumlah_peserta': jumlah_peserta
         })
     
-    return render_template("manajemen_seleksi.html", kegiatan_list=kegiatan_list, kegiatan_data=kegiatan_data, sidebar_state=sidebar_state)
+    # Ambil semua arsip untuk ditampilkan
+    arsip_list = ArsipSeleksi.query.order_by(ArsipSeleksi.tanggal_arsip.desc()).all()
+    arsip_data = []
+    for arsip in arsip_list:
+        arsip_data.append({
+            'id': arsip.id_arsip,
+            'event_id': arsip.event_id,
+            'nama_kegiatan': arsip.event.nama_kegiatan if arsip.event else 'N/A',
+            'nama_arsip': arsip.nama_arsip,
+            'deskripsi': arsip.deskripsi,
+            'file_path': arsip.file_path,
+            'file_type': arsip.file_type,
+            'tanggal_arsip': arsip.tanggal_arsip.strftime('%d %b %Y') if arsip.tanggal_arsip else '',
+            'pembuat': arsip.pembuat.nama_lengkap if arsip.pembuat else 'System',
+            'status': arsip.status
+        })
+    
+    return render_template(
+        "manajemen_seleksi.html", 
+        kegiatan_list=kegiatan_list, 
+        kegiatan_data=kegiatan_data,
+        arsip_list=arsip_data,
+        sidebar_state=sidebar_state
+    )
 
 # Route untuk halaman penugasan penilai
 @app.route('/admin/penugasan_penilai')
@@ -2951,6 +2974,285 @@ def calculate_ahp(event_id):
             
     except Exception as e:
         logging.error(f"Error calculating AHP: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+# Route untuk Laporan & Arsip Seleksi
+@app.route('/admin/laporan_arsip_seleksi')
+@login_required
+@admin_required
+def admin_laporan_arsip_seleksi():
+    """Halaman laporan dan arsip seleksi"""
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    # Ambil semua kegiatan
+    events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Ambil semua arsip
+    arsip_list = ArsipSeleksi.query.order_by(ArsipSeleksi.tanggal_arsip.desc()).all()
+    
+    # Format data arsip
+    arsip_data = []
+    for arsip in arsip_list:
+        arsip_data.append({
+            'id': arsip.id_arsip,
+            'event_id': arsip.event_id,
+            'nama_kegiatan': arsip.event.nama_kegiatan if arsip.event else 'N/A',
+            'nama_arsip': arsip.nama_arsip,
+            'deskripsi': arsip.deskripsi,
+            'file_path': arsip.file_path,
+            'file_type': arsip.file_type,
+            'tanggal_arsip': arsip.tanggal_arsip.strftime('%d %b %Y') if arsip.tanggal_arsip else '',
+            'pembuat': arsip.pembuat.nama_lengkap if arsip.pembuat else 'System',
+            'status': arsip.status
+        })
+    
+    return render_template(
+        'manajemen_seleksi.html',
+        kegiatan_list=events,
+        kegiatan_data=[],
+        arsip_list=arsip_data,
+        sidebar_state=sidebar_state
+    )
+
+# API untuk generate laporan Excel
+@app.route('/api/generate_laporan_excel/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def generate_laporan_excel(event_id):
+    """Generate laporan Excel untuk hasil seleksi"""
+    try:
+        event = Event.query.get_or_404(event_id)
+        
+        # Ambil hasil seleksi
+        hasil_seleksi = db.session.query(
+            HasilSeleksi,
+            Users,
+            Participants
+        ).join(
+            Users, HasilSeleksi.id_users == Users.id
+        ).outerjoin(
+            Participants, Users.email == Participants.email
+        ).filter(
+            HasilSeleksi.event_id == event_id
+        ).order_by(
+            HasilSeleksi.ranking.asc()
+        ).all()
+        
+        if not hasil_seleksi:
+            return jsonify({'success': False, 'message': 'Tidak ada data hasil seleksi'}), 400
+        
+        # Buat workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Laporan Hasil Seleksi"
+        
+        # Header
+        headers = ['No', 'Peringkat', 'Nama Lengkap', 'Email', 'Golongan', 'Tingkatan', 'Asal Gudep', 'Skor Akhir']
+        ws.append(headers)
+        
+        # Style header
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_fill = PatternFill("solid", fgColor="4F81BD")
+        center_align = Alignment(horizontal="center", vertical="center")
+        thin_border = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin"),
+        )
+        
+        for cell in ws[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = thin_border
+        
+        # Data
+        for idx, (hasil, user, participant) in enumerate(hasil_seleksi, start=1):
+            ws.append([
+                idx,
+                hasil.ranking,
+                user.nama_lengkap or '',
+                user.email or '',
+                participant.golongan if participant else '',
+                participant.tingkatan if participant else '',
+                participant.asal_gudep if participant else '',
+                round(hasil.skor_akhir, 2)
+            ])
+        
+        # Auto width
+        for column_cells in ws.columns:
+            length = max(len(str(cell.value)) for cell in column_cells)
+            ws.column_dimensions[column_cells[0].column_letter].width = min(length + 2, 50)
+        
+        ws.freeze_panes = "A2"
+        
+        # Save to BytesIO
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Simpan ke arsip
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.xlsx"
+        
+        # Simpan file ke folder static/uploads/reports
+        upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'reports')
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, filename)
+        
+        with open(file_path, 'wb') as f:
+            f.write(output.getvalue())
+        
+        # Simpan ke database arsip
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=f"Laporan Excel - {event.nama_kegiatan}",
+            deskripsi=f"Laporan hasil seleksi dalam format Excel untuk kegiatan {event.nama_kegiatan}",
+            file_path=f"static/uploads/reports/{filename}",
+            file_type='excel',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Laporan Excel berhasil dibuat dan diarsipkan',
+            'file_path': f"/{file_path}",
+            'arsip_id': arsip.id_arsip
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error generating Excel report: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+# API untuk generate laporan PDF (menggunakan HTML to PDF atau reportlab)
+@app.route('/api/generate_laporan_pdf/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def generate_laporan_pdf(event_id):
+    """Generate laporan PDF untuk hasil seleksi"""
+    try:
+        event = Event.query.get_or_404(event_id)
+        
+        # Ambil hasil seleksi
+        hasil_seleksi = db.session.query(
+            HasilSeleksi,
+            Users,
+            Participants
+        ).join(
+            Users, HasilSeleksi.id_users == Users.id
+        ).outerjoin(
+            Participants, Users.email == Participants.email
+        ).filter(
+            HasilSeleksi.event_id == event_id
+        ).order_by(
+            HasilSeleksi.ranking.asc()
+        ).all()
+        
+        if not hasil_seleksi:
+            return jsonify({'success': False, 'message': 'Tidak ada data hasil seleksi'}), 400
+        
+        # Generate HTML untuk PDF (bisa menggunakan weasyprint atau pdfkit)
+        # Untuk sekarang, kita simpan sebagai HTML dan bisa dikonversi nanti
+        html_content = render_template(
+            'laporan_pdf_template.html',
+            event=event,
+            hasil_seleksi=hasil_seleksi,
+            tanggal_laporan=datetime.now().strftime('%d %B %Y')
+        )
+        
+        # Simpan HTML (atau konversi ke PDF jika ada library)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.html"
+        
+        upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'reports')
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, filename)
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        # Simpan ke database arsip
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=f"Laporan PDF - {event.nama_kegiatan}",
+            deskripsi=f"Laporan hasil seleksi dalam format PDF untuk kegiatan {event.nama_kegiatan}",
+            file_path=f"static/uploads/reports/{filename}",
+            file_type='pdf',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Laporan PDF berhasil dibuat dan diarsipkan',
+            'file_path': f"/{file_path}",
+            'arsip_id': arsip.id_arsip
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error generating PDF report: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+# API untuk download file arsip
+@app.route('/api/download_arsip/<int:arsip_id>')
+@login_required
+@admin_required
+def download_arsip(arsip_id):
+    """Download file arsip"""
+    try:
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+        
+        if not arsip.file_path:
+            flash('File tidak ditemukan', 'error')
+            return redirect(url_for('admin_manajemen_seleksi'))
+        
+        file_path = os.path.join(app.root_path, arsip.file_path)
+        
+        if not os.path.exists(file_path):
+            flash('File tidak ditemukan di server', 'error')
+            return redirect(url_for('admin_manajemen_seleksi'))
+        
+        return send_file(file_path, as_attachment=True, download_name=arsip.nama_arsip)
+        
+    except Exception as e:
+        logging.error(f"Error downloading archive: {str(e)}")
+        flash('Error saat mengunduh file', 'error')
+        return redirect(url_for('admin_manajemen_seleksi'))
+
+# API untuk hapus arsip
+@app.route('/api/hapus_arsip/<int:arsip_id>', methods=['DELETE', 'POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def hapus_arsip(arsip_id):
+    """Hapus arsip seleksi"""
+    try:
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+        
+        # Hapus file jika ada
+        if arsip.file_path:
+            file_path = os.path.join(app.root_path, arsip.file_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        
+        db.session.delete(arsip)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Arsip berhasil dihapus'})
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting archive: {str(e)}")
         return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
 @app.route('/admin/peserta')
