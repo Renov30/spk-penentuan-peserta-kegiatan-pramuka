@@ -105,6 +105,44 @@ class Criteria(db.Model):
     evaluators = db.relationship('Users', secondary=tb_evaluator_criteria, lazy='subquery',
         backref=db.backref('assigned_criteria', lazy=True))
     
+    # Relationship with pairwise comparison matrix
+    pairwise_comparisons = db.relationship('PairwiseComparison', backref='criteria', lazy=True, cascade='all, delete-orphan')
+
+# Access to table tb_pairwise_comparison (untuk menyimpan matriks perbandingan AHP)
+class PairwiseComparison(db.Model):
+    __tablename__ = 'tb_pairwise_comparison'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    event_id = db.Column(db.Integer, db.ForeignKey("tb_kegiatan.id_kegiatan"), nullable=False)
+    criteria_i_id = db.Column(db.Integer, db.ForeignKey("tb_kriteria.id_kriteria"), nullable=False)
+    criteria_j_id = db.Column(db.Integer, db.ForeignKey("tb_kriteria.id_kriteria"), nullable=False)
+    comparison_value = db.Column(db.Float, nullable=False)  # Nilai perbandingan 1-9
+    fuzzy_l = db.Column(db.Float, nullable=True)  # Lower bound TFN
+    fuzzy_m = db.Column(db.Float, nullable=True)  # Middle bound TFN
+    fuzzy_u = db.Column(db.Float, nullable=True)  # Upper bound TFN
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
+    
+    # Relationship
+    event = db.relationship('Event', backref='pairwise_comparisons')
+    criteria_i = db.relationship('Criteria', foreign_keys=[criteria_i_id])
+    criteria_j = db.relationship('Criteria', foreign_keys=[criteria_j_id])
+
+# Access to table tb_ahp_results (untuk menyimpan hasil perhitungan AHP)
+class AHPResults(db.Model):
+    __tablename__ = 'tb_ahp_results'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    event_id = db.Column(db.Integer, db.ForeignKey("tb_kegiatan.id_kegiatan"), nullable=False, unique=True)
+    lambda_max = db.Column(db.Float, nullable=True)
+    ci = db.Column(db.Float, nullable=True)  # Consistency Index
+    cr = db.Column(db.Float, nullable=True)  # Consistency Ratio
+    is_consistent = db.Column(db.Boolean, default=False)
+    eigenvector_json = db.Column(db.Text, nullable=True)  # JSON array eigenvector
+    weights_json = db.Column(db.Text, nullable=True)  # JSON object weights
+    pairwise_matrix_json = db.Column(db.Text, nullable=True)  # JSON matrix
+    calculated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
+    
+    # Relationship
+    event = db.relationship('Event', backref='ahp_results')
+    
 # Access to table notifications
 class Notification(db.Model):
     __tablename__ = "notifications"

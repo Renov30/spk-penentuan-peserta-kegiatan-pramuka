@@ -4,7 +4,7 @@ from flask_session.sessions import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan, PairwiseComparison, AHPResults
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -2815,7 +2815,143 @@ def admin_kriteria():
 def admin_pembobotan_kriteria():
     sidebar_state = current_user.sidebar_state or 'expanded'
     users = Users.query.count()
-    return render_template('pembobotan_kriteria.html', sidebar_state=sidebar_state, user=users, time=time)
+    
+    # Ambil semua kegiatan untuk dropdown
+    events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Ambil event_id dari query parameter jika ada
+    selected_event_id = request.args.get('event_id', type=int)
+    selected_event = None
+    criteria_list = []
+    pairwise_matrix = None
+    ahp_results = None
+    
+    if selected_event_id:
+        selected_event = Event.query.get(selected_event_id)
+        if selected_event:
+            criteria_list = Criteria.query.filter_by(event_id=selected_event_id).order_by(Criteria.id_kriteria).all()
+            
+            # Cek apakah sudah ada matriks perbandingan
+            from app.fuzzy_ahp import get_pairwise_matrix_from_db
+            import numpy as np
+            criteria_ids = [c.id_kriteria for c in criteria_list]
+            if criteria_ids:
+                pairwise_matrix = get_pairwise_matrix_from_db(selected_event_id, criteria_ids)
+            
+            # Ambil hasil AHP jika ada
+            ahp_results = AHPResults.query.filter_by(event_id=selected_event_id).first()
+    
+    return render_template(
+        'pembobotan_kriteria.html', 
+        sidebar_state=sidebar_state, 
+        user=users, 
+        time=time,
+        events=events,
+        selected_event=selected_event,
+        criteria_list=criteria_list,
+        pairwise_matrix=pairwise_matrix.tolist() if pairwise_matrix is not None else None,
+        ahp_results=ahp_results
+    )
+
+
+# API untuk menyimpan matriks perbandingan berpasangan
+@app.route('/api/save_pairwise_matrix/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def save_pairwise_matrix(event_id):
+    """API untuk menyimpan matriks perbandingan berpasangan"""
+    try:
+        data = request.get_json(force=True)
+        matrix_data = data.get('matrix', [])
+        
+        if not matrix_data:
+            return jsonify({'success': False, 'message': 'Matriks tidak boleh kosong'}), 400
+        
+        # Ambil kriteria
+        criterias = Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
+        if not criterias:
+            return jsonify({'success': False, 'message': 'Tidak ada kriteria untuk kegiatan ini'}), 400
+        
+        criteria_ids = [c.id_kriteria for c in criterias]
+        n = len(criterias)
+        
+        # Validasi ukuran matriks
+        if len(matrix_data) != n or any(len(row) != n for row in matrix_data):
+            return jsonify({'success': False, 'message': f'Ukuran matriks harus {n}x{n}'}), 400
+        
+        # Konversi ke numpy array
+        import numpy as np
+        matrix = np.array(matrix_data, dtype=float)
+        
+        # Validasi nilai (harus 1-9 atau kebalikannya)
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    if matrix[i, j] != 1.0:
+                        return jsonify({'success': False, 'message': f'Diagonal harus 1.0 (baris {i+1}, kolom {j+1})'}), 400
+                else:
+                    val = matrix[i, j]
+                    if val < 1/9 or val > 9:
+                        return jsonify({'success': False, 'message': f'Nilai harus antara 1/9 sampai 9 (baris {i+1}, kolom {j+1})'}), 400
+        
+        # Simpan matriks
+        from app.fuzzy_ahp import save_pairwise_matrix
+        success, message = save_pairwise_matrix(event_id, criteria_ids, matrix)
+        
+        if success:
+            return jsonify({'success': True, 'message': message})
+        else:
+            return jsonify({'success': False, 'message': message}), 400
+            
+    except Exception as e:
+        logging.error(f"Error saving pairwise matrix: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+# API untuk menghitung bobot AHP
+@app.route('/api/calculate_ahp/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def calculate_ahp(event_id):
+    """API untuk menghitung bobot menggunakan AHP"""
+    try:
+        data = request.get_json(force=True)
+        use_fuzzy = data.get('use_fuzzy', True)
+        
+        from app.fuzzy_ahp import calculate_ahp_weights, calculate_fuzzy_ahp_weights
+        
+        if use_fuzzy:
+            success, message, results = calculate_fuzzy_ahp_weights(event_id)
+        else:
+            success, message, results = calculate_ahp_weights(event_id)
+        
+        if success:
+            # Ambil hasil AHP yang sudah disimpan
+            ahp_result = AHPResults.query.filter_by(event_id=event_id).first()
+            result_data = {
+                'success': True,
+                'message': message,
+                'results': results
+            }
+            
+            if ahp_result:
+                result_data['ahp_result'] = {
+                    'lambda_max': float(ahp_result.lambda_max) if ahp_result.lambda_max else None,
+                    'ci': float(ahp_result.ci) if ahp_result.ci else None,
+                    'cr': float(ahp_result.cr) if ahp_result.cr else None,
+                    'is_consistent': ahp_result.is_consistent,
+                    'weights_json': ahp_result.weights_json
+                }
+            
+            return jsonify(result_data)
+        else:
+            return jsonify({'success': False, 'message': message}), 400
+            
+    except Exception as e:
+        logging.error(f"Error calculating AHP: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
 @app.route('/admin/peserta')
 @login_required
