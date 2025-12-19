@@ -4,7 +4,7 @@ from flask_session.sessions import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan, PairwiseComparison, AHPResults, ArsipSeleksi
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan, PairwiseComparison, AHPResults, ArsipSeleksi, LogAktivitas
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -4075,8 +4075,210 @@ def api_delete_notification(notification_id):
 @admin_required
 def admin_log_aktivitas():
     sidebar_state = current_user.sidebar_state or 'expanded'
-    users = Users.query.count()
-    return render_template('log_aktivity.html', sidebar_state=sidebar_state, user=users, time=time)
+    
+    # Get query parameters for filtering
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    search = request.args.get('search', '', type=str)
+    role_filter = request.args.get('role', '', type=str)
+    date_filter = request.args.get('date', '', type=str)
+    
+    # Build query
+    query = LogAktivitas.query.join(Users).order_by(LogAktivitas.timestamp.desc())
+    
+    # Apply filters
+    if search:
+        query = query.filter(
+            db.or_(
+                Users.username.ilike(f'%{search}%'),
+                Users.nama_lengkap.ilike(f'%{search}%'),
+                LogAktivitas.aktivitas.ilike(f'%{search}%')
+            )
+        )
+    
+    if role_filter:
+        query = query.filter(Users.level == role_filter)
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter(db.cast(LogAktivitas.timestamp, db.Date) == filter_date)
+        except ValueError:
+            pass
+    
+    # Pagination
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    logs = pagination.items
+    
+    return render_template(
+        'log_aktivity.html',
+        sidebar_state=sidebar_state,
+        logs=logs,
+        pagination=pagination,
+        search=search,
+        role_filter=role_filter,
+        date_filter=date_filter,
+        current_page=page
+    )
+
+@app.route('/api/log_aktivitas/detail/<int:log_id>')
+@login_required
+@admin_required
+def api_log_detail(log_id):
+    try:
+        log = LogAktivitas.query.get_or_404(log_id)
+        return jsonify({
+            'success': True,
+            'log': {
+                'id_log': log.id_log,
+                'user_name': log.user.nama_lengkap or log.user.username,
+                'user_role': log.user.level,
+                'aktivitas': log.aktivitas,
+                'ip_address': log.ip_address,
+                'user_agent': log.user_agent,
+                'timestamp': log.timestamp.strftime('%d/%m/%Y %H:%M:%S') if log.timestamp else '-'
+            }
+        })
+    except Exception as e:
+        current_app.logger.exception('Error in api_log_detail:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/log_aktivitas/delete/<int:log_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def api_log_delete(log_id):
+    try:
+        log = LogAktivitas.query.get_or_404(log_id)
+        db.session.delete(log)
+        db.session.commit()
+        log_activity(current_user.id, f'Menghapus log aktivitas ID: {log_id}')
+        return jsonify({'success': True, 'message': 'Log aktivitas berhasil dihapus'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in api_log_delete:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/admin/log_aktivitas/export')
+@login_required
+@admin_required
+def admin_log_export():
+    try:
+        export_format = request.args.get('export', 'csv')
+        search = request.args.get('search', '', type=str)
+        role_filter = request.args.get('role', '', type=str)
+        date_filter = request.args.get('date', '', type=str)
+        
+        # Build query (same as main route)
+        query = LogAktivitas.query.join(Users).order_by(LogAktivitas.timestamp.desc())
+        
+        if search:
+            query = query.filter(
+                db.or_(
+                    Users.username.ilike(f'%{search}%'),
+                    Users.nama_lengkap.ilike(f'%{search}%'),
+                    LogAktivitas.aktivitas.ilike(f'%{search}%')
+                )
+            )
+        
+        if role_filter:
+            query = query.filter(Users.level == role_filter)
+        
+        if date_filter:
+            try:
+                filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                query = query.filter(db.cast(LogAktivitas.timestamp, db.Date) == filter_date)
+            except ValueError:
+                pass
+        
+        logs = query.all()
+        
+        if export_format == 'csv':
+            # Export CSV
+            output = io.StringIO()
+            output.write('User,Role,Aktivitas,IP Address,User Agent,Tanggal & Waktu\n')
+            
+            for log in logs:
+                user_name = log.user.nama_lengkap or log.user.username
+                role = log.user.level
+                aktivitas = log.aktivitas.replace('"', '""')  # Escape quotes
+                ip = log.ip_address or '-'
+                ua = (log.user_agent or '-').replace('"', '""')
+                timestamp = log.timestamp.strftime('%d/%m/%Y %H:%M:%S') if log.timestamp else '-'
+                
+                output.write(f'"{user_name}","{role}","{aktivitas}","{ip}","{ua}","{timestamp}"\n')
+            
+            output.seek(0)
+            return Response(
+                output.getvalue(),
+                mimetype='text/csv',
+                headers={'Content-Disposition': f'attachment; filename=log_aktivitas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
+            )
+        else:
+            # Export PDF - Generate HTML and convert to PDF using weasyprint or return HTML
+            # For now, return HTML that can be printed as PDF
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Log Aktivitas</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                    h1 {{ color: #333; }}
+                    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+                    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                    th {{ background-color: #4CAF50; color: white; }}
+                    tr:nth-child(even) {{ background-color: #f2f2f2; }}
+                </style>
+            </head>
+            <body>
+                <h1>Log Aktivitas</h1>
+                <p>Tanggal Export: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Aktivitas</th>
+                            <th>IP Address</th>
+                            <th>Tanggal & Waktu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            """
+            
+            for log in logs:
+                user_name = log.user.nama_lengkap or log.user.username
+                role = log.user.level
+                aktivitas = log.aktivitas.replace('<', '&lt;').replace('>', '&gt;')
+                ip = log.ip_address or '-'
+                timestamp = log.timestamp.strftime('%d/%m/%Y %H:%M:%S') if log.timestamp else '-'
+                html_content += f"""
+                        <tr>
+                            <td>{user_name}</td>
+                            <td>{role}</td>
+                            <td>{aktivitas}</td>
+                            <td>{ip}</td>
+                            <td>{timestamp}</td>
+                        </tr>
+                """
+            
+            html_content += """
+                    </tbody>
+                </table>
+            </body>
+            </html>
+            """
+            
+            return Response(
+                html_content,
+                mimetype='text/html',
+                headers={'Content-Disposition': f'attachment; filename=log_aktivitas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'}
+            )
+    except Exception as e:
+        current_app.logger.exception('Error in admin_log_export:')
+        flash('Error exporting logs: ' + str(e), 'error')
+        return redirect(url_for('admin_log_aktivitas'))
 
 @app.route('/admin/settings')
 @login_required
