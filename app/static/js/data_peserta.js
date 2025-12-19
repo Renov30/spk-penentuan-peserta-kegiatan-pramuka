@@ -394,21 +394,9 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
   }
 
-  // View peserta detail
+  // View peserta detail - redirect ke halaman detail
   window.viewPeserta = function (userId) {
-    fetch(`/api/peserta/detail/${userId}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success && data.peserta) {
-          showPesertaModal(data.peserta);
-        } else {
-          showNotification("Gagal memuat detail peserta", "error");
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        showNotification("Terjadi kesalahan", "error");
-      });
+    window.location.href = `/admin/peserta/detail/${userId}`;
   };
 
   // Edit peserta
@@ -463,90 +451,106 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Show peserta detail modal
   function showPesertaModal(peserta) {
+    // Deteksi theme yang aktif
+    const isDark =
+      document.documentElement.classList.contains("dark") ||
+      (window.Alpine && Alpine.store("theme") && Alpine.store("theme").isDark);
+
+    // Tentukan class berdasarkan theme
+    const bgModal = isDark ? "bg-gray-800" : "bg-white";
+    const textModal = isDark ? "text-white" : "text-gray-900";
+    const textLabel = isDark ? "text-gray-300" : "text-gray-600";
+    const textValue = isDark ? "text-gray-100" : "text-gray-900";
+    const bgActivity = isDark ? "bg-gray-700" : "bg-gray-100";
+    const textActivity = isDark ? "text-gray-200" : "text-gray-700";
+    const btnClose = isDark
+      ? "text-gray-300 hover:text-white"
+      : "text-gray-500 hover:text-gray-700";
+
     const modal = document.createElement("div");
     modal.className =
       "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
     modal.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="${bgModal} ${textModal} rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold">Detail Peserta</h2>
-                    <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <h2 class="text-2xl font-bold ${textModal}">Detail Peserta</h2>
+                    <button onclick="this.closest('.fixed').remove()" class="${btnClose} text-xl">
                         <i class="fa-solid fa-times"></i>
                     </button>
                 </div>
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Nama Lengkap</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.nama_lengkap || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Nama Lengkap</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.nama_lengkap || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Email</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.email || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Email</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.email || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Jenis Kelamin</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.jenis_kelamin || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Jenis Kelamin</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.jenis_kelamin || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Usia</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.usia || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Usia</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.usia || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Nomor HP</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.nomor_hp || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Nomor HP</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.nomor_hp || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Status</label>
+                            <label class="text-sm font-semibold ${textLabel}">Status</label>
                             <div class="mt-1">${getStatusBadge(
                               peserta.status
                             )}</div>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Golongan</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.golongan || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Golongan</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.golongan || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Tingkatan</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.tingkatan || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Tingkatan</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.tingkatan || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Asal Gudep</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.asal_gudep || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Asal Gudep</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.asal_gudep || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Asal Kwarran</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.asal_kwarran || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Asal Kwarran</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.asal_kwarran || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Asal Kwarcab</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.asal_kwarcab || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Asal Kwarcab</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.asal_kwarcab || "-"
+    )}</p>
                         </div>
                         <div>
-                            <label class="text-sm font-semibold text-gray-600">Asal Kwarda</label>
-                            <p class="mt-1">${escapeHtml(
-                              peserta.asal_kwarda || "-"
-                            )}</p>
+                            <label class="text-sm font-semibold ${textLabel}">Asal Kwarda</label>
+                            <p class="mt-1 ${textValue}">${escapeHtml(
+      peserta.asal_kwarda || "-"
+    )}</p>
                         </div>
                     </div>
                     ${
@@ -554,12 +558,12 @@ document.addEventListener("DOMContentLoaded", function () {
                       peserta.registered_activities.length > 0
                         ? `
                         <div class="mt-4">
-                            <label class="text-sm font-semibold text-gray-600">Kegiatan Terdaftar</label>
+                            <label class="text-sm font-semibold ${textLabel}">Kegiatan Terdaftar</label>
                             <ul class="mt-2 space-y-2">
                                 ${peserta.registered_activities
                                   .map(
                                     (activity) => `
-                                    <li class="p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                                    <li class="p-2 ${bgActivity} ${textActivity} rounded">
                                         <strong>${escapeHtml(
                                           activity.nama
                                         )}</strong> - ${escapeHtml(
@@ -585,7 +589,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 </div>
                 <div class="mt-6 flex justify-end gap-2">
-                    <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                    <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Tutup
                     </button>
                 </div>

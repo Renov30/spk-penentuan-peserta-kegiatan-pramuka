@@ -3473,6 +3473,54 @@ def admin_peserta():
         time=time
     )
 
+# Route untuk halaman detail peserta
+@app.route('/admin/peserta/detail/<int:user_id>')
+@login_required
+@admin_required
+def detail_peserta(user_id):
+    """Halaman detail peserta dengan sidebar"""
+    try:
+        # Get user data
+        user = Users.query.get(user_id)
+        if not user or user.level != 'peserta':
+            flash("Peserta tidak ditemukan", "error")
+            return redirect(url_for('admin_peserta'))
+        
+        # Get participant biodata
+        biodata = Participants.query.filter_by(email=user.email).first()
+        
+        # Get registered activities
+        registered_activities = []
+        if biodata:
+            activities = biodata.registered_activities.all()
+            for activity in activities:
+                hasil_activity = HasilSeleksi.query.filter_by(
+                    id_users=user.id,
+                    event_id=activity.id_kegiatan
+                ).first()
+                
+                registered_activities.append({
+                    'id': activity.id_kegiatan,
+                    'nama': activity.nama_kegiatan,
+                    'jenis': activity.jenis_kegiatan,
+                    'skor': hasil_activity.skor_akhir if hasil_activity else None,
+                    'ranking': hasil_activity.ranking if hasil_activity else None
+                })
+        
+        sidebar_state = current_user.sidebar_state or 'expanded'
+        
+        return render_template(
+            'detail_peserta.html',
+            user=user,
+            biodata=biodata,
+            registered_activities=registered_activities,
+            sidebar_state=sidebar_state
+        )
+    except Exception as e:
+        logging.error(f"Error in detail_peserta: {e}")
+        flash("Terjadi kesalahan saat memuat data peserta", "error")
+        return redirect(url_for('admin_peserta'))
+
 # Route untuk cetak kartu peserta
 @app.route('/admin/peserta/kartu/<int:user_id>')
 @login_required
@@ -3737,7 +3785,7 @@ def api_tambah_peserta_kegiatan_bulk():
             'success': False,
             'message': str(e)
         }), 500
-
+    
 @app.route('/admin/hasil_seleksi')
 @login_required
 @admin_required
