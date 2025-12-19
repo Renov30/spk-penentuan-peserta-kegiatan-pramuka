@@ -54,11 +54,13 @@
                   on Fuzzy AHP method' }}
                 </p>
               </div>
+              {% if show_back_button|default(True) %}
               <a href="{{ url_for('admin_manajemen_seleksi') }}" 
                  class="px-4 py-2 rounded-lg {{ 'bg-gray-700 hover:bg-gray-600' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-300' }} transition">
                   <i class="fa-solid fa-arrow-left mr-2"></i>
                   {{ 'Kembali' if current_lang == 'id' else 'Back' }}
               </a>
+              {% endif %}
             </div>
 
             <!-- Event Selector -->

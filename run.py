@@ -3790,9 +3790,59 @@ def api_tambah_peserta_kegiatan_bulk():
 @login_required
 @admin_required
 def admin_hasil_seleksi():
+    # Get all events
+    all_events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Get selected event from query parameter
+    selected_event_id = request.args.get('event_id', type=int)
+    selected_event = None
+    results = []
+    
+    if selected_event_id:
+        selected_event = Event.query.get(selected_event_id)
+        if selected_event:
+            from app.fuzzy_ahp import calculate_spk
+            
+            # Calculate SPK for this event
+            success, msg = calculate_spk(selected_event_id)
+            if not success:
+                logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            
+            # Fetch results for this event only
+            hasil_seleksi = db.session.query(
+                HasilSeleksi,
+                Users,
+                Participants
+            ).join(
+                Users, HasilSeleksi.id_users == Users.id
+            ).outerjoin(
+                Participants, Users.email == Participants.email
+            ).filter(
+                HasilSeleksi.event_id == selected_event_id
+            ).order_by(
+                HasilSeleksi.ranking.asc()
+            ).all()
+            
+            # Build results list
+            for hasil, user, participant in hasil_seleksi:
+                results.append({
+                    'hasil': hasil,
+                    'user': user,
+                    'participant': participant
+                })
+        else:
+            flash("Kegiatan tidak ditemukan.", "error")
+            selected_event = None
+
     sidebar_state = current_user.sidebar_state or 'expanded'
-    users = Users.query.count()
-    return render_template('hasil_seleksi.html', sidebar_state=sidebar_state, user=users, time=time)
+    return render_template(
+        'admin/hasil_penilaian.html',
+        assigned_events=all_events,
+        selected_event=selected_event,
+        results=results,
+        sidebar_state=sidebar_state,
+        show_back_button=False  # Tidak tampilkan tombol kembali karena dibuka dari sidebar
+    )
 
 @app.route('/admin/notifikasi')
 @login_required
@@ -4357,7 +4407,8 @@ def admin_hasil_penilaian():
         assigned_events=all_events,
         selected_event=selected_event,
         results=results,
-        sidebar_state=sidebar_state
+        sidebar_state=sidebar_state,
+        show_back_button=True  # Tampilkan tombol kembali karena dibuka dari manajemen seleksi
     )
 
 @app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
