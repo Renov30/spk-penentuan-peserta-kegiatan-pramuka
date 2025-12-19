@@ -2,6 +2,9 @@
 document.addEventListener("DOMContentLoaded", function () {
   let allPeserta = [];
   let filteredPeserta = [];
+  let kegiatanFilter = null;
+  let searchInput = null;
+  let statusFilter = null;
 
   // Get CSRF token
   const csrfToken =
@@ -9,55 +12,167 @@ document.addEventListener("DOMContentLoaded", function () {
       .querySelector('meta[name="csrf-token"]')
       ?.getAttribute("content") || "";
 
-  // Initialize
-  loadPesertaData();
-  loadStatistics();
-
-  // Search functionality
-  const searchInput =
+  // Initialize DOM elements
+  searchInput =
     document.querySelector("#searchInput") ||
     document.querySelector(
       'input[placeholder*="Cari peserta"], input[placeholder*="Search participants"]'
     );
+
+  kegiatanFilter = document.querySelector("#kegiatanFilter");
+
+  statusFilter =
+    document.querySelector("#statusFilter") ||
+    document.querySelector("select:not(#kegiatanFilter)");
+
+  // Setup event listeners
   if (searchInput) {
     searchInput.addEventListener("input", function (e) {
       filterPeserta();
     });
   }
 
-  // Filter by status
-  const statusFilter =
-    document.querySelector("#statusFilter") || document.querySelector("select");
+  if (kegiatanFilter) {
+    kegiatanFilter.addEventListener("change", function (e) {
+      loadPesertaData(); // Reload data when kegiatan filter changes
+    });
+  }
+
   if (statusFilter) {
     statusFilter.addEventListener("change", function (e) {
       filterPeserta();
     });
   }
 
+  // Initialize - load data after DOM is ready
+  setTimeout(() => {
+    loadPesertaData();
+    loadStatistics();
+  }, 100);
+
   // Load peserta data from API
   function loadPesertaData() {
-    fetch("/api/peserta/list")
-      .then((response) => response.json())
+    // Show loading state
+    const tbody = document.querySelector("table tbody");
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+            Memuat data...
+          </td>
+        </tr>
+      `;
+    }
+
+    // Get kegiatan filter value - re-query if needed
+    const kegiatanFilterEl = document.querySelector("#kegiatanFilter");
+    const kegiatanId =
+      kegiatanFilterEl && kegiatanFilterEl.value ? kegiatanFilterEl.value : "";
+    const url = kegiatanId
+      ? `/api/peserta/list?kegiatan_id=${kegiatanId}`
+      : "/api/peserta/list";
+
+    console.log("Fetching data from:", url);
+
+    fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin", // Include cookies for session
+    })
+      .then((response) => {
+        console.log("Response status:", response.status);
+        console.log("Response headers:", response.headers);
+
+        // Check if response is ok
+        if (!response.ok) {
+          // Try to get error message from response
+          return response.text().then((text) => {
+            console.error("Response error:", text);
+            throw new Error(`HTTP error! status: ${response.status}`);
+          });
+        }
+
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          return response.text().then((text) => {
+            console.error("Response is not JSON:", text.substring(0, 200));
+            throw new Error("Response is not JSON");
+          });
+        }
+
+        return response.json();
+      })
       .then((data) => {
-        if (data.success && data.peserta) {
-          allPeserta = data.peserta;
+        console.log("Received data:", data);
+
+        // Handle response - check if peserta exists (can be empty array)
+        if (data && data.success !== undefined) {
+          allPeserta = Array.isArray(data.peserta) ? data.peserta : [];
           filteredPeserta = [...allPeserta];
+          console.log(`Loaded ${allPeserta.length} peserta`);
+
+          if (allPeserta.length === 0) {
+            console.log("No peserta found");
+          }
+
           renderTable();
         } else {
-          console.error("Error loading peserta:", data.message);
-          showNotification("Gagal memuat data peserta", "error");
+          console.error(
+            "Error loading peserta:",
+            data?.message || "Unknown error"
+          );
+          const errorMsg = data?.message || "Gagal memuat data peserta";
+
+          if (tbody) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="7" class="px-4 py-8 text-center text-red-500">
+                <i class="fa-solid fa-exclamation-triangle mr-2"></i>
+                ${escapeHtml(errorMsg)}
+              </td>
+              </tr>
+            `;
+          }
+          showNotification(errorMsg, "error");
         }
       })
       .catch((error) => {
-        console.error("Error:", error);
-        showNotification("Terjadi kesalahan saat memuat data", "error");
+        console.error("Fetch error:", error);
+
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="px-4 py-8 text-center text-red-500">
+                <i class="fa-solid fa-exclamation-triangle mr-2"></i>
+                Terjadi kesalahan saat memuat data. Silakan refresh halaman atau hubungi administrator.
+                <br><small class="text-gray-400 mt-2 block">${escapeHtml(
+                  error.message || "Unknown error"
+                )}</small>
+              </td>
+            </tr>
+          `;
+        }
+        showNotification(
+          "Terjadi kesalahan saat memuat data: " +
+            (error.message || "Unknown error"),
+          "error"
+        );
       });
   }
 
   // Filter peserta based on search and status
   function filterPeserta() {
-    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-    const statusFilterValue = statusFilter ? statusFilter.value : "";
+    // Re-query elements in case they weren't found initially
+    const searchInputEl = searchInput || document.querySelector("#searchInput");
+    const statusFilterEl =
+      statusFilter || document.querySelector("#statusFilter");
+
+    const searchTerm = searchInputEl ? searchInputEl.value.toLowerCase() : "";
+    const statusFilterValue = statusFilterEl ? statusFilterEl.value : "";
 
     filteredPeserta = allPeserta.filter((peserta) => {
       const matchesSearch =
@@ -89,7 +204,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (filteredPeserta.length === 0) {
       tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                         Tidak ada data peserta
                     </td>
                 </tr>
@@ -99,13 +214,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
     filteredPeserta.forEach((peserta, index) => {
       const row = document.createElement("tr");
-      row.className = "border-b hover:bg-gray-50 dark:hover:bg-gray-800";
+      // CSS will handle hover effect with dark mode
+      row.className = "border-b";
 
       // Get status badge
       const statusBadge = getStatusBadge(peserta.status);
 
       // Get score (if available)
       const score = peserta.skor_akhir ? peserta.skor_akhir.toFixed(2) : "-";
+
+      // Get kegiatan names
+      let kegiatanNames = "-";
+      if (
+        peserta.registered_activities &&
+        peserta.registered_activities.length > 0
+      ) {
+        kegiatanNames = peserta.registered_activities
+          .map((act) => escapeHtml(act.nama || ""))
+          .filter((n) => n)
+          .join(", ");
+        if (kegiatanNames.length > 50) {
+          kegiatanNames = kegiatanNames.substring(0, 50) + "...";
+        }
+      }
 
       row.innerHTML = `
                 <td class="px-4 py-3">${index + 1}</td>
@@ -115,6 +246,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td class="px-4 py-3">${escapeHtml(
                   peserta.asal_gudep || "-"
                 )}</td>
+                <td class="px-4 py-3" title="${
+                  peserta.registered_activities &&
+                  peserta.registered_activities.length > 0
+                    ? peserta.registered_activities
+                        .map((a) => a.nama)
+                        .join(", ")
+                    : ""
+                }">${kegiatanNames}</td>
                 <td class="px-4 py-3">${statusBadge}</td>
                 <td class="px-4 py-3">${score}</td>
                 <td class="px-4 py-3 flex gap-2">

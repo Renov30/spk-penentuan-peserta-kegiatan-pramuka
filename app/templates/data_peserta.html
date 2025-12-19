@@ -88,6 +88,20 @@
                     class="w-full px-4 py-2 rounded-xl border focus:ring-2 {{ 'bg-gray-800 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
                   />
                   <select
+                    id="kegiatanFilter"
+                    class="px-3 py-2 rounded-xl border focus:ring-2 {{ 'bg-gray-800 text-white focus:ring-blue-400' if current_theme == 'dark' else 'bg-gray-100 border text-black focus:ring-blue-500' }}"
+                  >
+                    <option value="">
+                      {{ 'Semua Kegiatan' if current_lang == 'id' else 'All
+                      Activities' }}
+                    </option>
+                    {% if events %} {% for event in events %}
+                    <option value="{{ event.id_kegiatan }}">
+                      {{ event.nama_kegiatan }}
+                    </option>
+                    {% endfor %} {% endif %}
+                  </select>
+                  <select
                     id="statusFilter"
                     class="px-3 py-2 rounded-xl border focus:ring-2 {{ 'bg-gray-800 text-white focus:ring-green-400' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
                   >
@@ -132,6 +146,35 @@
               <div
                 class="bg-white shadow-md rounded-2xl overflow-x-auto {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
               >
+                <style>
+                  /* Custom hover effect untuk table rows - per baris, bukan per kolom */
+                  table tbody tr {
+                    transition: background-color 0.2s ease-in-out;
+                    cursor: pointer;
+                  }
+
+                  /* Mode terang - hover dengan warna abu-abu yang bagus */
+                  table tbody tr:hover {
+                    background-color: #e5e7eb !important; /* gray-200 - abu-abu yang bagus */
+                  }
+
+                  /* Mode gelap - hover dengan warna abu-abu gelap yang bagus */
+                  .dark table tbody tr:hover {
+                    background-color: #374151 !important; /* gray-700 - abu-abu gelap yang bagus */
+                  }
+
+                  /* Pastikan badge tetap terlihat saat hover - badge punya background sendiri */
+                  table tbody tr:hover td span[class*="rounded-full"] {
+                    opacity: 1 !important;
+                  }
+
+                  /* Pastikan button tetap terlihat dan tidak terpengaruh hover row */
+                  table tbody tr:hover td button {
+                    opacity: 1 !important;
+                    position: relative;
+                    z-index: 1;
+                  }
+                </style>
                 <table class="w-full text-sm text-left">
                   <thead
                     class="{{ 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-200 dark:bg-gray-200 text-black dark:text-gray-900' }}"
@@ -144,6 +187,9 @@
                       <th class="px-4 py-3">
                         {{ 'Asal Gudep' if current_lang == 'id' else 'Gudep
                         Origin' }}
+                      </th>
+                      <th class="px-4 py-3">
+                        {{ 'Kegiatan' if current_lang == 'id' else 'Activity' }}
                       </th>
                       <th class="px-4 py-3">
                         {{ 'Status Seleksi' if current_lang == 'id' else

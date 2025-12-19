@@ -2421,6 +2421,9 @@ def api_search_peserta():
 def api_list_peserta():
     """API untuk mendapatkan semua data peserta (gabungan users dan participants)"""
     try:
+        # Get optional filter parameters
+        kegiatan_id = request.args.get('kegiatan_id', type=int)
+        
         # Ambil semua user dengan level peserta
         users_peserta = Users.query.filter_by(level='peserta').all()
         
@@ -2429,10 +2432,46 @@ def api_list_peserta():
             # Cari data biodata dari tabel participants berdasarkan email
             biodata = Participants.query.filter_by(email=user.email).first()
             
-            # Get hasil seleksi (latest or highest score)
-            hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user.id).order_by(
-                HasilSeleksi.skor_akhir.desc()
-            ).first()
+            # Jika filter kegiatan_id diberikan, cek apakah peserta terdaftar di kegiatan tersebut
+            if kegiatan_id and biodata:
+                # Cek apakah peserta terdaftar di kegiatan ini
+                is_registered = db.session.query(tb_participant_kegiatan).filter_by(
+                    participant_id=biodata.id,
+                    kegiatan_id=kegiatan_id
+                ).first()
+                
+                if not is_registered:
+                    continue  # Skip peserta yang tidak terdaftar di kegiatan ini
+            
+            # Get hasil seleksi untuk kegiatan tertentu atau latest
+            if kegiatan_id:
+                hasil_seleksi = HasilSeleksi.query.filter_by(
+                    id_users=user.id,
+                    event_id=kegiatan_id
+                ).first()
+            else:
+                # Get latest or highest score
+                hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user.id).order_by(
+                    HasilSeleksi.skor_akhir.desc()
+                ).first()
+            
+            # Get registered activities for this participant
+            registered_activities = []
+            if biodata:
+                activities = biodata.registered_activities.all()
+                for activity in activities:
+                    hasil_activity = HasilSeleksi.query.filter_by(
+                        id_users=user.id,
+                        event_id=activity.id_kegiatan
+                    ).first()
+                    
+                    registered_activities.append({
+                        'id': activity.id_kegiatan,
+                        'nama': activity.nama_kegiatan,
+                        'jenis': activity.jenis_kegiatan,
+                        'skor': hasil_activity.skor_akhir if hasil_activity else None,
+                        'ranking': hasil_activity.ranking if hasil_activity else None
+                    })
             
             # Gabungkan data dari users dan participants
             peserta_item = {
@@ -2456,15 +2495,27 @@ def api_list_peserta():
                 'asal_kwarcab': biodata.asal_kwarcab if biodata else '',
                 'asal_kwarda': biodata.asal_kwarda if biodata else '',
                 'skor_akhir': hasil_seleksi.skor_akhir if hasil_seleksi else None,
-                'ranking': hasil_seleksi.ranking if hasil_seleksi else None
+                'ranking': hasil_seleksi.ranking if hasil_seleksi else None,
+                'registered_activities': registered_activities
             }
             peserta_data.append(peserta_item)
         
-        return jsonify({'success': True, 'peserta': peserta_data})
+        # Always return success with array, even if empty
+        return jsonify({
+            'success': True, 
+            'peserta': peserta_data,
+            'count': len(peserta_data)
+        })
     except Exception as e:
         logging.error(f"Error in api_list_peserta: {e}")
         current_app.logger.exception('Error in api_list_peserta:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        # Return error response in JSON format
+        return jsonify({
+            'success': False, 
+            'message': str(e),
+            'peserta': [],
+            'count': 0
+        }), 500
 
 # API Add Peserta
 @app.route("/api/peserta/add", methods=['POST'])
