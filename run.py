@@ -3472,6 +3472,51 @@ def admin_peserta():
         events=events,
         time=time
     )
+
+# Route untuk cetak kartu peserta
+@app.route('/admin/peserta/kartu/<int:user_id>')
+@login_required
+@admin_required
+def cetak_kartu_peserta(user_id):
+    """Halaman untuk mencetak kartu peserta"""
+    try:
+        # Get user data
+        user = Users.query.get(user_id)
+        if not user or user.level != 'peserta':
+            flash("Peserta tidak ditemukan", "error")
+            return redirect(url_for('admin_peserta'))
+        
+        # Get participant biodata
+        biodata = Participants.query.filter_by(email=user.email).first()
+        
+        # Get registered activities
+        registered_activities = []
+        if biodata:
+            activities = biodata.registered_activities.all()
+            for activity in activities:
+                hasil_activity = HasilSeleksi.query.filter_by(
+                    id_users=user.id,
+                    event_id=activity.id_kegiatan
+                ).first()
+                
+                registered_activities.append({
+                    'id': activity.id_kegiatan,
+                    'nama': activity.nama_kegiatan,
+                    'jenis': activity.jenis_kegiatan,
+                    'skor': hasil_activity.skor_akhir if hasil_activity else None,
+                    'ranking': hasil_activity.ranking if hasil_activity else None
+                })
+        
+        return render_template(
+            'kartu_peserta.html',
+            user=user,
+            biodata=biodata,
+            registered_activities=registered_activities
+        )
+    except Exception as e:
+        logging.error(f"Error in cetak_kartu_peserta: {e}")
+        flash("Terjadi kesalahan saat memuat data peserta", "error")
+        return redirect(url_for('admin_peserta'))
     
 @app.route('/admin/hasil_seleksi')
 @login_required

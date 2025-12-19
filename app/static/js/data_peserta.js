@@ -451,14 +451,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Print kartu peserta
   window.printKartuPeserta = function (userId) {
-    // For now, show notification that feature is coming soon
-    // TODO: Implement kartu peserta printing
-    showNotification(
-      "Fitur cetak kartu peserta sedang dalam pengembangan",
-      "info"
-    );
-    // Future implementation:
-    // window.open(`/admin/peserta/kartu/${userId}`, '_blank');
+    // Open kartu peserta page in new window
+    window.open(`/admin/peserta/kartu/${userId}`, "_blank");
   };
 
   // Show peserta detail modal
