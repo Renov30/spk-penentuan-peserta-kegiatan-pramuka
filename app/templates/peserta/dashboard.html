@@ -135,7 +135,7 @@
               >
                 <!-- Status Seleksi -->
                 <div
-                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-gray-100 text-black hover:shadow-gray-700' }}"
                 >
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">
@@ -208,7 +208,7 @@
                 <!-- Nilai Akhir & Ranking per Kegiatan -->
                 {% if activity_scores %}
                 <div
-                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-gray-100 text-black hover:shadow-gray-700' }}"
                 >
                   <!-- Card Title -->
                   <div class="flex items-center justify-between mb-4">
@@ -292,7 +292,7 @@
                 <!-- Jadwal Seleksi -->
                 {% if registered_activities %}
                 <div
-                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+                  class="rounded-xl shadow p-6 {{ 'bg-gray-900 text-white hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-gray-100 text-black hover:shadow-gray-700' }}"
                 >
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">
@@ -566,7 +566,7 @@
                     :key="kegiatan.id_kegiatan"
                   >
                     <div
-                      class="rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl {{ 'bg-gray-900 text-white border border-gray-700' if current_theme == 'dark' else 'bg-white text-black border border-gray-200' }}"
+                      class="rounded-xl shadow-sm p-6 transition-all duration-300 hover:shadow-sm {{ 'bg-gray-900 text-white border border-gray-700 hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white text-black border border-gray-200 hover:shadow-gray-700' }}"
                     >
                       <!-- Header -->
                       <div class="mb-4">
@@ -581,7 +581,13 @@
                             x-text="kegiatan.status"
                           ></span>
                           <span
-                            class="px-3 py-1 rounded-full text-xs font-semibold {{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 text-gray-800' }}"
+                            class="px-3 py-1 rounded-full text-xs font-semibold text-white"
+                            :class="{
+                              'bg-[#0cf900]': kegiatan.jenis_kegiatan.toLowerCase() === 'siaga',
+                              'bg-[#ff0000]': kegiatan.jenis_kegiatan.toLowerCase() === 'penggalang',
+                              'bg-[#ffb800]': kegiatan.jenis_kegiatan.toLowerCase() === 'penegak',
+                              'bg-[#994c20]': ['pandega', 'penegak dan pandega'].includes(kegiatan.jenis_kegiatan.toLowerCase())
+                            }"
                             x-text="kegiatan.jenis_kegiatan"
                           ></span>
                         </div>
@@ -725,7 +731,7 @@
                           'bg-gray-400 cursor-not-allowed': isRegistering,
                           'opacity-50': isRegistering
                         }"
-                        class="w-full py-2 px-4 rounded-lg text-white font-semibold transition-all duration-300 disabled:cursor-not-allowed"
+                        class="w-full py-2 px-4 rounded-lg text-white font-semibold transition-all duration-300 disabled:cursor-not-allowed cursor-pointer"
                       >
                         <span x-show="!isRegistering">
                           <i class="fa-solid fa-user-plus mr-2"></i>

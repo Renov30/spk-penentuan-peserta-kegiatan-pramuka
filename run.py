@@ -2952,15 +2952,8 @@ def penilai_dashboard():
     
     # Hitung total peserta (dari tabel participants)
     total_peserta = Participants.query.count()
-    
     sidebar_state = current_user.sidebar_state or 'expanded'
-
-    return render_template(
-        'penilai/dashboard.html',
-        events=events,
-        total_peserta=total_peserta,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/dashboard.html', events=events, total_peserta=total_peserta, sidebar_state=sidebar_state)
 
 @app.route('/penilai/penilaian')
 @login_required
@@ -2981,12 +2974,7 @@ def penilai_penilaian():
         event.jumlah_peserta = event.registered_participants.count()
     
     sidebar_state = current_user.sidebar_state or 'expanded'
-
-    return render_template(
-        'penilai/penilaian.html',
-        events=events,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/penilaian.html', events=events, sidebar_state=sidebar_state)
 
 @app.route('/penilai/event/<int:event_id>/participants')
 @login_required
@@ -3023,15 +3011,8 @@ def penilai_event_participants(event_id):
         else:
             p.is_graded = False
             p.user_id_for_link = 0 # Fallback
-
     sidebar_state = current_user.sidebar_state or 'expanded'
-    
-    return render_template(
-        'penilai/list_peserta.html',
-        event=event,
-        participants=participants,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/list_peserta.html', event=event, participants=participants, sidebar_state=sidebar_state)
 
 @app.route('/penilai/event/<int:event_id>/grade/<int:participant_id>', methods=['GET', 'POST'])
 @login_required
@@ -3108,12 +3089,7 @@ def penilai_input_score(event_id, participant_id):
                     if penilaian:
                         penilaian.nilai = float(score_val)
                     else:
-                        penilaian = Penilaian(
-                            id_users=participant_id,
-                            evaluator_id=current_user.id,
-                            id_kriteria=criteria.id_kriteria,
-                            nilai=float(score_val)
-                        )
+                        penilaian = Penilaian(id_users=participant_id, evaluator_id=current_user.id, id_kriteria=criteria.id_kriteria, nilai=float(score_val))
                         db.session.add(penilaian)
                     
                     # DEBUG: Log what we're saving
@@ -3127,15 +3103,7 @@ def penilai_input_score(event_id, participant_id):
             logging.error(f"Error saving score: {e}")
             flash(f"{t['score_save_error']}", "danger")
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template(
-        'penilai/form_penilaian.html',
-        event=event,
-        participant=participant_biodata,
-        participant_user=participant_user,
-        criterias=criterias,
-        existing_scores=existing_scores,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/form_penilaian.html', event=event, participant=participant_biodata, participant_user=participant_user, criterias=criterias, existing_scores=existing_scores, sidebar_state=sidebar_state)
 
 @app.route('/penilai/event/<int:event_id>/view/<int:participant_id>')
 @login_required
@@ -3203,16 +3171,7 @@ def penilai_view_score(event_id, participant_id):
 
     sidebar_state = current_user.sidebar_state or 'expanded'
 
-    return render_template(
-        'penilai/view_penilaian.html',
-        event=event,
-        participant=participant_biodata,
-        participant_user=participant_user,
-        criterias=all_criterias,
-        assigned_criteria_ids=assigned_criteria_ids,
-        existing_scores=existing_scores,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/view_penilaian.html', event=event, participant=participant_biodata, participant_user=participant_user, criterias=all_criterias, assigned_criteria_ids=assigned_criteria_ids, existing_scores=existing_scores, sidebar_state=sidebar_state)
 
 @app.route('/penilai/biodata', methods=['GET', 'POST'])
 @login_required
@@ -3256,13 +3215,8 @@ def penilai_biodata():
             db.session.rollback()
             logging.error(f"Error updating evaluator data: {e}")
             flash(f"{t['profile_update_error']}", "danger")
-    
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template(
-        'penilai/biodata.html',
-        sidebar_state=sidebar_state,
-        user=current_user
-    )
+    return render_template('penilai/biodata.html', sidebar_state=sidebar_state, user=current_user)
 
 @app.route('/penilai/hasil-penilaian')
 @login_required
@@ -3415,19 +3369,7 @@ def penilai_detail_nilai(user_id, event_id):
     final_score = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3 if calculation_details else 0
     
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template(
-        'penilai/detail_nilai.html',
-        user=user,
-        participant=participant,
-        event=event,
-        hasil_seleksi=hasil_seleksi,
-        calculation_details=calculation_details,
-        fuzzy_total_l=fuzzy_total_l,
-        fuzzy_total_m=fuzzy_total_m,
-        fuzzy_total_u=fuzzy_total_u,
-        final_score=final_score,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/detail_nilai.html', user=user, participant=participant, event=event, hasil_seleksi=hasil_seleksi, calculation_details=calculation_details, fuzzy_total_l=fuzzy_total_l, fuzzy_total_m=fuzzy_total_m, fuzzy_total_u=fuzzy_total_u, final_score=final_score, sidebar_state=sidebar_state)
 
 @app.route('/admin/hasil-penilaian')
 @login_required
@@ -3564,21 +3506,8 @@ def admin_detail_nilai(user_id, event_id):
     
     # Final defuzzified score
     final_score = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3 if calculation_details else 0
-    
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template(
-        'admin/detail_nilai.html',
-        user=user,
-        participant=participant,
-        event=event,
-        hasil_seleksi=hasil_seleksi,
-        calculation_details=calculation_details,
-        fuzzy_total_l=fuzzy_total_l,
-        fuzzy_total_m=fuzzy_total_m,
-        fuzzy_total_u=fuzzy_total_u,
-        final_score=final_score,
-        sidebar_state=sidebar_state
-    )
+    return render_template('admin/detail_nilai.html', user=user, participant=participant, event=event, hasil_seleksi=hasil_seleksi, calculation_details=calculation_details, fuzzy_total_l=fuzzy_total_l, fuzzy_total_m=fuzzy_total_m, fuzzy_total_u=fuzzy_total_u, final_score=final_score, sidebar_state=sidebar_state)
 
 @app.route('/penilai/hasil-seleksi')
 @login_required
@@ -3648,7 +3577,6 @@ def penilai_hasil_seleksi():
         else:
             flash(f"{t['event_not_found_or_no_access']}", "error")
             selected_event = None
-    
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template('penilai/hasil_seleksi.html', assigned_events=assigned_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state)
 
@@ -3670,6 +3598,18 @@ def penilai_notifikasi():
     ).all()
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template('penilai/notifikasi.html', notifications=notifications, sidebar_state=sidebar_state)
+
+@app.route('/penilai/settings')
+@login_required
+def penilai_settings():
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    if current_user.level != 'penilai':
+        flash(f"{t['evaluator_access_denied']}", "error")
+        return redirect(url_for('index'))
+    return render_template('settings.html', sidebar_state=sidebar_state, time=time)
 
 @app.route('/peserta/dashboard')
 @login_required
@@ -3752,9 +3692,7 @@ def peserta_dashboard():
     
     # Determine status
     status_seleksi = 'Terdaftar' if registered_activities else 'Belum ada status'
-    
     sidebar_state = current_user.sidebar_state or 'expanded'
-    
     return render_template('peserta/dashboard.html', biodata=participant, registered_activities=registered_activities, activity_scores=activity_scores, is_selection_ended=is_selection_ended, status_seleksi=status_seleksi, user=current_user, sidebar_state=sidebar_state, today=date.today())
 
 @app.route('/peserta/notifikasi')
@@ -3769,8 +3707,19 @@ def peserta_notifikasi():
     
     sidebar_state = current_user.sidebar_state or 'expanded'
     notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.id.desc()).all()
-    
     return render_template('peserta/notifikasi.html', notifications=notifications, sidebar_state=sidebar_state, user=current_user)
+
+@app.route('/peserta/settings')
+@login_required
+def peserta_settings():
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    if current_user.level != 'peserta':
+        flash(f"{t['participant_access_denied']}", "error")
+        return redirect(url_for('index'))
+    return render_template('settings.html', sidebar_state=sidebar_state, time=time)
 
 @app.route('/peserta/hasil_seleksi')
 @login_required
@@ -4006,9 +3955,8 @@ def api_kegiatan_tersedia():
         
         # Ambil kegiatan yang sedang membuka seleksi (tanggal sekarang antara mulai dan selesai)
         kegiatan_list = Event.query.filter(
-            Event.mulai <= today,
             Event.selesai >= today
-        ).order_by(Event.mulai.desc()).all()
+        ).order_by(Event.mulai.asc()).all()
         
         # Ambil biodata peserta untuk cek apakah sudah terdaftar
         biodata = Participants.query.filter_by(email=current_user.email).first()
