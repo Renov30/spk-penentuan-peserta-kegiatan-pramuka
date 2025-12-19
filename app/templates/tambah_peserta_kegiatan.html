@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
-      {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else 'Add Participant to Activity' }} | SPK Pramuka
+      {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else 'Add
+      Participant to Activity' }} | SPK Pramuka
     </title>
 
     <!-- Tailwind CSS -->
@@ -71,61 +72,40 @@
             <!-- Content -->
             <div class="container mx-auto p-6">
               <div class="mb-6">
-                <h1 class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                <h1
+                  class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                >
                   <i class="fa-solid fa-user-plus mr-2"></i>
-                  {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else 'Add Participant to Activity' }}
+                  {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else
+                  'Add Participant to Activity' }}
                 </h1>
                 <p class="text-gray-500">
-                  {{ 'Pilih peserta dan kegiatan untuk menambahkan peserta ke seleksi kegiatan' if current_lang == 'id' else 'Select participant and activity to add participant to activity selection' }}
+                  {{ 'Pilih peserta dan kegiatan untuk menambahkan peserta ke
+                  seleksi kegiatan' if current_lang == 'id' else 'Select
+                  participant and activity to add participant to activity
+                  selection' }}
                 </p>
               </div>
 
               <!-- Form -->
-              <div class="bg-white shadow-md rounded-2xl p-6 {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-white' }}">
-                <form action="{{ url_for('tambah_peserta_kegiatan') }}" method="POST" id="formTambahPeserta">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  {% if selected_user_id %}
-                  <input type="hidden" name="user_id" value="{{ selected_user_id }}">
-                  {% endif %}
-                  
-                  <!-- Pilih Peserta -->
-                  <div class="mb-6">
-                    <label class="block text-sm font-semibold mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
-                      <i class="fa-solid fa-user mr-2"></i>
-                      {{ 'Pilih Peserta' if current_lang == 'id' else 'Select Participant' }}
-                      <span class="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="participant_id"
-                      id="participant_id"
-                      required
-                      class="w-full px-4 py-3 rounded-xl border focus:ring-2 {{ 'bg-gray-800 text-white border-gray-700 focus:ring-blue-400' if current_theme == 'dark' else 'bg-gray-100 border-gray-300 text-black focus:ring-blue-500' }}"
-                    >
-                      <option value="">{{ '-- Pilih Peserta --' if current_lang == 'id' else '-- Select Participant --' }}</option>
-                      {% for participant in participants %}
-                        {% if participant.id %}
-                        <option value="{{ participant.id }}" {% if selected_user_id and participant.user_id == selected_user_id %}selected{% endif %}>
-                          {{ participant.nama }} 
-                          {% if participant.asal_gudep and participant.asal_gudep != '-' %}
-                            - {{ participant.asal_gudep }}
-                          {% endif %}
-                        </option>
-                        {% endif %}
-                      {% endfor %}
-                    </select>
-                    {% if selected_user_id %}
-                    <p class="text-sm text-blue-600 dark:text-blue-400 mt-2">
-                      <i class="fa-solid fa-info-circle mr-1"></i>
-                      Peserta telah dipilih sebelumnya
-                    </p>
-                    {% endif %}
-                  </div>
+              <div
+                class="bg-white shadow-md rounded-2xl p-6 {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-white' }}"
+              >
+                <form id="formTambahPeserta">
+                  <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                  />
 
                   <!-- Pilih Kegiatan -->
                   <div class="mb-6">
-                    <label class="block text-sm font-semibold mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                    <label
+                      class="block text-sm font-semibold mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
+                    >
                       <i class="fa-solid fa-calendar-check mr-2"></i>
-                      {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Activity' }}
+                      {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select
+                      Activity' }}
                       <span class="text-red-500">*</span>
                     </label>
                     <select
@@ -134,49 +114,107 @@
                       required
                       class="w-full px-4 py-3 rounded-xl border focus:ring-2 {{ 'bg-gray-800 text-white border-gray-700 focus:ring-blue-400' if current_theme == 'dark' else 'bg-gray-100 border-gray-300 text-black focus:ring-blue-500' }}"
                     >
-                      <option value="">{{ '-- Pilih Kegiatan --' if current_lang == 'id' else '-- Select Activity --' }}</option>
+                      <option value="">
+                        {{ '-- Pilih Kegiatan --' if current_lang == 'id' else
+                        '-- Select Activity --' }}
+                      </option>
                       {% for event in events %}
-                        <option value="{{ event.id_kegiatan }}">
-                          {{ event.nama_kegiatan }} 
-                          ({{ event.jenis_kegiatan }})
-                          {% if event.waktu_pelaksanaan_dimulai %}
-                            - {{ event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') }}
-                          {% endif %}
-                        </option>
+                      <option value="{{ event.id_kegiatan }}">
+                        {{ event.nama_kegiatan }} ({{ event.jenis_kegiatan }})
+                        {% if event.waktu_pelaksanaan_dimulai %} - {{
+                        event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') }}
+                        {% endif %}
+                      </option>
                       {% endfor %}
                     </select>
                   </div>
 
-                  <!-- Info Peserta Terpilih -->
-                  <div id="infoPeserta" class="mb-6 hidden">
-                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                      <h3 class="font-semibold mb-2 text-blue-800 dark:text-blue-300">
-                        <i class="fa-solid fa-info-circle mr-2"></i>
-                        {{ 'Informasi Peserta' if current_lang == 'id' else 'Participant Information' }}
-                      </h3>
-                      <div id="pesertaDetails" class="text-sm text-gray-700 dark:text-gray-300"></div>
+                  <!-- Pilih Peserta -->
+                  <div class="mb-6">
+                    <label
+                      class="block text-sm font-semibold mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
+                    >
+                      <i class="fa-solid fa-user mr-2"></i>
+                      {{ 'Pilih Peserta' if current_lang == 'id' else 'Select
+                      Participant' }}
+                      <span class="text-red-500">*</span>
+                    </label>
+                    <div
+                      class="max-h-60 overflow-y-auto border rounded-xl p-4 {{ 'bg-gray-800 border-gray-700' if current_theme == 'dark' else 'bg-gray-100 border-gray-300' }}"
+                    >
+                      {% for user in users_peserta %} {% set biodata = None %}
+                      {% for p in participants %} {% if p.email == user.email %}
+                      {% set biodata = p %} {% endif %} {% endfor %}
+                      <label
+                        class="flex items-center p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer mb-2"
+                      >
+                        <input
+                          type="checkbox"
+                          name="participant_ids[]"
+                          value="{{ biodata.id if biodata else user.id }}"
+                          data-has-biodata="{{ 'true' if biodata else 'false' }}"
+                          data-user-id="{{ user.id }}"
+                          data-user-email="{{ user.email }}"
+                          class="mr-3 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                        <div class="flex-1">
+                          <div
+                            class="font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.nama_lengkap if biodata and
+                            biodata.nama_lengkap else user.nama_lengkap }}
+                          </div>
+                          <div
+                            class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ user.email }} {% if biodata and
+                            biodata.asal_gudep %} - {{ biodata.asal_gudep }} {%
+                            endif %}
+                          </div>
+                        </div>
+                      </label>
+                      {% endfor %}
                     </div>
+                    <p
+                      class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }} mt-2"
+                    >
+                      <i class="fa-solid fa-info-circle mr-1"></i>
+                      {{ 'Pilih satu atau lebih peserta untuk ditambahkan ke
+                      kegiatan' if current_lang == 'id' else 'Select one or more
+                      participants to add to activity' }}
+                    </p>
                   </div>
 
                   <!-- Info Kegiatan Terpilih -->
                   <div id="infoKegiatan" class="mb-6 hidden">
-                    <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
-                      <h3 class="font-semibold mb-2 text-green-800 dark:text-green-300">
+                    <div
+                      class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4"
+                    >
+                      <h3
+                        class="font-semibold mb-2 text-green-800 dark:text-green-300"
+                      >
                         <i class="fa-solid fa-calendar-alt mr-2"></i>
-                        {{ 'Informasi Kegiatan' if current_lang == 'id' else 'Activity Information' }}
+                        {{ 'Informasi Kegiatan' if current_lang == 'id' else
+                        'Activity Information' }}
                       </h3>
-                      <div id="kegiatanDetails" class="text-sm text-gray-700 dark:text-gray-300"></div>
+                      <div
+                        id="kegiatanDetails"
+                        class="text-sm text-gray-700 dark:text-gray-300"
+                      ></div>
                     </div>
                   </div>
 
                   <!-- Button -->
                   <div class="flex gap-4">
                     <button
-                      type="submit"
+                      type="button"
+                      onclick="submitForm()"
+                      id="submitBtn"
                       class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg"
                     >
                       <i class="fa-solid fa-plus mr-2"></i>
-                      {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else 'Add Participant to Activity' }}
+                      {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id'
+                      else 'Add Participant to Activity' }}
                     </button>
                     <a
                       href="{{ url_for('admin_peserta') }}"
@@ -195,65 +233,37 @@
     </div>
 
     <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} 
-    {% include 'script_notification.html' %}
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
+
+    <!-- Data untuk JavaScript -->
+    <script type="application/json" id="kegiatan-data">
+      {{ events|map(attribute='id_kegiatan')|list|tojson }}
+    </script>
 
     <script>
-      // Data peserta untuk ditampilkan di info
-      const pesertaData = {
-        {% for participant in participants %}
-        {% if participant.id %}
-        {{ participant.id }}: {
-          nama: "{{ participant.nama }}",
-          email: "{{ participant.email }}",
-          asal_gudep: "{{ participant.asal_gudep or '-' }}"
-        },
-        {% endif %}
-        {% endfor %}
-      };
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-      // Data kegiatan untuk ditampilkan di info
-      const kegiatanData = {
-        {% for event in events %}
-        {{ event.id_kegiatan }}: {
-          nama: "{{ event.nama_kegiatan }}",
-          jenis: "{{ event.jenis_kegiatan }}",
-          tempat: "{{ event.tempat_pelaksanaan }}",
-          mulai: "{{ event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') if event.waktu_pelaksanaan_dimulai else '-' }}",
-          selesai: "{{ event.waktu_pelaksanaan_selesai.strftime('%d %B %Y') if event.waktu_pelaksanaan_selesai else '-' }}"
-        },
-        {% endfor %}
+      // Parse kegiatan data dari JSON
+      const kegiatanInfo = {};
+      {% for event in events %}
+      kegiatanInfo[String({{ event.id_kegiatan }})] = {
+        nama: {{ event.nama_kegiatan|tojson }},
+        jenis: {{ event.jenis_kegiatan|tojson }},
+        tempat: {{ event.tempat_pelaksanaan|tojson }},
+        mulai: {{ (event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') if event.waktu_pelaksanaan_dimulai else '-')|tojson }},
+        selesai: {{ (event.waktu_pelaksanaan_selesai.strftime('%d %B %Y') if event.waktu_pelaksanaan_selesai else '-')|tojson }}
       };
-
-      // Update info peserta
-      document.getElementById('participant_id').addEventListener('change', function() {
-        const participantId = this.value;
-        const infoDiv = document.getElementById('infoPeserta');
-        const detailsDiv = document.getElementById('pesertaDetails');
-        
-        if (participantId && pesertaData[participantId]) {
-          const p = pesertaData[participantId];
-          detailsDiv.innerHTML = `
-            <p><strong>Nama:</strong> ${p.nama}</p>
-            <p><strong>Email:</strong> ${p.email}</p>
-            <p><strong>Golongan:</strong> ${p.golongan}</p>
-            <p><strong>Tingkatan:</strong> ${p.tingkatan}</p>
-            <p><strong>Asal Gudep:</strong> ${p.asal_gudep}</p>
-          `;
-          infoDiv.classList.remove('hidden');
-        } else {
-          infoDiv.classList.add('hidden');
-        }
-      });
+      {% endfor %}
 
       // Update info kegiatan
       document.getElementById('kegiatan_id').addEventListener('change', function() {
         const kegiatanId = this.value;
         const infoDiv = document.getElementById('infoKegiatan');
         const detailsDiv = document.getElementById('kegiatanDetails');
-        
-        if (kegiatanId && kegiatanData[kegiatanId]) {
-          const k = kegiatanData[kegiatanId];
+
+        if (kegiatanId && kegiatanInfo[kegiatanId]) {
+          const k = kegiatanInfo[kegiatanId];
           detailsDiv.innerHTML = `
             <p><strong>Nama Kegiatan:</strong> ${k.nama}</p>
             <p><strong>Jenis:</strong> ${k.jenis}</p>
@@ -265,6 +275,86 @@
           infoDiv.classList.add('hidden');
         }
       });
+
+      // Submit form
+      function submitForm() {
+        const kegiatanId = document.getElementById('kegiatan_id').value;
+        const checkboxes = document.querySelectorAll('input[name="participant_ids[]"]:checked');
+
+        if (!kegiatanId) {
+          alert('{{ "Pilih kegiatan terlebih dahulu" if current_lang == "id" else "Please select an activity first" }}');
+          return;
+        }
+
+        if (checkboxes.length === 0) {
+          alert('{{ "Pilih minimal satu peserta" if current_lang == "id" else "Please select at least one participant" }}');
+          return;
+        }
+
+        // Get participant IDs - bisa dari biodata.id atau user.id
+        // Disable button
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>{{ "Memproses..." if current_lang == "id" else "Processing..." }}';
+
+        // Prepare participant IDs - jika tidak ada biodata, kirim user_id
+        const participantIds = [];
+        checkboxes.forEach(cb => {
+          const hasBiodata = cb.getAttribute('data-has-biodata') === 'true';
+          if (hasBiodata) {
+            // Jika ada biodata, gunakan participant_id
+            participantIds.push(parseInt(cb.value));
+          } else {
+            // Jika tidak ada biodata, gunakan user_id untuk dibuatkan biodata
+            const userId = parseInt(cb.getAttribute('data-user-id'));
+            if (userId && !isNaN(userId)) {
+              participantIds.push(userId);
+            }
+          }
+        });
+
+        if (participantIds.length === 0) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-solid fa-plus mr-2"></i>{{ "Tambah Peserta ke Kegiatan" if current_lang == "id" else "Add Participant to Activity" }}';
+          alert('{{ "Tidak ada peserta yang valid dipilih" if current_lang == "id" else "No valid participants selected" }}');
+          return;
+        }
+
+        // Send request
+        const requestData = {
+          kegiatan_id: parseInt(kegiatanId),
+          participant_ids: participantIds
+        };
+
+        fetch('/api/peserta/tambah-kegiatan-bulk', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert(data.message || '{{ "Peserta berhasil ditambahkan ke kegiatan" if current_lang == "id" else "Participants successfully added to activity" }}');
+            // Reset form
+            document.getElementById('formTambahPeserta').reset();
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.getElementById('infoKegiatan').classList.add('hidden');
+          } else {
+            alert(data.message || '{{ "Gagal menambahkan peserta" if current_lang == "id" else "Failed to add participants" }}');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('{{ "Terjadi kesalahan saat menambahkan peserta" if current_lang == "id" else "An error occurred while adding participants" }}');
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-solid fa-plus mr-2"></i>{{ "Tambah Peserta ke Kegiatan" if current_lang == "id" else "Add Participant to Activity" }}';
+        });
+      }
     </script>
   </body>
 </html>

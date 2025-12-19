@@ -121,6 +121,15 @@
                 <!-- 📂 Import / Export / Tambah -->
                 <div class="flex items-center gap-2">
                   <button
+                    onclick="openTambahPesertaKegiatan()"
+                    class="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition flex items-center cursor-pointer"
+                    title="{{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else 'Add Participant to Activity' }}"
+                  >
+                    <i class="fa-solid fa-user-plus mr-2"></i>
+                    {{ 'Tambah ke Kegiatan' if current_lang == 'id' else 'Add to
+                    Activity' }}
+                  </button>
+                  <button
                     class="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition flex items-center cursor-pointer"
                   >
                     <i class="fa-solid fa-file-import mr-2"></i>
@@ -132,14 +141,6 @@
                     <i class="fa-solid fa-file-export mr-2"></i>
                     Export
                   </button>
-                  <a
-                    href="{{ url_for('tambah_peserta_kegiatan') }}"
-                    class="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition flex items-center cursor-pointer"
-                  >
-                    <i class="fa-solid fa-user-plus mr-2"></i>
-                    {{ 'Tambah ke Kegiatan' if current_lang == 'id' else 'Add to
-                    Activity' }}
-                  </a>
                   <button
                     class="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition flex items-center cursor-pointer"
                   >
