@@ -287,6 +287,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     >
                         <i class="fa-solid fa-id-card"></i>
                     </button>
+                    <button 
+                        onclick="tambahPesertaKegiatan(${peserta.user_id}, ${
+        peserta.participant_id || "null"
+      })"
+                        class="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center cursor-pointer"
+                        aria-label="Tambah ke Kegiatan"
+                        title="Tambah ke Kegiatan"
+                    >
+                        <i class="fa-solid fa-calendar-plus"></i>
+                    </button>
                 </td>
             `;
 
@@ -453,6 +463,15 @@ document.addEventListener("DOMContentLoaded", function () {
   window.printKartuPeserta = function (userId) {
     // Open kartu peserta page in new window
     window.open(`/admin/peserta/kartu/${userId}`, "_blank");
+  };
+
+  // Tambah peserta ke kegiatan
+  window.tambahPesertaKegiatan = function (userId, participantId) {
+    // Redirect ke halaman tambah peserta ke kegiatan dengan user_id
+    const url = participantId
+      ? `/admin/peserta/tambah-kegiatan?user_id=${userId}&participant_id=${participantId}`
+      : `/admin/peserta/tambah-kegiatan?user_id=${userId}`;
+    window.location.href = url;
   };
 
   // Show peserta detail modal

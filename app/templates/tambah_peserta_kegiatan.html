@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>
+      {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else 'Add Participant to Activity' }} | SPK Pramuka
+    </title>
+
+    <!-- Tailwind CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/output.css') }}"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    />
+
+    <!-- Alpine.js -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <!-- Script Sidebar -->
+    {% include "script_sidebar.html" %}
+
+    <!-- Script Theme -->
+    {% include 'script_theme.html' %}
+  </head>
+  <body
+    x-data="{ ready: false }"
+    x-init="ready = true"
+    :class="{ 'dark': $store.theme?.isDark }"
+    x-bind:class="{
+        'bg-background-dark text-white': $store.theme?.isDark,
+        'bg-gray-100 text-black': !$store.theme?.isDark
+      }"
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+  >
+    <div
+      class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      <!-- Sidebar -->
+      {% include 'sidebar.html' %}
+
+      <!-- Main content -->
+      <div class="flex flex-col flex-1 overflow-hidden h-full">
+        <!-- Top Navbar -->
+        {% include 'header.html' %}
+
+        <!-- Page Content -->
+        <main
+          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[1%]'"
+        >
+          <section
+            class="flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+          >
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
+            <!-- Content -->
+            <div class="container mx-auto p-6">
+              <div class="mb-6">
+                <h1 class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
+                  <i class="fa-solid fa-user-plus mr-2"></i>
+                  {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else 'Add Participant to Activity' }}
+                </h1>
+                <p class="text-gray-500">
+                  {{ 'Pilih peserta dan kegiatan untuk menambahkan peserta ke seleksi kegiatan' if current_lang == 'id' else 'Select participant and activity to add participant to activity selection' }}
+                </p>
+              </div>
+
+              <!-- Form -->
+              <div class="bg-white shadow-md rounded-2xl p-6 {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-white' }}">
+                <form action="{{ url_for('tambah_peserta_kegiatan') }}" method="POST" id="formTambahPeserta">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% if selected_user_id %}
+                  <input type="hidden" name="user_id" value="{{ selected_user_id }}">
+                  {% endif %}
+                  
+                  <!-- Pilih Peserta -->
+                  <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                      <i class="fa-solid fa-user mr-2"></i>
+                      {{ 'Pilih Peserta' if current_lang == 'id' else 'Select Participant' }}
+                      <span class="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="participant_id"
+                      id="participant_id"
+                      required
+                      class="w-full px-4 py-3 rounded-xl border focus:ring-2 {{ 'bg-gray-800 text-white border-gray-700 focus:ring-blue-400' if current_theme == 'dark' else 'bg-gray-100 border-gray-300 text-black focus:ring-blue-500' }}"
+                    >
+                      <option value="">{{ '-- Pilih Peserta --' if current_lang == 'id' else '-- Select Participant --' }}</option>
+                      {% for participant in participants %}
+                        {% if participant.id %}
+                        <option value="{{ participant.id }}" {% if selected_user_id and participant.user_id == selected_user_id %}selected{% endif %}>
+                          {{ participant.nama }} 
+                          {% if participant.asal_gudep and participant.asal_gudep != '-' %}
+                            - {{ participant.asal_gudep }}
+                          {% endif %}
+                        </option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                    {% if selected_user_id %}
+                    <p class="text-sm text-blue-600 dark:text-blue-400 mt-2">
+                      <i class="fa-solid fa-info-circle mr-1"></i>
+                      Peserta telah dipilih sebelumnya
+                    </p>
+                    {% endif %}
+                  </div>
+
+                  <!-- Pilih Kegiatan -->
+                  <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}">
+                      <i class="fa-solid fa-calendar-check mr-2"></i>
+                      {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Activity' }}
+                      <span class="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="kegiatan_id"
+                      id="kegiatan_id"
+                      required
+                      class="w-full px-4 py-3 rounded-xl border focus:ring-2 {{ 'bg-gray-800 text-white border-gray-700 focus:ring-blue-400' if current_theme == 'dark' else 'bg-gray-100 border-gray-300 text-black focus:ring-blue-500' }}"
+                    >
+                      <option value="">{{ '-- Pilih Kegiatan --' if current_lang == 'id' else '-- Select Activity --' }}</option>
+                      {% for event in events %}
+                        <option value="{{ event.id_kegiatan }}">
+                          {{ event.nama_kegiatan }} 
+                          ({{ event.jenis_kegiatan }})
+                          {% if event.waktu_pelaksanaan_dimulai %}
+                            - {{ event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') }}
+                          {% endif %}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <!-- Info Peserta Terpilih -->
+                  <div id="infoPeserta" class="mb-6 hidden">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                      <h3 class="font-semibold mb-2 text-blue-800 dark:text-blue-300">
+                        <i class="fa-solid fa-info-circle mr-2"></i>
+                        {{ 'Informasi Peserta' if current_lang == 'id' else 'Participant Information' }}
+                      </h3>
+                      <div id="pesertaDetails" class="text-sm text-gray-700 dark:text-gray-300"></div>
+                    </div>
+                  </div>
+
+                  <!-- Info Kegiatan Terpilih -->
+                  <div id="infoKegiatan" class="mb-6 hidden">
+                    <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                      <h3 class="font-semibold mb-2 text-green-800 dark:text-green-300">
+                        <i class="fa-solid fa-calendar-alt mr-2"></i>
+                        {{ 'Informasi Kegiatan' if current_lang == 'id' else 'Activity Information' }}
+                      </h3>
+                      <div id="kegiatanDetails" class="text-sm text-gray-700 dark:text-gray-300"></div>
+                    </div>
+                  </div>
+
+                  <!-- Button -->
+                  <div class="flex gap-4">
+                    <button
+                      type="submit"
+                      class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg"
+                    >
+                      <i class="fa-solid fa-plus mr-2"></i>
+                      {{ 'Tambah Peserta ke Kegiatan' if current_lang == 'id' else 'Add Participant to Activity' }}
+                    </button>
+                    <a
+                      href="{{ url_for('admin_peserta') }}"
+                      class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg"
+                    >
+                      <i class="fa-solid fa-times mr-2"></i>
+                      {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+                    </a>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} 
+    {% include 'script_notification.html' %}
+
+    <script>
+      // Data peserta untuk ditampilkan di info
+      const pesertaData = {
+        {% for participant in participants %}
+        {% if participant.id %}
+        {{ participant.id }}: {
+          nama: "{{ participant.nama }}",
+          email: "{{ participant.email }}",
+          asal_gudep: "{{ participant.asal_gudep or '-' }}"
+        },
+        {% endif %}
+        {% endfor %}
+      };
+
+      // Data kegiatan untuk ditampilkan di info
+      const kegiatanData = {
+        {% for event in events %}
+        {{ event.id_kegiatan }}: {
+          nama: "{{ event.nama_kegiatan }}",
+          jenis: "{{ event.jenis_kegiatan }}",
+          tempat: "{{ event.tempat_pelaksanaan }}",
+          mulai: "{{ event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') if event.waktu_pelaksanaan_dimulai else '-' }}",
+          selesai: "{{ event.waktu_pelaksanaan_selesai.strftime('%d %B %Y') if event.waktu_pelaksanaan_selesai else '-' }}"
+        },
+        {% endfor %}
+      };
+
+      // Update info peserta
+      document.getElementById('participant_id').addEventListener('change', function() {
+        const participantId = this.value;
+        const infoDiv = document.getElementById('infoPeserta');
+        const detailsDiv = document.getElementById('pesertaDetails');
+        
+        if (participantId && pesertaData[participantId]) {
+          const p = pesertaData[participantId];
+          detailsDiv.innerHTML = `
+            <p><strong>Nama:</strong> ${p.nama}</p>
+            <p><strong>Email:</strong> ${p.email}</p>
+            <p><strong>Golongan:</strong> ${p.golongan}</p>
+            <p><strong>Tingkatan:</strong> ${p.tingkatan}</p>
+            <p><strong>Asal Gudep:</strong> ${p.asal_gudep}</p>
+          `;
+          infoDiv.classList.remove('hidden');
+        } else {
+          infoDiv.classList.add('hidden');
+        }
+      });
+
+      // Update info kegiatan
+      document.getElementById('kegiatan_id').addEventListener('change', function() {
+        const kegiatanId = this.value;
+        const infoDiv = document.getElementById('infoKegiatan');
+        const detailsDiv = document.getElementById('kegiatanDetails');
+        
+        if (kegiatanId && kegiatanData[kegiatanId]) {
+          const k = kegiatanData[kegiatanId];
+          detailsDiv.innerHTML = `
+            <p><strong>Nama Kegiatan:</strong> ${k.nama}</p>
+            <p><strong>Jenis:</strong> ${k.jenis}</p>
+            <p><strong>Tempat:</strong> ${k.tempat}</p>
+            <p><strong>Waktu:</strong> ${k.mulai} - ${k.selesai}</p>
+          `;
+          infoDiv.classList.remove('hidden');
+        } else {
+          infoDiv.classList.add('hidden');
+        }
+      });
+    </script>
+  </body>
+</html>

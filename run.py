@@ -3517,6 +3517,163 @@ def cetak_kartu_peserta(user_id):
         logging.error(f"Error in cetak_kartu_peserta: {e}")
         flash("Terjadi kesalahan saat memuat data peserta", "error")
         return redirect(url_for('admin_peserta'))
+
+# Route untuk tambah peserta ke kegiatan
+@app.route('/admin/peserta/tambah-kegiatan', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def tambah_peserta_kegiatan():
+    """Halaman untuk menambahkan peserta ke kegiatan"""
+    if request.method == 'POST':
+        try:
+            participant_id = request.form.get('participant_id', type=int)
+            user_id = request.form.get('user_id', type=int)
+            kegiatan_id = request.form.get('kegiatan_id', type=int)
+            
+            # Jika user_id diberikan, cari participant_id dari user_id
+            if user_id and not participant_id:
+                user = Users.query.get(user_id)
+                if user and user.level == 'peserta':
+                    biodata = Participants.query.filter_by(email=user.email).first()
+                    if biodata:
+                        participant_id = biodata.id
+                    else:
+                        flash("Data peserta tidak ditemukan", "error")
+                        return redirect(url_for('tambah_peserta_kegiatan'))
+                else:
+                    flash("User tidak valid", "error")
+                    return redirect(url_for('tambah_peserta_kegiatan'))
+            
+            if not participant_id or not kegiatan_id:
+                flash("Data tidak lengkap", "error")
+                return redirect(url_for('tambah_peserta_kegiatan'))
+            
+            # Cek apakah peserta sudah terdaftar di kegiatan ini
+            existing = db.session.query(tb_participant_kegiatan).filter_by(
+                participant_id=participant_id,
+                kegiatan_id=kegiatan_id
+            ).first()
+            
+            if existing:
+                flash("Peserta sudah terdaftar di kegiatan ini", "warning")
+                return redirect(url_for('tambah_peserta_kegiatan'))
+            
+            # Tambahkan peserta ke kegiatan
+            db.session.execute(
+                tb_participant_kegiatan.insert().values(
+                    participant_id=participant_id,
+                    kegiatan_id=kegiatan_id
+                )
+            )
+            db.session.commit()
+            
+            log_activity(current_user.id, f'Menambahkan peserta ke kegiatan: {kegiatan_id}')
+            flash("Peserta berhasil ditambahkan ke kegiatan", "success")
+            return redirect(url_for('admin_peserta'))
+            
+        except IntegrityError:
+            db.session.rollback()
+            flash("Peserta sudah terdaftar di kegiatan ini", "warning")
+            return redirect(url_for('tambah_peserta_kegiatan'))
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error in tambah_peserta_kegiatan: {e}")
+            flash("Terjadi kesalahan saat menambahkan peserta", "error")
+            return redirect(url_for('tambah_peserta_kegiatan'))
+    
+    # GET request - tampilkan form
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    # Get user_id dari query parameter jika ada
+    user_id_param = request.args.get('user_id', type=int)
+    
+    # Get all participants (gabungan dari Users dan Participants)
+    # Untuk dropdown, kita perlu data yang lebih lengkap
+    users_peserta = Users.query.filter_by(level='peserta').all()
+    participants_list = []
+    
+    for user in users_peserta:
+        biodata = Participants.query.filter_by(email=user.email).first()
+        if biodata:
+            participants_list.append({
+                'id': biodata.id,
+                'user_id': user.id,
+                'nama': biodata.nama_lengkap or user.nama_lengkap,
+                'email': user.email,
+                'asal_gudep': biodata.asal_gudep or '-'
+            })
+        else:
+            # Jika tidak ada biodata, buat biodata baru untuk peserta ini
+            # Atau skip jika tidak ada biodata (karena required untuk tb_participant_kegiatan)
+            # Untuk sekarang, kita skip peserta tanpa biodata
+            pass
+    
+    # Get all events
+    events = Event.query.all()
+    
+    return render_template(
+        'tambah_peserta_kegiatan.html',
+        sidebar_state=sidebar_state,
+        participants=participants_list,
+        events=events,
+        selected_user_id=user_id_param
+    )
+
+# API untuk tambah peserta ke kegiatan
+@app.route('/api/peserta/tambah-kegiatan', methods=['POST'])
+@login_required
+@admin_required
+def api_tambah_peserta_kegiatan():
+    """API untuk menambahkan peserta ke kegiatan"""
+    try:
+        data = request.get_json()
+        participant_id = data.get('participant_id')
+        user_id = data.get('user_id')
+        kegiatan_id = data.get('kegiatan_id')
+        
+        # Jika user_id diberikan, cari participant_id dari user_id
+        if user_id and not participant_id:
+            user = Users.query.get(user_id)
+            if user and user.level == 'peserta':
+                biodata = Participants.query.filter_by(email=user.email).first()
+                if biodata:
+                    participant_id = biodata.id
+                else:
+                    return jsonify({'success': False, 'message': 'Data peserta tidak ditemukan'}), 404
+            else:
+                return jsonify({'success': False, 'message': 'User tidak valid'}), 400
+        
+        if not participant_id or not kegiatan_id:
+            return jsonify({'success': False, 'message': 'Data tidak lengkap'}), 400
+        
+        # Cek apakah peserta sudah terdaftar di kegiatan ini
+        existing = db.session.query(tb_participant_kegiatan).filter_by(
+            participant_id=participant_id,
+            kegiatan_id=kegiatan_id
+        ).first()
+        
+        if existing:
+            return jsonify({'success': False, 'message': 'Peserta sudah terdaftar di kegiatan ini'}), 400
+        
+        # Tambahkan peserta ke kegiatan
+        db.session.execute(
+            tb_participant_kegiatan.insert().values(
+                participant_id=participant_id,
+                kegiatan_id=kegiatan_id
+            )
+        )
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Menambahkan peserta {participant_id} ke kegiatan {kegiatan_id}')
+        return jsonify({'success': True, 'message': 'Peserta berhasil ditambahkan ke kegiatan'})
+        
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': 'Peserta sudah terdaftar di kegiatan ini'}), 400
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_tambah_peserta_kegiatan: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
     
 @app.route('/admin/hasil_seleksi')
 @login_required
