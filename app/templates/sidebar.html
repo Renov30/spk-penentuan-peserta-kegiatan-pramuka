@@ -76,30 +76,6 @@
           </a>
         </li>
 
-        <!-- Notifikasi -->
-        <li>
-          <a
-            href="{{ url_for('peserta_notifikasi') }}"
-            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'peserta_notifikasi' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
-          >
-            <i
-              class="fas fa-bell w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
-            ></i>
-            <span
-              x-show="$store.sidebar.open"
-              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
-            >
-              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
-            </span>
-            <span
-              x-show="!$store.sidebar.open"
-              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
-            >
-              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
-            </span>
-          </a>
-        </li>
-
         <!-- Hasil Seleksi -->
         <li>
           <a
@@ -122,6 +98,30 @@
             >
               {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
               Results' }}
+            </span>
+          </a>
+        </li>
+
+        <!-- Notifikasi -->
+        <li>
+          <a
+            href="{{ url_for('peserta_notifikasi') }}"
+            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'peserta_notifikasi' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
+          >
+            <i
+              class="fas fa-bell w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
+            ></i>
+            <span
+              x-show="$store.sidebar.open"
+              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
+            >
+              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
+            </span>
+            <span
+              x-show="!$store.sidebar.open"
+              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
+            >
+              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
             </span>
           </a>
         </li>
@@ -259,12 +259,11 @@
         'User Management'), ('admin_manajemen_seleksi', 'fa-solid
         fa-calendar-days', 'Manajemen Seleksi', 'Selection Management'),
         ('admin_peserta', 'fas fa-user-check', 'Data Peserta', 'Participant
-        Data'), ('admin_notifikasi', 'fas fa-bell', 'Notifikasi',
-        'Notifications'), ('admin_hasil_seleksi', 'fa-solid
-        fa-square-poll-vertical', 'Hasil Seleksi', 'Selection Results'),
-        ('admin_log_aktivitas', 'fa-solid fa-chart-line', 'Log Aktivitas',
-        'Activity Log'), ('admin_settings', 'fas fa-cogs', 'Pengaturan',
-        'Settings') ] %}
+        Data'), ('admin_hasil_seleksi', 'fa-solid fa-square-poll-vertical',
+        'Hasil Seleksi', 'Selection Results'), ('admin_notifikasi', 'fas
+        fa-bell', 'Notifikasi', 'Notifications'), ('admin_log_aktivitas',
+        'fa-solid fa-chart-line', 'Log Aktivitas', 'Activity Log'),
+        ('admin_settings', 'fas fa-cogs', 'Pengaturan', 'Settings') ] %}
         <li>
           <a
             href="{{ url_for(menu[0]) }}"
