@@ -2429,6 +2429,11 @@ def api_list_peserta():
             # Cari data biodata dari tabel participants berdasarkan email
             biodata = Participants.query.filter_by(email=user.email).first()
             
+            # Get hasil seleksi (latest or highest score)
+            hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user.id).order_by(
+                HasilSeleksi.skor_akhir.desc()
+            ).first()
+            
             # Gabungkan data dari users dan participants
             peserta_item = {
                 'id': user.id,
@@ -2449,7 +2454,9 @@ def api_list_peserta():
                 'asal_gudep': biodata.asal_gudep if biodata else '',
                 'asal_kwarran': biodata.asal_kwarran if biodata else '',
                 'asal_kwarcab': biodata.asal_kwarcab if biodata else '',
-                'asal_kwarda': biodata.asal_kwarda if biodata else ''
+                'asal_kwarda': biodata.asal_kwarda if biodata else '',
+                'skor_akhir': hasil_seleksi.skor_akhir if hasil_seleksi else None,
+                'ranking': hasil_seleksi.ranking if hasil_seleksi else None
             }
             peserta_data.append(peserta_item)
         
@@ -2702,6 +2709,140 @@ def api_delete_peserta(user_id):
         db.session.rollback()
         logging.error(f"Error in api_delete_peserta: {e}")
         current_app.logger.exception('Error in api_delete_peserta:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Get Detail Peserta
+@app.route("/api/peserta/detail/<int:user_id>")
+@login_required
+@admin_required
+def api_detail_peserta(user_id):
+    """API untuk mendapatkan detail data peserta"""
+    try:
+        user = Users.query.get(user_id)
+        if not user or user.level != 'peserta':
+            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+        
+        # Cari data biodata dari tabel participants berdasarkan email
+        biodata = Participants.query.filter_by(email=user.email).first()
+        
+        # Get registered activities
+        registered_activities = []
+        if biodata:
+            activities = biodata.registered_activities.all()
+            for activity in activities:
+                # Get hasil seleksi if exists
+                hasil = HasilSeleksi.query.filter_by(
+                    id_users=user.id,
+                    event_id=activity.id_kegiatan
+                ).first()
+                
+                registered_activities.append({
+                    'id': activity.id_kegiatan,
+                    'nama': activity.nama_kegiatan,
+                    'jenis': activity.jenis_kegiatan,
+                    'skor': hasil.skor_akhir if hasil else None,
+                    'ranking': hasil.ranking if hasil else None
+                })
+        
+        # Gabungkan data dari users dan participants
+        peserta_data = {
+            'id': user.id,
+            'user_id': user.id,
+            'participant_id': biodata.id if biodata else None,
+            'username': user.username or '',
+            'nama_lengkap': biodata.nama_lengkap if biodata and biodata.nama_lengkap else (user.nama_lengkap or ''),
+            'email': user.email or '',
+            'jenis_kelamin': biodata.jenis_kelamin if biodata and biodata.jenis_kelamin else (user.jenis_kelamin or ''),
+            'usia': str(biodata.usia) if biodata and biodata.usia else (user.usia or '0'),
+            'nomor_hp': biodata.nomor_hp if biodata and biodata.nomor_hp else (user.nomor_hp or ''),
+            'foto': user.foto if user.foto and user.foto != 'img/default-user.png' else (biodata.foto if biodata and biodata.foto else 'img/default-user.png'),
+            'status': user.status or 'aktif',
+            'golongan': biodata.golongan if biodata else '',
+            'tingkatan': biodata.tingkatan if biodata else '',
+            'tanggal_lahir': biodata.tanggal_lahir.strftime('%Y-%m-%d') if biodata and biodata.tanggal_lahir else '',
+            'alamat_tinggal': biodata.alamat_tinggal if biodata else '',
+            'asal_gudep': biodata.asal_gudep if biodata else '',
+            'asal_kwarran': biodata.asal_kwarran if biodata else '',
+            'asal_kwarcab': biodata.asal_kwarcab if biodata else '',
+            'asal_kwarda': biodata.asal_kwarda if biodata else '',
+            'registered_activities': registered_activities
+        }
+        
+        return jsonify({'success': True, 'peserta': peserta_data})
+    except Exception as e:
+        logging.error(f"Error in api_detail_peserta: {e}")
+        current_app.logger.exception('Error in api_detail_peserta:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Get Statistics Peserta
+@app.route("/api/peserta/statistics")
+@login_required
+@admin_required
+def api_peserta_statistics():
+    """API untuk mendapatkan statistik peserta untuk chart"""
+    try:
+        # Count by status
+        total = Users.query.filter_by(level='peserta').count()
+        aktif = Users.query.filter_by(level='peserta', status='aktif').count()
+        nonaktif = Users.query.filter_by(level='peserta', status='non-aktif').count()
+        
+        # Count by gender (from Users table first, then Participants)
+        laki_laki = Users.query.filter_by(level='peserta', jenis_kelamin='laki-laki').count()
+        perempuan = Users.query.filter_by(level='peserta', jenis_kelamin='perempuan').count()
+        
+        # Also count from Participants table
+        peserta_laki = Participants.query.filter_by(jenis_kelamin='laki-laki').join(
+            Users, Participants.email == Users.email
+        ).filter(Users.level == 'peserta').count()
+        
+        peserta_perempuan = Participants.query.filter_by(jenis_kelamin='perempuan').join(
+            Users, Participants.email == Users.email
+        ).filter(Users.level == 'peserta').count()
+        
+        # Combine counts
+        laki_laki = max(laki_laki, peserta_laki)
+        perempuan = max(perempuan, peserta_perempuan)
+        
+        # Count by golongan
+        golongan_stats = db.session.query(
+            Participants.golongan,
+            db.func.count(Participants.id).label('count')
+        ).join(
+            Users, Participants.email == Users.email
+        ).filter(
+            Users.level == 'peserta'
+        ).group_by(Participants.golongan).all()
+        
+        golongan_data = {golongan: count for golongan, count in golongan_stats if golongan}
+        
+        # Get average scores
+        avg_score = db.session.query(
+            db.func.avg(HasilSeleksi.skor_akhir)
+        ).join(
+            Users, HasilSeleksi.id_users == Users.id
+        ).filter(
+            Users.level == 'peserta'
+        ).scalar() or 0
+        
+        return jsonify({
+            'success': True,
+            'statistics': {
+                'status': {
+                    'total': total,
+                    'aktif': aktif,
+                    'nonaktif': nonaktif
+                },
+                'gender': {
+                    'laki_laki': laki_laki,
+                    'perempuan': perempuan
+                },
+                'golongan': golongan_data,
+                'average_score': float(avg_score)
+            }
+        })
+    except Exception as e:
+        logging.error(f"Error in api_peserta_statistics: {e}")
+        current_app.logger.exception('Error in api_peserta_statistics:')
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # Tambah Kegiatan
@@ -3260,8 +3401,26 @@ def hapus_arsip(arsip_id):
 @admin_required
 def admin_peserta():
     sidebar_state = current_user.sidebar_state or 'expanded'
-    users = Users.query.count()
-    return render_template('data_peserta.html', sidebar_state=sidebar_state, user=users, time=time)
+    
+    # Get statistics
+    total_peserta = Users.query.filter_by(level='peserta').count()
+    
+    # Count by status
+    peserta_aktif = Users.query.filter_by(level='peserta', status='aktif').count()
+    peserta_nonaktif = Users.query.filter_by(level='peserta', status='non-aktif').count()
+    
+    # Get all events for filter
+    events = Event.query.all()
+    
+    return render_template(
+        'data_peserta.html', 
+        sidebar_state=sidebar_state, 
+        total_peserta=total_peserta,
+        peserta_aktif=peserta_aktif,
+        peserta_nonaktif=peserta_nonaktif,
+        events=events,
+        time=time
+    )
     
 @app.route('/admin/hasil_seleksi')
 @login_required
