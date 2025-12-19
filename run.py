@@ -102,6 +102,85 @@ limiter = Limiter(get_remote_address, app=app)
 logging.basicConfig(filename='login.log', level=logging.INFO,
                     format='%(asctime)s %(levelname)s:%(message)s')
 
+# Helper function untuk membuat notifikasi
+def create_notification(user_id, message):
+    """
+    Membuat notifikasi untuk user tertentu
+    
+    Args:
+        user_id: ID user yang akan menerima notifikasi
+        message: Pesan notifikasi (maks 255 karakter)
+    
+    Returns:
+        Notification object atau None jika gagal
+    """
+    try:
+        # Validasi user_id
+        if not user_id:
+            logging.error("create_notification: user_id is None or empty")
+            return None
+        
+        # Validasi message
+        if not message or not message.strip():
+            logging.error("create_notification: message is None or empty")
+            return None
+        
+        # Potong message jika terlalu panjang
+        if len(message) > 255:
+            message = message[:252] + "..."
+        
+        notification = Notification(
+            user_id=user_id,
+            message=message.strip(),
+            is_read=False
+        )
+        db.session.add(notification)
+        db.session.flush()  # Flush untuk memastikan ID tersedia
+        db.session.commit()
+        logging.info(f"Notification created successfully for user_id: {user_id}, message: {message[:50]}...")
+        return notification
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error creating notification for user_id {user_id}: {e}")
+        if hasattr(current_app, 'logger'):
+            current_app.logger.exception('Error in create_notification:')
+        return None
+
+# Helper function untuk membuat notifikasi ke semua admin
+def create_notification_to_all_admins(message):
+    """
+    Membuat notifikasi untuk semua admin
+    
+    Args:
+        message: Pesan notifikasi
+    """
+    try:
+        if not message or not message.strip():
+            logging.error("create_notification_to_all_admins: message is None or empty")
+            return
+        
+        admins = Users.query.filter_by(level='admin').all()
+        if not admins:
+            logging.warning("No admin users found to send notification to")
+            return
+        
+        logging.info(f"[NOTIFICATION] Creating notifications for {len(admins)} admin(s): {message[:50]}...")
+        success_count = 0
+        for admin in admins:
+            logging.info(f"[NOTIFICATION] Sending to admin: {admin.username} (ID: {admin.id}, Email: {admin.email})")
+            result = create_notification(admin.id, message)
+            if result:
+                success_count += 1
+                logging.info(f"[NOTIFICATION] ✓ Notification sent to admin: {admin.username} (ID: {admin.id})")
+            else:
+                logging.warning(f"[NOTIFICATION] ✗ Failed to send notification to admin: {admin.username} (ID: {admin.id})")
+        
+        logging.info(f"[NOTIFICATION] Summary: Successfully created {success_count}/{len(admins)} notifications")
+    except Exception as e:
+        logging.error(f"Error creating notification to admins: {e}")
+        if hasattr(current_app, 'logger'):
+            current_app.logger.exception('Error in create_notification_to_all_admins:')
+
 # Inisialisasi Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -1189,6 +1268,13 @@ def admin_add_user():
                 )
                 db.session.add(new_user)
                 db.session.commit()
+                
+                # Buat notifikasi untuk admin jika user yang dibuat adalah peserta
+                if level == 'peserta':
+                    create_notification_to_all_admins(
+                        f"Peserta baru terdaftar: {nama_lengkap} ({email})"
+                    )
+                
                 flash("Akun berhasil dibuat!", "success")
                 return redirect(url_for('admin_users'))
             except Exception as e:
@@ -2022,6 +2108,24 @@ def save_config():
                 )
                 db.session.add(crit)
         db.session.commit()
+        
+        # Buat notifikasi untuk admin setelah commit berhasil
+        if created_events:
+            for event in created_events:
+                notification_message = f"Kegiatan baru dibuat: {event.nama_kegiatan} ({event.jenis_kegiatan})"
+                logging.info(f"[NOTIFICATION] Attempting to create notification: {notification_message}")
+                
+                try:
+                    create_notification_to_all_admins(notification_message)
+                    logging.info(f"[NOTIFICATION] Successfully created notifications for event: {event.nama_kegiatan}")
+                except Exception as e:
+                    # Log error tapi jangan gagalkan proses utama
+                    logging.error(f"[NOTIFICATION] Failed to create notification for new event '{event.nama_kegiatan}': {e}")
+                    import traceback
+                    logging.error(f"[NOTIFICATION] Traceback: {traceback.format_exc()}")
+                    if hasattr(current_app, 'logger'):
+                        current_app.logger.exception('Error creating notification for new event:')
+        
         return jsonify({'status': 'success', 'message': 'Konfigurasi berhasil disimpan'}), 200
     except Exception as e:
         db.session.rollback()
@@ -2936,6 +3040,21 @@ def tambah_seleksi():
             
         db.session.add(new_event)
         db.session.commit()
+        
+        # Buat notifikasi untuk admin setelah commit berhasil
+        notification_message = f"Kegiatan baru dibuat: {nama} ({jenis})"
+        logging.info(f"[NOTIFICATION] Attempting to create notification: {notification_message}")
+        
+        try:
+            create_notification_to_all_admins(notification_message)
+            logging.info(f"[NOTIFICATION] Successfully created notifications for event: {nama}")
+        except Exception as e:
+            # Log error tapi jangan gagalkan proses utama
+            logging.error(f"[NOTIFICATION] Failed to create notification for new event '{nama}': {e}")
+            import traceback
+            logging.error(f"[NOTIFICATION] Traceback: {traceback.format_exc()}")
+            if hasattr(current_app, 'logger'):
+                current_app.logger.exception('Error creating notification for new event:')
 
         flash('Kegiatan berhasil ditambahkan!', 'success')
         return redirect(url_for('admin_manajemen_seleksi'))
@@ -3763,6 +3882,12 @@ def api_tambah_peserta_kegiatan_bulk():
         
         log_activity(current_user.id, f'Menambahkan {added_count} peserta ke kegiatan {event.nama_kegiatan}')
         
+        # Buat notifikasi untuk admin
+        if added_count > 0:
+            create_notification_to_all_admins(
+                f"{added_count} peserta ditambahkan ke kegiatan: {event.nama_kegiatan}"
+            )
+        
         message = f'Berhasil menambahkan {added_count} peserta'
         if skipped_count > 0:
             message += f', {skipped_count} peserta sudah terdaftar'
@@ -3807,6 +3932,11 @@ def admin_hasil_seleksi():
             success, msg = calculate_spk(selected_event_id)
             if not success:
                 logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            else:
+                # Buat notifikasi untuk admin saat hasil seleksi selesai
+                create_notification_to_all_admins(
+                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
+                )
             
             # Fetch results for this event only
             hasil_seleksi = db.session.query(
@@ -3848,9 +3978,97 @@ def admin_hasil_seleksi():
 @login_required
 @admin_required
 def admin_notifikasi():
+    # Get notifications for admin user
+    notifications = Notification.query.filter_by(
+        user_id=current_user.id
+    ).order_by(
+        Notification.id.desc()
+    ).all()
+    
+    # Count unread notifications
+    unread_count = Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False
+    ).count()
+    
+    # Debug logging
+    logging.info(f"Admin notifications page - User ID: {current_user.id}, Total notifications: {len(notifications)}, Unread: {unread_count}")
+    
     sidebar_state = current_user.sidebar_state or 'expanded'
-    users = Users.query.count()
-    return render_template('notifikasi.html', sidebar_state=sidebar_state, user=users, time=time)
+    return render_template(
+        'notifikasi.html',
+        notifications=notifications,
+        unread_count=unread_count,
+        sidebar_state=sidebar_state
+    )
+
+# API Mark Notification as Read
+@app.route('/api/notifikasi/mark-read/<int:notification_id>', methods=['POST'])
+@login_required
+@admin_required
+def api_mark_notification_read(notification_id):
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not notification:
+            return jsonify({'success': False, 'message': 'Notifikasi tidak ditemukan'}), 404
+        
+        notification.is_read = True
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Notifikasi ditandai sebagai dibaca'})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_mark_notification_read: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Mark All Notifications as Read
+@app.route('/api/notifikasi/mark-all-read', methods=['POST'])
+@login_required
+@admin_required
+def api_mark_all_notifications_read():
+    try:
+        updated = Notification.query.filter_by(
+            user_id=current_user.id,
+            is_read=False
+        ).update({'is_read': True})
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{updated} notifikasi ditandai sebagai dibaca'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_mark_all_notifications_read: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Delete Notification
+@app.route('/api/notifikasi/delete/<int:notification_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def api_delete_notification(notification_id):
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not notification:
+            return jsonify({'success': False, 'message': 'Notifikasi tidak ditemukan'}), 404
+        
+        db.session.delete(notification)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Notifikasi berhasil dihapus'})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_delete_notification: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
     
 @app.route('/admin/log_aktivitas')
 @login_required
@@ -4211,6 +4429,11 @@ def penilai_hasil_penilaian():
             success, msg = calculate_spk(selected_event_id)
             if not success:
                 logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            else:
+                # Buat notifikasi untuk admin saat hasil seleksi selesai
+                create_notification_to_all_admins(
+                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
+                )
             
             # Fetch results for this event only
             hasil_seleksi = db.session.query(
@@ -4374,6 +4597,11 @@ def admin_hasil_penilaian():
             success, msg = calculate_spk(selected_event_id)
             if not success:
                 logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            else:
+                # Buat notifikasi untuk admin saat hasil seleksi selesai
+                create_notification_to_all_admins(
+                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
+                )
             
             # Fetch results for this event only
             hasil_seleksi = db.session.query(
@@ -5084,6 +5312,11 @@ def api_daftar_seleksi():
         log_activity(
             current_user.id,
             f'Mendaftar ke seleksi kegiatan: {kegiatan.nama_kegiatan}'
+        )
+        
+        # Buat notifikasi untuk admin
+        create_notification_to_all_admins(
+            f"Peserta {biodata.nama_lengkap or current_user.nama_lengkap} mendaftar ke seleksi: {kegiatan.nama_kegiatan}"
         )
         
         return jsonify({
