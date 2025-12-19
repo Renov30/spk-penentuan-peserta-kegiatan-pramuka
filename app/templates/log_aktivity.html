@@ -91,7 +91,7 @@
                       type="date"
                       name="date"
                       value="{{ date_filter }}"
-                      class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 {{ 'bg-white text-gray-900' if current_theme == 'dark' else 'bg-white text-gray-900' }}"
+                      class="w-full rounded-lg focus:ring-2 focus:ring-blue-500 {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }}"
                     />
                   </div>
 
@@ -102,7 +102,7 @@
                     >
                     <select
                       name="role"
-                      class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 {{ 'bg-white text-gray-900' if current_theme == 'dark' else 'bg-white text-gray-900' }}"
+                      class="w-full rounded-lg focus:ring-2 focus:ring-blue-500 {{ 'border-gray-600 bg-gray-700 text-white' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900' }}"
                     >
                       <option value="" {{ 'selected' if not role_filter else '' }}>
                         {{ 'Semua' if current_lang == 'id' else 'All' }}
@@ -128,7 +128,7 @@
                       name="search"
                       value="{{ search }}"
                       placeholder="{{ 'Ketik nama pengguna...' if current_lang == 'id' else 'Type username...' }}"
-                      class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 {{ 'bg-white text-gray-900' if current_theme == 'dark' else 'bg-white text-gray-900' }}"
+                      class="w-full rounded-lg focus:ring-2 focus:ring-blue-500 {{ 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' if current_theme == 'dark' else 'border-gray-300 bg-white text-gray-900 placeholder-gray-500' }}"
                     />
                   </div>
 
@@ -152,10 +152,10 @@
                 <div class="overflow-x-auto">
                   <table class="w-full text-sm text-left">
                     <thead
-                      class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                      class="{{ 'bg-gray-700 text-gray-200' if current_theme == 'dark' else 'bg-gray-50 text-gray-700' }}"
                     >
                       <tr>
-                        <th class="px-4 py-3">User</th>
+                        <th class="px-4 py-3 rounded-tl-xl">User</th>
                         <th class="px-4 py-3">Role</th>
                         <th class="px-4 py-3">
                           {{ 'Aktivitas' if current_lang == 'id' else 'Activity'
@@ -166,17 +166,17 @@
                           {{ 'Tanggal & Waktu' if current_lang == 'id' else
                           'Date & Time' }}
                         </th>
-                        <th class="px-4 py-3 text-center">
+                        <th class="px-4 py-3 text-center rounded-tr-xl">
                           {{ 'Aksi' if current_lang == 'id' else 'Action' }}
                         </th>
                       </tr>
                     </thead>
                     <tbody
-                      class="divide-y divide-gray-200 dark:divide-gray-600 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
+                      class="divide-y {{ 'divide-gray-600' if current_theme == 'dark' else 'divide-gray-200' }} {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
                     >
                       {% if logs %}
                         {% for log in logs %}
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                        <tr class="transition {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-100' }}">
                           <td class="px-4 py-3 font-medium">
                             {{ log.user.nama_lengkap or log.user.username }}
                           </td>
