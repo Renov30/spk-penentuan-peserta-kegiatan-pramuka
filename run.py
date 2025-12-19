@@ -755,7 +755,7 @@ def index():
         .limit(3)
         .all()
     ) 
-    return render_template('index.html', username=username, profile_picture=profile_picture, notification_count=notification_count, user_data=user_data, first_time_login=first_time, debug_theme=session.get("theme"), latest_news=latest_news)
+    return render_template('index.html', username=username, profile_picture=profile_picture, notification_count=notification_count, user_data=user_data, first_time_login=first_time, debug_theme=session.get("theme"), latest_news=latest_news, TRANSLATIONS=TRANSLATIONS)
 
 @app.route("/clear-first-login-flag", methods=["POST"])
 @csrf.exempt
@@ -2835,7 +2835,7 @@ def admin_create_news():
     
     # Validasi dasar
     if not title or not content or not status:
-        flash(t['all_fields_required'], 'error')
+        flash(t['all_fields_required_news'], 'error')
         return redirect(url_for('admin_manajemen_berita'))
     
     base_slug = slugify(title)

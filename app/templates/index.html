@@ -902,8 +902,22 @@
     {% include 'script_animation.html' %}
 
     <script>
-      console.log("first_time_login: {{ first_time_login }}");
       document.addEventListener("DOMContentLoaded", function () {
+        // === Set Bahasa ===
+        const TRANSLATIONS = {{ TRANSLATIONS|default({})|tojson }};
+        const CURRENT_LANG = "{{ current_lang|default('id') }}";
+
+        function t(key, params = {}) {
+          let msg = TRANSLATIONS[CURRENT_LANG]?.[key] || key;
+
+          // Ganti placeholder dinamis, misal {username}, {error}
+          Object.keys(params).forEach(k => {
+            msg = msg.replaceAll(`{${k}}`, params[k]);
+          });
+
+          return msg;
+        }
+
         // === Smooth Scroll ===
         $('a[href^="#"]').on("click", function (e) {
           e.preventDefault();
@@ -1004,7 +1018,7 @@
 
             if (!emailRegex.test(email)) {
               e.preventDefault();
-              showError("Email tidak valid!");
+              showError(t("invalid_email_format"));
               return;
             }
 
@@ -1014,24 +1028,20 @@
 
             if (!hpRegex.test(nomor_hp)) {
               e.preventDefault();
-              showError(
-                "Nomor HP harus dimulai dengan 08 atau +628, panjang 10-13 digit!"
-              );
+              showError(t("invalid_phone_format"));
               return;
             }
 
             const prefix = nomor_hp.substring(0, 4);
             if (!validPrefixes.includes(prefix)) {
               e.preventDefault();
-              showError(
-                "Prefix nomor HP tidak dikenal. Periksa kembali nomor Anda."
-              );
+              showError(t("invalid_phone_prefix"));
               return;
             }
 
             if (/^(0+|08[0-9]{7}1234|08[0-9]{9}000)$/.test(nomor_hp)) {
               e.preventDefault();
-              showError("Nomor HP tampaknya tidak valid!");
+              showError(t("invalid_phone_number"));
               return;
             }
 

@@ -14,7 +14,7 @@ TRANSLATIONS = {
         'news_deleted': 'Berita berhasil dihapus!',
         'news_added': 'Berita berhasil ditambahkan!',
         'news_updated': 'Berita berhasil diperbarui!',
-        'all_fields_required': 'Semua field wajib diisi!',
+        'all_fields_required_news': 'Semua field wajib diisi!',
         
         # === LOGIN MANUAL ===
         'username_invalid': 'Username salah!',
@@ -47,10 +47,8 @@ TRANSLATIONS = {
         'user_data_not_found': 'Data user tidak ditemukan. Silakan login ulang.',
         'email_already_used': 'Email sudah digunakan. Silakan login.',
         'username_already_used': 'Username sudah digunakan.',
-        'register_failed': 'Terjadi kesalahan saat registrasi. Coba lagi.',
         'register_success': 'Registrasi berhasil! Anda sudah login untuk pertama kali.',
         'google_register_failed': 'Gagal melakukan registrasi dengan Google. Silakan coba lagi.',
-        'email_already_used': 'Email sudah digunakan. Silakan login.',
         'register_google_success': (
             'Registrasi berhasil! Selamat datang pengguna baru. '
             'Anda sekarang login untuk pertama kali.'
@@ -147,6 +145,13 @@ TRANSLATIONS = {
         'cannot_cancel_after_event_ended': 'Tidak dapat membatalkan pendaftaran karena seleksi sudah selesai',
         'cancel_registration_event': 'Membatalkan pendaftaran seleksi kegiatan',
         'cancel_registration_success': 'Berhasil membatalkan pendaftaran ke seleksi kegiatan',
+        
+        # === Javascript Message ===
+        'invalid_email_format': 'Alamat email tidak valid.',
+        'invalid_phone_format': 'Format nomor HP tidak valid. Gunakan nomor Indonesia.',
+        'invalid_phone_prefix': 'Prefix nomor HP tidak dikenal. Periksa kembali nomor Anda.',
+        'invalid_phone_number': 'Nomor HP tampaknya tidak valid!',
+        'sending': 'Mengirim...',
     },
     'en': {
         'logged_out': 'You have been logged out.',
@@ -163,7 +168,7 @@ TRANSLATIONS = {
         'news_deleted': 'News deleted successfully!',
         'news_added': 'News added successfully!',
         'news_updated': 'News updated successfully!',
-        'all_fields_required': 'All fields are required!',
+        'all_fields_required_news': 'All fields are required!',
         
         # === LOGIN MANUAL ===
         'username_invalid': 'Invalid username!',
@@ -196,10 +201,8 @@ TRANSLATIONS = {
         'user_data_not_found': 'User data not found. Please login again.',
         'email_already_used': 'Email is already used. Please login.',
         'username_already_used': 'Username is already taken.',
-        'register_failed': 'An error occurred during registration. Please try again.',
         'register_success': 'Registration successful! You are now logged in for the first time.',
         'google_register_failed': 'Failed to register with Google. Please try again.',
-        'email_already_used': 'Email is already used. Please login.',
         'register_google_success': (
             'Registration successful! Welcome, new user. '
             'You are now logged in for the first time.'
@@ -296,5 +299,12 @@ TRANSLATIONS = {
         'cannot_cancel_after_event_ended': 'Cannot cancel registration because the event has ended',
         'cancel_registration_event': 'Canceled registration for event',
         'cancel_registration_success': 'Successfully canceled registration for event',
+        
+        # === Javascript Message ===
+        'invalid_email_format': 'Invalid email address format.',
+        'invalid_phone_format': 'Invalid phone number format. Use Indonesian numbers.',
+        'invalid_phone_prefix': 'Phone number prefix is not recognized. Please check your number.',
+        'invalid_phone_number': 'Phone number seems invalid!',
+        'sending': 'Sending...',
     }
 }
