@@ -21,6 +21,7 @@ from app.utils.utils import log_activity
 from sqlalchemy.exc import IntegrityError
 from slugify import slugify
 import io
+from app.translations import TRANSLATIONS
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 import random, string
@@ -204,6 +205,9 @@ def my_decorator(f):
 @app.route('/login/', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def login():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
@@ -214,17 +218,17 @@ def login():
 
         if not user:
             logging.warning(f"Login gagal: username '{username}' tidak ditemukan.")
-            flash("Username salah!", "danger")
+            flash(t['username_invalid'], 'danger')
         elif not check_password_hash(user.password, password):
             logging.warning(f"Login gagal: password salah untuk user '{username}'.")
-            flash("Password salah!", "danger")
+            flash(t['password_invalid'], 'danger')
         else:
             login_user(user)
             session['username'] = username  
             session['role'] = user.level
             safe_username = escape(username)
             logging.info(f"User '{username}' berhasil login sebagai {user.level}.")
-            flash(f"Login berhasil! Selamat datang, {safe_username}.", "success")
+            flash(f"{t['login_success']}, {safe_username}.", 'success')
             session['first_time_login'] = True
             
             # Redirect sesuai role
@@ -249,6 +253,9 @@ def login_google():
 # Endpoint Callback Login With Google
 @app.route('/login/google/callback/')
 def login_google_callback():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     try:
         token = google.authorize_access_token()
         resp = google.get('userinfo')  
@@ -256,7 +263,7 @@ def login_google_callback():
         user_info = resp.json()
     except Exception as e:
         logging.warning(f"Login Google gagal: {e}") 
-        flash("Gagal login dengan Google. Silakan coba lagi.", "danger")
+        flash(f"{t['google_login_failed']}", "danger")
         return redirect(url_for('login'))
     
     # Proses lanjut jika data user berhasil diambil
@@ -265,12 +272,12 @@ def login_google_callback():
     picture = user_info.get('picture') or "img/default-user.png"
     
     if not email:
-        flash("Email dari akun Google tidak ditemukan.", "danger")
+        flash(f"{t['google_email_not_found']}", "danger")
         return redirect(url_for('login'))
     
     # ✅ Validasi hanya email Gmail
     if not email.endswith('@gmail.com'):
-        flash("Login hanya diizinkan dengan akun Gmail.", "danger")
+        flash(f"{t['google_only_gmail']}", "danger")
         return redirect(url_for('login'))
     
     user = Users.query.filter_by(email=email).first()
@@ -295,7 +302,7 @@ def login_google_callback():
         session.modified = True 
         print("✅ Session set:", session.get('user'))
         logging.info(f"User '{user.username}' berhasil login via Google.")
-        flash(f"Login berhasil! Selamat datang, {escape(user.nama_lengkap)}.", "success")
+        flash(f"{t['login_success']}, {escape(user.nama_lengkap)}.", "success")
         
         # Redirect sesuai role
         if user.level == "admin":
@@ -316,9 +323,12 @@ def login_google_callback():
 # Endpoint Fisrt Confirm Register With Google
 @app.route('/confirm-register/')
 def confirm_register():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     user_info = session.get('pending_user')
     if not user_info:
-        flash("Data user tidak ditemukan. Silakan login ulang.", "danger")
+        flash(f"{t['user_data_not_found']}", "danger")
         return redirect(url_for('login'))
     form = RegisterForm()
     return render_template("confirm_register.html", user=user_info, form=form)
@@ -326,9 +336,12 @@ def confirm_register():
 # Endpoint Confirm Register With Google
 @app.route('/confirm-register', methods=['POST'])
 def do_register():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     user_info = session.get('pending_user')
     if not user_info:
-        flash("Data user tidak ditemukan. Silakan login ulang.", "danger")
+        flash(f"{t['user_data_not_found']}", "danger")
         return redirect(url_for('login'))
     
     form = RegisterForm()
@@ -340,10 +353,10 @@ def do_register():
         
     # Validasi apakah username atau email sudah digunakan
         if Users.query.filter_by(email=email).first():
-            flash("Email sudah digunakan. Silakan login.", "warning")
+            flash(f"{t['email_already_used']}", "warning")
             return redirect(url_for('login'))
         if Users.query.filter_by(username=username).first():
-            flash("Username sudah digunakan.", "warning")
+            flash(f"{t['username_already_used']}", "warning")
             return redirect(url_for('confirm_register'))
     
         # Simpan ke database
@@ -368,7 +381,7 @@ def do_register():
         except Exception as e:
             db.session.rollback()
             logging.error(f"Gagal menyimpan user Google baru: {e}")
-            flash("Terjadi kesalahan saat registrasi. Coba lagi.", "danger")
+            flash(f"{t['register_failed']}", "danger")
             return redirect(url_for('confirm_register'))
 
         # Set session
@@ -382,7 +395,7 @@ def do_register():
         }
         print("Session setelah login Google:", dict(session))
         logging.info(f"User baru '{username}' berhasil registrasi dan login via Google.")
-        flash("Registrasi berhasil! Anda sudah login untuk pertama kali.", "welcome")
+        flash(f"{t['register_success']}", "welcome")
         session['username'] = new_user.username
         session['first_time_login'] = True
         return redirect(url_for('index'))
@@ -391,6 +404,9 @@ def do_register():
 # Endpoint register
 @app.route('/register/', methods=['GET', 'POST'])
 def register():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if request.method == 'POST':
         full_name = request.form.get('fullName', '').strip()
         email = request.form.get('email', '').strip().lower()
@@ -401,18 +417,18 @@ def register():
         
         # Apakah ada kolom yang kosong?
         if not all([full_name, email, username, password, confirm_password]):
-            flash("Semua kolom wajib diisi.", "danger")
+            flash(f"{t['all_fields_required']}", "danger")
             return redirect(url_for('register'))
         
         # Validasi password dengan regex
         password_pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
         if not re.match(password_pattern, password):
-            flash("Password must have at least 8 characters, including uppercase, lowercase, number, and special character.", "danger")
+            flash(f"{t['password_invalid']}", "danger")
             return redirect(url_for('register'))
         
         # Validasi apakah password dan confirmPassword cocok
         if password != confirm_password:
-            flash("Password and Confirm Password must match!", "danger")
+            flash(f"{t['password_not_match']}")
             return redirect(url_for('register'))
         
         # Cek keberadaan username dan email di database
@@ -447,19 +463,19 @@ def register():
                 )
                 db.session.add(new_user)
                 db.session.commit()
-                flash("Registrasi berhasil! Selamat datang di sistem kami. Silakan login untuk mulai menggunakan fitur.", "welcome")
+                flash(f"{t['register_success_manual']}", "welcome")
                 return redirect(url_for('login'))
             except IntegrityError as e:
                 db.session.rollback()
                 logging.error(f"Error during registration: {e}")
-                flash("An error occurred during registration, Please try again.", "danger")
+                flash(f"{t['register_failed']}", "danger")
                 print(e)
         elif user_exists and email_exists:
-            flash("Username dan email Anda telah terdaftar.", "danger")
+            flash(f"{t['username_email_exists']}", "danger")
         elif user_exists:
-            flash("Username Anda telah terdaftar.", "danger")
+            flash(f"{t['username_exists']}", "danger")
         elif email_exists:
-            flash("Email Anda telah terdaftar.", "danger")
+            flash(f"{t['email_exists']}", "danger")
         return redirect(url_for('register'))
     return render_template('register.html')
 
@@ -472,6 +488,9 @@ def register_google():
 # Endpoint Callback Register With Google
 @app.route('/register/google/callback/')
 def register_google_callback():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     try:
         token = google.authorize_access_token()
         resp = google.get('userinfo')
@@ -479,11 +498,16 @@ def register_google_callback():
         user_info = resp.json()
     except Exception as e:
         print(f"Google registrasi error: {e}") 
-        flash("Gagal melakukan registrasi dengan Google. Silakan coba lagi.", "danger")
+        flash(f"{t['google_register_failed']}", "danger")
         return redirect(url_for('register'))
     
     email = user_info['email']
     username = generate_username(email)
+    
+    # Cek email sudah digunakan
+    if Users.query.filter_by(email=email).first():
+        flash(f"{t['email_already_used']}", "warning")
+        return redirect(url_for('login'))
     
     # Simpan ke database
     new_user = Users(
@@ -501,9 +525,7 @@ def register_google_callback():
             sidebar_state="expanded",
             status='aktif'
     )
-    if Users.query.filter_by(email=email).first():
-        flash("Email sudah digunakan. Silakan login.", "warning")
-        return redirect(url_for('login'))
+    
     db.session.add(new_user)
     db.session.commit()
     
@@ -518,19 +540,22 @@ def register_google_callback():
         'foto': new_user.foto,
         'level': new_user.level
     }
-    flash("Registrasi berhasil! Selamat datang pengguna baru. Anda sekarang login untuk pertama kali.", "welcome")
+    flash(f"{t['register_google_success']}", "welcome")
     return redirect(url_for('admin_dashboard'))
 
 # Endpoint Find Account
 @app.route('/find_account/', methods=['GET', 'POST'])
 def find_account():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
         phone = request.form.get('no-hp')
         # Pastikan username diisi
         if not username:
-            flash('Username wajib diisi.', 'danger')
+            flash(f"{t['username_required']}", 'danger')
             return redirect(url_for('find_account'))
 
         # ===== Kondisi 1: Username + Email =====
@@ -538,7 +563,7 @@ def find_account():
             # Validasi format email
             email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
             if not re.match(email_pattern, email):
-                flash('Alamat email tidak valid.', 'danger')
+                flash(f"{t['invalid_email_format']}", 'danger')
                 return redirect(url_for('find_account'))
             user_exists = check_username_in_db(username)
             email_exists = check_email_in_db(email)
@@ -560,21 +585,21 @@ def find_account():
                 <p>Atau klik <a href="{url_for('verify_code', _external=True)}" style="color: blue;">link ini</a> untuk melanjutkan.</p>
                 """
                 mail.send(msg)
-                flash(f'Kode verifikasi telah dikirim ke email {escape(email)}', 'success')
+                flash(f"{t['email_sent_code']} {escape(email)}", 'success')
                 return redirect(url_for('verify_code'))
             elif not user_exists and not email_exists:
-                flash('Username dan email tidak ditemukan.', 'danger')
+                flash(f"{t['username_email_not_found']}", 'danger')
             elif not user_exists:
-                flash('Username tidak ditemukan.', 'danger')
+                flash(f"{t['username_not_found']}", 'danger')
             elif not email_exists:
-                flash('Email tidak ditemukan.', 'danger')
+                flash(f"{t['email_not_found']}", 'danger')
     
         # ===== Kondisi 2: Username + Nomor HP =====
         elif phone and not email:
             normalized_phone = normalize_phone_number(phone)
             phone_pattern = r'^\+628\d{7,12}$'
             if not re.match(phone_pattern, normalized_phone):
-                flash('Format nomor HP tidak valid. Gunakan nomor Indonesia.', 'danger')
+                flash(f"{t['invalid_phone_format']}", 'danger')
                 return redirect(url_for('find_account'))
             # Cek keberadaan username dan nomor HP di database
             user_exists = check_username_in_db(username)
@@ -586,18 +611,18 @@ def find_account():
                 session['username'] = username
                 session['phone'] = normalized_phone
                 send_whatsapp_code(normalized_phone, verification_code)
-                flash(f'Kode verifikasi telah dikirim ke nomor WhatsApp {normalized_phone}', 'success')
+                flash(f"{t['whatsapp_sent_code']} {normalized_phone}", 'success')
                 return redirect(url_for('verify_code'))
             # Penanganan error spesifik
             if not user_exists and not hp_exists:
-                flash('Username dan nomor HP tidak ditemukan.', 'danger')
+                flash(f"{t['username_phone_not_found']}", 'danger')
             elif not user_exists:
-                flash('Username tidak ditemukan.', 'danger')
+                flash(f"{t['username_not_found']}", 'danger')
             elif not hp_exists:
-                flash('Nomor HP tidak ditemukan.', 'danger')
+                flash(f"{t['phone_not_found']}", 'danger')
             return redirect(url_for('find_account'))
         else:
-            flash('Harap isi email atau nomor HP.', 'danger')
+            flash(f"{t['email_or_phone_required']}", 'danger')
         return redirect(url_for('find_account'))
     return render_template('find_account.html')
 
@@ -729,8 +754,7 @@ def index():
         .order_by(News.published_at.desc())
         .limit(3)
         .all()
-    )
-        
+    ) 
     return render_template('index.html', username=username, profile_picture=profile_picture, notification_count=notification_count, user_data=user_data, first_time_login=first_time, debug_theme=session.get("theme"), latest_news=latest_news)
 
 @app.route("/clear-first-login-flag", methods=["POST"])
@@ -751,7 +775,11 @@ def set_language(lang_code):
 
 @app.context_processor
 def inject_current_lang():
-    return dict(current_lang=session.get('lang', 'id'))
+    lang = session.get('lang', 'id')
+    return {
+        'current_lang': lang,
+        't': TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    }
 
 @app.route('/set-theme/<theme>', methods=['POST'])
 def set_theme(theme):
@@ -785,6 +813,8 @@ def save_sidebar_state():
 def admin_dashboard():
     sidebar_state = current_user.sidebar_state or 'expanded'
     user = current_user
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
 
     # Validasi role admin
     if user.level == 'penilai':
@@ -792,7 +822,7 @@ def admin_dashboard():
     elif user.level == 'peserta':
         return redirect(url_for('peserta_dashboard'))
     elif user.level != 'admin':
-        flash("Akses ditolak. Anda bukan admin!", "danger")
+        flash(f"{t['access_denied_not_admin']}", "danger")
         return redirect(url_for('index'))
 
     total_users = Users.query.count()
@@ -814,14 +844,16 @@ def admin_dashboard():
 @app.route('/admin/view_penugasan_penilai')
 @login_required
 def admin_view_penugasan_penilai():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     sidebar_state = current_user.sidebar_state or 'expanded'
     if 'username' not in session:
-        flash("Silakan login terlebih dahulu", "warning")
+        flash(f"{t['login_required']}", "warning")
         return redirect(url_for('login'))
-    
     user = current_user
     if not user or user.level != 'admin':
-        flash("Akses ditolak!", "danger")
+        flash(f"{t['access_denied']}", "danger")
         return redirect(url_for('index'))
     
     # Ambil semua event beserta kriteria dan evaluator yang ditugaskan
@@ -837,18 +869,15 @@ def admin_view_penugasan_penilai():
         
         # Ambil semua kriteria untuk event ini
         criteria_list = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
-        
         for criteria in criteria_list:
             # Ambil evaluator yang ditugaskan untuk kriteria ini
             evaluators = criteria.evaluators  # Menggunakan relationship yang sudah didefinisikan
-            
             event_info['criteria_assignments'].append({
                 'criteria': criteria,
                 'evaluators': evaluators
             })
         
         assignment_data.append(event_info)
-    
     return render_template(
         'penugasan_penilai_view.html',
         assignment_data=assignment_data,
@@ -856,17 +885,19 @@ def admin_view_penugasan_penilai():
         sidebar_state=sidebar_state
     )
 
-
 # Middleware untuk membatasi akses hanya admin
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        lang = session.get('lang', 'id')
+        t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+        
         if not current_user.is_authenticated:
-            flash("Silakan login terlebih dahulu.", "warning")
+            flash(f"{t['access_denied']}", "warning")
             return redirect(url_for('login'))
 
         if current_user.level != 'admin':
-            flash("Akses ditolak! Hanya admin yang bisa membuka halaman ini.", "danger")
+            flash(f"{t['admin_only_access']}", "danger")
             return redirect(url_for('index'))
 
         return f(*args, **kwargs)
@@ -968,6 +999,9 @@ def get_detail_penilaian(user_id, kegiatan_id):
 @login_required
 @admin_required
 def admin_penilaian_detail_view(user_id, kegiatan_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+        
     try:
         user = Users.query.get_or_404(user_id)
         participant = Participants.query.filter_by(email=user.email).first()
@@ -1010,7 +1044,7 @@ def admin_penilaian_detail_view(user_id, kegiatan_id):
         )
     except Exception as e:
         current_app.logger.exception('Error in admin_penilaian_detail_view:')
-        flash(f"Terjadi kesalahan: {str(e)}", "danger")
+        flash(f"{t['error_occurred']}: {str(e)}", "danger")
         return redirect(url_for('admin_manajemen_seleksi'))
 
 # API Hapus Penilaian Peserta
@@ -1090,6 +1124,8 @@ def admin_users():
 @admin_required
 def admin_add_user():
     sidebar_state = current_user.sidebar_state or 'expanded'
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
 
     if request.method == 'POST':
         # Ambil data dari form
@@ -1103,11 +1139,11 @@ def admin_add_user():
         # Validasi password dengan regex
         password_pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
         if not re.match(password_pattern, password):
-            flash("Password must have at least 8 characters, including uppercase, lowercase, number, and special character.", "danger")
+            flash(t['invalid_password_format'], "danger")
             return redirect(url_for('admin_users'))
         # Validasi apakah password dan confirmPassword cocok
         if password != confirm_password:
-            flash("Password and Confirm Password must match!", "danger")
+            flash(t['password_mismatch'], "danger")
             return redirect(url_for('admin_users'))
         # Cek keberadaan username dan email di database
         user_exists = check_username_in_db(username)
@@ -1140,19 +1176,19 @@ def admin_add_user():
                 )
                 db.session.add(new_user)
                 db.session.commit()
-                flash("Akun berhasil dibuat!", "success")
+                flash(t['user_created'], "success")
                 return redirect(url_for('admin_users'))
             except Exception as e:
                 db.session.rollback()
                 logging.error(f"Error during registration: {e}")
-                flash("An error occurred during registration, Please try again.", "danger")
+                flash(t['registration_failed'], "danger")
                 print(e)
         elif user_exists and email_exists:
-            flash("Username dan email Anda telah terdaftar.", "danger")
+            flash(t['username_email_exists'], "danger")
         elif user_exists:
-            flash("Username Anda telah terdaftar.", "danger")
+            flash(t['username_exists'], "danger")
         elif email_exists:
-            flash("Email Anda telah terdaftar.", "danger")
+            flash(t['email_exists'], "danger")
         return redirect(url_for('admin_users'))
     return render_template('manajemen_pengguna.html', sidebar_state=sidebar_state, users=Users.query.all(), time=time)
 
@@ -1161,13 +1197,16 @@ def admin_add_user():
 @login_required
 @admin_required
 def admin_import_users():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if 'file' not in request.files:
-        flash('Tidak ada file yang diupload!', 'error')
+        flash(t['no_file_uploaded'], 'danger')
         return redirect(url_for('admin_users'))
     
     file = request.files['file']
     if not file.filename:
-        flash('Nama file tidak valid!', 'error')
+        flash(t['invalid_file_name'], 'danger')
         return redirect(url_for('admin_users'))
 
     if file.mimetype not in [
@@ -1175,12 +1214,12 @@ def admin_import_users():
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ]:
-        flash('Tipe file tidak didukung!', 'error')
+        flash(t['unsupported_file_type'], 'danger')
         return redirect(url_for('admin_users'))
 
     ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
     if not allowed_file(file.filename, 'doc'):
-        flash('Format file tidak diizinkan! Gunakan CSV atau Excel.', 'error')
+        flash(t['file_not_allowed'], 'danger')
         return redirect(url_for('admin_users'))
 
     filename = secure_filename(file.filename)
@@ -1194,7 +1233,7 @@ def admin_import_users():
         required_cols = ['nama_lengkap', 'username', 'email', 'level']
         missing = [c for c in required_cols if c not in df.columns]
         if missing:
-            flash(f"Kolom berikut tidak ditemukan: {', '.join(missing)}", 'error')
+            flash(f"{t['missing_columns']}: {', '.join(missing)}", 'danger')
             return redirect(url_for('admin_users'))
 
         existing_usernames = {u[0] for u in db.session.query(Users.username).all()}
@@ -1233,21 +1272,13 @@ def admin_import_users():
         if new_users:
             db.session.bulk_save_objects(new_users)
             db.session.commit()
-            flash({
-                'category': 'success',
-                'title': 'Import Berhasil ✅',
-                'message': f'{count_added} pengguna baru ditambahkan, {count_skipped} dilewati.'
-            })
+            flash(f"{t['import_success']}: {count_added} {t['users_added']}, {count_skipped} {t['users_skipped']}.", 'success')
         else:
-            flash({
-                'category': 'danger',
-                'title': 'Tidak Ada Data Baru ⚠️',
-                'message': 'File sudah diproses, tetapi tidak ada pengguna baru yang ditambahkan.'
-            })
+            flash(t['no_new_users'], 'warning')
     except Exception as e:
         db.session.rollback()
         app.logger.exception(f"Import gagal: {e}")
-        flash(f'Terjadi kesalahan saat import: {e}', 'error')
+        flash(f"{t['import_failed']}: {e}", 'danger')
     finally:
         if os.path.exists(filepath):
             os.remove(filepath)
@@ -1256,21 +1287,20 @@ def admin_import_users():
 # Download Data User
 @app.route('/download_users')
 def download_users():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     users = Users.query.order_by(Users.nama_lengkap.asc()).all()
     
     # Jika tidak ada data pengguna
     if not users:
-        flash({
-            'category': 'warning',
-            'title': 'Tidak Ada Data ⚠️',
-            'message': 'Tidak ada data pengguna yang tersedia untuk diunduh.'
-        })
+        flash(t['no_user_data'], 'warning')
         return redirect(url_for('admin_users'))
     
     wb = Workbook()
     ws = wb.active
-    ws.title = "Data Pengguna"
-    headers = ['No', 'Nama Lengkap', 'Username', 'Email', 'Level', 'Status']
+    ws.title = t['user_data_sheet']
+    headers = [t['no'], t['full_name'], t['username'], t['email'], t['level'], t['status']]
     ws.append(headers)
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill("solid", fgColor="4F81BD")
@@ -1321,28 +1351,31 @@ def download_users():
 @login_required
 @admin_required
 def delete_user(user_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     # Hanya admin boleh hapus
     if current_user.level != "admin":
-        flash("Anda tidak memiliki izin untuk menghapus pengguna.", "danger")
+        flash(f"{t['no_permission_delete_user']}", "danger")
         return redirect(url_for('admin_users'))
     
     user = Users.query.get(user_id)
     if not user:
-        flash("Pengguna tidak ditemukan!", "danger")
+        flash(f"{t['user_not_found']}", "danger")
         return redirect(url_for('admin_users'))
     
     # Proteksi: admin tidak bisa menghapus dirinya sendiri
     if user.id == current_user.id:
-        flash("Anda tidak dapat menghapus akun Anda sendiri!", "warning")
+        flash(f"{t['cannot_delete_self']}", "warning")
         return redirect(url_for('admin_users'))
     try:
         db.session.delete(user)
         db.session.commit()
-        flash(f"Pengguna '{user.username}' berhasil dihapus!", "success")
+        flash(f"{t['user_deleted'].format(username=user.username)}", "success")
         logging.info(f"User '{user.username}' berhasil dihapus oleh admin.")
     except Exception as e:
         db.session.rollback()
-        flash("Terjadi kesalahan saat menghapus data.", "danger")
+        flash(f"{t['error_delete_user']}", "danger")
         logging.error(f"Gagal menghapus user_id {user_id}: {e}")
     return redirect(url_for('admin_users'))
 
@@ -1351,45 +1384,44 @@ def delete_user(user_id):
 @login_required
 @admin_required
 def edit_user(user_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     user = Users.query.get(user_id)
     if not user:
-        flash("Pengguna tidak ditemukan!", "danger")
+        flash(f"{t['user_not_found']}", "danger")
         return redirect(url_for('admin_users'))
     
     # Jika GET request, hanya redirect ke halaman manajemen pengguna
-    # (form edit ditangani di frontend dengan Alpine.js)
     if request.method == 'GET':
         return redirect(url_for('admin_users'))
     
     # POST request - proses update data
     try:
-        # Update data dari form
         # Field required
         nama_lengkap = request.form.get('nama_lengkap', '').strip()
         if not nama_lengkap:
-            flash("Nama lengkap harus diisi.", "danger")
+            flash(f"{t['full_name_required']}", "danger")
             return redirect(url_for('admin_users'))
         user.nama_lengkap = nama_lengkap
-        
         email = request.form.get('email', '').strip().lower()
         if not email:
-            flash("Email harus diisi.", "danger")
+            flash(f"{t['email_required']}", "danger")
             return redirect(url_for('admin_users'))
         # Cek apakah email sudah digunakan oleh user lain
         existing_user = Users.query.filter(Users.email == email, Users.id != user_id).first()
         if existing_user:
-            flash("Email sudah digunakan oleh pengguna lain.", "danger")
+            flash(f"{t['email_used_by_other']}", "danger")
             return redirect(url_for('admin_users'))
         user.email = email
-        
         username = request.form.get('username', '').strip()
         if not username:
-            flash("Username harus diisi.", "danger")
+            flash(f"{t['username_required']}", "danger")
             return redirect(url_for('admin_users'))
         # Cek apakah username sudah digunakan oleh user lain
         existing_user = Users.query.filter(Users.username == username, Users.id != user_id).first()
         if existing_user:
-            flash("Username sudah digunakan oleh pengguna lain.", "danger")
+            flash(f"{t['username_used_by_other']}", "danger")
             return redirect(url_for('admin_users'))
         user.username = username
         
@@ -1444,7 +1476,7 @@ def edit_user(user_id):
                 # Generate unique filename
                 filename = secure_filename(foto_file.filename)
                 if not filename:
-                    flash("Nama file tidak valid.", "danger")
+                    flash(f"{t['invalid_image_format']}", "danger")
                     return redirect(url_for('admin_users'))
                     
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -1464,24 +1496,24 @@ def edit_user(user_id):
                     user.foto = f"uploads/users/{unique_filename}"
                     logging.info(f"Foto berhasil diupload untuk user_id {user_id}: {foto_path}")
                 else:
-                    flash("Gagal menyimpan file foto. Silakan coba lagi.", "danger")
+                    flash(f"{t['failed_save_photo']}", "danger")
                     logging.error(f"File tidak ditemukan atau kosong setelah save: {foto_path}")
                     return redirect(url_for('admin_users'))
             except Exception as e:
-                flash(f"Terjadi kesalahan saat mengupload foto: {str(e)}", "danger")
+                flash(f"{t['error_upload_photo'].format(error=str(e))}", "danger")
                 logging.error(f"Error uploading foto for user_id {user_id}: {e}")
                 current_app.logger.exception('Error uploading foto:')
                 return redirect(url_for('admin_users'))
 
         db.session.commit()
-        flash(f"Data pengguna '{user.username}' berhasil diperbarui!", "success")
+        flash(f"{t['user_updated'].format(username=user.username)}", "success")
         log_activity(
             current_user.id,
             f'Mengupdate data pengguna: {user.username}'
         )
     except IntegrityError as e:
         db.session.rollback()
-        flash("Email atau username sudah digunakan oleh pengguna lain.", "danger")
+        flash(f"{t['email_or_username_used']}", "danger")
         logging.error(f"Integrity error saat update user_id {user_id}: {e}")
         current_app.logger.exception('Integrity error in edit_user:')
     except ValueError as e:
@@ -1492,14 +1524,13 @@ def edit_user(user_id):
     except Exception as e:
         db.session.rollback()
         error_msg = str(e)
-        flash(f"Terjadi kesalahan saat memperbarui data: {error_msg}", "danger")
+        flash(f"{t['error_update_data'].format(error=error_msg)}", "danger")
         logging.error(f"Gagal memperbarui user_id {user_id}: {error_msg}")
         current_app.logger.exception('Error in edit_user:')
         # Print error untuk debugging
         print(f"ERROR in edit_user: {error_msg}")
         import traceback
         traceback.print_exc()
-    
     return redirect(url_for('admin_users'))
 
 # Manajemen Seleksi   
@@ -2401,7 +2432,6 @@ def api_add_peserta():
         if golongan or tingkatan or tanggal_lahir or alamat_tinggal:
             # Konversi usia ke integer jika ada
             usia_int = int(usia) if usia and usia.isdigit() else 0
-            
             new_participant = Participants(
                 nama_lengkap=nama_lengkap,
                 email=email,
@@ -2420,12 +2450,9 @@ def api_add_peserta():
                 level='peserta'
             )
             db.session.add(new_participant)
-        
         db.session.commit()
-        
         log_activity(current_user.id, f'Menambah peserta baru: {username}')
         return jsonify({'success': True, 'message': 'Peserta berhasil ditambahkan'})
-        
     except ValueError as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Data tidak valid: {str(e)}'}), 400
@@ -2537,12 +2564,9 @@ def api_edit_peserta(user_id):
                 level='peserta'
             )
             db.session.add(new_biodata)
-        
         db.session.commit()
-        
         log_activity(current_user.id, f'Mengupdate data peserta: {user.username}')
         return jsonify({'success': True, 'message': 'Data peserta berhasil diperbarui'})
-        
     except ValueError as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Data tidak valid: {str(e)}'}), 400
@@ -2577,7 +2601,6 @@ def api_delete_peserta(user_id):
         
         log_activity(current_user.id, f'Menghapus peserta: {username}')
         return jsonify({'success': True, 'message': 'Peserta berhasil dihapus'})
-        
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in api_delete_peserta: {e}")
@@ -2637,6 +2660,9 @@ def tambah_seleksi():
 @login_required
 @admin_required
 def edit_kegiatan(id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     event = Event.query.get_or_404(id)
     if request.method == 'POST':
         event.nama_kegiatan = request.form['nama_kegiatan']
@@ -2664,10 +2690,9 @@ def edit_kegiatan(id):
             evaluators = Users.query.filter(Users.id.in_(evaluator_ids)).all()
             event.evaluators = evaluators
         else:
-            event.evaluators = []
-            
+            event.evaluators = [] 
         db.session.commit()
-        flash('Kegiatan berhasil diupdate!', 'success')
+        flash(f"{t['event_updated']}", "success")
         return redirect(url_for('admin_manajemen_seleksi'))
     
     # Get all evaluators
@@ -2679,10 +2704,13 @@ def edit_kegiatan(id):
 @login_required
 @admin_required
 def hapus_kegiatan(id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     event = Event.query.get_or_404(id)
     db.session.delete(event)
     db.session.commit()
-    flash('Kegiatan berhasil dihapus!', 'danger')
+    flash(f"{t['event_deleted']}", "danger")
     return redirect(url_for('admin_manajemen_seleksi'))
 
 @app.route('/admin/detail_kegiatan/<int:id>')
@@ -2784,6 +2812,9 @@ def admin_manajemen_berita():
 @login_required
 @admin_required
 def admin_create_news():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     title = request.form['title']
     content = request.form['content']
     status = request.form['status']
@@ -2804,7 +2835,7 @@ def admin_create_news():
     
     # Validasi dasar
     if not title or not content or not status:
-        flash('Semua field wajib diisi!', 'error')
+        flash(t['all_fields_required'], 'error')
         return redirect(url_for('admin_manajemen_berita'))
     
     base_slug = slugify(title)
@@ -2832,7 +2863,7 @@ def admin_create_news():
         news.published_at = datetime.utcnow()
     db.session.add(news)
     db.session.commit()
-    flash('Berita berhasil ditambahkan!', 'success')
+    flash(t['news_added'], 'success')
     return redirect(url_for('admin_manajemen_berita'))
 
 # Edit Berita
@@ -2840,6 +2871,8 @@ def admin_create_news():
 @login_required
 @admin_required
 def admin_edit_news(id_news):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     news = News.query.get_or_404(id_news)
     news.title = request.form['title']
     news.content = request.form['content']
@@ -2849,18 +2882,21 @@ def admin_edit_news(id_news):
     if news.status == 'published' and not news.published_at:
         news.published_at = datetime.utcnow()
     db.session.commit()
-    flash('Berita berhasil diperbarui!', 'success')
+    flash(t['news_updated'], 'success')
     return redirect(url_for('admin_manajemen_berita'))
 
 # Hapus Berita
-@app.route('/admin/news/delete/<int:id_news>')
+@app.route('/admin/news/delete/<int:id_news>', methods=['POST'])
 @login_required
 @admin_required
 def admin_delete_news(id_news):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     news = News.query.get_or_404(id_news)
     db.session.delete(news)
     db.session.commit()
-    flash('Berita berhasil dihapus!', 'success')
+
+    flash(t['news_deleted'], 'success')
     return redirect(url_for('admin_manajemen_berita'))
 
 # Detail Berita
@@ -2900,8 +2936,11 @@ def admin_settings():
 @app.route('/penilai/dashboard')
 @login_required
 def penilai_dashboard():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
 
     # Ambil semua kegiatan yang aktif
@@ -2926,8 +2965,11 @@ def penilai_dashboard():
 @app.route('/penilai/penilaian')
 @login_required
 def penilai_penilaian():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
 
     # Ambil semua kegiatan yang aktif
@@ -2949,8 +2991,11 @@ def penilai_penilaian():
 @app.route('/penilai/event/<int:event_id>/participants')
 @login_required
 def penilai_event_participants(event_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
     
     event = Event.query.get_or_404(event_id)
@@ -2991,8 +3036,11 @@ def penilai_event_participants(event_id):
 @app.route('/penilai/event/<int:event_id>/grade/<int:participant_id>', methods=['GET', 'POST'])
 @login_required
 def penilai_input_score(event_id, participant_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
     
     event = Event.query.get_or_404(event_id)
@@ -3057,7 +3105,6 @@ def penilai_input_score(event_id, participant_id):
                         evaluator_id=current_user.id,
                         id_kriteria=criteria.id_kriteria
                     ).first()
-                    
                     if penilaian:
                         penilaian.nilai = float(score_val)
                     else:
@@ -3072,18 +3119,14 @@ def penilai_input_score(event_id, participant_id):
                     # DEBUG: Log what we're saving
                     with open('debug_scores.log', 'a') as f:
                         f.write(f"Saving: Criteria {criteria.id_kriteria}, Score {score_val}, id_users={participant_id}\n")
-            
             db.session.commit()
-            flash("Penilaian berhasil disimpan!", "success")
+            flash(f"{t['score_saved_success']}", "success")
             return redirect(url_for('penilai_event_participants', event_id=event_id))
-            
         except Exception as e:
             db.session.rollback()
             logging.error(f"Error saving score: {e}")
-            flash("Terjadi kesalahan saat menyimpan nilai.", "danger")
-
+            flash(f"{t['score_save_error']}", "danger")
     sidebar_state = current_user.sidebar_state or 'expanded'
-
     return render_template(
         'penilai/form_penilaian.html',
         event=event,
@@ -3097,8 +3140,11 @@ def penilai_input_score(event_id, participant_id):
 @app.route('/penilai/event/<int:event_id>/view/<int:participant_id>')
 @login_required
 def penilai_view_score(event_id, participant_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
     
     event = Event.query.get_or_404(event_id)
@@ -3171,8 +3217,11 @@ def penilai_view_score(event_id, participant_id):
 @app.route('/penilai/biodata', methods=['GET', 'POST'])
 @login_required
 def penilai_biodata():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
     
     if request.method == 'POST':
@@ -3200,13 +3249,13 @@ def penilai_biodata():
                     current_user.foto = f"img/{new_filename}"
             
             db.session.commit()
-            flash("Data profil berhasil diperbarui!", "success")
+            flash(f"{t['profile_update_success']}", "success")
             return redirect(url_for('penilai_biodata'))
             
         except Exception as e:
             db.session.rollback()
             logging.error(f"Error updating evaluator data: {e}")
-            flash("Terjadi kesalahan saat menyimpan data.", "danger")
+            flash(f"{t['profile_update_error']}", "danger")
     
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template(
@@ -3218,8 +3267,11 @@ def penilai_biodata():
 @app.route('/penilai/hasil-penilaian')
 @login_required
 def penilai_hasil_penilaian():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
     
     # Get all assigned events
@@ -3264,29 +3316,25 @@ def penilai_hasil_penilaian():
                     'participant': participant
                 })
         else:
-            flash("Kegiatan tidak ditemukan atau Anda tidak memiliki akses.", "error")
+            flash(f"{t['event_not_found_or_no_access']}", "error")
             selected_event = None
-
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template(
-        'penilai/hasil_penilaian.html',
-        assigned_events=assigned_events,
-        selected_event=selected_event,
-        results=results,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/hasil_penilaian.html', assigned_events=assigned_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state)
 
 @app.route('/penilai/detail-nilai/<int:user_id>/<int:event_id>')
 @login_required
 def penilai_detail_nilai(user_id, event_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
     
     # Verify event is assigned to this evaluator
     event = Event.query.get_or_404(event_id)
     if current_user not in event.evaluators:
-        flash("Anda tidak memiliki akses ke kegiatan ini.", "error")
+        flash(f"{t['event_access_denied']}", "error")
         return redirect(url_for('penilai_hasil_penilaian'))
     
     # Get participant info
@@ -3381,11 +3429,12 @@ def penilai_detail_nilai(user_id, event_id):
         sidebar_state=sidebar_state
     )
 
-
 @app.route('/admin/hasil-penilaian')
 @login_required
 @admin_required
 def admin_hasil_penilaian():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     # Get all events
     all_events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
     
@@ -3427,17 +3476,10 @@ def admin_hasil_penilaian():
                     'participant': participant
                 })
         else:
-            flash("Kegiatan tidak ditemukan.", "error")
+            flash(f"{t['event_not_found']}", "error")
             selected_event = None
-
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template(
-        'admin/hasil_penilaian.html',
-        assigned_events=all_events,
-        selected_event=selected_event,
-        results=results,
-        sidebar_state=sidebar_state
-    )
+    return render_template('admin/hasil_penilaian.html', assigned_events=all_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state)
 
 @app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
 @login_required
@@ -3538,12 +3580,14 @@ def admin_detail_nilai(user_id, event_id):
         sidebar_state=sidebar_state
     )
 
-
 @app.route('/penilai/hasil-seleksi')
 @login_required
 def penilai_hasil_seleksi():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
     
     # Get all assigned events
@@ -3602,23 +3646,20 @@ def penilai_hasil_seleksi():
                     'is_passed': is_passed
                 })
         else:
-            flash("Kegiatan tidak ditemukan atau Anda tidak memiliki akses.", "error")
+            flash(f"{t['event_not_found_or_no_access']}", "error")
             selected_event = None
     
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template(
-        'penilai/hasil_seleksi.html',
-        assigned_events=assigned_events,
-        selected_event=selected_event,
-        results=results,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/hasil_seleksi.html', assigned_events=assigned_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state)
 
 @app.route('/penilai/notifikasi')
 @login_required
 def penilai_notifikasi():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'penilai':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
     
     # Get notifications for this evaluator
@@ -3627,21 +3668,18 @@ def penilai_notifikasi():
     ).order_by(
         Notification.created_at.desc()
     ).all()
-    
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template(
-        'penilai/notifikasi.html',
-        notifications=notifications,
-        sidebar_state=sidebar_state
-    )
+    return render_template('penilai/notifikasi.html', notifications=notifications, sidebar_state=sidebar_state)
 
 @app.route('/peserta/dashboard')
 @login_required
 def peserta_dashboard():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     """Dashboard for participants showing scores and rankings for all registered activities"""
     
     if current_user.level != 'peserta':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['participant_access_denied']}", "error")
         return redirect(url_for('index'))
     
     # Get current user's participant record
@@ -3717,40 +3755,31 @@ def peserta_dashboard():
     
     sidebar_state = current_user.sidebar_state or 'expanded'
     
-    return render_template(
-        'peserta/dashboard.html',
-        biodata=participant,
-        registered_activities=registered_activities,
-        activity_scores=activity_scores,
-        is_selection_ended=is_selection_ended,
-        status_seleksi=status_seleksi,
-        user=current_user,
-        sidebar_state=sidebar_state,
-        today=date.today()
-    )
+    return render_template('peserta/dashboard.html', biodata=participant, registered_activities=registered_activities, activity_scores=activity_scores, is_selection_ended=is_selection_ended, status_seleksi=status_seleksi, user=current_user, sidebar_state=sidebar_state, today=date.today())
 
 @app.route('/peserta/notifikasi')
 @login_required
 def peserta_notifikasi():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'peserta':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['participant_access_denied']}", "error")
         return redirect(url_for('index'))
     
     sidebar_state = current_user.sidebar_state or 'expanded'
     notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.id.desc()).all()
     
-    return render_template(
-        'peserta/notifikasi.html',
-        notifications=notifications,
-        sidebar_state=sidebar_state,
-        user=current_user
-    )
+    return render_template('peserta/notifikasi.html', notifications=notifications, sidebar_state=sidebar_state, user=current_user)
 
 @app.route('/peserta/hasil_seleksi')
 @login_required
 def peserta_hasil_seleksi():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'peserta':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['participant_access_denied']}", "error")
         return redirect(url_for('index'))
     
     sidebar_state = current_user.sidebar_state or 'expanded'
@@ -3819,11 +3848,8 @@ def peserta_hasil_seleksi():
                         Penilaian.id_users == current_user.id,
                         Penilaian.id_kriteria.in_(criteria_ids)
                     ).all()
-                    
                     rating_map = {r.id_kriteria: r.nilai for r in ratings}
-                    
                     total_bobot = sum(c.bobot for c in criteria_list)
-                    
                     if ratings:
                          has_temp_score = True
                          for c in criteria_list:
@@ -3839,9 +3865,7 @@ def peserta_hasil_seleksi():
                                      # (value * weight) / total_weight
                                      # This keeps result in same scale as value (e.g. 1-100)
                                      current_score += val * (c.bobot / total_bobot)
-
                     temp_score = current_score
-
             results_data.append({
                 'event': event,
                 'hasil': hasil,
@@ -3851,19 +3875,16 @@ def peserta_hasil_seleksi():
                 'has_temp_score': has_temp_score
             })
 
-    return render_template(
-        'peserta/hasil_seleksi.html',
-        results_data=results_data,
-        biodata=biodata,
-        sidebar_state=sidebar_state,
-        user=current_user
-    )
+    return render_template('peserta/hasil_seleksi.html', results_data=results_data, biodata=biodata, sidebar_state=sidebar_state, user=current_user)
 
 @app.route('/peserta/data', methods=['GET', 'POST'])
 @login_required
 def peserta_data():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'peserta':
-        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        flash(f"{t['participant_access_denied']}", "error")
         return redirect(url_for('index'))
 
     # Ambil data biodata
@@ -3940,13 +3961,13 @@ def peserta_data():
                 biodata.nomor_hp = nomor_hp
             
             db.session.commit()
-            flash("Data peserta berhasil diperbarui!", "success")
+            flash(f"{t['participant_updated']}", "success")
             return redirect(url_for('peserta_data'))
             
         except Exception as e:
             db.session.rollback()
             logging.error(f"Error updating participant data: {e}")
-            flash("Terjadi kesalahan saat menyimpan data.", "danger")
+            flash(f"{t['save_error']}", "danger")
 
     # Check completeness
     is_complete = False
@@ -3966,26 +3987,20 @@ def peserta_data():
             is_complete = True
     else:
         missing_fields = ['All Data']
-
     sidebar_state = current_user.sidebar_state or 'expanded'
-    
-    return render_template(
-        'peserta/data_peserta.html',
-        biodata=biodata,
-        user=current_user,
-        sidebar_state=sidebar_state,
-        is_complete=is_complete,
-        missing_fields=missing_fields
-    )
+    return render_template('peserta/data_peserta.html', biodata=biodata, user=current_user, sidebar_state=sidebar_state, is_complete=is_complete, missing_fields=missing_fields)
 
 # API untuk mendapatkan kegiatan/seleksi yang tersedia (sedang dibuka)
 @app.route('/api/kegiatan_tersedia')
 @login_required
 def api_kegiatan_tersedia():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     """Mengembalikan daftar kegiatan yang sedang membuka seleksi (tanggal sekarang antara mulai dan selesai)"""
     try:
         if current_user.level != 'peserta':
-            return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+            return jsonify({'status': 'error', 'message': t['access_denied']}), 403
         
         today = datetime.utcnow().date()
         
@@ -4013,7 +4028,6 @@ def api_kegiatan_tersedia():
             
             # Cek apakah peserta sudah terdaftar di kegiatan ini
             sudah_terdaftar = kegiatan.id_kegiatan in peserta_kegiatan_ids
-            
             result.append({
                 'id_kegiatan': kegiatan.id_kegiatan,
                 'nama_kegiatan': kegiatan.nama_kegiatan,
@@ -4035,7 +4049,6 @@ def api_kegiatan_tersedia():
                 'sudah_terdaftar': sudah_terdaftar,
                 'status': 'Terdaftar' if sudah_terdaftar else 'Tersedia'
             })
-        
         return jsonify({'status': 'success', 'data': result}), 200
     except Exception as e:
         current_app.logger.exception('Error in /api/kegiatan_tersedia:')
@@ -4046,27 +4059,28 @@ def api_kegiatan_tersedia():
 @login_required
 @csrf.exempt
 def api_daftar_seleksi():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     """Endpoint untuk peserta mendaftar ke seleksi kegiatan"""
     try:
         if current_user.level != 'peserta':
-            return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+            return jsonify({'status': 'error', 'message': t['access_denied']}), 403
         
         data = request.get_json(force=True)
         kegiatan_id = data.get('kegiatan_id')
-        
         if not kegiatan_id:
-            return jsonify({'status': 'error', 'message': 'ID kegiatan tidak ditemukan'}), 400
+            return jsonify({'status': 'error', 'message': t['id_event_not_found']}), 400
         
         # Cek apakah kegiatan ada dan sedang membuka seleksi
         kegiatan = Event.query.get(kegiatan_id)
         if not kegiatan:
-            return jsonify({'status': 'error', 'message': 'Kegiatan tidak ditemukan'}), 404
-        
+            return jsonify({'status': 'error', 'message': t['event_not_found']}), 404
         today = datetime.utcnow().date()
         if today < kegiatan.mulai or today > kegiatan.selesai:
             return jsonify({
                 'status': 'error', 
-                'message': 'Pendaftaran seleksi untuk kegiatan ini belum dibuka atau sudah ditutup'
+                'message': t['registration_closed']
             }), 400
         
         # Cek apakah peserta sudah punya biodata
@@ -4074,14 +4088,14 @@ def api_daftar_seleksi():
         if not biodata:
             return jsonify({
                 'status': 'error', 
-                'message': 'Biodata Anda belum terdaftar. Silakan hubungi administrator untuk mendaftarkan biodata.'
+                'message': t['biodata_not_registered']
             }), 400
         
         # Cek apakah sudah terdaftar di kegiatan yang sama
         if kegiatan in biodata.registered_activities.all():
             return jsonify({
                 'status': 'error', 
-                'message': 'Anda sudah terdaftar di kegiatan ini'
+                'message': t['already_registered_for_event']
             }), 400
         
         # Cek kuota
@@ -4089,16 +4103,15 @@ def api_daftar_seleksi():
         if kuota:
             peserta_putra = kegiatan.registered_participants.filter(Participants.jenis_kelamin == 'laki-laki').count()
             peserta_putri = kegiatan.registered_participants.filter(Participants.jenis_kelamin == 'perempuan').count()
-            
             if biodata.jenis_kelamin == 'laki-laki' and peserta_putra >= kuota.putra:
                 return jsonify({
                     'status': 'error', 
-                    'message': 'Kuota untuk peserta putra sudah penuh'
+                    'message': t['male_quota_full']
                 }), 400
             elif biodata.jenis_kelamin == 'perempuan' and peserta_putri >= kuota.putri:
                 return jsonify({
                     'status': 'error', 
-                    'message': 'Kuota untuk peserta putri sudah penuh'
+                    'message': t['female_quota_full']
                 }), 400
         
         # Daftarkan peserta ke kegiatan menggunakan many-to-many relationship
@@ -4108,12 +4121,11 @@ def api_daftar_seleksi():
         # Log aktivitas
         log_activity(
             current_user.id,
-            f'Mendaftar ke seleksi kegiatan: {kegiatan.nama_kegiatan}'
+            f"{t['register_event']}: {kegiatan.nama_kegiatan}"
         )
-        
         return jsonify({
             'status': 'success', 
-            'message': f'Berhasil mendaftar ke seleksi kegiatan: {kegiatan.nama_kegiatan}'
+            'message': f"{t['register_event_success']}: {kegiatan.nama_kegiatan}"
         }), 200
         
     except Exception as e:
@@ -4126,35 +4138,38 @@ def api_daftar_seleksi():
 @login_required
 @csrf.exempt
 def api_batal_daftar_seleksi():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     """Endpoint untuk peserta membatalkan pendaftaran ke seleksi kegiatan"""
     try:
         if current_user.level != 'peserta':
-            return jsonify({'status': 'error', 'message': 'Akses ditolak'}), 403
+            return jsonify({'status': 'error', 'message': t['access_denied']}), 403
         
         data = request.get_json(force=True)
         kegiatan_id = data.get('kegiatan_id')
         
         if not kegiatan_id:
-            return jsonify({'status': 'error', 'message': 'ID kegiatan tidak ditemukan'}), 400
+            return jsonify({'status': 'error', 'message': t['id_event_not_found']}), 400
         
         # Cek apakah kegiatan ada
         kegiatan = Event.query.get(kegiatan_id)
         if not kegiatan:
-            return jsonify({'status': 'error', 'message': 'Kegiatan tidak ditemukan'}), 404
+            return jsonify({'status': 'error', 'message': t['event_not_found']}), 404
         
         # Cek apakah peserta sudah punya biodata
         biodata = Participants.query.filter_by(email=current_user.email).first()
         if not biodata:
             return jsonify({
                 'status': 'error', 
-                'message': 'Biodata Anda belum terdaftar. Silakan hubungi administrator untuk mendaftarkan biodata.'
+                'message': t['biodata_not_registered']
             }), 400
         
         # Cek apakah peserta terdaftar di kegiatan ini
         if kegiatan not in biodata.registered_activities.all():
             return jsonify({
                 'status': 'error', 
-                'message': 'Anda belum terdaftar di kegiatan ini'
+                'message': f"{t['not_registered_for_event']}"
             }), 400
         
         # Cek apakah sudah ada hasil seleksi (jika sudah ada hasil seleksi, tidak bisa dibatalkan)
@@ -4162,7 +4177,7 @@ def api_batal_daftar_seleksi():
         if hasil_seleksi:
             return jsonify({
                 'status': 'error', 
-                'message': 'Tidak dapat membatalkan pendaftaran karena seleksi sudah selesai'
+                'message': f"{t['cannot_cancel_after_event_ended']}"
             }), 400
         
         # Batalkan pendaftaran (remove from many-to-many relationship)
@@ -4172,12 +4187,12 @@ def api_batal_daftar_seleksi():
         # Log aktivitas
         log_activity(
             current_user.id,
-            f'Membatalkan pendaftaran seleksi kegiatan: {kegiatan.nama_kegiatan}'
+            f"{t['cancel_registration_event']}: {kegiatan.nama_kegiatan}"
         )
         
         return jsonify({
             'status': 'success', 
-            'message': f'Berhasil membatalkan pendaftaran ke seleksi kegiatan: {kegiatan.nama_kegiatan}'
+            'message': f"{t['cancel_registration_success']}: {kegiatan.nama_kegiatan}"
         }), 200
         
     except Exception as e:
@@ -4187,9 +4202,12 @@ def api_batal_daftar_seleksi():
 
 @app.route('/logout/')
 def logout():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     session.clear()
     session.pop('username', None)
-    flash("Anda telah logout.", "info")
+    flash(f"{t['logged_out']}", "info")
     return redirect(url_for('index'))
 
 if __name__ == '__main__':

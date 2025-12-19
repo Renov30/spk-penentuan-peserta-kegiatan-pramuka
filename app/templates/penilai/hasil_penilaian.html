@@ -1,29 +1,51 @@
 <!DOCTYPE html>
-<html lang="{{ current_lang }}" x-data>
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}" x-data>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
       {{ 'Hasil Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading
       Results | Scout DSS' }}
     </title>
+    
+    <!-- Tailwind CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+
+    <!-- Icons -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    />
+
+    <!-- Alpine.js -->
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
-    {% include "script_sidebar.html" %} {% include 'script_theme.html' %}
+
+    <!-- Script Sidebar -->
+    {% include "script_sidebar.html" %}
+
+    <!-- Script Theme -->
+    {% include 'script_theme.html' %}
   </head>
   <body
-    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+    x-data="{ ready: false }"
+    x-init="ready = true"
     :class="{ 'dark': $store.theme?.isDark }"
+    x-bind:class="{
+        'bg-background-dark text-white': $store.theme?.isDark,
+        'bg-gray-100 text-black': !$store.theme?.isDark
+      }"
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
   >
     <div
       class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
