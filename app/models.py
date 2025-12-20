@@ -252,3 +252,22 @@ class ArsipSeleksi(db.Model):
     # Relationship
     event = db.relationship('Event', backref='arsip_seleksi')
     pembuat = db.relationship('Users', backref='arsip_yang_dibuat')
+
+# Access to table settings
+class Settings(db.Model):
+    __tablename__ = 'settings'
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(255), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+    category = db.Column(db.String(100), nullable=False, default='general')  # email, sms, app, logo, language
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'key': self.key,
+            'value': self.value,
+            'category': self.category,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }

@@ -4,7 +4,7 @@ from flask_session.sessions import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan, PairwiseComparison, AHPResults, ArsipSeleksi, LogAktivitas
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan, PairwiseComparison, AHPResults, ArsipSeleksi, LogAktivitas, Settings
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -209,34 +209,131 @@ def allowed_file(filename, file_type='image'):
         allowed = ALLOWED_EXTENSIONS_DOC
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed
 
-# Configure Flask-Mail OTP
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
-app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")
+# Helper function untuk mendapatkan pengaturan dari database
+def get_setting(key, default=None):
+    """Mendapatkan pengaturan dari database, fallback ke default jika tidak ada"""
+    try:
+        setting = Settings.query.filter_by(key=key).first()
+        if setting and setting.value:
+            return setting.value
+    except:
+        pass
+    return default
+
+def get_email_settings():
+    """Mendapatkan pengaturan email dari database atau env/config"""
+    return {
+        'mail_server': get_setting('mail_server') or os.getenv("MAIL_SERVER", "smtp.gmail.com"),
+        'mail_port': int(get_setting('mail_port') or os.getenv("MAIL_PORT", "465")),
+        'mail_use_tls': get_setting('mail_use_tls', 'false') == 'true',
+        'mail_use_ssl': get_setting('mail_use_ssl', 'true') == 'true',
+        'mail_username': get_setting('mail_username') or os.getenv("MAIL_USERNAME", ""),
+        'mail_password': get_setting('mail_password') or os.getenv("MAIL_PASSWORD", ""),
+        'mail_enabled': get_setting('mail_enabled', 'true') == 'true'
+    }
+
+def get_sms_settings():
+    """Mendapatkan pengaturan SMS/WhatsApp dari database atau env/config"""
+    return {
+        'twilio_account_sid': get_setting('twilio_account_sid') or os.getenv("TWILIO_ACCOUNT_SID", ""),
+        'twilio_auth_token': get_setting('twilio_auth_token') or os.getenv("TWILIO_AUTH_TOKEN", ""),
+        'twilio_whatsapp_from': get_setting('twilio_whatsapp_from') or os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886"),
+        'sms_enabled': get_setting('sms_enabled', 'true') == 'true'
+    }
+
+# Configure Flask-Mail OTP - akan diupdate dari database saat runtime
+email_config = get_email_settings()
+app.config['MAIL_SERVER'] = email_config['mail_server']
+app.config['MAIL_PORT'] = email_config['mail_port']
+app.config['MAIL_USE_TLS'] = email_config['mail_use_tls']
+app.config['MAIL_USE_SSL'] = email_config['mail_use_ssl']
+app.config['MAIL_USERNAME'] = email_config['mail_username']
+app.config['MAIL_PASSWORD'] = email_config['mail_password']
 mail = Mail(app)
 
-# Whatsapp OTP
-account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-client = Client(account_sid, auth_token)
-
 def send_whatsapp_code(phone, code):
-    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-    client = Client(account_sid, auth_token)
-    message_body = f"Kode verifikasi Anda adalah: *{code}*.\nJangan bagikan kode ini kepada siapa pun."
+    """Mengirim kode verifikasi via WhatsApp menggunakan pengaturan dari database"""
+    sms_config = get_sms_settings()
+    
+    if not sms_config['sms_enabled']:
+        print("SMS/WhatsApp tidak diaktifkan")
+        return False
+    
+    if not sms_config['twilio_account_sid'] or not sms_config['twilio_auth_token']:
+        print("Twilio credentials tidak ditemukan")
+        return False
+    
     try:
+        client = Client(sms_config['twilio_account_sid'], sms_config['twilio_auth_token'])
+        message_body = f"Kode verifikasi Anda adalah: *{code}*.\nJangan bagikan kode ini kepada siapa pun."
         message = client.messages.create(
             body=message_body,
-            from_='whatsapp:+14155238886',
+            from_=sms_config['twilio_whatsapp_from'],
             to=f'whatsapp:{phone}'
         )
         print("Pesan berhasil dikirim:", message.sid)
+        return True
     except Exception as e:
         print("Gagal mengirim pesan:", e)
+        return False
+
+def send_email_message(subject, recipients, html_body, sender=None):
+    """Mengirim email menggunakan pengaturan dari database"""
+    email_config = get_email_settings()
+    
+    if not email_config['mail_enabled']:
+        print("Email tidak diaktifkan")
+        return False
+    
+    if not email_config['mail_username'] or not email_config['mail_password']:
+        print("Email credentials tidak ditemukan")
+        return False
+    
+    try:
+        # Update config sementara
+        original_config = {
+            'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+            'MAIL_PORT': app.config.get('MAIL_PORT'),
+            'MAIL_USE_SSL': app.config.get('MAIL_USE_SSL'),
+            'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
+            'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+            'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD')
+        }
+        
+        app.config['MAIL_SERVER'] = email_config['mail_server']
+        app.config['MAIL_PORT'] = email_config['mail_port']
+        app.config['MAIL_USE_SSL'] = email_config['mail_use_ssl']
+        app.config['MAIL_USE_TLS'] = email_config['mail_use_tls']
+        app.config['MAIL_USERNAME'] = email_config['mail_username']
+        app.config['MAIL_PASSWORD'] = email_config['mail_password']
+        
+        # Reinitialize mail dengan config baru
+        mail.init_app(app)
+        
+        msg = Message(
+            subject=subject,
+            recipients=recipients if isinstance(recipients, list) else [recipients],
+            html=html_body,
+            sender=sender or email_config['mail_username']
+        )
+        mail.send(msg)
+        
+        # Restore original config
+        for key, value in original_config.items():
+            app.config[key] = value
+        mail.init_app(app)
+        
+        return True
+    except Exception as e:
+        print(f"Gagal mengirim email: {e}")
+        # Restore original config
+        try:
+            for key, value in original_config.items():
+                app.config[key] = value
+            mail.init_app(app)
+        except:
+            pass
+        return False
 
 def normalize_phone_number(phone):
     phone = phone.strip()
@@ -679,18 +776,15 @@ def find_account():
                 session['verification_code'] = verification_code
                 session['verification_code_expiry'] = time.time() + 180
                 session['username'] = username
-                # Kirim kode via email
-                msg = Message('Verifikasi Akun Anda',
-                              sender='adip98816@gmail.com',
-                              recipients=[email])
+                # Kirim kode via email menggunakan helper function
                 safe_code = escape(verification_code)
-                msg.html = f"""
+                html_body = f"""
                 <p>Halo,</p>
                 <p>Berikut adalah kode verifikasi 6 digit untuk mengakses akun Anda:</p>
                 <h2>{safe_code}</h2>
                 <p>Atau klik <a href="{url_for('verify_code', _external=True)}" style="color: blue;">link ini</a> untuk melanjutkan.</p>
                 """
-                mail.send(msg)
+                send_email_message('Verifikasi Akun Anda', email, html_body)
                 flash(f'Kode verifikasi telah dikirim ke email {escape(email)}', 'success')
                 return redirect(url_for('verify_code'))
             elif not user_exists and not email_exists:
@@ -4286,7 +4380,48 @@ def admin_log_export():
 def admin_settings():
     sidebar_state = current_user.sidebar_state or 'expanded'
     users = Users.query.count()
-    return render_template('settings.html', sidebar_state=sidebar_state, user=users, time=time)
+    
+    # Ambil semua pengaturan dari database
+    settings = Settings.query.all()
+    settings_dict = {s.key: s.value for s in settings}
+    
+    # Default values jika belum ada di database
+    email_settings = {
+        'mail_server': settings_dict.get('mail_server') or os.getenv("MAIL_SERVER", "smtp.gmail.com"),
+        'mail_port': settings_dict.get('mail_port') or os.getenv("MAIL_PORT", "465"),
+        'mail_use_tls': settings_dict.get('mail_use_tls', 'false'),
+        'mail_use_ssl': settings_dict.get('mail_use_ssl', 'true'),
+        'mail_username': settings_dict.get('mail_username') or os.getenv("MAIL_USERNAME", ""),
+        'mail_password': "",  # Jangan tampilkan password
+        'mail_enabled': settings_dict.get('mail_enabled', 'true')
+    }
+    
+    sms_settings = {
+        'twilio_account_sid': settings_dict.get('twilio_account_sid') or os.getenv("TWILIO_ACCOUNT_SID", ""),
+        'twilio_auth_token': "",  # Jangan tampilkan token
+        'twilio_whatsapp_from': settings_dict.get('twilio_whatsapp_from') or os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886"),
+        'sms_enabled': settings_dict.get('sms_enabled', 'true')
+    }
+    
+    app_settings = {
+        'app_name': settings_dict.get('app_name') or 'SPK Pramuka',
+        'app_description': settings_dict.get('app_description') or 'Sistem Pendukung Keputusan untuk Seleksi Pramuka',
+        'app_version': settings_dict.get('app_version') or '1.0.0',
+        'organization_name': settings_dict.get('organization_name') or 'Kwartir',
+        'organization_address': settings_dict.get('organization_address') or '',
+        'organization_phone': settings_dict.get('organization_phone') or '',
+        'organization_email': settings_dict.get('organization_email') or '',
+        'logo_path': settings_dict.get('logo_path') or 'img/logo.png',
+        'default_language': settings_dict.get('default_language') or 'id'
+    }
+    
+    return render_template('settings.html', 
+                         sidebar_state=sidebar_state, 
+                         user=users, 
+                         time=time,
+                         email_settings=email_settings,
+                         sms_settings=sms_settings,
+                         app_settings=app_settings)
     
 @app.route('/penilai/dashboard')
 @login_required
@@ -5593,6 +5728,241 @@ def api_batal_daftar_seleksi():
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception('Error in /api/batal_daftar_seleksi:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/save_settings', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def save_settings():
+    try:
+        data = request.get_json()
+        category = data.get('category')
+        
+        if not category:
+            return jsonify({'status': 'error', 'message': 'Category is required'}), 400
+        
+        # Simpan setiap setting berdasarkan category
+        if category == 'email':
+            settings_to_save = {
+                'mail_server': data.get('mail_server', ''),
+                'mail_port': data.get('mail_port', '465'),
+                'mail_use_tls': data.get('mail_use_tls', 'false'),
+                'mail_use_ssl': data.get('mail_use_ssl', 'true'),
+                'mail_username': data.get('mail_username', ''),
+                'mail_enabled': data.get('mail_enabled', 'true')
+            }
+            # Hanya update password jika diisi
+            if data.get('mail_password'):
+                settings_to_save['mail_password'] = data.get('mail_password')
+                
+        elif category == 'sms':
+            settings_to_save = {
+                'twilio_account_sid': data.get('twilio_account_sid', ''),
+                'twilio_whatsapp_from': data.get('twilio_whatsapp_from', 'whatsapp:+14155238886'),
+                'sms_enabled': data.get('sms_enabled', 'true')
+            }
+            # Hanya update auth token jika diisi
+            if data.get('twilio_auth_token'):
+                settings_to_save['twilio_auth_token'] = data.get('twilio_auth_token')
+                
+        elif category == 'app':
+            settings_to_save = {
+                'app_name': data.get('app_name', ''),
+                'app_description': data.get('app_description', ''),
+                'app_version': data.get('app_version', ''),
+                'organization_name': data.get('organization_name', ''),
+                'organization_address': data.get('organization_address', ''),
+                'organization_phone': data.get('organization_phone', ''),
+                'organization_email': data.get('organization_email', ''),
+                'default_language': data.get('default_language', 'id')
+            }
+        elif category == 'logo':
+            settings_to_save = {
+                'logo_path': data.get('logo_path', 'img/logo.png')
+            }
+        else:
+            return jsonify({'status': 'error', 'message': 'Invalid category'}), 400
+        
+        # Simpan ke database
+        for key, value in settings_to_save.items():
+            setting = Settings.query.filter_by(key=key).first()
+            if setting:
+                setting.value = str(value)
+                setting.updated_by = current_user.id
+            else:
+                setting = Settings(
+                    key=key,
+                    value=str(value),
+                    category=category,
+                    updated_by=current_user.id
+                )
+                db.session.add(setting)
+        
+        db.session.commit()
+        
+        # Update app config untuk email jika category email
+        if category == 'email':
+            app.config['MAIL_SERVER'] = settings_to_save.get('mail_server', app.config.get('MAIL_SERVER'))
+            app.config['MAIL_PORT'] = int(settings_to_save.get('mail_port', app.config.get('MAIL_PORT', 465)))
+            app.config['MAIL_USE_TLS'] = settings_to_save.get('mail_use_tls', 'false') == 'true'
+            app.config['MAIL_USE_SSL'] = settings_to_save.get('mail_use_ssl', 'true') == 'true'
+            app.config['MAIL_USERNAME'] = settings_to_save.get('mail_username', app.config.get('MAIL_USERNAME'))
+            if 'mail_password' in settings_to_save:
+                app.config['MAIL_PASSWORD'] = settings_to_save['mail_password']
+        
+        # Log aktivitas
+        log_activity(
+            current_user.id,
+            f'Mengubah pengaturan {category}'
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Pengaturan {category} berhasil disimpan'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/save_settings:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/test_email', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def test_email():
+    try:
+        data = request.get_json()
+        test_email_address = data.get('email', current_user.email)
+        
+        # Ambil pengaturan email dari database
+        mail_settings = {}
+        settings = Settings.query.filter_by(category='email').all()
+        for s in settings:
+            mail_settings[s.key] = s.value
+        
+        # Gunakan pengaturan dari database atau fallback ke env/config
+        mail_server = mail_settings.get('mail_server') or app.config.get('MAIL_SERVER')
+        mail_port = int(mail_settings.get('mail_port') or app.config.get('MAIL_PORT', 465))
+        mail_use_ssl = mail_settings.get('mail_use_ssl', 'true') == 'true'
+        mail_use_tls = mail_settings.get('mail_use_tls', 'false') == 'true'
+        mail_username = mail_settings.get('mail_username') or app.config.get('MAIL_USERNAME')
+        mail_password = mail_settings.get('mail_password') or app.config.get('MAIL_PASSWORD')
+        
+        # Buat Mail instance sementara dengan konfigurasi baru
+        from flask_mail import Mail
+        test_mail = Mail()
+        test_mail.init_app(app)
+        
+        # Update config sementara
+        original_config = {
+            'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+            'MAIL_PORT': app.config.get('MAIL_PORT'),
+            'MAIL_USE_SSL': app.config.get('MAIL_USE_SSL'),
+            'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
+            'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+            'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD')
+        }
+        
+        app.config['MAIL_SERVER'] = mail_server
+        app.config['MAIL_PORT'] = mail_port
+        app.config['MAIL_USE_SSL'] = mail_use_ssl
+        app.config['MAIL_USE_TLS'] = mail_use_tls
+        app.config['MAIL_USERNAME'] = mail_username
+        app.config['MAIL_PASSWORD'] = mail_password
+        
+        # Reinitialize mail dengan config baru
+        mail.init_app(app)
+        
+        try:
+            msg = Message(
+                subject='Test Email - SPK Pramuka',
+                recipients=[test_email_address],
+                body='Ini adalah email test dari sistem SPK Pramuka. Jika Anda menerima email ini, berarti konfigurasi email sudah benar.',
+                sender=mail_username
+            )
+            mail.send(msg)
+            
+            # Reinitialize mail dengan config asli
+            mail.init_app(app)
+            
+            # Restore original config
+            for key, value in original_config.items():
+                app.config[key] = value
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Email test berhasil dikirim ke {test_email_address}'
+            }), 200
+        except Exception as e:
+            # Restore original config
+            for key, value in original_config.items():
+                app.config[key] = value
+            raise e
+            
+    except Exception as e:
+        current_app.logger.exception('Error in /api/test_email:')
+        return jsonify({'status': 'error', 'message': f'Gagal mengirim email test: {str(e)}'}), 500
+
+@app.route('/api/upload_logo', methods=['POST'])
+@login_required
+@admin_required
+def upload_logo():
+    try:
+        if 'logo' not in request.files:
+            return jsonify({'status': 'error', 'message': 'Tidak ada file yang diupload'}), 400
+        
+        file = request.files['logo']
+        if file.filename == '':
+            return jsonify({'status': 'error', 'message': 'Tidak ada file yang dipilih'}), 400
+        
+        # Validasi file
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
+        if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+            return jsonify({'status': 'error', 'message': 'Format file tidak didukung. Gunakan PNG, JPG, JPEG, GIF, atau SVG'}), 400
+        
+        # Simpan file
+        filename = secure_filename(file.filename)
+        logo_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'logo')
+        os.makedirs(logo_dir, exist_ok=True)
+        
+        # Generate unique filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"logo_{timestamp}_{filename}"
+        filepath = os.path.join(logo_dir, filename)
+        file.save(filepath)
+        
+        # Simpan path ke database
+        logo_path = f"uploads/logo/{filename}"
+        setting = Settings.query.filter_by(key='logo_path').first()
+        if setting:
+            # Hapus logo lama jika ada
+            old_path = os.path.join(app.config['UPLOAD_FOLDER'], setting.value.replace('uploads/', ''))
+            if os.path.exists(old_path):
+                try:
+                    os.remove(old_path)
+                except:
+                    pass
+            setting.value = logo_path
+        else:
+            setting = Settings(key='logo_path', value=logo_path, category='logo', updated_by=current_user.id)
+            db.session.add(setting)
+        
+        db.session.commit()
+        
+        # Log aktivitas
+        log_activity(current_user.id, 'Mengupload logo aplikasi')
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Logo berhasil diupload',
+            'logo_path': logo_path
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/upload_logo:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/logout/')
