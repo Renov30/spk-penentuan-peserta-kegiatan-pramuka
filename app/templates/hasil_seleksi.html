@@ -65,7 +65,13 @@
           :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[1%]'"
         >
           <section
-            class="flex flex-col gap-6 justify-start items-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+            x-data="{ shown: false }"
+            x-init="setTimeout(() => shown = true, 50)"
+            x-show="shown"
+            x-transition:enter="transition ease-out duration-500"
+            x-transition:enter-start="opacity-0 -translate-x-full"
+            x-transition:enter-end="opacity-100 translate-x-0"
+            class="flex flex-col gap-6 justify-start items-center {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
           >
             <!-- Notification Box -->
             {% include 'notification_box.html' %}

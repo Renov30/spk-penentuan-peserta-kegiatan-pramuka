@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ current_lang }}" x-data>
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}" x-data>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
       {{ 'Hasil Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading
       Results | Scout DSS' }}
@@ -15,15 +16,29 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+    <!-- Animate.css -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
-    {% include "script_sidebar.html" %} {% include 'script_theme.html' %}
+    <!-- Script Sidebar -->
+    {% include "script_sidebar.html" %}
+    <!-- Script Theme -->
+    {% include 'script_theme.html' %}
   </head>
   <body
-    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+    x-data="{ ready: false }"
+    x-init="ready = true"
     :class="{ 'dark': $store.theme?.isDark }"
+    x-bind:class="{
+        'bg-background-dark text-white': $store.theme?.isDark,
+        'bg-gray-100 text-black': !$store.theme?.isDark
+      }"
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
   >
     <div
       class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
@@ -37,6 +52,9 @@
           class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
           :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
         >
+          <section
+            class="wow animate__animated animate__slideInLeft animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+          >
           <div class="container mx-auto p-6 max-w-7xl">
             <div class="flex items-center justify-between mb-6">
               <div>
@@ -237,8 +255,11 @@
             </div>
             {% endif %}
           </div>
+          </section>
         </main>
       </div>
     </div>
+    <!-- Animation Script -->
+    {% include 'script_animation.html' %}
   </body>
 </html>

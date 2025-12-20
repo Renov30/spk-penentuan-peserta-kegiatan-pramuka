@@ -546,7 +546,7 @@
                           id="logoFile"
                           accept="image/*"
                           @change="handleLogoUpload($event)"
-                          class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                          class="file-input-custom w-full px-4 py-3 border-2 rounded-lg cursor-pointer {{ 'bg-gray-800 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
                         />
                       </div>
 
@@ -666,6 +666,66 @@
 
       .toast.hide {
         animation: slideOutRight 0.3s ease-in;
+      }
+
+      /* Custom File Input Styling - Modern Browsers */
+      .file-input-custom::file-selector-button {
+        background-color: #2563eb !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.625rem 1.25rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        margin-right: 1rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .file-input-custom::file-selector-button:hover {
+        background-color: #1d4ed8 !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        transform: translateY(-1px);
+      }
+
+      .file-input-custom::file-selector-button:active {
+        background-color: #1e40af !important;
+        transform: translateY(0);
+      }
+
+      /* WebKit/Chrome specific styling (for older browsers) */
+      .file-input-custom::-webkit-file-upload-button {
+        background-color: #2563eb !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.625rem 1.25rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        margin-right: 1rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+      }
+
+      .file-input-custom::-webkit-file-upload-button:hover {
+        background-color: #1d4ed8 !important;
+      }
+
+      /* Dark mode styling for file input button */
+      .dark .file-input-custom::file-selector-button,
+      .dark .file-input-custom::-webkit-file-upload-button {
+        background-color: #3b82f6 !important;
+      }
+
+      .dark .file-input-custom::file-selector-button:hover,
+      .dark .file-input-custom::-webkit-file-upload-button:hover {
+        background-color: #2563eb !important;
+      }
+
+      .dark .file-input-custom::file-selector-button:active,
+      .dark .file-input-custom::-webkit-file-upload-button:active {
+        background-color: #1d4ed8 !important;
       }
     </style>
 
