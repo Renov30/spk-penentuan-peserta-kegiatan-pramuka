@@ -4403,6 +4403,17 @@ def admin_settings():
         'sms_enabled': settings_dict.get('sms_enabled', 'true')
     }
     
+    # Format logo_path untuk ditampilkan di template
+    logo_path_raw = settings_dict.get('logo_path') or 'img/logo.png'
+    if logo_path_raw.startswith('uploads/'):
+        logo_path_display = f'/static/{logo_path_raw}'
+    elif logo_path_raw.startswith('/static/'):
+        logo_path_display = logo_path_raw
+    elif not logo_path_raw.startswith('/'):
+        logo_path_display = f'/static/{logo_path_raw}'
+    else:
+        logo_path_display = logo_path_raw
+    
     app_settings = {
         'app_name': settings_dict.get('app_name') or 'SPK Pramuka',
         'app_description': settings_dict.get('app_description') or 'Sistem Pendukung Keputusan untuk Seleksi Pramuka',
@@ -4411,7 +4422,7 @@ def admin_settings():
         'organization_address': settings_dict.get('organization_address') or '',
         'organization_phone': settings_dict.get('organization_phone') or '',
         'organization_email': settings_dict.get('organization_email') or '',
-        'logo_path': settings_dict.get('logo_path') or 'img/logo.png',
+        'logo_path': logo_path_display,
         'default_language': settings_dict.get('default_language') or 'id'
     }
     
@@ -5908,6 +5919,7 @@ def test_email():
 @app.route('/api/upload_logo', methods=['POST'])
 @login_required
 @admin_required
+@csrf.exempt
 def upload_logo():
     try:
         if 'logo' not in request.files:
@@ -5938,7 +5950,14 @@ def upload_logo():
         setting = Settings.query.filter_by(key='logo_path').first()
         if setting:
             # Hapus logo lama jika ada
-            old_path = os.path.join(app.config['UPLOAD_FOLDER'], setting.value.replace('uploads/', ''))
+            old_value = setting.value
+            # Bersihkan path dari prefix /static/ jika ada
+            if old_value.startswith('/static/'):
+                old_value = old_value.replace('/static/', '')
+            # Pastikan path relatif dari uploads/
+            if old_value.startswith('uploads/'):
+                old_value = old_value.replace('uploads/', '')
+            old_path = os.path.join(app.config['UPLOAD_FOLDER'], old_value)
             if os.path.exists(old_path):
                 try:
                     os.remove(old_path)
@@ -5954,10 +5973,13 @@ def upload_logo():
         # Log aktivitas
         log_activity(current_user.id, 'Mengupload logo aplikasi')
         
+        # Kembalikan path dengan /static/ untuk ditampilkan di frontend
+        logo_path_display = f'/static/{logo_path}'
+        
         return jsonify({
             'status': 'success',
             'message': 'Logo berhasil diupload',
-            'logo_path': logo_path
+            'logo_path': logo_path_display
         }), 200
         
     except Exception as e:
