@@ -4096,10 +4096,47 @@ def admin_notifikasi():
         sidebar_state=sidebar_state
     )
 
+# API Get Notifications
+@app.route('/api/notifikasi', methods=['GET'])
+@login_required
+def api_get_notifications():
+    """Get all notifications for current user"""
+    try:
+        notifications = Notification.query.filter_by(
+            user_id=current_user.id
+        ).order_by(
+            Notification.id.desc()
+        ).limit(50).all()
+        
+        notifications_data = []
+        for notif in notifications:
+            notif_data = {
+                'id': notif.id,
+                'message': notif.message or 'Tidak ada pesan',
+                'is_read': notif.is_read
+            }
+            # Check if created_at exists
+            if hasattr(notif, 'created_at') and notif.created_at:
+                notif_data['created_at'] = notif.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            notifications_data.append(notif_data)
+        
+        unread_count = Notification.query.filter_by(
+            user_id=current_user.id,
+            is_read=False
+        ).count()
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications_data,
+            'unread_count': unread_count
+        })
+    except Exception as e:
+        logging.error(f"Error in api_get_notifications: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # API Mark Notification as Read
 @app.route('/api/notifikasi/mark-read/<int:notification_id>', methods=['POST'])
 @login_required
-@admin_required
 def api_mark_notification_read(notification_id):
     try:
         notification = Notification.query.filter_by(
@@ -4122,7 +4159,6 @@ def api_mark_notification_read(notification_id):
 # API Mark All Notifications as Read
 @app.route('/api/notifikasi/mark-all-read', methods=['POST'])
 @login_required
-@admin_required
 def api_mark_all_notifications_read():
     try:
         updated = Notification.query.filter_by(
@@ -4144,7 +4180,6 @@ def api_mark_all_notifications_read():
 # API Delete Notification
 @app.route('/api/notifikasi/delete/<int:notification_id>', methods=['DELETE'])
 @login_required
-@admin_required
 def api_delete_notification(notification_id):
     try:
         notification = Notification.query.filter_by(
