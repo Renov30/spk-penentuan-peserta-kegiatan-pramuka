@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+
+    <title>
+      {{ news.title }} | {{ 'Berita' if current_lang == 'id' else 'News' }}
+    </title>
+
+    <!-- Tailwind CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/output.css') }}"
+    />
+
+    <!-- Animate.css -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+
+    <!-- Alpine.js -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <!-- Script Theme -->
+    {% include 'script_theme.html' %}
+  </head>
+
+  <body
+    x-data="{ ready: false }"
+    x-init="ready = true"
+    :class="{ 'dark': $store.theme?.isDark }"
+    x-bind:class="{
+        'bg-background-dark text-white': $store.theme?.isDark,
+        'bg-gray-100 text-black': !$store.theme?.isDark
+      }"
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-gray-900' }}"
+  >
+    <!-- ======= HEADER / HERO ======= -->
+    <section
+      class="pt-28 pb-14 text-center
+      {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }}"
+    >
+      <div class="max-w-4xl mx-auto px-6">
+        <h1 class="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+          {{ news.title }}
+        </h1>
+
+        <div
+          class="flex flex-wrap justify-center gap-4 text-sm
+          {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+        >
+          <span>
+            <i class="fa-regular fa-calendar mr-1"></i>
+            {{ news.published_at.strftime('%d %B %Y') }}
+          </span>
+
+          <span>
+            <i class="fa-regular fa-user mr-1"></i>
+            {{ news.author.nama_lengkap }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= CONTENT ======= -->
+    <main class="py-14">
+      <div class="max-w-5xl mx-auto px-6">
+        <!-- Thumbnail -->
+        <div class="mb-10">
+          <img
+            src="{{ url_for('static', filename=news.thumbnail) }}"
+            alt="{{ news.title }}"
+            class="w-full max-h-[420px] object-cover rounded-xl shadow-lg"
+          />
+        </div>
+
+        <!-- Article Content -->
+        <article
+          class="prose max-w-none
+          {{ 'prose-invert' if current_theme == 'dark' else '' }}"
+        >
+          {{ news.content | safe }}
+        </article>
+
+        <!-- Divider -->
+        <hr
+          class="my-12
+          {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-300' }}"
+        />
+
+        <!-- Back Button -->
+        <div class="flex justify-between items-center">
+          <a
+            href="{{ url_for('index') }}#news"
+            class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black font-semibold transition"
+          >
+            <i class="fa-solid fa-arrow-left"></i>
+            {{ 'Kembali ke Berita' if current_lang == 'id' else 'Back to News'
+            }}
+          </a>
+
+          <!-- Share (opsional, UI siap) -->
+          <div class="flex gap-3 text-xl">
+            <a
+              href="#"
+              class="hover:text-blue-500 transition"
+              title="Share Facebook"
+            >
+              <i class="fa-brands fa-facebook"></i>
+            </a>
+            <a
+              href="#"
+              class="hover:text-sky-400 transition"
+              title="Share Twitter"
+            >
+              <i class="fa-brands fa-twitter"></i>
+            </a>
+            <a
+              href="#"
+              class="hover:text-green-500 transition"
+              title="Share WhatsApp"
+            >
+              <i class="fa-brands fa-whatsapp"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ======= FOOTER SIMPLE ======= -->
+    <footer
+      class="py-8 text-center text-sm
+      {{ 'bg-gray-800 text-gray-400' if current_theme == 'dark' else 'bg-white text-gray-600' }}"
+    >
+      © {{ current_year }} • {{ 'Semua Hak Dilindungi' if current_lang == 'id'
+      else 'All Rights Reserved' }}
+    </footer>
+  </body>
+</html>
