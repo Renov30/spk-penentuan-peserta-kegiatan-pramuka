@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app
+from flask import Flask, Response, abort, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app
 from flask_session import Session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -2757,7 +2757,13 @@ def admin_hasil_seleksi():
 @login_required
 @admin_required
 def admin_manajemen_berita():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    if current_user.level != 'admin':
+        flash(f"{t['evaluator_access_denied']}", "error")
+        return redirect(url_for('index'))
     
     search = request.args.get('search', '').strip()
     status = request.args.get('status', '').strip()
@@ -2773,9 +2779,21 @@ def admin_manajemen_berita():
         query = query.filter(News.status == status)
 
     # Ambil semua berita
-    news_list = News.query.order_by(News.created_at.desc()).all()
+    news_list_raw = query.order_by(News.created_at.desc()).all()
 
-    total_news = len(news_list)
+    news_list = []
+    for news in news_list_raw:
+        news_list.append({
+            "id_news": news.id_news,
+            "title": news.title,
+            "content": news.content,
+            "status": news.status,
+            "created_at": news.created_at.strftime("%d-%m-%Y"),
+            "author": {
+                "nama_lengkap": news.author.nama_lengkap
+            }
+        })
+    total_news = len(news_list_raw)
     published_news = News.query.filter_by(status='published').count()
     draft_news = News.query.filter_by(status='draft').count()
 
@@ -2787,25 +2805,54 @@ def admin_manajemen_berita():
         )
         .first()
     )
-
     last_update = (
-        last_news.updated_at or last_news.created_at
+        (last_news.updated_at or last_news.created_at).strftime("%d-%m-%Y")
         if last_news else '-'
     )
+    return render_template('news_management.html', news_list=news_list, total_news=total_news, published_news=published_news, draft_news=draft_news, last_update=last_update, sidebar_state=sidebar_state, user=current_user, search=search, status=status, time=time)
 
-    return render_template(
-        'news_management.html',
-        news_list=news_list,
-        total_news=total_news,
-        published_news=published_news,
-        draft_news=draft_news,
-        last_update=last_update,
-        sidebar_state=sidebar_state,
-        user=current_user,
-        search=search,
-        status=status,
-        time=time
+# API Pagination Berita
+@app.route("/admin/api/berita")
+@login_required
+@admin_required
+def api_berita():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    if current_user.level != 'admin':
+        flash(f"{t['evaluator_access_denied']}", "error")
+        return redirect(url_for('index'))
+    
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 6, type=int)
+
+    pagination = (
+        News.query
+        .order_by(News.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
     )
+
+    data = []
+    for news in pagination.items:
+        data.append({
+            "id_news": news.id_news,
+            "title": news.title,
+            "status": news.status,
+            "created_at": news.created_at.strftime("%d-%m-%Y"),
+            "author": {
+                "nama_lengkap": news.author.nama_lengkap
+            }
+        })
+
+    return jsonify({
+        "data": data,
+        "pagination": {
+            "page": pagination.page,
+            "total_pages": pagination.pages,
+            "total_items": pagination.total,
+            "per_page": pagination.per_page,
+        }
+    })
 
 # Tambah Berita
 @app.route('/admin/news/create', methods=['POST'])
@@ -2814,6 +2861,10 @@ def admin_manajemen_berita():
 def admin_create_news():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    if current_user.level != 'admin':
+        flash(f"{t['evaluator_access_denied']}", "error")
+        return redirect(url_for('index'))
     
     title = request.form['title']
     content = request.form['content']
@@ -2873,6 +2924,11 @@ def admin_create_news():
 def admin_edit_news(id_news):
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    if current_user.level != 'admin':
+        flash(f"{t['evaluator_access_denied']}", "error")
+        return redirect(url_for('index'))
+    
     news = News.query.get_or_404(id_news)
     news.title = request.form['title']
     news.content = request.form['content']
@@ -2890,8 +2946,13 @@ def admin_edit_news(id_news):
 @login_required
 @admin_required
 def admin_delete_news(id_news):
+    if current_user.level != 'admin':
+        flash(f"{t['evaluator_access_denied']}", "error")
+        return redirect(url_for('index'))
+        
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     news = News.query.get_or_404(id_news)
     db.session.delete(news)
     db.session.commit()

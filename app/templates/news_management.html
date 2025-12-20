@@ -25,13 +25,6 @@
       href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
     />
 
-    <!-- API Google Maps -->
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"
-      async
-      defer
-    ></script>
-
     <!-- Alpine.js -->
     <script
       defer
@@ -203,113 +196,184 @@
               </div>
 
               <!-- Tabel Daftar Berita / Empty State -->
-              <div class="overflow-x-auto rounded-xl shadow">
-                {% if news_list and news_list|length > 0 %}
-
+              <div
+                x-data="beritaPagination()"
+                x-init="init()"
+                class="overflow-x-auto rounded-xl shadow"
+              >
                 <!-- ====== TABEL BERITA ====== -->
-                <table class="w-full border-collapse border-spacing-y-2">
-                  <thead>
-                    <tr
-                      class="border-b {{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-400 text-gray-900 dark:text-gray-800' }}"
-                    >
-                      <th>No</th>
-                      <th>
-                        {{ 'Judul' if current_lang == 'id' else 'Title' }}
-                      </th>
-                      <th>
-                        {{ 'Penulis' if current_lang == 'id' else 'Author' }}
-                      </th>
-                      <th>Status</th>
-                      <th>
-                        {{ 'Tanggal' if current_lang == 'id' else 'Date' }}
-                      </th>
-                      <th class="text-center">
-                        {{ 'Aksi' if current_lang == 'id' else 'Action' }}
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {% for news in news_list %}
-                    <tr
-                      class="rounded-lg shadow transition border-b {{ 'bg-gray-700 hover:bg-gray-800' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-100' }}"
-                    >
-                      <td class="p-4">{{ loop.index }}</td>
-                      <td class="p-4 font-semibold">{{ news.title }}</td>
-                      <td class="p-4">{{ news.author.nama_lengkap }}</td>
-                      <td
-                        class="p-4 {{ 'font-light' if current_theme == 'dark' else 'font-bold' }}"
+                <template x-if="$store.pagination.items.length > 0">
+                  <table class="w-full border-collapse border-spacing-y-2">
+                    <thead>
+                      <tr
+                        class="border-b {{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-400 text-gray-900 dark:text-gray-800' }}"
                       >
-                        <span
-                          class="px-3 py-1 rounded-full text-xs {{ 'bg-green-500/20 text-green-400' if news.status == 'published' else 'bg-yellow-500/20 text-yellow-400' }}"
-                        >
-                          {{ 'Publik' if news.status == 'published' else 'Draft'
-                          }}
-                        </span>
-                      </td>
-                      <td
-                        class="p-4 text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-black' }}"
+                        <th>No</th>
+                        <th>
+                          {{ 'Judul' if current_lang == 'id' else 'Title' }}
+                        </th>
+                        <th>
+                          {{ 'Penulis' if current_lang == 'id' else 'Author' }}
+                        </th>
+                        <th>Status</th>
+                        <th>
+                          {{ 'Tanggal' if current_lang == 'id' else 'Date' }}
+                        </th>
+                        <th class="text-center">
+                          {{ 'Aksi' if current_lang == 'id' else 'Action' }}
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <template
+                        x-for="(news, index) in $store.pagination.items"
+                        :key="news.id_news"
                       >
-                        {{ news.created_at.strftime('%d-%m-%Y') }}
-                      </td>
-                      <td class="p-4 text-center space-x-2">
-                        <button
-                          @click="
-                                modalMode = 'edit';
-                                editId = {{ news.id_news }};
-                                form.title = '{{ news.title|escape }}';
-                                form.content = `{{ news.content|escape }}`;
-                                form.status = '{{ news.status }}';
-                                newsModal = true;
-                            "
-                          class="text-yellow-400 hover:text-yellow-500 cursor-pointer"
-                        >
-                          <i class="fa-solid fa-pen"></i>
-                        </button>
-                        <button
-                          @click="
-                            showModal = true;
-                            deleteUrl = '{{ url_for('admin_delete_news', id_news=news.id_news) }}';
-                            newsTitle = '{{ news.title|escape }}';
-                          "
-                          class="text-red-500 hover:text-red-700 cursor-pointer"
-                        >
-                          <i class="fa-solid fa-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                        <tr class="rounded-lg shadow transition border-b">
+                          <td
+                            class="p-4"
+                            x-text="($store.pagination.page - 1) * $store.pagination.perPage + index + 1"
+                          ></td>
 
-                {% else %}
+                          <td
+                            class="p-4 font-semibold"
+                            x-text="news.title"
+                          ></td>
+                          <td
+                            class="p-4"
+                            x-text="news.author.nama_lengkap"
+                          ></td>
 
-                <!-- ====== EMPTY STATE ====== -->
+                          <td class="p-4">
+                            <span
+                              :class="news.status === 'published'
+                                    ? 'px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400'
+                                    : 'px-3 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-400'"
+                              x-text="news.status === 'published'
+                                    ? '{{ 'Publik' if current_lang == 'id' else 'Public' }}'
+                                    : 'Draft'"
+                            ></span>
+                          </td>
+
+                          <td class="p-4 text-sm" x-text="news.created_at"></td>
+                          <td class="p-4 text-center">
+                            <div class="flex justify-center gap-2">
+                              <!-- Tombol Edit -->
+                              <button
+                                @click="
+                                        modalMode = 'edit';
+                                        editId = news.id_news;
+                                        form.title = news.title;
+                                        form.content = news.content;
+                                        form.status = news.status;
+                                        thumbnailPreview = news.thumbnail ?? null;
+                                        newsModal = true;
+                                      "
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition shadow cursor-pointer"
+                                title="{{ 'Edit' if current_lang == 'id' else 'Edit' }}"
+                              >
+                                <i
+                                  class="fa-solid fa-pen-to-square text-sm"
+                                ></i>
+                              </button>
+
+                              <!-- Tombol Hapus -->
+                              <button
+                                @click="
+                                        showModal = true;
+                                        deleteUrl = `/admin/news/delete/${news.id_news}`;
+                                        newsTitle = news.title;
+                                      "
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-500 hover:bg-red-600 text-white transition shadow cursor-pointer"
+                                title="{{ 'Hapus' if current_lang == 'id' else 'Delete' }}"
+                              >
+                                <i class="fa-solid fa-trash text-sm"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </template>
+
+                <p class="text-sm text-gray-500 text-center mt-2">
+                  {{ 'Showing' if current_lang == 'en' else 'Menampilkan' }}
+                  <span
+                    x-text="(($store.pagination.page - 1) * $store.pagination.perPage) + 1"
+                  ></span>
+                  –
+                  <span
+                    x-text="Math.min(
+                              $store.pagination.page * $store.pagination.perPage,
+                              $store.pagination.totalItems
+                            )"
+                  ></span>
+                  {{ 'of' if current_lang == 'en' else 'dari' }}
+                  <span x-text="$store.pagination.totalItems"></span>
+                  {{ 'entries' if current_lang == 'en' else 'data' }}
+                </p>
+
+                <!-- Pagination -->
                 <div
-                  class="flex flex-col items-center justify-center py-20 {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
+                  x-show="$store.pagination.totalPages > 1"
+                  class="flex justify-center my-4"
                 >
-                  <i class="fa-regular fa-newspaper text-6xl mb-4"></i>
-                  <p class="text-lg font-semibold">{{ t.no_news }}</p>
-                  <p class="text-sm mb-6">
-                    {{ 'Mulai dengan menambahkan berita pertama' if current_lang
-                    == 'id' else 'Start by adding your first news article' }}
-                  </p>
-                  <button
-                    @click="
-                        modalMode = 'create';
-                        editId = null;
-                        form = { title: '', content: '', status: 'draft' };
-                        thumbnailPreview = null;
-                        newsModal = true;
-                    "
-                    class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow cursor-pointer"
+                  <nav
+                    class="inline-flex items-center gap-1 rounded-xl px-2 py-2 shadow-md ring-1 {{ 'bg-white dark:bg-gray-900 ring-gray-200 dark:ring-gray-700' if current_theme == 'dark' else 'bg-white dark:bg-gray-400 ring-gray-200 dark:ring-gray-500' }}"
+                    aria-label="Pagination"
                   >
-                    <i class="fa-solid fa-plus mr-1"></i>
-                    {{ t.add_news }}
-                  </button>
+                    <!-- Previous -->
+                    <button
+                      @click="fetchData($store.pagination.page - 1)"
+                      :disabled="$store.pagination.page === 1"
+                      class="inline-flex items-center justify-center h-9 w-9 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer {{ 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white' if current_theme == 'dark' else 'text-blue-500 hover:bg-gray-100 hover:text-blue-800 dark:text-blue-800 dark:hover:bg-gray-500 dark:hover:text-blue-800' }}"
+                      aria-label="Previous"
+                    >
+                      <i class="fa-solid fa-chevron-left text-sm"></i>
+                    </button>
+
+                    <!-- Page Numbers -->
+                    <template x-for="p in pageNumbers()" :key="p">
+                      <button
+                        @click="fetchData(p)"
+                        class="h-9 min-w-[36px] px-3 rounded-lg text-sm font-medium transition cursor-pointer"
+                        :class="p === $store.pagination.page
+                                ? 'bg-blue-600 text-white shadow-sm scale-105'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800
+                                  dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white'"
+                        x-text="p"
+                        :aria-current="p === $store.pagination.page ? 'page' : null"
+                      ></button>
+                    </template>
+
+                    <!-- Next -->
+                    <button
+                      @click="fetchData($store.pagination.page + 1)"
+                      :disabled="$store.pagination.page === $store.pagination.totalPages"
+                      class="inline-flex items-center justify-center h-9 w-9 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer {{ 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white' if current_theme == 'dark' else 'text-blue-500 hover:bg-gray-100 hover:text-blue-800 dark:text-blue-800 dark:hover:bg-gray-500 dark:hover:text-blue-800' }}"
+                      aria-label="Next"
+                    >
+                      <i class="fa-solid fa-chevron-right text-sm"></i>
+                    </button>
+                  </nav>
                 </div>
 
-                {% endif %}
+                <!-- ====== EMPTY STATE ====== -->
+                <template
+                  x-if="!$store.pagination.loading && $store.pagination.items.length === 0"
+                >
+                  <div class="flex flex-col items-center justify-center py-20">
+                    <i class="fa-regular fa-newspaper text-6xl mb-4"></i>
+                    <p class="text-lg font-semibold">{{ t.no_news }}</p>
+                    <p class="text-sm mb-6">
+                      {{ 'Mulai dengan menambahkan berita pertama' if
+                      current_lang == 'id' else 'Start by adding your first news
+                      article' }}
+                    </p>
+                  </div>
+                </template>
               </div>
             </div>
 
@@ -395,13 +459,13 @@
                       >
                         <button
                           @click="previewModal = false"
-                          class="absolute top-2 right-2 text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 text-2xl font-bold transition-colors"
+                          class="absolute top-2 right-2 text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-800 text-2xl font-bold transition-colors cursor-pointer"
                         >
                           <i class="fa-solid fa-x"></i>
                         </button>
                         <img
                           :src="thumbnailPreview"
-                          class="w-full h-auto rounded-lg p-2"
+                          class="w-full h-auto rounded-lg p-3.5"
                         />
                       </div>
                     </div>
@@ -636,8 +700,8 @@
       });
     </script>
 
-    <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} {% include 'script_notification.html'
-    %}
+    <!-- Animation, Pagination & Notification Script -->
+    {% include 'script_news_pagination.html' %} {% include
+    'script_animation.html' %} {% include 'script_notification.html' %}
   </body>
 </html>
