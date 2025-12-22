@@ -220,3 +220,24 @@ class News(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     published_at = db.Column(db.DateTime)
+
+# Access to table news_comment
+class Comment(db.Model):
+    __tablename__ = 'news_comment'  # nama tabel di database
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    news_id = db.Column(db.Integer, db.ForeignKey('tb_news.id_news'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('news_comment.id'), nullable=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
+    is_approved = db.Column(db.Boolean, default=True, nullable=False)
+
+    # Relationship opsional
+    news = db.relationship('News', backref=db.backref('news_comment', lazy='dynamic'))
+    user = db.relationship('Users', backref=db.backref('news_comment', lazy='dynamic'))
+    parent = db.relationship('Comment', remote_side=[id], backref='replies')
+    def __repr__(self):
+        return f"<Comment id={self.id} news_id={self.news_id} user_id={self.user_id}>"

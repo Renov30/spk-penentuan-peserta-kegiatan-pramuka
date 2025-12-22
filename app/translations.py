@@ -15,6 +15,8 @@ TRANSLATIONS = {
         'news_added': 'Berita berhasil ditambahkan!',
         'news_updated': 'Berita berhasil diperbarui!',
         'all_fields_required_news': 'Semua field wajib diisi!',
+        'comment_empty': 'Komentar tidak boleh kosong',
+        'comment_posted': 'Komentar berhasil dikirim',
         
         # === LOGIN MANUAL ===
         'username_invalid': 'Username salah!',
@@ -169,6 +171,8 @@ TRANSLATIONS = {
         'news_added': 'News added successfully!',
         'news_updated': 'News updated successfully!',
         'all_fields_required_news': 'All fields are required!',
+        'comment_empty': 'Comment cannot be empty',
+        'comment_posted': 'Comment posted successfully',
         
         # === LOGIN MANUAL ===
         'username_invalid': 'Invalid username!',

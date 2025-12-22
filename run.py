@@ -3,7 +3,7 @@ from flask_session import Session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, News, ParticipantKegiatan
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, News, Comment, ParticipantKegiatan
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -20,6 +20,7 @@ from functools import wraps
 from app.utils.utils import log_activity
 from sqlalchemy.exc import IntegrityError
 from slugify import slugify
+from urllib.parse import urlparse, urljoin
 import io
 from app.translations import TRANSLATIONS
 from openpyxl import Workbook
@@ -201,6 +202,11 @@ def my_decorator(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
 # Endpoint login
 @app.route('/login/', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
@@ -208,7 +214,14 @@ def login():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
+    next_url = request.form.get('next') or request.args.get('next')
     form = LoginForm()
+    if current_user.is_authenticated:
+        if next_url and is_safe_url(next_url):
+            logging.info(f"Redirect after login to: {next_url}")
+            return redirect(next_url)
+        return redirect(url_for('index'))
+
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
@@ -231,6 +244,9 @@ def login():
             flash(f"{t['login_success']}, {safe_username}.", 'success')
             session['first_time_login'] = True
             
+            if next_url and is_safe_url(next_url):
+                return redirect(next_url)
+            
             # Redirect sesuai role
             if user.level == "admin":
                 return redirect(url_for('admin_dashboard'))
@@ -247,6 +263,11 @@ def login():
 @app.route('/login/google/', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def login_google():
+    next_url = request.args.get('next')
+
+    if next_url and is_safe_url(next_url):
+        session['oauth_next'] = next_url
+        
     redirect_uri = url_for('login_google_callback', _external=True)
     return google.authorize_redirect(redirect_uri)
 
@@ -255,70 +276,69 @@ def login_google():
 def login_google_callback():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
+    next_url = session.pop('oauth_next', None)
+
     try:
         token = google.authorize_access_token()
-        resp = google.get('userinfo')  
-        resp.raise_for_status()  
+        resp = google.get('userinfo')
+        resp.raise_for_status()
         user_info = resp.json()
     except Exception as e:
-        logging.warning(f"Login Google gagal: {e}") 
-        flash(f"{t['google_login_failed']}", "danger")
+        logging.warning(f"Login Google gagal: {e}")
+        flash(t['google_login_failed'], "danger")
         return redirect(url_for('login'))
-    
-    # Proses lanjut jika data user berhasil diambil
+
     email = user_info.get('email')
-    username = user_info.get('name') or "Pengguna"
     picture = user_info.get('picture') or "img/default-user.png"
-    
+
     if not email:
-        flash(f"{t['google_email_not_found']}", "danger")
+        flash(t['google_email_not_found'], "danger")
         return redirect(url_for('login'))
-    
-    # ✅ Validasi hanya email Gmail
+
     if not email.endswith('@gmail.com'):
-        flash(f"{t['google_only_gmail']}", "danger")
+        flash(t['google_only_gmail'], "danger")
         return redirect(url_for('login'))
-    
+
     user = Users.query.filter_by(email=email).first()
-    if user:
-        # Update foto dari Google jika belum tersimpan
-        if not user.foto or user.foto == "img/default-user.png":
-            user.foto = user_info.get('picture') or "img/default-user.png"
-            db.session.commit()
-        
-        login_user(user)
-        
-        session['username'] = user.username
-        session['user'] = {
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'nama_lengkap': user.nama_lengkap,
-            'foto': user.foto,
-            'level': user.level
-        }
-        session['first_time_login'] = True
-        session.modified = True 
-        print("✅ Session set:", session.get('user'))
-        logging.info(f"User '{user.username}' berhasil login via Google.")
-        flash(f"{t['login_success']}, {escape(user.nama_lengkap)}.", "success")
-        
-        # Redirect sesuai role
-        if user.level == "admin":
-            return redirect(url_for('admin_dashboard'))
-        elif user.level == "penilai":
-            return redirect(url_for('penilai_dashboard'))
-        elif user.level == "peserta":
-            return redirect(url_for('peserta_dashboard'))
-        else:
-            return redirect(url_for('login'))
-    else:
-        # Jika belum ada, arahkan ke konfirmasi registrasi
+    if not user:
         session['pending_user'] = user_info
         logging.warning(f"Percobaan login Google dari email '{email}' belum terdaftar.")
-        flash("Akun Google Anda belum terdaftar. Lanjutkan registrasi?", "warning")
+        flash(f"{t['google_not_registered']}", "warning")
         return redirect(url_for('confirm_register'))
+
+    if not user.foto or user.foto == "img/default-user.png":
+        user.foto = picture
+        db.session.commit()
+
+    login_user(user)
+    session['user'] = {
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'nama_lengkap': user.nama_lengkap,
+        'foto': user.foto,
+        'level': user.level
+    }
+    session['first_time_login'] = True
+    session.modified = True
+
+    logging.info(f"User '{user.username}' berhasil login via Google.")
+    flash(f"{t['login_success']}, {escape(user.nama_lengkap)}.", "success")
+
+    if next_url and is_safe_url(next_url):
+        return redirect(next_url)
+
+    user_level = (user.level or "").strip().lower()
+    role_redirect = {
+        "admin": "admin_dashboard",
+        "penilai": "penilai_dashboard",
+        "peserta": "peserta_dashboard"
+    }
+    endpoint = role_redirect.get(user_level)
+
+    if endpoint:
+        return redirect(url_for(endpoint))
+    return redirect(url_for("index"))
     
 # Endpoint Fisrt Confirm Register With Google
 @app.route('/confirm-register/')
@@ -525,7 +545,6 @@ def register_google_callback():
             sidebar_state="expanded",
             status='aktif'
     )
-    
     db.session.add(new_user)
     db.session.commit()
     
@@ -2946,12 +2965,12 @@ def admin_edit_news(id_news):
 @login_required
 @admin_required
 def admin_delete_news(id_news):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     if current_user.level != 'admin':
         flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
-        
-    lang = session.get('lang', 'id')
-    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
     news = News.query.get_or_404(id_news)
     db.session.delete(news)
@@ -2959,6 +2978,35 @@ def admin_delete_news(id_news):
 
     flash(t['news_deleted'], 'success')
     return redirect(url_for('admin_manajemen_berita'))
+
+# Komentar Berita (Admin)
+@app.route('/news/<int:news_id>/comment', methods=['POST'])
+@login_required
+@admin_required
+def post_comment_admin(news_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    if current_user.level != 'admin':
+        flash(f"{t['evaluator_access_denied']}", "error")
+        return redirect(url_for('index'))
+
+    data = request.get_json()
+    content = data.get('content', '').strip()
+    parent_id = data.get('parent_id')
+
+    if not content:
+        return jsonify({'error': 'Komentar tidak boleh kosong'}), 400
+
+    comment = Comment(
+        news_id=news_id,
+        user_id=current_user.id,
+        parent_id=parent_id,
+        content=content
+    )
+    db.session.add(comment)
+    db.session.commit()
+    return jsonify({'message': 'Komentar berhasil ditambahkan'}), 201
 
 # Detail Berita
 @app.route('/news/<slug>')
@@ -2968,7 +3016,93 @@ def news_detail(slug):
         status='published'
     ).first_or_404()
 
-    return render_template('news_detail.html', news=news)
+    # Ambil komentar utama (bukan reply)
+    comments = Comment.query.filter(
+        Comment.news_id == news.id_news,
+        Comment.parent_id.is_(None),
+        Comment.is_deleted.is_(False),
+        Comment.is_approved.is_(True)
+    ).order_by(Comment.created_at.desc()).all()
+    return render_template('news_detail.html', news=news, comments=comments, comment_count=len(comments))
+
+# Post Komentar Berita (support AJAX)
+@app.route('/news/<slug>/comment', methods=['POST'])
+@login_required
+def post_comment_user(slug):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    news = News.query.filter_by(
+        slug=slug,
+        status='published'
+    ).first_or_404()
+
+    # Ambil data komentar
+    if request.is_json:
+        data = request.get_json()
+        content = data.get('content', '').strip()
+        parent_id = data.get('parent_id')
+    else:
+        content = request.form.get('content', '').strip()
+        parent_id = request.form.get('parent_id')
+
+    if not content:
+        if request.is_json:
+            return jsonify({'success': False, 'message': t['comment_empty']}), 400
+        else:
+            flash(t['comment_empty'], 'error')
+            return redirect(url_for('news_detail', slug=slug))
+
+    # Buat komentar baru
+    comment = Comment(
+        news_id=news.id_news,
+        user_id=current_user.id,
+        content=content,
+        parent_id=parent_id if parent_id else None
+    )
+    db.session.add(comment)
+    db.session.commit()
+
+    total_comments = Comment.query.filter_by(
+        news_id=news.id_news,
+        parent_id=None,
+        is_deleted=False,
+        is_approved=True
+    ).count()
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'comment': {
+                'id': comment.id,
+                'content': comment.content,
+                'user': {'nama_lengkap': current_user.nama_lengkap},
+                'slug': slug
+            },
+            'total_comments': total_comments
+        })
+
+    # Redirect normal untuk submit form biasa
+    flash(t['comment_posted'], 'success')
+    return redirect(url_for('news_detail', slug=slug))
+
+# Hapus Komentar Berita
+@app.route('/comment/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_comment(id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    comment = Comment.query.get_or_404(id)
+
+    if comment.user_id != current_user.id:
+        abort(403)
+
+    comment.is_deleted = True
+    db.session.commit()
+
+    flash('Komentar dihapus', 'info')
+    return redirect(request.referrer)
 
 @app.route('/admin/notifikasi')
 @login_required
