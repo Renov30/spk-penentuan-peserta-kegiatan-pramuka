@@ -720,27 +720,16 @@
                         </td>
                         <td class="border p-2 px-4 py-2">{{ user.level }}</td>
                         <td class="border p-2 px-4 py-2">
-                          <div x-data="{ loading: false, currentStatus: '{{ user.status }}' }">
-                            <button
-                              type="button"
-                              @click="toggleUserStatus({{ user.id }}, currentStatus, '{{ user.username }}', $el)"
-                              class="px-3 py-1 text-xs rounded-lg font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                              :class="{
-                                'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300': currentStatus.toLowerCase() === 'aktif',
-                                'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300': currentStatus.toLowerCase() === 'non-aktif' || currentStatus.toLowerCase() === 'nonaktif'
-                              }"
-                              :disabled="loading"
-                            >
-                              <span x-show="!loading" class="flex items-center">
-                                <i class="fas mr-1" :class="currentStatus.toLowerCase() === 'aktif' ? 'fa-check-circle' : 'fa-times-circle'"></i>
-                                <span x-text="currentStatus"></span>
-                              </span>
-                              <span x-show="loading" class="flex items-center">
-                                <i class="fas fa-spinner fa-spin mr-1"></i>
-                                {{ 'Memproses...' if current_lang == 'id' else 'Processing...' }}
-                              </span>
-                            </button>
-                          </div>
+                          <span
+                            class="px-3 py-1 text-xs rounded-lg font-semibold inline-flex items-center"
+                            :class="{
+                              'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300': '{{ user.status|lower }}' === 'aktif',
+                              'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300': '{{ user.status|lower }}' === 'non-aktif' || '{{ user.status|lower }}' === 'nonaktif'
+                            }"
+                          >
+                            <i class="fas mr-1" :class="'{{ user.status|lower }}' === 'aktif' ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                            {{ user.status }}
+                          </span>
                         </td>
                         <td
                           class="border p-2 px-4 py-2 flex gap-2"
