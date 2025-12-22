@@ -53,7 +53,8 @@
         const lang = "{{ current_lang }}";
         Alpine.store("page", {
           current: "main",
-          breadcrumbs: lang === "id" ? ["Manajemen Pengguna"] : ["Users Management"],
+          breadcrumbs:
+            lang === "id" ? ["Manajemen Pengguna"] : ["Users Management"],
         });
       });
     </script>
@@ -120,8 +121,8 @@
                         <i class="fa-solid fa-users text-xl"></i>
                       </div>
                       <h2 class="ml-3 text-lg font-semibold">
-                        {{ 'Kelola Pengguna' if current_lang == 'id'
-                        else 'Manage Users' }}
+                        {{ 'Kelola Pengguna' if current_lang == 'id' else
+                        'Manage Users' }}
                       </h2>
                     </div>
                     <p
@@ -143,8 +144,8 @@
                         class="flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer"
                       >
                         <i class="fa-solid fa-users mr-2"></i>
-                        {{ 'Kelola Pengguna' if current_lang == 'id' else 'Manage
-                        Users' }}
+                        {{ 'Kelola Pengguna' if current_lang == 'id' else
+                        'Manage Users' }}
                       </button>
                     </div>
                   </div>
@@ -253,7 +254,8 @@
                       class="flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
                     >
                       <i class="fa-solid fa-user-lock mr-2"></i>
-                      {{ 'Kelola Status Akun' if current_lang == 'id' else 'Manage Account Status' }}
+                      {{ 'Kelola Status Akun' if current_lang == 'id' else
+                      'Manage Account Status' }}
                     </button>
                   </div>
 
@@ -294,298 +296,14 @@
                   </div>
                 </div>
               </div>
-              <hr class="mt-10" />
-
-              <!-- Content 2 -->
-              <div class="mt-10">
-                <h1 class="text-2xl font-bold mb-8">
-                  {{ 'Daftar Pengguna' if current_lang == 'id' else 'Users List'
-                  }}
-                </h1>
-                <!-- Search Bar -->
-                <div
-                  class="flex flex-wrap items-center justify-between gap-3 mb-14"
-                >
-                  <div class="flex flex-wrap items-center gap-3">
-                    <input
-                      type="text"
-                      x-model="searchQuery"
-                      placeholder="Cari pengguna..."
-                      class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
-                    />
-
-                    <select
-                      x-model="filterRole"
-                      class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
-                    >
-                      <option value="">
-                        {{ 'Semua Role' if current_lang == 'id' else 'All Roles'
-                        }}
-                      </option>
-                      <option value="peserta">
-                        {{ 'Peserta' if current_lang == 'id' else 'Participant'
-                        }}
-                      </option>
-                      <option value="penilai">
-                        {{ 'Penilai' if current_lang == 'id' else 'Evaluator' }}
-                      </option>
-                      <option value="admin">Admin</option>
-                    </select>
-
-                    <select
-                      x-model="filterStatus"
-                      class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
-                    >
-                      <option value="">{{ 'Semua Status' if current_lang == 'id' else 'All Status' }}</option>
-                      <option value="aktif">
-                        {{ 'Aktif' if current_lang == 'id' else 'Active' }}
-                      </option>
-                      <option value="nonaktif">
-                        {{ 'Nonaktif' if current_lang == 'id' else 'Inactive' }}
-                      </option>
-                    </select>
-                  </div>
-
-                  <!-- Tombol di kanan -->
-                  <button
-                    type="button"
-                    class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer"
-                    @click="
-                      fetch('{{ url_for('download_users') }}')
-                        .then(res => res.blob())
-                        .then(blob => {const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'users.csv'; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);});"
-                  >
-                    <i class="fa-solid fa-download mr-2"></i>
-                    {{ 'Unduh' if current_lang == 'id' else 'Download ' }}
-                  </button>
-                </div>
-
-                <!-- Daftar Pengguna -->
-                <div
-                  class="overflow-x-auto mb-10 shadow rounded-lg {{ 'bg-white dark:bg-gray-800' if current_theme == 'dark' else 'bg-white dark:bg-gray-200' }}"
-                >
-                  <table class="w-full text-left border-collapse">
-                    <thead>
-                      <tr
-                        class="{{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-100' }}"
-                      >
-                        <th class="border p-2 px-4 py-2">No</th>
-                        <th class="border p-2 px-4 py-2">
-                          {{ 'Nama Lengkap' if current_lang == 'id' else 'Full
-                          Name' }}
-                        </th>
-                        <th class="border p-2 px-4 py-2">Email</th>
-                        <th class="border p-2 px-4 py-2">Username</th>
-                        <th class="border p-2 px-4 py-2">Role</th>
-                        <th class="border p-2 px-4 py-2">Status</th>
-                        <th class="border p-2 px-4 py-2">
-                          {{ 'Aksi' if current_lang == 'id' else 'Action' }}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for user in users %}
-                      <tr 
-                        class="border-b dark:border-gray-700"
-                        x-show="
-                          (searchQuery === '' || 
-                           '{{ user.nama_lengkap }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           '{{ user.email }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           '{{ user.username }}'.toLowerCase().includes(searchQuery.toLowerCase())) &&
-                          (filterRole === '' || '{{ user.level }}'.toLowerCase() === filterRole.toLowerCase()) &&
-                          (filterStatus === '' || 
-                           ((filterStatus === 'aktif' && '{{ user.status }}'.toLowerCase() === 'aktif') ||
-                            (filterStatus === 'nonaktif' && ('{{ user.status }}'.toLowerCase() === 'non-aktif' || '{{ user.status }}'.toLowerCase() === 'nonaktif'))))
-                        "
-                      >
-                        <td class="border p-2">{{ loop.index }}</td>
-                        <td class="border p-2 px-4 py-2">
-                          {{ user.nama_lengkap }}
-                        </td>
-                        <td class="border p-2 px-4 py-2">{{ user.email }}</td>
-                        <td class="border p-2 px-4 py-2">
-                          {{ user.username }}
-                        </td>
-                        <td class="border p-2 px-4 py-2">{{ user.level }}</td>
-                        <td class="border p-2 px-4 py-2">
-                          <span
-                            class="px-3 py-1 text-xs rounded-lg font-semibold inline-flex items-center"
-                            :class="{
-                              'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300': '{{ user.status|lower }}' === 'aktif',
-                              'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300': '{{ user.status|lower }}' === 'non-aktif' || '{{ user.status|lower }}' === 'nonaktif'
-                            }"
-                          >
-                            <i class="fas mr-1" :class="'{{ user.status|lower }}' === 'aktif' ? 'fa-check-circle' : 'fa-times-circle'"></i>
-                            {{ user.status }}
-                          </span>
-                        </td>
-                        <td
-                          class="border p-2 px-4 py-2 flex gap-2"
-                          x-data="{ 
-                            showModal: false, 
-                            deleteUrl: '{{ url_for('delete_user', user_id=user.id) }}', 
-                            username: '{{ user.username }}'
-                          }"
-                        >
-                          <!-- prettier-ignore -->
-                          <button
-                            @click="
-                              let userData = {
-                                id: {{user.id}},
-                                nama_lengkap: '{{user.nama_lengkap|replace("'", "\\'")}}',
-                                email: '{{user.email}}',
-                                username: '{{user.username}}',
-                                jenis_kelamin: '{{user.jenis_kelamin or ''}}',
-                                usia: {{user.usia or 0}},
-                                nomor_hp: '{{user.nomor_hp or ''}}',
-                                level: '{{user.level}}',
-                                status: '{{user.status}}',
-                                foto: '{{user.foto or 'images/profil-default.jpg'}}'
-                              };
-                              {% if user.biodata %}
-                              userData.biodata = {
-                                nama_lengkap: '{{user.biodata.nama_lengkap|replace("'", "\\'")}}',
-                                tanggal_lahir: '{{user.biodata.tanggal_lahir}}',
-                                alamat_tinggal: '{{user.biodata.alamat_tinggal|replace("'", "\\'")}}',
-                                golongan: '{{user.biodata.golongan}}',
-                                tingkatan: '{{user.biodata.tingkatan}}',
-                                asal_gudep: '{{user.biodata.asal_gudep|replace("'", "\\'")}}',
-                                asal_kwarran: '{{user.biodata.asal_kwarran|replace("'", "\\'")}}',
-                                asal_kwarcab: '{{user.biodata.asal_kwarcab|replace("'", "\\'")}}',
-                                asal_kwarda: '{{user.biodata.asal_kwarda|replace("'", "\\'")}}',
-                                usia: {{user.biodata.usia or 0}},
-                                jenis_kelamin: '{{user.biodata.jenis_kelamin}}',
-                                nomor_hp: '{{user.biodata.nomor_hp|replace("'", "\\'")}}',
-                                foto: '{{user.biodata.foto|replace("'", "\\'")}}'
-                              };
-                              // Merge data biodata ke userData jika ada
-                              if (userData.biodata.nama_lengkap) userData.nama_lengkap = userData.biodata.nama_lengkap;
-                              if (userData.biodata.email) userData.email = userData.biodata.email;
-                              if (userData.biodata.jenis_kelamin) userData.jenis_kelamin = userData.biodata.jenis_kelamin;
-                              if (userData.biodata.usia) userData.usia = userData.biodata.usia;
-                              if (userData.biodata.nomor_hp) userData.nomor_hp = userData.biodata.nomor_hp;
-                              {% endif %}
-                              selectedUser = userData;
-                              page = 'edit';
-                              if ($store.page) {
-                                $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Pengguna', 'Edit User'] : ['Users Management', 'Edit User'];
-                              }
-                            "
-                            class="px-3 py-1 rounded bg-blue-500 hover:bg-blue-700 text-white text-xs cursor-pointer"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            type="button"
-                            @click="showModal = true; username = '{{ user.username }}'; deleteUrl = '{{ url_for('delete_user', user_id=user.id) }}';"
-                            class="px-3 py-1 rounded bg-red-500 hover:bg-red-700 text-white text-xs cursor-pointer"
-                          >
-                            {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
-                          </button>
-
-                          <!-- Modal Konfirmasi Hapus -->
-                          <div
-                            x-show="showModal"
-                            @keydown.escape.window="showModal = false"
-                            x-transition.opacity.duration.300ms
-                            x-cloak
-                            class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }}"
-                          >
-                            <div
-                              x-transition.scale.80.duration.300ms
-                              class="p-6 rounded-2xl shadow-2xl w-96 flex flex-col items-center relative bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
-                              @click.away="showModal = false"
-                            >
-                              <!-- Tombol Close -->
-                              <button
-                                @click="showModal = false"
-                                class="absolute top-3 right-3 dark:hover:text-red-600 transition cursor-pointer {{ 'text-gray-500 hover:text-gray-700' if current_theme == 'dark' else 'text-gray-800 hover:text-gray-900' }}"
-                                aria-label="Close"
-                              >
-                                <i class="fa-solid fa-xmark text-lg"></i>
-                              </button>
-
-                              <!-- Icon -->
-                              <div
-                                class="text-3xl mb-2 animate-bounce text-red-600"
-                              >
-                                <i class="fa-solid fa-trash"></i>
-                              </div>
-
-                              <h2
-                                class="text-lg font-semibold mb-6 {{ 'text-red-700' if current_theme == 'dark' else 'text-red-800' }}"
-                              >
-                                {{ 'Konfirmasi Hapus' if current_lang == 'id'
-                                else 'Confirm Delete' }}
-                              </h2>
-
-                              <p class="text-gray-600 text-center mb-10">
-                                {{ 'Apakah Anda yakin ingin menghapus pengguna'
-                                if current_lang == 'id' else 'Are you sure you
-                                want to delete user' }}
-                                <span
-                                  class="font-semibold text-red-600"
-                                  x-text="username"
-                                ></span
-                                >?
-                              </p>
-
-                              <form
-                                :action="deleteUrl"
-                                method="POST"
-                                id="deleteForm{{ user.id }}"
-                              >
-                                <input
-                                  type="hidden"
-                                  name="csrf_token"
-                                  value="{{ csrf_token() }}"
-                                />
-                                <div class="flex justify-end gap-5 mb-5">
-                                  <button
-                                    type="button"
-                                    @click="showModal = false"
-                                    class="px-4 py-2 rounded-lg cursor-pointer bg-gray-300 hover:bg-gray-400 text-gray-800"
-                                  >
-                                    {{ 'Batal' if current_lang == 'id' else
-                                    'Cancel' }}
-                                  </button>
-                                  <button
-                                    type="submit"
-                                    class="px-4 py-2 rounded-lg cursor-pointer bg-red-600 hover:bg-red-700 text-white"
-                                  >
-                                    {{ 'Hapus' if current_lang == 'id' else
-                                    'Delete' }}
-                                  </button>
-                                </div>
-                              </form>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                      {% else %}
-                      <tr>
-                        <td
-                          colspan="7"
-                          class="p-4 text-center text-gray-500 mt-4"
-                        >
-                          {{ 'Tidak ada data' if current_lang == 'id' else 'No
-                          data available' }}
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
             </div>
 
             <!-- === (Tabs) === -->
             <template x-if="page === 'edit'">
               {% include 'manajemen-pengguna/edit_data_user.html' %}
             </template>
-            {%include 'manajemen-pengguna/kelola_pengguna.html'%}
-            {%include 'manajemen-pengguna/kelola_role.html'%} {%include
+            {%include 'manajemen-pengguna/kelola_pengguna.html'%} {%include
+            'manajemen-pengguna/kelola_role.html'%} {%include
             'manajemen-pengguna/log_activity.html'%} {%include
             'manajemen-pengguna/kelola_profil.html'%} {%include
             'manajemen-pengguna/kelola_status_akun.html'%}
@@ -633,40 +351,49 @@
     <!-- Script untuk Toggle Status Akun -->
     <script>
       // Fungsi untuk toggle status akun
-      async function toggleUserStatus(userId, currentStatus, username, buttonElement) {
+      async function toggleUserStatus(
+        userId,
+        currentStatus,
+        username,
+        buttonElement
+      ) {
         // Tentukan status baru
-        const isAktif = currentStatus.toLowerCase() === 'aktif';
-        const newStatus = isAktif ? 'non-aktif' : 'aktif';
-        
+        const isAktif = currentStatus.toLowerCase() === "aktif";
+        const newStatus = isAktif ? "non-aktif" : "aktif";
+
         // Konfirmasi perubahan
-        const statusText = newStatus === 'aktif' ? 'mengaktifkan' : 'menonaktifkan';
+        const statusText =
+          newStatus === "aktif" ? "mengaktifkan" : "menonaktifkan";
         const confirmMessage = `{{ 'Apakah Anda yakin ingin ' if current_lang == 'id' else 'Are you sure you want to ' }}${statusText} akun ${username}?`;
-        
+
         if (!confirm(confirmMessage)) {
           return;
         }
 
         // Get Alpine component dari button
-        const alpineComponent = Alpine.$data(buttonElement.closest('[x-data]'));
+        const alpineComponent = Alpine.$data(buttonElement.closest("[x-data]"));
         if (alpineComponent) {
           alpineComponent.loading = true;
         }
 
         try {
           // Get CSRF token
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                           document.querySelector('input[name="csrf_token"]')?.value;
+          const csrfToken =
+            document
+              .querySelector('meta[name="csrf-token"]')
+              ?.getAttribute("content") ||
+            document.querySelector('input[name="csrf_token"]')?.value;
 
           // Kirim request ke API
           const response = await fetch(`/api/user/update_status/${userId}`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': csrfToken
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
             },
             body: JSON.stringify({
-              status: newStatus
-            })
+              status: newStatus,
+            }),
           });
 
           const data = await response.json();
@@ -677,13 +404,14 @@
               alpineComponent.currentStatus = newStatus;
               alpineComponent.loading = false;
             }
-            
+
             // Tampilkan notifikasi sukses
             showNotification(
-              data.message || `Status akun berhasil diubah menjadi ${newStatus}`,
-              'success'
+              data.message ||
+                `Status akun berhasil diubah menjadi ${newStatus}`,
+              "success"
             );
-            
+
             // Reload halaman setelah 1.5 detik untuk sinkronisasi
             setTimeout(() => {
               location.reload();
@@ -691,22 +419,22 @@
           } else {
             // Tampilkan notifikasi error
             showNotification(
-              data.message || 'Gagal mengubah status akun',
-              'error'
+              data.message || "Gagal mengubah status akun",
+              "error"
             );
-            
+
             // Reset loading state
             if (alpineComponent) {
               alpineComponent.loading = false;
             }
           }
         } catch (error) {
-          console.error('Error:', error);
+          console.error("Error:", error);
           showNotification(
             '{{ "Terjadi kesalahan saat mengubah status akun" if current_lang == "id" else "An error occurred while changing account status" }}',
-            'error'
+            "error"
           );
-          
+
           // Reset loading state
           if (alpineComponent) {
             alpineComponent.loading = false;
@@ -715,49 +443,59 @@
       }
 
       // Fungsi helper untuk show notification (jika belum ada)
-      function showNotification(message, type = 'info') {
+      function showNotification(message, type = "info") {
         // Cek apakah ada fungsi notification dari script_notification.html
-        if (typeof window.showNotification === 'function') {
+        if (typeof window.showNotification === "function") {
           window.showNotification(message, type);
           return;
         }
 
         // Fallback: buat notifikasi sederhana
-        const notification = document.createElement('div');
+        const notification = document.createElement("div");
         notification.className = `fixed bottom-6 right-6 z-50 px-6 py-4 rounded-2xl shadow-xl border ${
-          type === 'success' ? 'bg-green-600 text-white border-green-500' :
-          type === 'error' ? 'bg-red-600 text-white border-red-500' :
-          type === 'warning' ? 'bg-yellow-500 text-gray-900 border-yellow-400' :
-          'bg-gray-800 text-white border-gray-700'
+          type === "success"
+            ? "bg-green-600 text-white border-green-500"
+            : type === "error"
+            ? "bg-red-600 text-white border-red-500"
+            : type === "warning"
+            ? "bg-yellow-500 text-gray-900 border-yellow-400"
+            : "bg-gray-800 text-white border-gray-700"
         }`;
         notification.innerHTML = `
           <div class="flex items-center gap-3">
             <i class="fa-solid ${
-              type === 'success' ? 'fa-circle-check' :
-              type === 'error' ? 'fa-triangle-exclamation' :
-              type === 'warning' ? 'fa-exclamation-circle' :
-              'fa-info-circle'
+              type === "success"
+                ? "fa-circle-check"
+                : type === "error"
+                ? "fa-triangle-exclamation"
+                : type === "warning"
+                ? "fa-exclamation-circle"
+                : "fa-info-circle"
             } text-lg"></i>
             <div>
-              <strong>${type === 'success' ? '{{ "Berhasil" if current_lang == "id" else "Success" }}' : 
-                        type === 'error' ? '{{ "Error" if current_lang == "id" else "Error" }}' : 
-                        '{{ "Info" if current_lang == "id" else "Info" }}'}</strong><br>
+              <strong>${
+                type === "success"
+                  ? '{{ "Berhasil" if current_lang == "id" else "Success" }}'
+                  : type === "error"
+                  ? '{{ "Error" if current_lang == "id" else "Error" }}'
+                  : '{{ "Info" if current_lang == "id" else "Info" }}'
+              }</strong><br>
               <span class="text-sm">${message}</span>
             </div>
           </div>
         `;
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
-          notification.style.transition = 'opacity 0.3s';
-          notification.style.opacity = '0';
+          notification.style.transition = "opacity 0.3s";
+          notification.style.opacity = "0";
           setTimeout(() => notification.remove(), 300);
         }, 3000);
       }
 
       // Export fungsi ke global scope
       window.toggleUserStatus = toggleUserStatus;
-      if (typeof window.showNotification === 'undefined') {
+      if (typeof window.showNotification === "undefined") {
         window.showNotification = showNotification;
       }
     </script>
