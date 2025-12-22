@@ -1731,6 +1731,47 @@ def edit_user(user_id):
     
     return redirect(url_for('admin_users'))
 
+@app.route('/api/user/update_status/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def api_update_user_status(user_id):
+    """API endpoint untuk update status akun user"""
+    try:
+        user = Users.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User tidak ditemukan'}), 404
+        
+        data = request.get_json()
+        new_status = data.get('status', '').strip()
+        
+        # Normalisasi status
+        if new_status == 'nonaktif':
+            new_status = 'non-aktif'
+        elif new_status not in ['aktif', 'non-aktif']:
+            return jsonify({'success': False, 'message': 'Status tidak valid'}), 400
+        
+        # Update status
+        old_status = user.status
+        user.status = new_status
+        db.session.commit()
+        
+        # Log aktivitas
+        status_text = 'mengaktifkan' if new_status == 'aktif' else 'menonaktifkan'
+        log_activity(
+            current_user.id,
+            f'{status_text.capitalize()} akun pengguna: {user.username}'
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'Status akun {user.username} berhasil diubah menjadi {new_status}',
+            'status': new_status
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in api_update_user_status:')
+        return jsonify({'success': False, 'message': f'Terjadi kesalahan: {str(e)}'}), 500
+
 # Manajemen Seleksi   
 @app.route('/admin/manajemen_seleksi')
 @login_required

@@ -1,0 +1,401 @@
+<!-- Halaman Kelola Status Akun -->
+<div
+  x-show="page === 'status'"
+  x-transition:enter="transition ease-out duration-500"
+  x-transition:enter-start="opacity-0 scale-95"
+  x-transition:enter-end="opacity-100 scale-100"
+  x-transition:leave="transition ease-in duration-300"
+  x-transition:leave-start="opacity-100 scale-100"
+  x-transition:leave-end="opacity-0 scale-95"
+  class="container mx-auto p-6"
+  x-data="{ 
+    searchQuery: '', 
+    filterRole: '', 
+    filterStatus: '',
+    selectedUsers: [],
+    loading: {},
+    selectAll: false,
+    init() {
+      // Inisialisasi jika diperlukan
+    }
+  }"
+>
+  <!-- Header -->
+  <div class="mb-6">
+    <button
+      @click="page = 'main'; if ($store.page) $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Pengguna'] : ['Users Management']"
+      class="mb-4 flex items-center text-blue-600 hover:text-blue-800 transition cursor-pointer"
+    >
+      <i class="fa-solid fa-arrow-left mr-2"></i>
+      {{ 'Kembali' if current_lang == 'id' else 'Back' }}
+    </button>
+    <h1 class="text-2xl font-bold mb-2">
+      {{ 'Kelola Status Akun' if current_lang == 'id' else 'Manage Account
+      Status' }}
+    </h1>
+    <p
+      class="text-sm {{ 'text-gray-600 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-600' }}"
+    >
+      {{ 'Aktifkan atau nonaktifkan akun pengguna secara individual atau
+      massal.' if current_lang == 'id' else 'Activate or deactivate user
+      accounts individually or in bulk.' }}
+    </p>
+  </div>
+
+  <!-- Filter & Search -->
+  <div class="mb-6 flex flex-wrap items-center gap-3">
+    <input
+      type="text"
+      x-model="searchQuery"
+      :placeholder="current_lang === 'id' ? 'Cari pengguna...' : 'Search users...'"
+      class="px-4 py-2 border rounded-lg flex-1 min-w-[200px] {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
+    />
+    <select
+      x-model="filterRole"
+      class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
+    >
+      <option value="">
+        {{ 'Semua Role' if current_lang == 'id' else 'All Roles' }}
+      </option>
+      <option value="peserta">
+        {{ 'Peserta' if current_lang == 'id' else 'Participant' }}
+      </option>
+      <option value="penilai">
+        {{ 'Penilai' if current_lang == 'id' else 'Evaluator' }}
+      </option>
+      <option value="admin">Admin</option>
+    </select>
+    <select
+      x-model="filterStatus"
+      class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
+    >
+      <option value="">
+        {{ 'Semua Status' if current_lang == 'id' else 'All Status' }}
+      </option>
+      <option value="aktif">
+        {{ 'Aktif' if current_lang == 'id' else 'Active' }}
+      </option>
+      <option value="nonaktif">
+        {{ 'Nonaktif' if current_lang == 'id' else 'Inactive' }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Bulk Actions -->
+  <div
+    x-show="selectedUsers.length > 0"
+    class="mb-4 p-4 rounded-lg {{ 'bg-blue-100 dark:bg-blue-900' if current_theme == 'dark' else 'bg-blue-50 dark:bg-blue-100' }}"
+  >
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <span
+        class="font-semibold {{ 'text-blue-900 dark:text-blue-100' if current_theme == 'dark' else 'text-blue-800 dark:text-blue-900' }}"
+      >
+        <span x-text="selectedUsers.length"></span> {{ 'akun dipilih' if
+        current_lang == 'id' else 'accounts selected' }}
+      </span>
+      <div class="flex gap-2">
+        <button
+          @click="bulkUpdateStatus('aktif')"
+          class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition cursor-pointer"
+        >
+          <i class="fa-solid fa-check-circle mr-2"></i>
+          {{ 'Aktifkan Semua' if current_lang == 'id' else 'Activate All' }}
+        </button>
+        <button
+          @click="bulkUpdateStatus('non-aktif')"
+          class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
+        >
+          <i class="fa-solid fa-ban mr-2"></i>
+          {{ 'Nonaktifkan Semua' if current_lang == 'id' else 'Deactivate All'
+          }}
+        </button>
+        <button
+          @click="selectedUsers = []"
+          class="px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition cursor-pointer"
+        >
+          {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabel Pengguna -->
+  <div
+    class="overflow-x-auto shadow rounded-lg {{ 'bg-white dark:bg-gray-800' if current_theme == 'dark' else 'bg-white dark:bg-gray-200' }}"
+  >
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr
+          class="{{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-100' }}"
+        >
+          <th class="border p-2 px-4 py-2">
+            <input
+              type="checkbox"
+              @change="
+                selectAll = $event.target.checked;
+                if (selectAll) {
+                  selectedUsers = Array.from(document.querySelectorAll('input[type=checkbox][data-user-id]:not(:disabled)')).map(cb => parseInt(cb.dataset.userId));
+                } else {
+                  selectedUsers = [];
+                }
+              "
+              :checked="selectAll && selectedUsers.length > 0"
+              class="cursor-pointer"
+            />
+          </th>
+          <th class="border p-2 px-4 py-2">
+            {{ 'No' if current_lang == 'id' else 'No' }}
+          </th>
+          <th class="border p-2 px-4 py-2">
+            {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}
+          </th>
+          <th class="border p-2 px-4 py-2">Email</th>
+          <th class="border p-2 px-4 py-2">Username</th>
+          <th class="border p-2 px-4 py-2">Role</th>
+          <th class="border p-2 px-4 py-2">Status</th>
+          <th class="border p-2 px-4 py-2">
+            {{ 'Aksi' if current_lang == 'id' else 'Action' }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr
+          class="border-b dark:border-gray-700"
+          x-show="
+            (searchQuery === '' || 
+             '{{ user.nama_lengkap }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
+             '{{ user.email }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
+             '{{ user.username }}'.toLowerCase().includes(searchQuery.toLowerCase())) &&
+            (filterRole === '' || '{{ user.level }}'.toLowerCase() === filterRole.toLowerCase()) &&
+            (filterStatus === '' || 
+             ((filterStatus === 'aktif' && '{{ user.status }}'.toLowerCase() === 'aktif') ||
+              (filterStatus === 'nonaktif' && ('{{ user.status }}'.toLowerCase() === 'non-aktif' || '{{ user.status }}'.toLowerCase() === 'nonaktif'))))
+          "
+        >
+          <td class="border p-2">
+            <input
+              type="checkbox"
+              data-user-id="{{ user.id }}"
+              :checked="selectedUsers.includes({{ user.id }})"
+              @change="
+                const userId = {{ user.id }};
+                if ($event.target.checked) {
+                  if (!selectedUsers.includes(userId)) {
+                    selectedUsers.push(userId);
+                  }
+                } else {
+                  selectedUsers = selectedUsers.filter(id => id !== userId);
+                  selectAll = false;
+                }
+              "
+              class="cursor-pointer"
+            />
+          </td>
+          <td class="border p-2">{{ loop.index }}</td>
+          <td class="border p-2 px-4 py-2">{{ user.nama_lengkap }}</td>
+          <td class="border p-2 px-4 py-2">{{ user.email }}</td>
+          <td class="border p-2 px-4 py-2">{{ user.username }}</td>
+          <td class="border p-2 px-4 py-2">{{ user.level }}</td>
+          <td class="border p-2 px-4 py-2">
+            <span
+              class="px-2 py-1 text-xs rounded-lg font-semibold"
+              :class="{
+                'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300': '{{ user.status|lower }}' === 'aktif',
+                'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300': '{{ user.status|lower }}' === 'non-aktif' || '{{ user.status|lower }}' === 'nonaktif'
+              }"
+            >
+              {{ user.status }}
+            </span>
+          </td>
+          <td class="border p-2 px-4 py-2">
+            <div class="flex gap-2">
+              <template x-if="'{{ user.status|lower }}' === 'aktif'">
+                <button
+                  @click="updateUserStatus({{ user.id }}, 'non-aktif', '{{ user.username }}')"
+                  class="px-3 py-1 rounded bg-red-500 hover:bg-red-700 text-white text-xs cursor-pointer disabled:opacity-50"
+                  :disabled="loading[{{ user.id }}]"
+                >
+                  <i class="fa-solid fa-ban mr-1"></i>
+                  {{ 'Nonaktifkan' if current_lang == 'id' else 'Deactivate' }}
+                </button>
+              </template>
+              <template
+                x-if="'{{ user.status|lower }}' === 'non-aktif' || '{{ user.status|lower }}' === 'nonaktif'"
+              >
+                <button
+                  @click="updateUserStatus({{ user.id }}, 'aktif', '{{ user.username }}')"
+                  class="px-3 py-1 rounded bg-green-500 hover:bg-green-700 text-white text-xs cursor-pointer disabled:opacity-50"
+                  :disabled="loading[{{ user.id }}]"
+                >
+                  <i class="fa-solid fa-check-circle mr-1"></i>
+                  {{ 'Aktifkan' if current_lang == 'id' else 'Activate' }}
+                </button>
+              </template>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="p-4 text-center text-gray-500">
+            {{ 'Tidak ada data' if current_lang == 'id' else 'No data available'
+            }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("alpine:init", () => {
+    // Fungsi untuk update status user individual
+    window.updateUserStatus = async function (userId, newStatus, username) {
+      const confirmMessage =
+        newStatus === "aktif"
+          ? `{{ 'Apakah Anda yakin ingin mengaktifkan akun ' if current_lang == 'id' else 'Are you sure you want to activate account ' }}${username}?`
+          : `{{ 'Apakah Anda yakin ingin menonaktifkan akun ' if current_lang == 'id' else 'Are you sure you want to deactivate account ' }}${username}?`;
+
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+
+      // Set loading state
+      const statusPage = document.querySelector(
+        "[x-show=\"page === 'status'\"]"
+      );
+      const pageData = statusPage ? Alpine.$data(statusPage) : null;
+      if (pageData) {
+        pageData.loading[userId] = true;
+      }
+
+      try {
+        const csrfToken =
+          document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") ||
+          document.querySelector('input[name="csrf_token"]')?.value;
+
+        const response = await fetch(`/api/user/update_status/${userId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          if (typeof showNotification === "function") {
+            showNotification(
+              data.message ||
+                `{{ 'Status akun berhasil diubah' if current_lang == 'id' else 'Account status updated successfully' }}`,
+              "success"
+            );
+          }
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          if (typeof showNotification === "function") {
+            showNotification(
+              data.message ||
+                `{{ 'Gagal mengubah status akun' if current_lang == 'id' else 'Failed to update account status' }}`,
+              "error"
+            );
+          }
+          if (pageData) {
+            pageData.loading[userId] = false;
+          }
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        if (typeof showNotification === "function") {
+          showNotification(
+            `{{ 'Terjadi kesalahan' if current_lang == 'id' else 'An error occurred' }}`,
+            "error"
+          );
+        }
+        if (pageData) {
+          pageData.loading[userId] = false;
+        }
+      }
+    };
+
+    // Fungsi untuk bulk update status
+    window.bulkUpdateStatus = async function (newStatus) {
+      const statusPage = document.querySelector(
+        "[x-show=\"page === 'status'\"]"
+      );
+      const pageData = statusPage ? Alpine.$data(statusPage) : null;
+
+      if (!pageData || pageData.selectedUsers.length === 0) {
+        return;
+      }
+
+      const statusText =
+        newStatus === "aktif" ? "mengaktifkan" : "menonaktifkan";
+      const confirmMessage = `{{ 'Apakah Anda yakin ingin ' if current_lang == 'id' else 'Are you sure you want to ' }}${statusText} ${pageData.selectedUsers.length} {{ 'akun' if current_lang == 'id' else 'accounts' }}?`;
+
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+
+      try {
+        const csrfToken =
+          document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") ||
+          document.querySelector('input[name="csrf_token"]')?.value;
+
+        // Update semua user yang dipilih
+        const promises = pageData.selectedUsers.map((userId) =>
+          fetch(`/api/user/update_status/${userId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({ status: newStatus }),
+          }).then((res) => res.json())
+        );
+
+        const results = await Promise.all(promises);
+        const successCount = results.filter((r) => r.success).length;
+        const failCount = results.length - successCount;
+
+        if (successCount > 0) {
+          if (typeof showNotification === "function") {
+            showNotification(
+              `${successCount} {{ 'akun berhasil diubah' if current_lang == 'id' else 'accounts updated successfully' }}${
+                failCount > 0
+                  ? `, ${failCount} {{ 'gagal' if current_lang == 'id' else 'failed' }}`
+                  : ""
+              }`,
+              failCount > 0 ? "warning" : "success"
+            );
+          }
+          pageData.selectedUsers = [];
+          pageData.selectAll = false;
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          if (typeof showNotification === "function") {
+            showNotification(
+              `{{ 'Gagal mengubah status akun' if current_lang == 'id' else 'Failed to update account status' }}`,
+              "error"
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        if (typeof showNotification === "function") {
+          showNotification(
+            `{{ 'Terjadi kesalahan' if current_lang == 'id' else 'An error occurred' }}`,
+            "error"
+          );
+        }
+      }
+    };
+  });
+</script>

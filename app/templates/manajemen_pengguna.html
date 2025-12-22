@@ -554,20 +554,19 @@
                       password.' if current_lang == 'id' else
                       'Activate/deactivate accounts or reset passwords.' }}
                     </p>
-                    <div class="flex flex-wrap gap-2">
-                      <button
-                        class="flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
-                      >
-                        <i class="fa-solid fa-ban mr-2"></i> {{ 'Nonaktifkan' if
-                        current_lang == 'id' else 'Deactivate' }}
-                      </button>
-                      <button
-                        class="flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition cursor-pointer"
-                      >
-                        <i class="fa-solid fa-key mr-2"></i> {{ 'Reset Password'
-                        if current_lang == 'id' else 'Reset Password' }}
-                      </button>
-                    </div>
+                    <button
+                      @click="
+                        page = 'status';
+                        $store.page.breadcrumbs =
+                          current_lang === 'id'
+                            ? ['Manajemen Pengguna', 'Kelola Status Akun']
+                            : ['Users Management', 'Manage Account Status']
+                      "
+                      class="flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
+                    >
+                      <i class="fa-solid fa-user-lock mr-2"></i>
+                      {{ 'Kelola Status Akun' if current_lang == 'id' else 'Manage Account Status' }}
+                    </button>
                   </div>
 
                   <!-- Profil Peserta -->
@@ -706,7 +705,9 @@
                            '{{ user.email }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            '{{ user.username }}'.toLowerCase().includes(searchQuery.toLowerCase())) &&
                           (filterRole === '' || '{{ user.level }}'.toLowerCase() === filterRole.toLowerCase()) &&
-                          (filterStatus === '' || '{{ user.status }}'.toLowerCase() === filterStatus.toLowerCase())
+                          (filterStatus === '' || 
+                           ((filterStatus === 'aktif' && '{{ user.status }}'.toLowerCase() === 'aktif') ||
+                            (filterStatus === 'nonaktif' && ('{{ user.status }}'.toLowerCase() === 'non-aktif' || '{{ user.status }}'.toLowerCase() === 'nonaktif'))))
                         "
                       >
                         <td class="border p-2">{{ loop.index }}</td>
@@ -719,15 +720,27 @@
                         </td>
                         <td class="border p-2 px-4 py-2">{{ user.level }}</td>
                         <td class="border p-2 px-4 py-2">
-                          <span
-                            class="px-2 py-1 text-xs rounded-lg"
-                            :class="{
-                              'bg-green-100 text-green-600': '{{ user.status|lower }}' === 'aktif',
-                              'bg-red-100 text-red-600': '{{ user.status|lower }}' !== 'aktif'
-                            }"
-                          >
-                            {{ user.status }}
-                          </span>
+                          <div x-data="{ loading: false, currentStatus: '{{ user.status }}' }">
+                            <button
+                              type="button"
+                              @click="toggleUserStatus({{ user.id }}, currentStatus, '{{ user.username }}', $el)"
+                              class="px-3 py-1 text-xs rounded-lg font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                              :class="{
+                                'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300': currentStatus.toLowerCase() === 'aktif',
+                                'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300': currentStatus.toLowerCase() === 'non-aktif' || currentStatus.toLowerCase() === 'nonaktif'
+                              }"
+                              :disabled="loading"
+                            >
+                              <span x-show="!loading" class="flex items-center">
+                                <i class="fas mr-1" :class="currentStatus.toLowerCase() === 'aktif' ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                <span x-text="currentStatus"></span>
+                              </span>
+                              <span x-show="loading" class="flex items-center">
+                                <i class="fas fa-spinner fa-spin mr-1"></i>
+                                {{ 'Memproses...' if current_lang == 'id' else 'Processing...' }}
+                              </span>
+                            </button>
+                          </div>
                         </td>
                         <td
                           class="border p-2 px-4 py-2 flex gap-2"
@@ -896,7 +909,8 @@
             </template>
             {%include 'manajemen-pengguna/kelola_role.html'%} {%include
             'manajemen-pengguna/log_activity.html'%} {%include
-            'manajemen-pengguna/kelola_profil.html'%}
+            'manajemen-pengguna/kelola_profil.html'%} {%include
+            'manajemen-pengguna/kelola_status_akun.html'%}
           </section>
         </main>
       </div>
@@ -937,5 +951,137 @@
     <!-- Animation & Notification Script -->
     {% include 'script_animation.html' %} {% include 'script_notification.html'
     %}
+
+    <!-- Script untuk Toggle Status Akun -->
+    <script>
+      // Fungsi untuk toggle status akun
+      async function toggleUserStatus(userId, currentStatus, username, buttonElement) {
+        // Tentukan status baru
+        const isAktif = currentStatus.toLowerCase() === 'aktif';
+        const newStatus = isAktif ? 'non-aktif' : 'aktif';
+        
+        // Konfirmasi perubahan
+        const statusText = newStatus === 'aktif' ? 'mengaktifkan' : 'menonaktifkan';
+        const confirmMessage = `{{ 'Apakah Anda yakin ingin ' if current_lang == 'id' else 'Are you sure you want to ' }}${statusText} akun ${username}?`;
+        
+        if (!confirm(confirmMessage)) {
+          return;
+        }
+
+        // Get Alpine component dari button
+        const alpineComponent = Alpine.$data(buttonElement.closest('[x-data]'));
+        if (alpineComponent) {
+          alpineComponent.loading = true;
+        }
+
+        try {
+          // Get CSRF token
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                           document.querySelector('input[name="csrf_token"]')?.value;
+
+          // Kirim request ke API
+          const response = await fetch(`/api/user/update_status/${userId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+              status: newStatus
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // Update status di Alpine component
+            if (alpineComponent) {
+              alpineComponent.currentStatus = newStatus;
+              alpineComponent.loading = false;
+            }
+            
+            // Tampilkan notifikasi sukses
+            showNotification(
+              data.message || `Status akun berhasil diubah menjadi ${newStatus}`,
+              'success'
+            );
+            
+            // Reload halaman setelah 1.5 detik untuk sinkronisasi
+            setTimeout(() => {
+              location.reload();
+            }, 1500);
+          } else {
+            // Tampilkan notifikasi error
+            showNotification(
+              data.message || 'Gagal mengubah status akun',
+              'error'
+            );
+            
+            // Reset loading state
+            if (alpineComponent) {
+              alpineComponent.loading = false;
+            }
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          showNotification(
+            '{{ "Terjadi kesalahan saat mengubah status akun" if current_lang == "id" else "An error occurred while changing account status" }}',
+            'error'
+          );
+          
+          // Reset loading state
+          if (alpineComponent) {
+            alpineComponent.loading = false;
+          }
+        }
+      }
+
+      // Fungsi helper untuk show notification (jika belum ada)
+      function showNotification(message, type = 'info') {
+        // Cek apakah ada fungsi notification dari script_notification.html
+        if (typeof window.showNotification === 'function') {
+          window.showNotification(message, type);
+          return;
+        }
+
+        // Fallback: buat notifikasi sederhana
+        const notification = document.createElement('div');
+        notification.className = `fixed bottom-6 right-6 z-50 px-6 py-4 rounded-2xl shadow-xl border ${
+          type === 'success' ? 'bg-green-600 text-white border-green-500' :
+          type === 'error' ? 'bg-red-600 text-white border-red-500' :
+          type === 'warning' ? 'bg-yellow-500 text-gray-900 border-yellow-400' :
+          'bg-gray-800 text-white border-gray-700'
+        }`;
+        notification.innerHTML = `
+          <div class="flex items-center gap-3">
+            <i class="fa-solid ${
+              type === 'success' ? 'fa-circle-check' :
+              type === 'error' ? 'fa-triangle-exclamation' :
+              type === 'warning' ? 'fa-exclamation-circle' :
+              'fa-info-circle'
+            } text-lg"></i>
+            <div>
+              <strong>${type === 'success' ? '{{ "Berhasil" if current_lang == "id" else "Success" }}' : 
+                        type === 'error' ? '{{ "Error" if current_lang == "id" else "Error" }}' : 
+                        '{{ "Info" if current_lang == "id" else "Info" }}'}</strong><br>
+              <span class="text-sm">${message}</span>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.style.transition = 'opacity 0.3s';
+          notification.style.opacity = '0';
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+      }
+
+      // Export fungsi ke global scope
+      window.toggleUserStatus = toggleUserStatus;
+      if (typeof window.showNotification === 'undefined') {
+        window.showNotification = showNotification;
+      }
+    </script>
   </body>
 </html>
