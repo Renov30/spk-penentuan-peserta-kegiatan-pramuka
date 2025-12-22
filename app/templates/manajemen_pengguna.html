@@ -208,19 +208,13 @@
                       current_lang == 'id' else 'View login history and user
                       activities.' }}
                     </p>
-                    <button
-                      @click="
-                        page = 'log';
-                        $store.page.breadcrumbs =
-                          current_lang === 'id'
-                            ? ['Manajemen Pengguna', 'Log Aktivitas']
-                            : ['Users Management', 'Activity Log']
-                      "
-                      class="flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition cursor-pointer"
+                    <a
+                      href="{{ url_for('admin_log_aktivitas') }}"
+                      class="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition cursor-pointer"
                     >
                       <i class="fa-solid fa-clock-rotate-left mr-2"></i>
                       {{ 'Lihat Log' if current_lang == 'id' else 'View Logs' }}
-                    </button>
+                    </a>
                   </div>
 
                   <!-- Status Akun -->
