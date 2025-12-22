@@ -133,7 +133,13 @@
                     </p>
                     <div class="flex flex-wrap gap-2">
                       <button
-                        onclick="document.querySelector('.overflow-x-auto').scrollIntoView({ behavior: 'smooth', block: 'start' })"
+                        @click="
+                          page = 'kelola';
+                          $store.page.breadcrumbs =
+                            current_lang === 'id'
+                              ? ['Manajemen Pengguna', 'Kelola Pengguna']
+                              : ['Users Management', 'Manage Users']
+                        "
                         class="flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer"
                       >
                         <i class="fa-solid fa-users mr-2"></i>
@@ -578,6 +584,7 @@
             <template x-if="page === 'edit'">
               {% include 'manajemen-pengguna/edit_data_user.html' %}
             </template>
+            {%include 'manajemen-pengguna/kelola_pengguna.html'%}
             {%include 'manajemen-pengguna/kelola_role.html'%} {%include
             'manajemen-pengguna/log_activity.html'%} {%include
             'manajemen-pengguna/kelola_profil.html'%} {%include
