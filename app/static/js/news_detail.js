@@ -1,4 +1,32 @@
-// --- Modal Login ---
+// ================= MODAL LOGIN =================
+const lang = document.body.dataset.lang || "id";
+const messages = {
+  id: {
+    reply: "Balas",
+    seeReplies: (count) => `Lihat ${count} balasan lainnya`,
+    seeReplies2: "Lihat balasan lainnya",
+    hideReplies: "Sembunyikan balasan",
+    delete: "Hapus",
+    cancel: "Batal",
+    send: "Kirim",
+    deleteConfirm: "Apakah Anda yakin ingin menghapus komentar ini?",
+  },
+  en: {
+    reply: "Reply",
+    cancel: "Cancel",
+    seeReplies: (count) => `See ${count} more replies`,
+    seeReplies2: "See more replies",
+    hideReplies: "Hide replies",
+    delete: "Delete",
+    cancel: "Cancel",
+    send: "Send",
+    deleteConfirm: "Are you sure you want to delete this comment?",
+  },
+};
+
+// pilih pesan sesuai bahasa
+const t = messages[lang];
+
 function openLoginModal() {
   const modal = document.getElementById("loginModal");
   modal.classList.remove("hidden");
@@ -11,94 +39,347 @@ function closeLoginModal() {
   modal.classList.remove("flex");
 }
 
-// --- Toggle Reply Form ---
-function toggleReplyForm(id) {
-  const el = document.getElementById(`reply-form-${id}`);
-  if (el) el.classList.toggle("hidden");
+// ================= UTIL =================
+function escapeHTML(str) {
+  return str.replace(
+    /[&<>"']/g,
+    (m) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[m])
+  );
 }
 
-// --- Render Comment & Replies (Recursive) ---
+// ================= RENDER COMMENT =================
 function renderComment(comment) {
-  let repliesHTML = "";
-  if (comment.replies && comment.replies.length > 0) {
-    comment.replies.forEach((reply) => {
-      repliesHTML += `
-        <div class="ml-6 mt-3 border-l pl-4">
-          <p class="font-semibold text-sm">${reply.user.nama_lengkap}</p>
-          <p class="text-sm">${reply.content}</p>
-          <div class="mt-1">
-            <button onclick="toggleReplyForm(${
-              reply.id
-            })" class="text-xs text-yellow-500 cursor-pointer">Balas</button>
-          </div>
-          <div id="reply-form-${reply.id}" class="hidden mt-2">
-            <form onsubmit="submitReply(event, ${reply.id}, '${comment.slug}')">
-              <textarea name="content" rows="2" class="w-full p-2 border rounded" required></textarea>
-              <button type="submit" class="text-sm text-white bg-yellow-500 px-3 py-1 rounded mt-1 cursor-pointer">Kirim</button>
-            </form>
-          </div>
-          ${reply.replies ? renderComment(reply) : ""}
-        </div>
+  if (!comment || !comment.user) return "";
+
+  const isReply = comment.parent_id !== null;
+  const userName = comment.user.nama_lengkap || "User";
+  const foto = comment.user.foto;
+  const defaultFoto = "/static/images/profil-default.jpg";
+
+  let avatar = "";
+
+  // ===== AVATAR LOGIC (MENIRU JINJA) =====
+  if (foto && typeof foto === "string") {
+    let fotoUrl = null;
+
+    if (foto.startsWith("http://") || foto.startsWith("https://")) {
+      fotoUrl = foto;
+    } else if (foto.startsWith("uploads/") || foto.startsWith("img/")) {
+      fotoUrl = `/static/${foto}`;
+    }
+
+    if (fotoUrl) {
+      avatar = `
+        <img
+          src="${fotoUrl}"
+          alt="Foto ${escapeHTML(userName)}"
+          class="w-8 h-8 rounded-full object-cover"
+          onerror="this.src='${defaultFoto}'"
+        />
       `;
-    });
+    }
+  }
+
+  // ===== FALLBACK ICON =====
+  if (!avatar) {
+    avatar = `
+      <div class="w-8 h-8 rounded-full bg-gray-400 text-white
+                  flex items-center justify-center">
+        <i class="fa-solid fa-user text-sm"></i>
+      </div>
+    `;
   }
 
   return `
-    <div class="mb-6" id="comment-${comment.id}">
-      <p class="font-semibold">${comment.user.nama_lengkap}</p>
-      <p class="text-sm text-gray-700">${comment.content}</p>
-      <div class="flex gap-2 mt-1">
-        <button onclick="toggleReplyForm(${
-          comment.id
-        })" class="text-xs text-yellow-500 cursor-pointer">Balas</button>
-        <button onclick="likeComment(${comment.id})" class="text-xs">👍 ${
-    comment.likes || 0
+    <div id="comment-${comment.id}" class="mb-6 ${
+    isReply ? "ml-6 border-l pl-4" : ""
+  }">
+      <div class="flex items-start gap-3">
+        ${avatar}
+        <div class="w-full">
+          <p class="font-semibold">${escapeHTML(userName)}</p>
+          <p class="text-sm text-gray-400">${escapeHTML(comment.content)}</p>
+          <div class="flex gap-4 text-xs mt-1">
+            <button id="reply-btn-${comment.id}" onclick="openReplyForm(${
+    comment.id
+  }, '${escapeHTML(
+    userName
+  )}')" class="text-blue-600 hover:text-blue-700 cursor-pointer">${
+    t.reply
   }</button>
+            ${
+              comment.is_owner
+                ? `
+                    <div class="text-xs text-gray-400 gap-4">
+                      <button
+                        onclick="editComment(${comment.id})"
+                        class="edit-btn text-yellow-500 hover:text-yellow-600 cursor-pointer">
+                        Edit
+                      </button>
+                      ·
+                      <button
+                        onclick="deleteComment(${comment.id})"
+                        class="text-red-500 hover:text-red-600 cursor-pointer">
+                        ${t.delete}
+                      </button>
+                    </div>
+                  `
+                : ""
+            }
+            <button onclick="likeComment(${
+              comment.id
+            }, this)" class="like-btn text-xs flex items-center gap-1 ${
+    comment.is_liked ? "text-red-500" : "text-gray-500"
+  } hover:text-red-500 transition cursor-pointer">
+              <span class="heart">❤️</span>
+              <span class="like-count">${comment.likes}</span>
+            </button>
+            ${
+              !isReply && comment.reply_count > 0
+                ? `<button data-state="hidden" onclick="toggleReplies(${
+                    comment.id
+                  }, this)" class="text-yellow-500 hover:text-yellow-600 cursor-pointer">${t.seeReplies(
+                    comment.reply_count
+                  )}</button>`
+                : ""
+            }
+          </div>
+          <div id="reply-form-${comment.id}" class="hidden mt-2"></div>
+          <div id="replies-${comment.id}" class="mt-3 hidden"></div>
+        </div>
       </div>
-      <div id="reply-form-${comment.id}" class="hidden mt-2">
-        <form onsubmit="submitReply(event, ${comment.id}, '${comment.slug}')">
-          <textarea name="content" rows="2" class="w-full p-2 border rounded" required></textarea>
-          <button type="submit" class="text-sm text-white bg-yellow-500 px-3 py-1 rounded mt-1 cursor-pointer">Kirim</button>
-        </form>
-      </div>
-      ${repliesHTML}
     </div>
   `;
 }
 
-// --- Load Comments via AJAX ---
+// ================= Toggle Replies =================
+function toggleReplies(commentId, button) {
+  const container = document.getElementById(`replies-${commentId}`);
+  const state = button.dataset.state;
+
+  // === HIDE ===
+  if (state === "shown") {
+    container.classList.add("hidden");
+    button.textContent = t.seeReplies2;
+    button.dataset.state = "hidden";
+    return;
+  }
+
+  // === FIRST LOAD ===
+  if (!container.dataset.loaded) {
+    fetch(`/news/comment/${commentId}/replies`)
+      .then((res) => res.json())
+      .then((data) => {
+        container.innerHTML = data.replies.map(renderComment).join("");
+        container.dataset.loaded = "1";
+        container.classList.remove("hidden");
+        button.textContent = t.hideReplies;
+        button.dataset.state = "shown";
+      });
+  } else {
+    container.classList.remove("hidden");
+    button.textContent = t.hideReplies;
+    button.dataset.state = "shown";
+  }
+}
+
+// ================= FORM BALAS + TAG USER (@username) =================
+function openReplyForm(commentId, userName) {
+  closeReplyForm(commentId);
+
+  const container = document.getElementById(`reply-form-${commentId}`);
+  const replyBtn = document.getElementById(`reply-btn-${commentId}`);
+  container.innerHTML = `
+    <form class="reply-form" data-parent="${commentId}">
+      <textarea
+        rows="2"
+        required
+        class="w-full p-2 border rounded text-sm"
+      >@${userName} </textarea>
+
+      <div class="flex gap-3 mt-2">
+        <button
+          type="submit"
+          class="text-xs bg-yellow-500 hover:bg-yellow-600 px-3 py-1 rounded text-white cursor-pointer">
+          ${t.send}
+        </button>
+
+        <button
+          type="button"
+          onclick="closeReplyForm(${commentId})"
+          class="text-xs bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white cursor-pointer">
+          ${t.cancel}
+        </button>
+      </div>
+    </form>
+  `;
+
+  container.classList.remove("hidden");
+  if (replyBtn) replyBtn.classList.add("hidden");
+
+  const textarea = container.querySelector("textarea");
+  textarea.focus();
+  const cancelBtn = container.querySelector("button[type='button']");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => closeReplyForm(commentId));
+  }
+}
+
+function closeReplyForm(commentId) {
+  const container = document.getElementById(`reply-form-${commentId}`);
+  const replyBtn = document.getElementById(`reply-btn-${commentId}`);
+  if (!container) return;
+  container.innerHTML = "";
+  container.classList.add("hidden");
+  if (replyBtn) replyBtn.classList.remove("hidden");
+}
+
+// ================= COMMENTS SCROLL =================
 let commentPage = 1;
-function loadComments(slug) {
+let loadingComments = false;
+let hasNextComments = true;
+
+function enableCommentsScroll(slug) {
+  const container = document.getElementById("comments-container");
+  if (!container) return;
+
+  container.style.maxHeight = "400px";
+  container.style.overflowY = "auto";
+
+  let debounceTimer;
+  container.addEventListener("scroll", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight - 10
+      ) {
+        loadComments(slug);
+      }
+    }, 100);
+  });
+}
+
+// ================= LOADER =================
+function showLoader() {
+  let loader = document.getElementById("comments-loader");
+  if (!loader) {
+    loader = document.createElement("div");
+    loader.id = "comments-loader";
+    loader.className = "text-center py-2";
+    loader.innerHTML = `<span class="text-gray-500">Loading...</span>`;
+    document.getElementById("comments-container").appendChild(loader);
+  }
+  loader.style.display = "block";
+}
+
+function hideLoader() {
+  const loader = document.getElementById("comments-loader");
+  if (loader) loader.style.display = "none";
+}
+
+// ================= LOAD COMMENTS =================
+function loadComments(slug, reset = false) {
   const container = document.getElementById("comments-container");
   const count = document.getElementById("comment-count");
+  const emptyState = document.getElementById("empty-comments");
+  if (!container) return;
+
+  if (reset) {
+    container.innerHTML = "";
+    commentPage = 1;
+    hasNextComments = true;
+    container.scrollTop = 0; // reset scroll
+  }
+
+  if (loadingComments || !hasNextComments) return;
+  loadingComments = true;
+  showLoader();
 
   fetch(`/news/${slug}/comments?page=${commentPage}`)
     .then((res) => res.json())
     .then((data) => {
-      if (!container || !count) return;
-
       count.textContent = `(${data.total})`;
+      if (data.total === 0) emptyState.classList.remove("hidden");
+      else emptyState.classList.add("hidden");
 
       data.comments.forEach((comment) => {
         container.insertAdjacentHTML("beforeend", renderComment(comment));
       });
 
       commentPage++;
+      hasNextComments = data.has_next;
+      loadingComments = false;
+      hideLoader();
+
+      if (!container.dataset.scrollAttached) {
+        enableCommentsScroll(slug);
+        container.dataset.scrollAttached = "1";
+      }
+      checkAutoLoad(slug);
     })
-    .catch((err) => console.error("Load comments error:", err));
+    .catch((err) => {
+      console.error("Load comments error:", err);
+      loadingComments = false;
+      hideLoader();
+    });
 }
 
-// --- Submit Comment via AJAX ---
-function initCommentForm() {
-  const commentForm = document.getElementById("commentForm");
-  if (!commentForm) return;
-
+// ================= AUTO LOAD UNTUK SCROLL =================
+function checkAutoLoad(slug) {
   const container = document.getElementById("comments-container");
-  const count = document.getElementById("comment-count");
+  if (!container) return;
+  while (container.scrollHeight <= container.clientHeight && hasNextComments) {
+    loadComments(slug);
+  }
+}
 
-  commentForm.addEventListener("submit", function (e) {
+// ================= INIT =================
+document.addEventListener("DOMContentLoaded", () => {
+  const slug = document.body.dataset.slug;
+  if (slug) loadComments(slug, true);
+  initCommentForm();
+});
+
+// ================= LOAD BALASAN (ON DEMAND) =================
+function loadReplies(commentId, button) {
+  const container = document.getElementById(`replies-${commentId}`);
+
+  if (!container.classList.contains("hidden")) {
+    container.classList.add("hidden");
+    return;
+  }
+
+  fetch(`/news/comment/${commentId}/replies`)
+    .then((res) => res.json())
+    .then((data) => {
+      container.innerHTML = data.replies
+        .map((reply) => renderComment(reply))
+        .join("");
+
+      container.classList.remove("hidden");
+      button.remove();
+    })
+    .catch((err) => console.error("Load replies error:", err));
+}
+
+// ================= SUBMIT KOMENTAR =================
+function initCommentForm() {
+  const form = document.getElementById("commentForm");
+  if (!form) return;
+  const slug = document.body.dataset.slug;
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+  form.addEventListener("submit", function (e) {
     e.preventDefault();
-    const textarea = this.querySelector('textarea[name="content"]');
+    const textarea = this.querySelector("textarea");
     const content = textarea.value.trim();
     if (!content) return;
 
@@ -106,7 +387,7 @@ function initCommentForm() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRFToken": this.dataset.csrf,
+        "X-CSRFToken": csrf,
       },
       body: JSON.stringify({ content }),
     })
@@ -114,35 +395,32 @@ function initCommentForm() {
       .then((data) => {
         if (data.success) {
           textarea.value = "";
-          container.insertAdjacentHTML(
-            "afterbegin",
-            renderComment(data.comment)
-          );
-          count.textContent = `(${data.total_comments})`;
+          loadComments(slug, true);
         } else {
           alert(data.message || "Gagal mempublikasikan komentar.");
         }
       })
-      .catch((err) => {
-        console.error(err);
-        alert("Terjadi kesalahan saat mengirim komentar.");
-      });
+      .catch(() => alert("Terjadi kesalahan."));
   });
 }
 
-// --- Submit Reply via AJAX ---
-function submitReply(event, parentId, slug) {
-  event.preventDefault();
-  const form = event.target;
-  const textarea = form.querySelector('textarea[name="content"]');
-  const content = textarea.value.trim();
-  if (!content) return;
+// ================= SUBMIT REPLY (EVENT DELEGATION) =================
+document.addEventListener("submit", function (e) {
+  if (!e.target.classList.contains("reply-form")) return;
+  e.preventDefault();
 
+  const slug = document.body.dataset.slug;
+  const parentId = e.target.dataset.parent;
+  const textarea = e.target.querySelector("textarea");
+  const content = textarea.value.trim();
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+  if (!content) return;
   fetch(`/news/${slug}/comment`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-CSRFToken": document.querySelector("#commentForm").dataset.csrf,
+      "X-CSRFToken": csrf,
     },
     body: JSON.stringify({ content, parent_id: parentId }),
   })
@@ -150,36 +428,235 @@ function submitReply(event, parentId, slug) {
     .then((data) => {
       if (data.success) {
         textarea.value = "";
-        const parentDiv = document.getElementById(`comment-${parentId}`);
-        parentDiv.insertAdjacentHTML("beforeend", renderComment(data.comment));
+        closeReplyForm(parentId);
+
+        const repliesContainer = document.getElementById(`replies-${parentId}`);
+        if (repliesContainer) {
+          if (repliesContainer.classList.contains("hidden")) {
+            repliesContainer.classList.remove("hidden");
+          }
+          const newReplyHTML = renderComment(data.comment);
+          repliesContainer.insertAdjacentHTML("beforeend", newReplyHTML);
+          const newEl = document.getElementById(`comment-${data.comment.id}`);
+          if (newEl) {
+            newEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            newEl.classList.add("bg-gray-700", "animate-pulse");
+            setTimeout(() => {
+              newEl.classList.remove("bg-gray-700", "animate-pulse");
+            }, 2000);
+          }
+        }
       } else {
         alert(data.message || "Gagal mempublikasikan balasan.");
       }
     })
-    .catch((err) => {
-      console.error(err);
-      alert("Terjadi kesalahan saat mengirim balasan.");
+    .catch(() => alert("Terjadi kesalahan saat mempublikasikan balasan."));
+});
+
+// ================= LIKE COMMENT (REALTIME + ANIMATION) =================
+function likeComment(commentId, button) {
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+  fetch(`/news/comment/${commentId}/like`, {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": csrf,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.success) {
+        alert(data.message || "Gagal memberi like");
+        return;
+      }
+
+      const heart = button.querySelector(".heart");
+      const countEl = button.querySelector(".like-count");
+      countEl.textContent = data.likes;
+
+      if (data.is_liked) {
+        button.classList.remove("text-gray-500");
+        button.classList.add("text-red-500");
+        heart.classList.add("animate-bounce", "scale-125");
+      } else {
+        button.classList.remove("text-red-500");
+        button.classList.add("text-gray-500");
+        heart.classList.add("animate-pulse");
+      }
+      setTimeout(() => {
+        heart.classList.remove("animate-bounce", "animate-pulse", "scale-125");
+      }, 600);
+    })
+    .catch(() => {
+      alert("Terjadi kesalahan saat like komentar");
     });
 }
 
-// --- Like Comment via AJAX ---
-function likeComment(commentId) {
-  fetch(`/news/comment/${commentId}/like`, { method: "POST" })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) {
-        const button = document.querySelector(
-          `#comment-${commentId} button[onclick*="likeComment"]`
-        );
-        if (button) button.textContent = `👍 ${data.likes}`;
-      } else {
-        alert(data.message || "Gagal menyukai komentar.");
-      }
+// ================= DELETE COMENT =================
+function deleteComment(id) {
+  showConfirmModal(t.deleteConfirm, () => {
+    fetch(`/comment/${id}/delete`, {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": document.querySelector('meta[name="csrf-token"]')
+          .content,
+      },
     })
-    .catch((err) => console.error(err));
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          document.getElementById(`comment-${id}`)?.remove();
+
+          const commentEl = document.getElementById(`comment-${id}`);
+          if (commentEl) {
+            commentEl.classList.add(
+              "opacity-0",
+              "transition-all",
+              "duration-300"
+            );
+            setTimeout(() => commentEl.remove(), 300);
+          }
+
+          const repliesEl = document.getElementById(`replies-${id}`);
+          if (repliesEl) {
+            repliesEl.classList.add(
+              "opacity-0",
+              "transition-all",
+              "duration-300"
+            );
+            setTimeout(() => repliesEl.remove(), 300);
+          }
+
+          const count = document.getElementById("comment-count");
+          if (count) {
+            let total = parseInt(count.textContent.replace(/[()]/g, "")) || 0;
+            total = Math.max(total - 1, 0);
+            count.textContent = `(${total})`;
+          }
+
+          if (
+            container &&
+            hasNextComments &&
+            container.scrollHeight <= container.clientHeight
+          ) {
+            loadComments(slug);
+          }
+
+          alert(data.message);
+        } else {
+          alert(data.message || "Terjadi kesalahan saat menghapus komentar");
+        }
+      })
+      .catch((err) => {
+        console.error("Delete comment error:", err);
+        alert("Terjadi kesalahan saat menghapus komentar");
+      });
+  });
 }
 
-// --- Initialize on DOMContentLoaded ---
+// ================= EDIT KOMENTAR =================
+function editComment(id) {
+  const commentEl = document.getElementById(`comment-${id}`);
+  if (!commentEl) return;
+  const contentEl = commentEl.querySelector("p.text-sm.text-gray-400");
+  const originalContent = contentEl.textContent;
+  const editBtn = commentEl.querySelector(".edit-btn");
+  if (editBtn) editBtn.style.display = "none";
+
+  // Tampilkan form edit
+  contentEl.innerHTML = `
+    <textarea class="w-full p-2 border rounded text-sm">${originalContent}</textarea>
+    <div class="flex gap-2 mt-2">
+      <button type="button" class="save-btn bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded cursor-pointer">${t.send}</button>
+      <button type="button" class="cancel-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded cursor-pointer">${t.cancel}</button>
+    </div>
+  `;
+
+  const textarea = contentEl.querySelector("textarea");
+  textarea.focus();
+
+  const cancelEdit = () => {
+    contentEl.textContent = originalContent;
+    if (editBtn) editBtn.style.display = "inline-block";
+  };
+
+  contentEl.querySelector(".cancel-btn").onclick = cancelEdit;
+
+  contentEl.querySelector(".save-btn").onclick = () => {
+    const newContent = textarea.value.trim();
+    if (!newContent) {
+      alert(t.emptyContent);
+      return;
+    }
+
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+    fetch(`/comment/${id}/edit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrf,
+      },
+      body: JSON.stringify({ content: newContent }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          contentEl.textContent = data.comment.content;
+
+          // Highlight perubahan
+          commentEl.classList.add("bg-gray-700", "animate-pulse");
+          setTimeout(
+            () => commentEl.classList.remove("bg-gray-700", "animate-pulse"),
+            2000
+          );
+          if (editBtn) editBtn.style.display = "inline-block";
+        } else {
+          alert(data.message || "Terjadi kesalahan saat mengedit komentar.");
+        }
+      })
+      .catch(() => alert("Terjadi kesalahan saat mengedit komentar."));
+  };
+}
+
+// ================= MODAL KONFIRMASI =================
+function showConfirmModal(message, onConfirm) {
+  let modal = document.getElementById("confirmModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "confirmModal";
+    modal.className = `
+      fixed inset-0 z-50 flex items-center justify-center 
+      bg-black/50 backdrop-blur-sm hidden
+    `;
+    modal.innerHTML = `
+      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-transform duration-200 scale-95">
+        <p class="text-center text-gray-800 dark:text-gray-200 mb-6" id="confirmMessage"></p>
+        <div class="flex justify-center gap-4">
+          <button id="confirmCancelBtn" class="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600 cursor-pointer">${t.cancel}</button>
+          <button id="confirmOkBtn" class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 cursor-pointer">${t.delete}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  modal.querySelector("#confirmMessage").textContent = message;
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    modal.querySelector("div").classList.remove("scale-95");
+  }, 10);
+  const closeModal = () => {
+    modal.querySelector("div").classList.add("scale-95");
+    setTimeout(() => modal.classList.add("hidden"), 200);
+  };
+  modal.querySelector("#confirmCancelBtn").onclick = closeModal;
+  modal.querySelector("#confirmOkBtn").onclick = () => {
+    onConfirm();
+    closeModal();
+  };
+}
+
+// ================= INIT =================
 document.addEventListener("DOMContentLoaded", () => {
   const slug = document.body.dataset.slug;
   if (slug) loadComments(slug);

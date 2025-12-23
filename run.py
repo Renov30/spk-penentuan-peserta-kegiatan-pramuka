@@ -3,7 +3,7 @@ from flask_session import Session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, News, Comment, ParticipantKegiatan
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, News, Comment, CommentLike, ParticipantKegiatan
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -3017,13 +3017,41 @@ def news_detail(slug):
     ).first_or_404()
 
     # Ambil komentar utama (bukan reply)
-    comments = Comment.query.filter(
+    comment_count = Comment.query.filter(
         Comment.news_id == news.id_news,
         Comment.parent_id.is_(None),
         Comment.is_deleted.is_(False),
         Comment.is_approved.is_(True)
-    ).order_by(Comment.created_at.desc()).all()
-    return render_template('news_detail.html', news=news, comments=comments, comment_count=len(comments))
+    ).count()
+    return render_template('news_detail.html', news=news, comment_count=comment_count)
+
+@app.route('/news/<slug>/comments')
+def get_comments(slug):
+    page = request.args.get('page', 1, type=int)
+    per_page = 5
+
+    news = News.query.filter_by(slug=slug).first_or_404()
+
+    pagination = Comment.query.filter(
+        Comment.news_id == news.id_news,
+        Comment.parent_id.is_(None),
+        Comment.is_deleted.is_(False),
+        Comment.is_approved.is_(True)
+    ).order_by(Comment.created_at.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    return jsonify({"total": pagination.total, "comments": [comment.to_dict() for comment in pagination.items], "has_next": pagination.has_next})
+
+@app.route('/news/comment/<int:comment_id>/replies')
+def get_comment_replies(comment_id):
+    replies = Comment.query.filter_by(
+        parent_id=comment_id,
+        is_deleted=False,
+        is_approved=True
+    ).order_by(Comment.created_at.asc()).all()
+    return jsonify({"replies": [r.to_dict() for r in replies]})
 
 # Post Komentar Berita (support AJAX)
 @app.route('/news/<slug>/comment', methods=['POST'])
@@ -3071,20 +3099,40 @@ def post_comment_user(slug):
     ).count()
 
     if request.is_json:
-        return jsonify({
-            'success': True,
-            'comment': {
-                'id': comment.id,
-                'content': comment.content,
-                'user': {'nama_lengkap': current_user.nama_lengkap},
-                'slug': slug
-            },
-            'total_comments': total_comments
-        })
+        return jsonify({'success': True, 'comment': comment.to_dict(), 'total_comments': total_comments})
 
     # Redirect normal untuk submit form biasa
     flash(t['comment_posted'], 'success')
     return redirect(url_for('news_detail', slug=slug))
+
+# Like / Unlike Komentar Berita
+@app.route('/news/comment/<int:id>/like', methods=['POST'])
+@login_required
+def like_comment(id):
+    comment = Comment.query.get_or_404(id)
+
+    existing_like = CommentLike.query.filter_by(
+        comment_id=comment.id,
+        user_id=current_user.id
+    ).first()
+
+    if existing_like:
+        # 💔 UNLIKE
+        db.session.delete(existing_like)
+        is_liked = False
+    else:
+        # ❤️ LIKE
+        new_like = CommentLike(
+            comment_id=comment.id,
+            user_id=current_user.id
+        )
+        db.session.add(new_like)
+        is_liked = True
+
+    # 🔁 UPDATE COUNTER
+    comment.likes = comment.likes_rel.count()
+    db.session.commit()
+    return jsonify({"success": True, "likes": comment.likes, "is_liked": is_liked})
 
 # Hapus Komentar Berita
 @app.route('/comment/<int:id>/delete', methods=['POST'])
@@ -3092,17 +3140,57 @@ def post_comment_user(slug):
 def delete_comment(id):
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
     comment = Comment.query.get_or_404(id)
 
     if comment.user_id != current_user.id:
-        abort(403)
+        return {"success": False, "message": t["unauthorized"]}, 403
 
     comment.is_deleted = True
+    replies = Comment.query.filter_by(parent_id=id).all()
+    for reply in replies:
+        reply.is_deleted = True
+    db.session.commit()
+    return {"success": True, "message": t["commentDeleted"]}
+
+# Edit Komentar Berita
+@app.route('/comment/<int:id>/edit', methods=['POST'])
+@login_required
+def edit_comment(id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    comment = Comment.query.get_or_404(id)
+
+    # Cek hak akses
+    if comment.user_id != current_user.id:
+        return {"success": False, "message": t["unauthorized-2"]}, 403
+
+    data = request.get_json()
+    content = data.get("content", "").strip()
+    if not content:
+        return {"success": False, "message": t["emptyContent"]}, 400
+
+    # Update komentar
+    comment.content = content
     db.session.commit()
 
-    flash('Komentar dihapus', 'info')
-    return redirect(request.referrer)
+    # Return data terbaru
+    return {
+        "success": True,
+        "message": t["commentUpdated"],
+        "comment": {
+            "id": comment.id,
+            "content": comment.content,
+            "user": {
+                "nama_lengkap": comment.user.nama_lengkap,
+                "foto": comment.user.foto
+            },
+            "likes": comment.likes,
+            "is_owner": True,
+            "is_liked": False,
+            "reply_count": len(comment.replies),
+            "parent_id": comment.parent_id
+        }
+    }
 
 @app.route('/admin/notifikasi')
 @login_required

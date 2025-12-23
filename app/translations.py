@@ -17,6 +17,11 @@ TRANSLATIONS = {
         'all_fields_required_news': 'Semua field wajib diisi!',
         'comment_empty': 'Komentar tidak boleh kosong',
         'comment_posted': 'Komentar berhasil dikirim',
+        'commentDeleted': "Komentar berhasil dihapus",
+        'unauthorized': "Anda tidak berhak menghapus komentar",
+        "unauthorized-2": "Anda tidak memiliki akses untuk ini.",
+        "emptyContent": "Konten tidak boleh kosong.",
+        "commentUpdated": "Komentar berhasil diperbarui.",
         
         # === LOGIN MANUAL ===
         'username_invalid': 'Username salah!',
@@ -173,6 +178,11 @@ TRANSLATIONS = {
         'all_fields_required_news': 'All fields are required!',
         'comment_empty': 'Comment cannot be empty',
         'comment_posted': 'Comment posted successfully',
+        'commentDeleted': "Comment deleted successfully",
+        'unauthorized': "You are not authorized to delete this comment",
+        "unauthorized-2": "You do not have permission to perform this action.",
+        "emptyContent": "Content cannot be empty.",
+        "commentUpdated": "Comment has been successfully updated.",
         
         # === LOGIN MANUAL ===
         'username_invalid': 'Invalid username!',

@@ -3,6 +3,7 @@ from app import db
 from sqlalchemy.dialects.mysql import ENUM
 from flask_login import UserMixin
 from datetime import datetime
+from flask_login import current_user
 from slugify import slugify
     
 # Access to table users
@@ -221,6 +222,20 @@ class News(db.Model):
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     published_at = db.Column(db.DateTime)
 
+class CommentLike(db.Model):
+    __tablename__ = "comment_like"
+
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey("news_comment.id", ondelete="CASCADE"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # 🔐 UNIQUE: 1 USER HANYA BISA LIKE 1X
+    __table_args__ = (db.UniqueConstraint("comment_id", "user_id", name="uq_comment_user_like"),)
+
+    def __repr__(self):
+        return f"<CommentLike comment_id={self.comment_id} user_id={self.user_id}>"
+
 # Access to table news_comment
 class Comment(db.Model):
     __tablename__ = 'news_comment'  # nama tabel di database
@@ -234,10 +249,58 @@ class Comment(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     is_approved = db.Column(db.Boolean, default=True, nullable=False)
+    likes = db.Column(db.Integer, default=0)
 
     # Relationship opsional
     news = db.relationship('News', backref=db.backref('news_comment', lazy='dynamic'))
     user = db.relationship('Users', backref=db.backref('news_comment', lazy='dynamic'))
     parent = db.relationship('Comment', remote_side=[id], backref='replies')
+    likes_rel = db.relationship("CommentLike", backref="comment", cascade="all, delete-orphan", lazy="dynamic")
+    
+    def to_dict(self, depth=1):
+        data = {
+            "id": self.id,
+            "parent_id": self.parent_id,
+            "content": self.content,
+            
+            "user": {
+                "id": self.user.id,
+                "nama_lengkap": self.user.nama_lengkap,
+                "foto": self.user.foto if self.user and self.user.foto else None
+            },
+            
+            "created_at": self.created_at.strftime('%d %B %Y'),
+            "likes": self.likes,
+            
+            "reply_count": Comment.query.filter_by(
+                parent_id=self.id,
+                is_deleted=False,
+                is_approved=True
+            ).count(),
+            
+            "is_owner": (
+                current_user.is_authenticated
+                and self.user_id == current_user.id
+            ),
+        }
+        
+        # 🔁 OPSIONAL (REKOMENDASI): STATUS LIKE USER
+        if current_user.is_authenticated:
+            data["is_liked"] = self.likes_rel.filter_by(
+                user_id=current_user.id
+            ).first() is not None
+        else:
+            data["is_liked"] = False
+
+        # Batasi kedalaman reply (keamanan & performa)
+        if depth > 0:
+            data["replies"] = [
+                reply.to_dict(depth - 1)
+                for reply in self.replies
+                if not reply.is_deleted and reply.is_approved
+            ]
+
+        return data
+
     def __repr__(self):
         return f"<Comment id={self.id} news_id={self.news_id} user_id={self.user_id}>"

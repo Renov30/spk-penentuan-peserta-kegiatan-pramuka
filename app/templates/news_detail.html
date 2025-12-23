@@ -39,6 +39,8 @@
 
   <body
     data-slug="{{ news.slug }}"
+    data-auth="{{ '1' if current_user.is_authenticated else '0' }}"
+    data-lang="{{ current_lang }}"
     x-data="{ ready: false }"
     x-init="ready = true"
     :class="{ 'dark': $store.theme?.isDark }"
@@ -125,9 +127,9 @@
           >
             <h2 class="text-2xl font-bold mb-1">
               {{ 'Komentar' if current_lang == 'id' else 'Comments' }}
-              <span id="comment-count" class="text-sm text-gray-500"
-                >({{ comment_count }})</span
-              >
+              <span id="comment-count" class="text-sm text-gray-500">
+                ({{ comment_count }})
+              </span>
             </h2>
 
             <p class="text-sm text-gray-500 mb-8">
@@ -137,11 +139,29 @@
 
             <!-- Form Komentar -->
             <div class="flex gap-4 mb-10">
-              <div
-                class="w-12 h-12 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold"
-              >
-                G
+              {% if current_user.is_authenticated %} {% set user_foto =
+              current_user.foto if current_user.foto else
+              'images/profil-default.jpg' %} {% if user_foto.startswith('http')
+              %} {% set foto_url = user_foto %} {% elif
+              user_foto.startswith('uploads/') or user_foto.startswith('img/')
+              %} {% set foto_url = url_for('static', filename=user_foto) %} {%
+              else %} {% set foto_url = url_for('static',
+              filename='images/profil-default.jpg') %} {% endif %}
+
+              <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                <img
+                  src="{{ foto_url }}"
+                  alt="Foto {{ current_user.nama_lengkap }}"
+                  class="w-full h-full object-cover"
+                />
               </div>
+              {% else %}
+              <div
+                class="w-12 h-12 rounded-full bg-gray-400 text-white flex items-center justify-center"
+              >
+                <i class="fa-solid fa-user"></i>
+              </div>
+              {% endif %}
 
               <div class="flex-1">
                 {% if current_user.is_authenticated %}
@@ -149,7 +169,6 @@
                   id="commentForm"
                   method="POST"
                   data-action="{{ url_for('post_comment_user', slug=news.slug) }}"
-                  data-csrf="{{ csrf_token() }}"
                 >
                   <textarea
                     name="content"
@@ -188,65 +207,18 @@
               </div>
             </div>
 
+            <hr class="flex-grow border-t border-gray-300 mt-2.5 mb-3.5" />
+
             <!-- Empty -->
-            <div id="comments-container">
-              {% for comment in comments %}
-              <div class="mb-6">
-                <p class="font-semibold">{{ comment.user.nama_lengkap }}</p>
-                <p class="text-sm text-gray-500">{{ comment.content }}</p>
+            <div
+              id="comments-container"
+              class="max-h-[400px] overflow-y-auto"
+            ></div>
 
-                <button
-                  class="text-xs text-yellow-500 hover:text-yellow-600 mt-1 cursor-pointer"
-                  onclick="toggleReplyForm({{ comment.id }})"
-                >
-                  Balas
-                </button>
-
-                <!-- Reply Form -->
-                <div id="reply-form-{{ comment.id }}" class="hidden mt-2">
-                  <form
-                    method="POST"
-                    action="{{ url_for('post_comment_user', slug=news.slug) }}"
-                  >
-                    <input
-                      type="hidden"
-                      name="csrf_token"
-                      value="{{ csrf_token() }}"
-                    />
-                    <input
-                      type="hidden"
-                      name="parent_id"
-                      value="{{ comment.id }}"
-                    />
-                    <textarea
-                      name="content"
-                      rows="2"
-                      class="w-full p-2 border rounded"
-                    ></textarea>
-                    <button
-                      class="text-sm text-white bg-yellow-500 hover:bg-yellow-600 px-3 py-1 rounded mt-1 cursor-pointer"
-                    >
-                      Kirim
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              <!-- Replies -->
-              {% for reply in comment.replies if not reply.is_deleted and
-              reply.is_approved %}
-              <div class="ml-6 mt-3 border-l pl-4">
-                <p class="font-semibold text-sm">
-                  {{ reply.user.nama_lengkap }}
-                </p>
-                <p class="text-sm text-gray-500">{{ reply.content }}</p>
-              </div>
-              {% endfor %}
-            </div>
-            {% else %}
             <!-- EMPTY STATE -->
             <div
-              class="text-center py-16 border-2 border-dashed rounded-xl text-gray-400"
+              id="empty-comments"
+              class="hidden text-center py-16 border-2 border-dashed rounded-xl text-gray-400"
             >
               <i class="fa-regular fa-comments text-4xl mb-3"></i>
               <p class="font-semibold">
@@ -258,7 +230,6 @@
                 first to comment' }}
               </p>
             </div>
-            {% endfor %}
           </div>
         </section>
       </div>
@@ -308,6 +279,36 @@
       © {{ current_year }} • {{ 'Semua Hak Dilindungi' if current_lang == 'id'
       else 'All Rights Reserved' }}
     </footer>
+
+    <!-- Notifikasi Flash -->
+    {% with flashes = get_flashed_messages(with_categories=true) %} {% if
+    flashes %}
+    <div
+      x-data="{ show: true }"
+      x-init="setTimeout(() => show = false, 5000)"
+      x-show="show"
+      x-transition
+      x-cloak
+    >
+      {% for category, message in flashes %}
+      <div
+        class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl border {% if category == 'success' %} bg-green-600 text-white border-green-500 {% elif category in ['danger','error'] %} bg-red-600 text-white border-red-500 {% elif category == 'warning' %} bg-yellow-500 text-gray-900 border-yellow-400 {% else %} bg-gray-800 text-white border-gray-700 {% endif %}"
+        x-transition
+      >
+        <!-- Icon -->
+        <i
+          class="fa-solid {% if category == 'success' %} fa-circle-check {% elif category in ['danger','error'] %} fa-triangle-exclamation {% elif category == 'warning' %} fa-exclamation-circle {% else %} fa-info-circle {% endif %} text-lg"
+        ></i>
+
+        <!-- Text -->
+        <div>
+          <strong>{{ category|capitalize }}</strong><br />
+          <span class="text-sm">{{ message }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
 
     <script src="{{ url_for('static', filename='js/news_detail.js') }}"></script>
   </body>
