@@ -260,7 +260,7 @@
                   <div class="flex gap-2 items-center">
                     <a
                       href="{{ url_for('admin_log_aktivitas', page=pagination.prev_num, search=search, role=role_filter, date=date_filter) if pagination.has_prev else '#' }}"
-                      class="px-2 py-1 text-sm {{ 'bg-gray-300 dark:bg-gray-600' if pagination.has_prev else 'bg-gray-200 dark:bg-gray-700 opacity-50 cursor-not-allowed' }} rounded-lg transition"
+                      class="px-2 py-1 text-sm rounded-lg transition {{ 'bg-blue-500 text-white hover:bg-blue-600' if pagination.has_prev else 'bg-blue-300 text-white opacity-50 cursor-not-allowed' }}"
                       {% if not pagination.has_prev %}onclick="return false;"{% endif %}
                     >
                       «
@@ -270,7 +270,7 @@
                     </span>
                     <a
                       href="{{ url_for('admin_log_aktivitas', page=pagination.next_num, search=search, role=role_filter, date=date_filter) if pagination.has_next else '#' }}"
-                      class="px-2 py-1 text-sm {{ 'bg-gray-300 dark:bg-gray-600' if pagination.has_next else 'bg-gray-200 dark:bg-gray-700 opacity-50 cursor-not-allowed' }} rounded-lg transition"
+                      class="px-2 py-1 text-sm rounded-lg transition {{ 'bg-blue-500 text-white hover:bg-blue-600' if pagination.has_next else 'bg-blue-300 text-white opacity-50 cursor-not-allowed' }}"
                       {% if not pagination.has_next %}onclick="return false;"{% endif %}
                     >
                       »
