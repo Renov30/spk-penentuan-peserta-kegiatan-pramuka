@@ -1370,7 +1370,7 @@ def admin_add_user():
                     )
                 
                 flash("Akun berhasil dibuat!", "success")
-                return redirect(url_for('admin_users'))
+                return redirect(url_for('admin_users', page='kelola'))
             except Exception as e:
                 db.session.rollback()
                 logging.error(f"Error during registration: {e}")
