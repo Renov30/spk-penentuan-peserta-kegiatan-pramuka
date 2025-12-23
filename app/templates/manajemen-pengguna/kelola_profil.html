@@ -197,7 +197,15 @@
               <img
                 :src="peserta.foto && peserta.foto !== 'img/default-user.png' && peserta.foto !== '' && !peserta.foto.startsWith('http') ? `{{ url_for('static', filename='') }}${peserta.foto}` : (peserta.foto && peserta.foto.startsWith('http') ? peserta.foto : '{{ url_for('static', filename='images/profil-default.jpg') }}')"
                 alt="Foto"
-                class="w-10 h-10 rounded-full object-cover border-2 {{ 'border-teal-500' if current_theme == 'dark' else 'border-teal-400' }}"
+                class="w-8 h-8 rounded-full object-cover border {{ 'border-teal-500' if current_theme == 'dark' else 'border-teal-400' }}"
+                style="
+                  width: 32px;
+                  height: 32px;
+                  min-width: 32px;
+                  min-height: 32px;
+                  max-width: 32px;
+                  max-height: 32px;
+                "
                 @error="$el.src='{{ url_for('static', filename='images/profil-default.jpg') }}'"
               />
             </td>
