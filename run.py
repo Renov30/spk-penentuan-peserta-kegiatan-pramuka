@@ -414,13 +414,20 @@ def ratelimit_handler(e):
 def inject_notifications():
     user = None
     unread_count = 0
+    notifications = []
     if session.get('username'):
         user = Users.query.filter_by(username=session.get('username')).first()
     elif session.get('user'):
         user = Users.query.filter_by(username=session['user'].get('username')).first()
     if user:
         unread_count = Notification.query.filter_by(user_id=user.id, is_read=False).count()
-    return dict(notification_count=unread_count)
+        # Get recent notifications (last 10) for the notification tray
+        notifications = Notification.query.filter_by(
+            user_id=user.id
+        ).order_by(
+            Notification.id.desc()
+        ).limit(10).all()
+    return dict(notification_count=unread_count, notifications=notifications)
 
 # --- Middleware untuk cek login dan role ---
 def my_decorator(f):
@@ -4140,7 +4147,6 @@ def admin_notifikasi():
 # API Mark Notification as Read
 @app.route('/api/notifikasi/mark-read/<int:notification_id>', methods=['POST'])
 @login_required
-@admin_required
 def api_mark_notification_read(notification_id):
     try:
         notification = Notification.query.filter_by(
@@ -4163,7 +4169,6 @@ def api_mark_notification_read(notification_id):
 # API Mark All Notifications as Read
 @app.route('/api/notifikasi/mark-all-read', methods=['POST'])
 @login_required
-@admin_required
 def api_mark_all_notifications_read():
     try:
         updated = Notification.query.filter_by(
@@ -4185,7 +4190,6 @@ def api_mark_all_notifications_read():
 # API Delete Notification
 @app.route('/api/notifikasi/delete/<int:notification_id>', methods=['DELETE'])
 @login_required
-@admin_required
 def api_delete_notification(notification_id):
     try:
         notification = Notification.query.filter_by(

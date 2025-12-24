@@ -7,10 +7,12 @@
     <h2
       class="text-lg text-center font-bold relative {{ 'text-white' if current_theme == 'dark' else 'text-gray-800' }}"
     >
+      {% if notification_count > 0 %}
       <span
         class="absolute -top-2 -right-4 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce"
-        >1</span
+        >{{ notification_count }}</span
       >
+      {% endif %}
       {{ 'KOTAK MASUK' if current_lang == 'id' else 'INBOX' }}
     </h2>
   </div>
@@ -46,56 +48,72 @@
   <!-- Message List Container -->
   <div class="max-h-[400px] overflow-y-auto">
     <div id="system-tab" class="space-y-3 p-4">
-      <!-- Card 1 -->
-      <div
-        class="border rounded-lg p-3 shadow-sm hover:shadow-md transition {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'border-gray-200 hover:bg-gray-50' }}"
-      >
-        <div class="flex items-start justify-between">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-exclamation-circle text-yellow-400 mr-2"></i>
-            <span class="text-sm font-semibold"
-              >{{ 'Notifikasi Sistem' if current_lang == 'id' else 'System
-              Notification' }}</span
-            >
-            <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+      {% if notifications %}
+        {% for notification in notifications %}
+        <div
+          id="notification-tray-{{ notification.id }}"
+          class="border rounded-lg p-3 shadow-sm hover:shadow-md transition {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'border-gray-200 hover:bg-gray-50' }} {% if not notification.is_read %}border-l-4 border-blue-500{% endif %}"
+        >
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-bell {{ 'text-blue-500' if not notification.is_read else 'text-gray-400' }} mr-2"></i>
+              <span class="text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                >{{ 'Notifikasi Sistem' if current_lang == 'id' else 'System Notification' }}</span
+              >
+              {% if not notification.is_read %}
+              <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              {% endif %}
+            </div>
+            <div class="flex items-center gap-2">
+              {% if not notification.is_read %}
+              <button
+                onclick="markAsReadTray({{ notification.id }})"
+                class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer transition"
+                title="{{ 'Tandai Dibaca' if current_lang == 'id' else 'Mark as Read' }}"
+              >
+                <i class="fas fa-check"></i>
+              </button>
+              {% endif %}
+              <button
+                onclick="deleteNotificationTray({{ notification.id }})"
+                class="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer transition"
+                title="{{ 'Hapus' if current_lang == 'id' else 'Delete' }}"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
           </div>
-          <span class="text-xs text-gray-400 whitespace-nowrap"
-            >{{ '14 jam lalu' if current_lang == 'id' else '14 hours ago'
-            }}</span
+          <h4
+            class="mt-2 font-bold text-sm {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
           >
+            {{ notification.message or ('Tidak ada pesan' if current_lang == 'id' else 'No message') }}
+          </h4>
+          {% if not notification.is_read %}
+          <span
+            class="inline-block mt-2 px-2 py-1 text-xs rounded bg-blue-500 text-white"
+          >
+            {{ 'Baru' if current_lang == 'id' else 'New' }}
+          </span>
+          {% endif %}
         </div>
-        <h4
-          class="mt-2 font-bold text-sm {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-        >
-          {{ '🎉 Liburan Seru Dimulai!' if current_lang == 'id' else '🎉 The Fun
-          Holiday Begins!' }}
-        </h4>
-        <p
-          class="text-sm pt-2.5 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
-        >
-          {{ 'Ajukan permintaan minimal 2 layanan pembuatan aplikasi kami dan
-          dapatkan diskon menarik untuk permintaan ke-3 hingga 40%' if
-          current_lang == 'id' else 'Submit requests for at least 2 of our
-          application development services and get up to 40% off on your 3rd
-          request!' }}
-        </p>
-        <a
-          href="#"
-          class="mt-2 inline-block text-sm text-blue-600 hover:underline"
-        >
-          {{ 'Pelajari selengkapnya' if current_lang == 'id' else 'Learn more'
-          }}</a
-        >
-      </div>
-
-      <!-- Tambah card lain di sini -->
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-8">
+          <i class="fa-solid fa-bell-slash text-4xl text-gray-400 mb-2"></i>
+          <p class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+            {{ 'Tidak ada notifikasi' if current_lang == 'id' else 'No notifications' }}
+          </p>
+        </div>
+      {% endif %}
     </div>
 
     <!-- Tab: Interaksi -->
     <div id="interaction-tab" class="hidden p-4 space-y-3">
-      <div class="text-sm text-gray-600 italic">
-        {{ 'Belum ada interaksi baru' if current_lang == 'id' else 'No recent
-        interactions' }}
+      <div class="text-center py-8">
+        <i class="fa-solid fa-comments text-4xl text-gray-400 mb-2"></i>
+        <p class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+          {{ 'Belum ada interaksi baru' if current_lang == 'id' else 'No recent interactions' }}
+        </p>
       </div>
     </div>
   </div>

@@ -3,6 +3,9 @@
   const toggleButton = document.getElementById("notification-toggle");
   const notifBox = document.getElementById("notification-box");
 
+  // Get CSRF token
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
   // Toggle show/hide box
   toggleButton?.addEventListener("click", function (event) {
     event.stopPropagation();
@@ -62,6 +65,159 @@
       }, 200);
     } else {
       console.log("ℹ️ Bukan login pertama → notifBox tidak muncul otomatis");
+    }
+  };
+
+  // Switch Tab Function
+  window.switchTab = function(tabName) {
+    const systemTab = document.getElementById('system-tab');
+    const interactionTab = document.getElementById('interaction-tab');
+    const tabSystemBtn = document.getElementById('tab-system');
+    const tabInteractionBtn = document.getElementById('tab-interaction');
+
+    if (tabName === 'system') {
+      systemTab?.classList.remove('hidden');
+      interactionTab?.classList.add('hidden');
+      tabSystemBtn?.classList.add('border-b-2', 'border-black', 'dark:border-white');
+      tabSystemBtn?.classList.remove('border-transparent');
+      tabInteractionBtn?.classList.remove('border-b-2', 'border-black', 'dark:border-white');
+      tabInteractionBtn?.classList.add('border-transparent');
+    } else if (tabName === 'interaction') {
+      systemTab?.classList.add('hidden');
+      interactionTab?.classList.remove('hidden');
+      tabInteractionBtn?.classList.add('border-b-2', 'border-black', 'dark:border-white');
+      tabInteractionBtn?.classList.remove('border-transparent');
+      tabSystemBtn?.classList.remove('border-b-2', 'border-black', 'dark:border-white');
+      tabSystemBtn?.classList.add('border-transparent');
+    }
+  };
+
+  // Clear All Notifications Function
+  window.clearAllNotifications = async function() {
+    if (!confirm('{{ "Apakah Anda yakin ingin menghapus semua notifikasi?" if current_lang == "id" else "Are you sure you want to delete all notifications?" }}')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/notifikasi/mark-all-read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        }
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Reload page to refresh notifications
+        location.reload();
+      } else {
+        alert(data.message || '{{ "Gagal menghapus notifikasi" if current_lang == "id" else "Failed to delete notifications" }}');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}');
+    }
+  };
+
+  // Mark Notification as Read (for tray)
+  window.markAsReadTray = async function(notificationId) {
+    try {
+      const response = await fetch(`/api/notifikasi/mark-read/${notificationId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        }
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const notificationEl = document.getElementById(`notification-tray-${notificationId}`);
+        if (notificationEl) {
+          // Update UI
+          notificationEl.classList.remove('border-l-4', 'border-blue-500');
+          notificationEl.classList.add('border-l-4', 'border-gray-300');
+          
+          const bellIcon = notificationEl.querySelector('i.fa-bell');
+          if (bellIcon) {
+            bellIcon.classList.remove('text-blue-500');
+            bellIcon.classList.add('text-gray-400');
+          }
+          
+          const redDot = notificationEl.querySelector('.bg-red-500.animate-pulse');
+          if (redDot) redDot.remove();
+          
+          const newBadge = notificationEl.querySelector('.bg-blue-500');
+          if (newBadge) newBadge.remove();
+          
+          const markReadBtn = notificationEl.querySelector('button[onclick*="markAsReadTray"]');
+          if (markReadBtn) markReadBtn.remove();
+        }
+        
+        // Reload to update count
+        setTimeout(() => location.reload(), 500);
+      } else {
+        alert(data.message || '{{ "Gagal menandai notifikasi" if current_lang == "id" else "Failed to mark notification" }}');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}');
+    }
+  };
+
+  // Delete Notification (for tray)
+  window.deleteNotificationTray = async function(notificationId) {
+    if (!confirm('{{ "Apakah Anda yakin ingin menghapus notifikasi ini?" if current_lang == "id" else "Are you sure you want to delete this notification?" }}')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/notifikasi/delete/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        }
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const notificationEl = document.getElementById(`notification-tray-${notificationId}`);
+        if (notificationEl) {
+          notificationEl.style.transition = 'opacity 0.3s';
+          notificationEl.style.opacity = '0';
+          setTimeout(() => {
+            notificationEl.remove();
+            
+            // Check if no notifications left
+            const systemTab = document.getElementById('system-tab');
+            if (systemTab && systemTab.children.length === 0) {
+              const noNotifText = '{{ "Tidak ada notifikasi" if current_lang == "id" else "No notifications" }}';
+              const textColorClass = '{{ "text-gray-400" if current_theme == "dark" else "text-gray-600" }}';
+              systemTab.innerHTML = `
+                <div class="text-center py-8">
+                  <i class="fa-solid fa-bell-slash text-4xl text-gray-400 mb-2"></i>
+                  <p class="text-sm ${textColorClass}">
+                    ${noNotifText}
+                  </p>
+                </div>
+              `;
+            }
+          }, 300);
+        }
+        
+        // Reload to update count
+        setTimeout(() => location.reload(), 500);
+      } else {
+        alert(data.message || '{{ "Gagal menghapus notifikasi" if current_lang == "id" else "Failed to delete notification" }}');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}');
     }
   };
 </script>
