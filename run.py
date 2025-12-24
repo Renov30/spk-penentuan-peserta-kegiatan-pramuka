@@ -3008,6 +3008,12 @@ def post_comment_admin(news_id):
     db.session.commit()
     return jsonify({'message': 'Komentar berhasil ditambahkan'}), 201
 
+@app.route('/author/<int:author_id>')
+def author_news(author_id):
+    author = Users.query.get_or_404(author_id)
+    news_list = News.query.filter_by(author_id=author.id, status='published').all()
+    return render_template('author_news.html', author=author, news_list=news_list)
+
 # Detail Berita
 @app.route('/news/<slug>')
 def news_detail(slug):
@@ -3172,25 +3178,7 @@ def edit_comment(id):
     # Update komentar
     comment.content = content
     db.session.commit()
-
-    # Return data terbaru
-    return {
-        "success": True,
-        "message": t["commentUpdated"],
-        "comment": {
-            "id": comment.id,
-            "content": comment.content,
-            "user": {
-                "nama_lengkap": comment.user.nama_lengkap,
-                "foto": comment.user.foto
-            },
-            "likes": comment.likes,
-            "is_owner": True,
-            "is_liked": False,
-            "reply_count": len(comment.replies),
-            "parent_id": comment.parent_id
-        }
-    }
+    return {"success": True, "message": t["commentUpdated"], "comment": {"id": comment.id, "content": comment.content, "user": {"nama_lengkap": comment.user.nama_lengkap, "foto": comment.user.foto}, "likes": comment.likes, "is_owner": True, "is_liked": False, "reply_count": len(comment.replies), "parent_id": comment.parent_id}}
 
 @app.route('/admin/notifikasi')
 @login_required
