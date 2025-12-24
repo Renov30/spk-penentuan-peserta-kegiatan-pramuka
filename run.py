@@ -1041,6 +1041,94 @@ def admin_dashboard():
         sidebar_state=sidebar_state
     )
 
+# API untuk data chart dashboard admin
+@app.route('/api/admin/dashboard/charts')
+@login_required
+def api_admin_dashboard_charts():
+    """API untuk mendapatkan data chart dashboard admin"""
+    # Cek apakah user adalah admin
+    if current_user.level != 'admin':
+        return jsonify({
+            'success': False,
+            'message': 'Akses ditolak. Hanya admin yang bisa mengakses data ini.'
+        }), 403
+    
+    try:
+        # 1. Distribusi User (Admin, Penilai, Peserta)
+        admin_count = Users.query.filter_by(level='admin').count()
+        penilai_count = Users.query.filter_by(level='penilai').count()
+        peserta_count = Users.query.filter_by(level='peserta').count()
+        
+        # 2. Statistik Peserta (Status)
+        peserta_aktif = Users.query.filter_by(level='peserta', status='aktif').count()
+        peserta_nonaktif = Users.query.filter_by(level='peserta', status='non-aktif').count()
+        
+        # 3. Statistik Peserta (Jenis Kelamin)
+        peserta_laki = db.session.query(Users).filter_by(level='peserta').filter(
+            (Users.jenis_kelamin == 'laki-laki') | (Users.jenis_kelamin == 'Laki-laki')
+        ).count()
+        peserta_perempuan = db.session.query(Users).filter_by(level='peserta').filter(
+            (Users.jenis_kelamin == 'perempuan') | (Users.jenis_kelamin == 'Perempuan')
+        ).count()
+        
+        # 4. Statistik Notifikasi (Read vs Unread)
+        notifications_read = Notification.query.filter_by(is_read=True).count()
+        notifications_unread = Notification.query.filter_by(is_read=False).count()
+        
+        # 5. Statistik Kegiatan/Event
+        total_events = Event.query.count()
+        events_aktif = Event.query.filter(
+            Event.waktu_pelaksanaan_dimulai <= date.today(),
+            Event.waktu_pelaksanaan_selesai >= date.today()
+        ).count()
+        events_selesai = Event.query.filter(
+            Event.waktu_pelaksanaan_selesai < date.today()
+        ).count()
+        events_mendatang = Event.query.filter(
+            Event.waktu_pelaksanaan_dimulai > date.today()
+        ).count()
+        
+        # 6. Statistik Hasil Seleksi (jika ada)
+        total_hasil_seleksi = HasilSeleksi.query.count()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'user_distribution': {
+                    'admin': admin_count,
+                    'penilai': penilai_count,
+                    'peserta': peserta_count
+                },
+                'peserta_status': {
+                    'aktif': peserta_aktif,
+                    'nonaktif': peserta_nonaktif
+                },
+                'peserta_gender': {
+                    'laki_laki': peserta_laki,
+                    'perempuan': peserta_perempuan
+                },
+                'notifications': {
+                    'read': notifications_read,
+                    'unread': notifications_unread
+                },
+                'events': {
+                    'total': total_events,
+                    'aktif': events_aktif,
+                    'selesai': events_selesai,
+                    'mendatang': events_mendatang
+                },
+                'hasil_seleksi': {
+                    'total': total_hasil_seleksi
+                }
+            }
+        })
+    except Exception as e:
+        logging.error(f"Error in api_admin_dashboard_charts: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
 # Route untuk melihat data penugasan penilai
 @app.route('/admin/view_penugasan_penilai')
 @login_required
