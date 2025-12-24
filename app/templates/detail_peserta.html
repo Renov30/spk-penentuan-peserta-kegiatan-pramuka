@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>
+      {{ 'Detail Peserta | SPK Pramuka' if current_lang == 'id' else
+      'Participant Detail | Scout DSS' }}
+    </title>
+
+    <!-- Tailwind CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/output.css') }}"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    />
+
+    <!-- Alpine.js -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <!-- Script Sidebar -->
+    {% include "script_sidebar.html" %}
+
+    <!-- Script Theme -->
+    {% include 'script_theme.html' %}
+  </head>
+  <body
+    x-data="{ ready: false }"
+    x-init="ready = true"
+    :class="{ 'dark': $store.theme?.isDark }"
+    x-bind:class="{
+        'bg-background-dark text-white': $store.theme?.isDark,
+        'bg-gray-100 text-black': !$store.theme?.isDark
+      }"
+    class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
+  >
+    <div
+      class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      <!-- Sidebar -->
+      {% include 'sidebar.html' %}
+
+      <!-- Main content -->
+      <div class="flex flex-col flex-1 overflow-hidden h-full">
+        <!-- Top Navbar -->
+        {% include 'header.html' %}
+
+        <!-- Page Content -->
+        <main
+          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[1%]'"
+        >
+          <section
+            class="flex flex-col wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }} min-h-full"
+          >
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
+            <!-- Content -->
+            <div class="w-full px-6 py-6">
+              <!-- Header dengan tombol kembali -->
+              <div class="flex items-center justify-between mb-6">
+                <h1
+                  class="text-2xl font-bold flex items-center gap-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                >
+                  <i class="fa-solid fa-user text-blue-500"></i>
+                  {{ 'Detail Peserta' if current_lang == 'id' else 'Participant
+                  Detail' }}
+                </h1>
+                <a
+                  href="{{ url_for('admin_peserta') }}"
+                  class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-gray-500 text-white hover:bg-gray-600 active:scale-95 transition-all shadow cursor-pointer"
+                >
+                  <i class="fa-solid fa-arrow-left mr-2"></i>
+                  {{ 'Kembali' if current_lang == 'id' else 'Back' }}
+                </a>
+              </div>
+
+              <!-- Card Detail Peserta -->
+              <div
+                class="rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }} mb-6"
+              >
+                <!-- Header dengan foto dan info utama -->
+                <div
+                  class="{{ 'bg-gradient-to-r from-blue-500 to-indigo-600' if current_theme == 'dark' else 'bg-gray-100 border-b border-gray-200' }} p-6"
+                >
+                  <div class="flex items-center gap-6">
+                    <!-- Foto Peserta -->
+                    <div class="flex-shrink-0">
+                      {% if biodata and biodata.foto and biodata.foto !=
+                      'img/default-user.png' %}
+                      <img
+                        src="{{ url_for('static', filename=biodata.foto) }}"
+                        alt="Foto Peserta"
+                        class="w-24 h-24 rounded-full border-4 {{ 'border-white' if current_theme == 'dark' else 'border-gray-300' }} shadow-lg object-cover"
+                        onerror="this.src='{{ url_for('static', filename='images/profil-default.png') }}'"
+                      />
+                      {% elif user.foto and user.foto != 'img/default-user.png'
+                      %}
+                      <img
+                        src="{{ url_for('static', filename=user.foto) }}"
+                        alt="Foto Peserta"
+                        class="w-24 h-24 rounded-full border-4 {{ 'border-white' if current_theme == 'dark' else 'border-gray-300' }} shadow-lg object-cover"
+                        onerror="this.src='{{ url_for('static', filename='images/profil-default.png') }}'"
+                      />
+                      {% else %}
+                      <img
+                        src="{{ url_for('static', filename='images/profil-default.png') }}"
+                        alt="Foto Peserta"
+                        class="w-24 h-24 rounded-full border-4 {{ 'border-white' if current_theme == 'dark' else 'border-gray-300' }} shadow-lg object-cover"
+                      />
+                      {% endif %}
+                    </div>
+                    <!-- Info Utama -->
+                    <div
+                      class="flex-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                    >
+                      <h2 class="text-2xl font-bold mb-2">
+                        {{ biodata.nama_lengkap if biodata and
+                        biodata.nama_lengkap else (user.nama_lengkap or
+                        user.username) }}
+                      </h2>
+                      <div
+                        class="flex flex-wrap gap-4 text-sm {{ 'opacity-90' if current_theme == 'dark' else 'text-gray-700' }}"
+                      >
+                        <span class="flex items-center gap-2">
+                          <i class="fa-solid fa-envelope"></i>
+                          {{ user.email }}
+                        </span>
+                        <span class="flex items-center gap-2">
+                          <i class="fa-solid fa-phone"></i>
+                          {{ biodata.nomor_hp if biodata and biodata.nomor_hp
+                          else (user.nomor_hp or '-') }}
+                        </span>
+                        <span class="flex items-center gap-2">
+                          <i class="fa-solid fa-layer-group"></i>
+                          {{ biodata.golongan if biodata and biodata.golongan
+                          else '-' }}
+                        </span>
+                        <span class="flex items-center gap-2">
+                          {% if user.status == 'aktif' %}
+                          <span
+                            class="px-3 py-1 bg-green-500 rounded-full text-xs font-semibold text-white"
+                          >
+                            Aktif
+                          </span>
+                          {% else %}
+                          <span
+                            class="px-3 py-1 bg-red-500 rounded-full text-xs font-semibold text-white"
+                          >
+                            Non-Aktif
+                          </span>
+                          {% endif %}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Content dengan grid layout -->
+                <div class="p-6">
+                  <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    <!-- Informasi Pribadi -->
+                    <div class="space-y-4">
+                      <h3
+                        class="text-lg font-semibold mb-4 pb-2 border-b {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-200' }}"
+                      >
+                        <i
+                          class="fa-solid fa-user-circle mr-2 text-blue-500"
+                        ></i>
+                        {{ 'Informasi Pribadi' if current_lang == 'id' else
+                        'Personal Information' }}
+                      </h3>
+                      <div class="space-y-3">
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Jenis Kelamin' if current_lang == 'id' else
+                            'Gender' }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.jenis_kelamin if biodata and
+                            biodata.jenis_kelamin else (user.jenis_kelamin or
+                            '-') }}
+                          </p>
+                        </div>
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Usia' if current_lang == 'id' else 'Age' }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.usia if biodata and biodata.usia else
+                            (user.usia or '-') }} {{ 'tahun' if current_lang ==
+                            'id' else 'years' }}
+                          </p>
+                        </div>
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Tanggal Lahir' if current_lang == 'id' else
+                            'Date of Birth' }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.tanggal_lahir.strftime('%d/%m/%Y') if
+                            biodata and biodata.tanggal_lahir else '-' }}
+                          </p>
+                        </div>
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Alamat' if current_lang == 'id' else 'Address'
+                            }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.alamat_tinggal if biodata and
+                            biodata.alamat_tinggal else '-' }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Informasi Pramuka -->
+                    <div class="space-y-4">
+                      <h3
+                        class="text-lg font-semibold mb-4 pb-2 border-b {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-200' }}"
+                      >
+                        <i class="fa-solid fa-scout mr-2 text-green-500"></i>
+                        {{ 'Informasi Pramuka' if current_lang == 'id' else
+                        'Scout Information' }}
+                      </h3>
+                      <div class="space-y-3">
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Golongan' if current_lang == 'id' else 'Group'
+                            }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.golongan if biodata and biodata.golongan
+                            else '-' }}
+                          </p>
+                        </div>
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Tingkatan' if current_lang == 'id' else 'Level'
+                            }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.tingkatan if biodata and
+                            biodata.tingkatan else '-' }}
+                          </p>
+                        </div>
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Asal Gudep' if current_lang == 'id' else 'Gudep
+                            Origin' }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.asal_gudep if biodata and
+                            biodata.asal_gudep else '-' }}
+                          </p>
+                        </div>
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Asal Kwarran' if current_lang == 'id' else
+                            'Kwarran Origin' }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.asal_kwarran if biodata and
+                            biodata.asal_kwarran else '-' }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Informasi Kwartir -->
+                    <div class="space-y-4">
+                      <h3
+                        class="text-lg font-semibold mb-4 pb-2 border-b {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-200' }}"
+                      >
+                        <i
+                          class="fa-solid fa-map-marker-alt mr-2 text-red-500"
+                        ></i>
+                        {{ 'Informasi Kwartir' if current_lang == 'id' else
+                        'Kwartir Information' }}
+                      </h3>
+                      <div class="space-y-3">
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Asal Kwarcab' if current_lang == 'id' else
+                            'Kwarcab Origin' }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.asal_kwarcab if biodata and
+                            biodata.asal_kwarcab else '-' }}
+                          </p>
+                        </div>
+                        <div>
+                          <label
+                            class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ 'Asal Kwarda' if current_lang == 'id' else
+                            'Kwarda Origin' }}
+                          </label>
+                          <p
+                            class="mt-1 {{ 'text-gray-100' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ biodata.asal_kwarda if biodata and
+                            biodata.asal_kwarda else '-' }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card Kegiatan Terdaftar -->
+              {% if registered_activities and registered_activities|length > 0
+              %}
+              <div
+                class="rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              >
+                <div class="p-6">
+                  <h3
+                    class="text-lg font-semibold mb-4 pb-2 border-b {{ 'text-white border-gray-700' if current_theme == 'dark' else 'text-gray-900 border-gray-200' }}"
+                  >
+                    <i
+                      class="fa-solid fa-calendar-check mr-2 text-purple-500"
+                    ></i>
+                    {{ 'Kegiatan Terdaftar' if current_lang == 'id' else
+                    'Registered Activities' }}
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for activity in registered_activities %}
+                    <div
+                      class="p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
+                    >
+                      <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                          <h4
+                            class="font-semibold mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ activity.nama }}
+                          </h4>
+                          <p
+                            class="text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }} mb-2"
+                          >
+                            {{ activity.jenis }}
+                          </p>
+                          {% if activity.skor %}
+                          <div class="flex items-center gap-4 text-sm">
+                            <span
+                              class="px-3 py-1 rounded-full {{ 'bg-blue-600 text-white' if current_theme == 'dark' else 'bg-blue-100 text-blue-800' }}"
+                            >
+                              <i class="fa-solid fa-star mr-1"></i>
+                              {{ 'Skor:' if current_lang == 'id' else 'Score:'
+                              }} {{ "%.2f"|format(activity.skor) }}
+                            </span>
+                            {% if activity.ranking %}
+                            <span
+                              class="px-3 py-1 rounded-full {{ 'bg-green-600 text-white' if current_theme == 'dark' else 'bg-green-100 text-green-800' }}"
+                            >
+                              <i class="fa-solid fa-trophy mr-1"></i>
+                              {{ 'Ranking:' if current_lang == 'id' else 'Rank:'
+                              }} {{ activity.ranking }}
+                            </span>
+                            {% endif %}
+                          </div>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Animation Script -->
+    {% include 'script_animation.html' %}
+  </body>
+</html>

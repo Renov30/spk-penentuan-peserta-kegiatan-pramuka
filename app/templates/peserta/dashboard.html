@@ -252,28 +252,6 @@
                                </p>
                            </div>
 
-                           {% if activity.status_lulus is not none %}
-                               <!-- Vertical Separator -->
-                               <div class="h-8 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
-
-                               <!-- Status Lulus -->
-                               <div class="text-right">
-                                     <p class="text-xs font-medium opacity-60 uppercase mb-1">
-                                        {{ 'Status' if current_lang == 'id' else 'Status' }}
-                                     </p>
-                                     {% if activity.status_lulus %}
-                                         <span class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-bold text-lg">
-                                             <i class="fa-solid fa-circle-check"></i>
-                                             {{ 'LULUS' if current_lang == 'id' else 'PASSED' }}
-                                         </span>
-                                     {% else %}
-                                         <span class="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-bold text-lg">
-                                             <i class="fa-solid fa-circle-xmark"></i>
-                                             {{ 'TIDAK' if current_lang == 'id' else 'FAILED' }}
-                                         </span>
-                                     {% endif %}
-                               </div>
-                           {% endif %}
                          </div>
 
                       {% else %}

@@ -24,7 +24,6 @@ class Users(db.Model, UserMixin):
     login_method = db.Column(db.String(100), nullable=False, default="manual")
     sidebar_state = db.Column(db.String(10), nullable=False, default='expanded')
     status = db.Column(ENUM('aktif', 'non-aktif', '', '', name='user_status'), nullable=False, default='aktif', server_default='aktif')
-    
     news = db.relationship('News', backref='author', lazy=True)
     
     def to_dict(self):
@@ -52,7 +51,7 @@ class EventEvaluator(db.Model):
     evaluator = db.relationship("Users", backref=db.backref("events_assigned", lazy=True))
 
 # Access to table tb_participant_kegiatan
-ParticipantKegiatan = db.Table(
+tb_participant_kegiatan = db.Table(
     'tb_participant_kegiatan',
     db.Column('participant_id', db.Integer, db.ForeignKey('participants.id'), primary_key=True),
     db.Column('kegiatan_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), primary_key=True)
@@ -73,13 +72,11 @@ class Event(db.Model):
     selesai = db.Column(db.Date, nullable=False)
     tanggal_tes = db.Column(db.String(255), nullable=True)
     tempat_tes = db.Column(db.String(100), nullable=True)
-    batas_lolos = db.Column(db.Integer, default=3) # Default 3 peserta lolos
     kuota = db.relationship("Kuota", backref="event", lazy=True, cascade="all, delete-orphan")
     kriteria = db.relationship("Criteria", backref="event", lazy=True, cascade="all, delete-orphan")
     
     # Relationship with Evaluators
     evaluators = db.relationship('Users', secondary='tb_event_evaluator', lazy='subquery', backref=db.backref('assigned_events', lazy=True))
-
 
 # Access to table tb_kuota
 class Kuota(db.Model):
@@ -115,6 +112,41 @@ class Criteria(db.Model):
         lazy='subquery',
         backref=db.backref('assigned_criteria', lazy=True)
     )
+
+# Access to table tb_pairwise_comparison (untuk menyimpan matriks perbandingan AHP)
+class PairwiseComparison(db.Model):
+    __tablename__ = 'tb_pairwise_comparison'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    event_id = db.Column(db.Integer, db.ForeignKey("tb_kegiatan.id_kegiatan"), nullable=False)
+    criteria_i_id = db.Column(db.Integer, db.ForeignKey("tb_kriteria.id_kriteria"), nullable=False)
+    criteria_j_id = db.Column(db.Integer, db.ForeignKey("tb_kriteria.id_kriteria"), nullable=False)
+    comparison_value = db.Column(db.Float, nullable=False)  # Nilai perbandingan 1-9
+    fuzzy_l = db.Column(db.Float, nullable=True)  # Lower bound TFN
+    fuzzy_m = db.Column(db.Float, nullable=True)  # Middle bound TFN
+    fuzzy_u = db.Column(db.Float, nullable=True)  # Upper bound TFN
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
+    
+    # Relationship
+    event = db.relationship('Event', backref='pairwise_comparisons')
+    criteria_i = db.relationship('Criteria', foreign_keys=[criteria_i_id])
+    criteria_j = db.relationship('Criteria', foreign_keys=[criteria_j_id])
+
+# Access to table tb_ahp_results (untuk menyimpan hasil perhitungan AHP)
+class AHPResults(db.Model):
+    __tablename__ = 'tb_ahp_results'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    event_id = db.Column(db.Integer, db.ForeignKey("tb_kegiatan.id_kegiatan"), nullable=False, unique=True)
+    lambda_max = db.Column(db.Float, nullable=True)
+    ci = db.Column(db.Float, nullable=True)  # Consistency Index
+    cr = db.Column(db.Float, nullable=True)  # Consistency Ratio
+    is_consistent = db.Column(db.Boolean, default=False)
+    eigenvector_json = db.Column(db.Text, nullable=True)  # JSON array eigenvector
+    weights_json = db.Column(db.Text, nullable=True)  # JSON object weights
+    pairwise_matrix_json = db.Column(db.Text, nullable=True)  # JSON matrix
+    calculated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
+    
+    # Relationship
+    event = db.relationship('Event', backref='ahp_results')
     
 # Access to table notifications
 class Notification(db.Model):
@@ -138,22 +170,14 @@ class Participants(db.Model):
     asal_kwarcab = db.Column(db.String(100), nullable=False)
     asal_kwarda = db.Column(db.String(100), nullable=False)
     usia = db.Column(db.Integer, nullable=False)
-    jenis_kelamin = db.Column(
-        db.Enum('laki-laki', 'perempuan', '', '', name='jenis_kelamin_enum'),
-        nullable=False)
+    jenis_kelamin = db.Column(db.Enum('laki-laki', 'perempuan', '', '', name='jenis_kelamin_enum'), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     nomor_hp = db.Column(db.String(100), nullable=False)
     foto = db.Column(db.String(100), nullable=False)
     kegiatan_id = db.Column(db.Integer, db.ForeignKey("tb_kegiatan.id_kegiatan"), nullable=True)
-
-    # kolom yang selalu berisi "peserta"
     level = db.Column(db.String(50), nullable=False, default="peserta", server_default="peserta")
-    
-    # Relationship dengan Event (backward compatibility - deprecated)
     kegiatan = db.relationship("Event", backref="peserta_list", lazy=True)
-    
-    # Many-to-many relationship dengan Event untuk multiple registrations
-    registered_activities = db.relationship("Event", secondary=ParticipantKegiatan, backref=db.backref("registered_participants", lazy="dynamic"), lazy="dynamic")
+    registered_activities = db.relationship("Event", secondary=tb_participant_kegiatan, backref=db.backref("registered_participants", lazy="dynamic"), lazy="dynamic")
 
     def __repr__(self):
         return f"<Participants {self.nama_lengkap}>"
@@ -174,7 +198,6 @@ class Penilaian(db.Model):
     evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Penilai
     id_kriteria = db.Column(db.Integer, db.ForeignKey('tb_kriteria.id_kriteria'), nullable=False)
     nilai = db.Column(db.Float, nullable=False)
-
 
 # Access to table tb_hasil_seleksi
 class HasilSeleksi(db.Model):
@@ -207,6 +230,42 @@ class Informasi(db.Model):
     isi = db.Column(db.Text, nullable=False)
     tanggal = db.Column(db.Date, server_default=db.func.current_date())
 
+# Access to table tb_arsip_seleksi (untuk menyimpan arsip laporan seleksi)
+class ArsipSeleksi(db.Model):
+    __tablename__ = 'tb_arsip_seleksi'
+    id_arsip = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), nullable=False)
+    nama_arsip = db.Column(db.String(255), nullable=False)
+    deskripsi = db.Column(db.Text, nullable=True)
+    file_path = db.Column(db.String(500), nullable=True) 
+    file_type = db.Column(db.String(50), nullable=False, default='pdf')  # pdf atau excel
+    tanggal_arsip = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
+    dibuat_oleh = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='aktif')  # aktif, diarsipkan
+    
+    # Relationship
+    event = db.relationship('Event', backref='arsip_seleksi')
+    pembuat = db.relationship('Users', backref='arsip_yang_dibuat')
+
+# Access to table settings
+class Settings(db.Model):
+    __tablename__ = 'settings'
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(255), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+    category = db.Column(db.String(100), nullable=False, default='general')  # email, sms, app, logo, language
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'key': self.key,
+            'value': self.value,
+            'category': self.category,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 # Access to table tb_news
 class News(db.Model):
     __tablename__ = 'tb_news'
@@ -222,6 +281,7 @@ class News(db.Model):
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     published_at = db.Column(db.DateTime)
 
+# Access to table comment_like
 class CommentLike(db.Model):
     __tablename__ = "comment_like"
 
@@ -299,7 +359,6 @@ class Comment(db.Model):
                 for reply in self.replies
                 if not reply.is_deleted and reply.is_approved
             ]
-
         return data
 
     def __repr__(self):

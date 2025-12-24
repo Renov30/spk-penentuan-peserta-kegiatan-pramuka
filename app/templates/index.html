@@ -336,15 +336,6 @@
                 class="absolute -right-[30] mt-2 w-36 border rounded-md shadow-md z-50 {{ 'bg-gray-900 border-gray-600' if current_theme == 'dark' else 'bg-white border-gray-200' }}"
               >
                 <a
-                  href="/settings/"
-                  class="block px-4 py-2 text-sm {{ 'text-white hover:bg-gray-600' if current_theme == 'dark' else 'text-gray-700 hover:bg-yellow-100' }}"
-                >
-                  <i
-                    class="fas fa-cog mr-2 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
-                  ></i>
-                  {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
-                </a>
-                <a
                   href="/logout/"
                   class="block px-4 py-2 text-sm text-red-600 {{ 'hover:bg-gray-600' if current_theme == 'dark' else 'hover:bg-yellow-100' }}"
                 >

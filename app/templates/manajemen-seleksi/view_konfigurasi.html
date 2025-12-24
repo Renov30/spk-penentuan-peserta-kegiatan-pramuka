@@ -132,13 +132,13 @@
                 {% for event in events %}
                 <div
                   class="bg-white shadow-md rounded-xl p-6 hover:shadow-lg transition {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-100' }}"
-                  :class="{ 'ring-2 ring-blue-500': selectedItems.includes({{ event.id_kegiatan }}) }"
+                  :class="{ 'ring-2 ring-blue-500': selectedItems.includes(parseInt({{ event.id_kegiatan }}, 10)) }"
                 >
                   <div class="flex items-start justify-between mb-4">
                     <div class="flex items-start gap-3 flex-1">
                       <input
                         type="checkbox"
-                        :checked="selectedItems.includes({{ event.id_kegiatan }})"
+                        :checked="selectedItems.includes(parseInt({{ event.id_kegiatan }}, 10))"
                         @change="toggleSelectItem({{ event.id_kegiatan }}, $event.target.checked)"
                         @click.stop
                         class="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500 {{ 'bg-gray-700 border-gray-600' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
@@ -407,18 +407,6 @@
                                 <p
                                   class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                                   x-text="configData.event.tempat_tes || '-'"
-                                ></p>
-                              </div>
-                              <div>
-                                <label
-                                  class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                                >
-                                  {{ 'Batas Ranking' if current_lang == 'id'
-                                  else 'Ranking Limit' }}
-                                </label>
-                                <p
-                                  class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                                  x-text="configData.event.batas_lolos || 3"
                                 ></p>
                               </div>
                             </div>
@@ -759,20 +747,6 @@
                               class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                             />
 
-                            <!-- Batas Ranking -->
-                            <label
-                              class="block text-sm font-medium mb-1 mt-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                            >
-                              {{ 'Batas Ranking' if current_lang == 'id' else
-                              'Ranking Limit' }}
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              x-model.number="editData.event.batas_lolos"
-                              placeholder="Contoh: 3"
-                              class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
-                            />
                           </div>
 
                           <!-- Komposisi Kontingen -->
@@ -1292,18 +1266,19 @@
         },
 
         toggleSelectItem(eventId, checked) {
+          const id = parseInt(eventId, 10);
           if (checked) {
-            if (!this.selectedItems.includes(eventId)) {
-              this.selectedItems.push(eventId);
+            if (!this.selectedItems.includes(id)) {
+              this.selectedItems.push(id);
             }
           } else {
-            this.selectedItems = this.selectedItems.filter(id => id !== eventId);
+            this.selectedItems = this.selectedItems.filter(item => item !== id);
           }
         },
 
         toggleSelectAll(checked) {
           if (checked) {
-            this.selectedItems = this.events.map(e => e.id);
+            this.selectedItems = this.events.map(e => parseInt(e.id, 10));
           } else {
             this.selectedItems = [];
           }
@@ -1531,23 +1506,30 @@
           const csrfToken =
             document.querySelector("meta[name=csrf-token]")?.content || "";
 
+          // Pastikan selectedItems berisi integer
+          const eventIds = this.selectedItems.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+          
+          if (eventIds.length === 0) {
+            this.loading = false;
+            showNotification('{{ "Tidak ada data yang valid untuk dihapus" if current_lang == "id" else "No valid data to delete" }}', 'error');
+            return;
+          }
+
+          console.log('Deleting events:', eventIds);
+
           fetch(`/api/delete_config_bulk`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
             },
-            body: JSON.stringify({ event_ids: this.selectedItems }),
+            body: JSON.stringify({ event_ids: eventIds }),
           })
             .then((res) => res.json())
             .then((data) => {
+              console.log('Delete response:', data);
               if (data.status === "success") {
-                this.modal = {
-                  show: true,
-                  title:
-                    "{{ 'Berhasil' if current_lang == 'id' else 'Success' }}",
-                  message: data.message,
-                };
+                showNotification(data.message, 'success');
                 this.showDeleteModal = false;
                 this.isBulkDelete = false;
                 this.selectedItems = [];
@@ -1555,23 +1537,18 @@
                   window.location.reload();
                 }, 1000);
               } else {
-                this.modal = {
-                  show: true,
-                  title: "{{ 'Error' if current_lang == 'id' else 'Error' }}",
-                  message:
-                    data.message ||
-                    "{{ 'Gagal menghapus konfigurasi' if current_lang == 'id' else 'Failed to delete configuration' }}",
-                };
+                showNotification(
+                  data.message || "{{ 'Gagal menghapus konfigurasi' if current_lang == 'id' else 'Failed to delete configuration' }}", 
+                  'error'
+                );
               }
             })
             .catch((err) => {
               console.error("Error deleting bulk config:", err);
-              this.modal = {
-                show: true,
-                title: "{{ 'Error' if current_lang == 'id' else 'Error' }}",
-                message:
+              showNotification(
                   "{{ 'Terjadi kesalahan saat menghapus data' if current_lang == 'id' else 'An error occurred while deleting data' }}",
-              };
+                'error'
+              );
             })
             .finally(() => {
               this.loading = false;

@@ -7,7 +7,9 @@
   x-transition:leave="transition ease-in duration-300"
   x-transition:leave-start="opacity-100 translate-y-0"
   x-transition:leave-end="opacity-0 translate-y-5"
-  class="p-6 rounded-2xl shadow-md m-2 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-gray-200' }}"
+  class="p-6 rounded-2xl shadow-md {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+  x-data="laporanArsipData()"
+  x-init="init()"
 >
   <!-- Header -->
   <div class="flex items-center justify-between mb-4">
@@ -17,92 +19,176 @@
       {{ 'Laporan & Arsip Seleksi' if current_lang == 'id' else 'Selection
       Reports & Archives' }}
     </h2>
-    <button
-      class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer"
+    <div class="flex gap-2">
+      <!-- Filter Kegiatan -->
+      <select
+        x-model="selectedEventId"
+        @change="loadArsip()"
+        class="px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">
+          {{ 'Semua Kegiatan' if current_lang == 'id' else 'All Events' }}
+        </option>
+        {% for event in kegiatan_list %}
+        <option value="{{ event.id_kegiatan }}">
+          {{ event.nama_kegiatan }}
+        </option>
+        {% endfor %}
+      </select>
+
+      <button
+        @click="showGenerateModal = true"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 cursor-pointer"
+      >
+        <i class="fa-solid fa-file-export"></i>
+        {{ 'Generate Laporan' if current_lang == 'id' else 'Generate Report' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter & Search -->
+  <div class="mb-4 flex gap-2">
+    <input
+      type="text"
+      x-model="searchQuery"
+      @input="filterArsip()"
+      placeholder="{{ 'Cari arsip...' if current_lang == 'id' else 'Search archives...' }}"
+      class="flex-1 px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+    />
+    <select
+      x-model="filterType"
+      @change="filterArsip()"
+      class="px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
     >
-      <i class="fa-solid fa-clone"></i>
-      {{ 'Tambah Arsip' if current_lang == 'id' else 'Add Archive' }}
-    </button>
+      <option value="">
+        {{ 'Semua Tipe' if current_lang == 'id' else 'All Types' }}
+      </option>
+      <option value="excel">Excel</option>
+      <option value="pdf">PDF</option>
+    </select>
   </div>
 
   <!-- Table -->
   <div class="overflow-x-auto">
     <table
-      class="w-full text-sm text-left {{ 'text-gray-600 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-800 dark:text-gray-900' }}"
+      class="w-full text-sm text-left {{ 'text-gray-600' if current_theme == 'dark' else 'text-gray-800 dark:text-gray-900' }}"
     >
       <thead
-        class="text-xs uppercase {{ 'bg-gray-100 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-100 dark:bg-gray-400' }}"
+        class="text-xs uppercase {{ 'bg-gray-100' if current_theme == 'dark' else 'bg-gray-100 dark:bg-gray-400' }}"
       >
         <tr>
-          <th scope="col" class="px-4 py-3">No</th>
-          <th scope="col" class="px-4 py-3">
-            {{ 'Periode' if current_lang == 'id' else 'Period' }}
+          <th
+            scope="col"
+            class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
+            No
           </th>
-          <th scope="col" class="px-4 py-3">
+          <th
+            scope="col"
+            class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
+            {{ 'Nama Kegiatan' if current_lang == 'id' else 'Event Name' }}
+          </th>
+          <th
+            scope="col"
+            class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
+            {{ 'Nama Arsip' if current_lang == 'id' else 'Archive Name' }}
+          </th>
+          <th
+            scope="col"
+            class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
+            {{ 'Tipe File' if current_lang == 'id' else 'File Type' }}
+          </th>
+          <th
+            scope="col"
+            class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
             {{ 'Tanggal Arsip' if current_lang == 'id' else 'Archive Date' }}
           </th>
-          <th scope="col" class="px-4 py-3">File</th>
-          <th scope="col" class="px-4 py-3 text-right">
+          <th
+            scope="col"
+            class="px-4 py-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
+            {{ 'Dibuat Oleh' if current_lang == 'id' else 'Created By' }}
+          </th>
+          <th
+            scope="col"
+            class="px-4 py-3 text-right {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          >
             {{ 'Aksi' if current_lang == 'id' else 'Action' }}
           </th>
         </tr>
       </thead>
       <tbody>
-        <!-- Row contoh -->
-        <tr
-          class="border-b {{ 'dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800' if current_theme == 'dark' else 'dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-200' }}"
-        >
-          <td class="px-4 py-3">1</td>
-          <td class="px-4 py-3 font-medium">Seleksi 2024</td>
-          <td class="px-4 py-3">12 Jan 2025</td>
-          <td class="px-4 py-3">laporan_2024.pdf</td>
-          <td class="px-4 py-3 text-right flex gap-2 justify-end">
-            <button
-              class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg cursor-pointer"
-            >
-              <i class="fa-solid fa-eye"></i>
-              {{ 'Lihat' if current_lang == 'id' else 'View' }}
-            </button>
-            <button
-              class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded-lg cursor-pointer"
-            >
-              <i class="fa-solid fa-download"></i>
-              {{ 'Unduh' if current_lang == 'id' else 'Download' }}
-            </button>
-            <button
-              class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg cursor-pointer"
-            >
-              {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
-            </button>
-          </td>
-        </tr>
-        <!-- Row contoh -->
-        <tr
-          class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          <td class="px-4 py-3">2</td>
-          <td class="px-4 py-3 font-medium">Seleksi 2023</td>
-          <td class="px-4 py-3">10 Jan 2024</td>
-          <td class="px-4 py-3">laporan_2023.pdf</td>
-          <td class="px-4 py-3 text-right flex gap-2 justify-end">
-            <button
-              class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg"
-            >
-              <i class="fa-solid fa-eye"></i>
-              {{ 'Lihat' if current_lang == 'id' else 'View' }}
-            </button>
-            <button
-              class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded-lg"
-            >
-              <i class="fa-solid fa-download"></i>
-              {{ 'Unduh' if current_lang == 'id' else 'Download' }}
-            </button>
-            <button
-              class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg"
-            >
-              <i class="fa-solid fa-trash"></i>
-              {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
-            </button>
+        <template x-for="(arsip, index) in filteredArsip" :key="arsip.id">
+          <tr
+            class="border-b {{ 'border-gray-700 hover:bg-gray-800' if current_theme == 'dark' else 'border-gray-300 hover:bg-gray-50' }}"
+          >
+            <td
+              class="px-4 py-3 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+              x-text="index + 1"
+            ></td>
+            <td
+              class="px-4 py-3 font-medium {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+              x-text="arsip.nama_kegiatan"
+            ></td>
+            <td
+              class="px-4 py-3 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+              x-text="arsip.nama_arsip"
+            ></td>
+            <td class="px-4 py-3">
+              <span
+                class="px-2 py-1 rounded text-xs font-semibold uppercase"
+                :class="arsip.file_type === 'excel' ? 
+                  ('{{ 'bg-green-900 text-green-200' if current_theme == 'dark' else 'bg-green-100 text-green-800' }}') : 
+                  ('{{ 'bg-red-900 text-red-200' if current_theme == 'dark' else 'bg-red-100 text-red-800' }}')"
+                x-text="arsip.file_type"
+              ></span>
+            </td>
+            <td
+              class="px-4 py-3 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+              x-text="arsip.tanggal_arsip"
+            ></td>
+            <td
+              class="px-4 py-3 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+              x-text="arsip.pembuat"
+            ></td>
+            <td class="px-4 py-3 text-right">
+              <div class="flex gap-2 justify-end">
+                <button
+                  @click="viewArsip(arsip)"
+                  class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg cursor-pointer"
+                >
+                  <i class="fa-solid fa-eye"></i>
+                  {{ 'Lihat' if current_lang == 'id' else 'View' }}
+                </button>
+                <button
+                  @click="downloadArsip(arsip.id)"
+                  class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded-lg cursor-pointer"
+                >
+                  <i class="fa-solid fa-download"></i>
+                  {{ 'Unduh' if current_lang == 'id' else 'Download' }}
+                </button>
+                <button
+                  @click="deleteArsip(arsip.id)"
+                  class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg cursor-pointer"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                  {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </template>
+        <tr x-show="filteredArsip.length === 0">
+          <td
+            colspan="7"
+            class="px-4 py-8 text-center {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+          >
+            {{ 'Tidak ada arsip ditemukan' if current_lang == 'id' else 'No
+            archives found' }}
           </td>
         </tr>
       </tbody>
@@ -111,28 +197,215 @@
 
   <!-- Pagination -->
   <div class="flex justify-between items-center mt-4">
-    <span class="text-sm text-gray-500 dark:text-gray-400"
-      >{{ 'Menampilkan 1–5 dari 20 arsip' if current_lang == 'id' else 'Delete'
-      }}</span
+    <span
+      class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
     >
-    <div class="flex gap-2">
-      <button
-        class="px-3 py-1 text-sm border rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 cursor-pointer"
-      >
-        {{ 'Sebelumnya' if current_lang == 'id' else 'Previous' }}
-      </button>
-      <button
-        class="px-3 py-1 text-sm border rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 cursor-pointer"
-      >
-        {{ 'Berikutnya' if current_lang == 'id' else 'Next' }}
-      </button>
-    </div>
+      <span
+        x-text="`{{ 'Menampilkan' if current_lang == 'id' else 'Showing' }} ${filteredArsip.length} {{ 'dari' if current_lang == 'id' else 'of' }} ${arsipList.length} {{ 'arsip' if current_lang == 'id' else 'archives' }}`"
+      ></span>
+    </span>
   </div>
+
   <button
     @click="page = 'main'; $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Seleksi'] : ['Selection Management']"
-    class="px-4 py-2 bg-gray-300 hover:bg-gray-800 dark:bg-gray-700 rounded-lg cursor-pointer mt-8"
+    class="px-4 py-2 rounded-lg cursor-pointer mt-8 {{ 'bg-gray-700 hover:bg-gray-600 text-white' if current_theme == 'dark' else 'bg-gray-300 hover:bg-gray-400 text-gray-900' }}"
   >
     <i class="fa-solid fa-backward"></i>
     {{ 'Kembali' if current_lang == 'id' else 'Back' }}
   </button>
+
+  <!-- Modal Generate Laporan -->
+  <div
+    x-show="showGenerateModal"
+    @click.away="showGenerateModal = false"
+    class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black bg-opacity-50' if current_theme == 'dark' else 'bg-gray-300 bg-opacity-70' }}"
+    style="display: none"
+  >
+    <div
+      class="rounded-xl shadow-lg p-6 w-full max-w-md {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }}"
+    >
+      <h3
+        class="text-lg font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+      >
+        {{ 'Generate Laporan' if current_lang == 'id' else 'Generate Report' }}
+      </h3>
+
+      <div class="mb-4">
+        <label
+          class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+        >
+          {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Event' }}
+        </label>
+        <select
+          x-model="generateEventId"
+          class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+        >
+          <option value="">
+            {{ '-- Pilih Kegiatan --' if current_lang == 'id' else '-- Select
+            Event --' }}
+          </option>
+          {% for event in kegiatan_list %}
+          <option value="{{ event.id_kegiatan }}">
+            {{ event.nama_kegiatan }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label
+          class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+        >
+          {{ 'Format Laporan' if current_lang == 'id' else 'Report Format' }}
+        </label>
+        <div class="flex gap-2">
+          <button
+            @click="generateReport('excel')"
+            class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg cursor-pointer"
+          >
+            <i class="fa-solid fa-file-excel mr-2"></i>Excel
+          </button>
+          <button
+            @click="generateReport('pdf')"
+            class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer"
+          >
+            <i class="fa-solid fa-file-pdf mr-2"></i>PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button
+          @click="showGenerateModal = false"
+          class="flex-1 px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-600 hover:bg-gray-500 text-white' if current_theme == 'dark' else 'bg-gray-300 hover:bg-gray-400 text-gray-900' }}"
+        >
+          {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+  function laporanArsipData() {
+    return {
+      arsipList: {{ arsip_list | tojson if arsip_list else '[]' }},
+      filteredArsip: [],
+      searchQuery: '',
+      filterType: '',
+      selectedEventId: '',
+      showGenerateModal: false,
+      generateEventId: '',
+
+      init() {
+        this.filteredArsip = this.arsipList;
+      },
+
+      filterArsip() {
+        let filtered = this.arsipList;
+
+        // Filter by event
+        if (this.selectedEventId) {
+          filtered = filtered.filter(a => a.event_id == this.selectedEventId);
+        }
+
+        // Filter by type
+        if (this.filterType) {
+          filtered = filtered.filter(a => a.file_type === this.filterType);
+        }
+
+        // Filter by search query
+        if (this.searchQuery) {
+          const query = this.searchQuery.toLowerCase();
+          filtered = filtered.filter(a =>
+            a.nama_arsip.toLowerCase().includes(query) ||
+            a.nama_kegiatan.toLowerCase().includes(query)
+          );
+        }
+
+        this.filteredArsip = filtered;
+      },
+
+      loadArsip() {
+        this.filterArsip();
+      },
+
+      async generateReport(type) {
+        if (!this.generateEventId) {
+          alert('{{ "Pilih kegiatan terlebih dahulu" if current_lang == "id" else "Please select an event first" }}');
+          return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const endpoint = type === 'excel'
+          ? `/api/generate_laporan_excel/${this.generateEventId}`
+          : `/api/generate_laporan_pdf/${this.generateEventId}`;
+
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken
+            }
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            alert(data.message);
+            this.showGenerateModal = false;
+            // Reload page to refresh arsip list
+            window.location.reload();
+          } else {
+            alert(data.message);
+          }
+        } catch (error) {
+          alert('{{ "Error saat generate laporan" if current_lang == "id" else "Error generating report" }}');
+          console.error(error);
+        }
+      },
+
+      viewArsip(arsip) {
+        if (arsip.file_path) {
+          window.open(`/${arsip.file_path}`, '_blank');
+        }
+      },
+
+      async downloadArsip(arsipId) {
+        window.location.href = `/api/download_arsip/${arsipId}`;
+      },
+
+      async deleteArsip(arsipId) {
+        if (!confirm('{{ "Apakah Anda yakin ingin menghapus arsip ini?" if current_lang == "id" else "Are you sure you want to delete this archive?" }}')) {
+          return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+        try {
+          const response = await fetch(`/api/hapus_arsip/${arsipId}`, {
+            method: 'DELETE',
+            headers: {
+              'X-CSRFToken': csrfToken
+            }
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            alert(data.message);
+            // Remove from list
+            this.arsipList = this.arsipList.filter(a => a.id !== arsipId);
+            this.filterArsip();
+          } else {
+            alert(data.message);
+          }
+        } catch (error) {
+          alert('{{ "Error saat menghapus arsip" if current_lang == "id" else "Error deleting archive" }}');
+          console.error(error);
+        }
+      }
+    }
+  }
+</script>

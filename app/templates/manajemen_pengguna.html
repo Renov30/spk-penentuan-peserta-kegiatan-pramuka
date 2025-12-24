@@ -39,7 +39,15 @@
   </head>
   <body
     x-data="{ ready: false, page: 'main', selectedUser: null, searchPeserta: '', selectedPeserta: null, current_lang: '{{ current_lang }}', searchQuery: '', filterRole: '', filterStatus: '' }"
-    x-init="ready = true"
+    x-init="
+      const urlParams = new URLSearchParams(window.location.search);
+      const pageParam = urlParams.get('page');
+      if (pageParam === 'kelola') {
+        page = 'kelola';
+        $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Pengguna', 'Kelola Pengguna'] : ['Users Management', 'Manage Users'];
+      }
+      ready = true;
+    "
     :class="{ 'dark': $store.theme?.isDark }"
     x-bind:class="{
         'bg-background-dark text-white': $store.theme?.isDark,
@@ -53,7 +61,8 @@
         const lang = "{{ current_lang }}";
         Alpine.store("page", {
           current: "main",
-          breadcrumbs: lang === "id" ? ["Manajemen Pengguna"] : ["Users Management"],
+          breadcrumbs:
+            lang === "id" ? ["Manajemen Pengguna"] : ["Users Management"],
         });
       });
     </script>
@@ -113,16 +122,15 @@
                 >
                   <!-- Tambah & Kelola Pengguna -->
                   <div
-                    x-data="{ openAddUser: false, openImport: false }"
                     class="p-6 bg-white rounded-2xl shadow-md transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
                   >
                     <div class="flex items-center mb-4">
                       <div class="p-3 bg-blue-100 text-blue-600 rounded-full">
-                        <i class="fa-solid fa-user-plus text-xl"></i>
+                        <i class="fa-solid fa-users text-xl"></i>
                       </div>
                       <h2 class="ml-3 text-lg font-semibold">
-                        {{ 'Tambah & Kelola Pengguna' if current_lang == 'id'
-                        else 'Add & Manage Users' }}
+                        {{ 'Kelola Pengguna' if current_lang == 'id' else
+                        'Manage Users' }}
                       </h2>
                     </div>
                     <p
@@ -134,336 +142,25 @@
                     </p>
                     <div class="flex flex-wrap gap-2">
                       <button
-                        @click="openAddUser = true"
+                        @click="
+                          page = 'kelola';
+                          $store.page.breadcrumbs =
+                            current_lang === 'id'
+                              ? ['Manajemen Pengguna', 'Kelola Pengguna']
+                              : ['Users Management', 'Manage Users']
+                        "
                         class="flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer"
                       >
-                        <i class="fa-solid fa-user-plus mr-2"></i>
-                        {{ 'Tambah Pengguna' if current_lang == 'id' else 'Add
-                        User' }}
+                        <i class="fa-solid fa-users mr-2"></i>
+                        {{ 'Kelola Pengguna' if current_lang == 'id' else
+                        'Manage Users' }}
                       </button>
-
-                      <!-- Modal Tambah Pengguna -->
-                      <div
-                        x-show="openAddUser"
-                        x-cloak
-                        x-transition.opacity
-                        class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }}"
-                      >
-                        <div
-                          x-transition.scale
-                          class="bg-white rounded-2xl shadow-lg w-full max-w-lg p-6 {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
-                          @click.away="openAddUser = false"
-                        >
-                          <!-- Header -->
-                          <div
-                            class="flex justify-between items-center border-b pb-3 mb-12"
-                          >
-                            <h2
-                              class="text-xl font-semibold {{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-900' }}"
-                            >
-                              {{ 'Tambah Pengguna Baru' if current_lang == 'id'
-                              else 'Add New User' }}
-                            </h2>
-                            <button
-                              @click="openAddUser = false"
-                              class="text-gray-500 hover:text-gray-800 dark:hover:text-red-700 cursor-pointer"
-                            >
-                              <i class="fa-solid fa-xmark text-lg"></i>
-                            </button>
-                          </div>
-
-                          <!-- Form -->
-                          <form
-                            action="{{ url_for('admin_add_user') }}"
-                            method="POST"
-                            class="space-y-4"
-                          >
-                            <!-- CSRF Token -->
-                            <input
-                              type="hidden"
-                              name="csrf_token"
-                              value="{{ csrf_token() }}"
-                            />
-
-                            <!-- Nama Lengkap -->
-                            <div>
-                              <label class="block text-sm font-medium mb-1"
-                                >{{ 'Nama Lengkap' if current_lang == 'id' else
-                                'Full Name' }}</label
-                              >
-                              <input
-                                type="text"
-                                id="fullName"
-                                name="fullName"
-                                class="w-full px-3 py-2 border rounded-lg focus:ring focus:ring-blue-400 {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
-                                placeholder="Masukkan nama lengkap"
-                                required
-                              />
-                            </div>
-
-                            <!-- Email -->
-                            <div>
-                              <label class="block text-sm font-medium mb-1"
-                                >Email</label
-                              >
-                              <input
-                                type="email"
-                                id="email"
-                                name="email"
-                                class="w-full px-3 py-2 border rounded-lg focus:ring focus:ring-blue-400 {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
-                                placeholder="contoh@email.com"
-                                required
-                              />
-                            </div>
-
-                            <!-- Username -->
-                            <div>
-                              <label class="block text-sm font-medium mb-1"
-                                >Username</label
-                              >
-                              <input
-                                type="text"
-                                id="username"
-                                name="username"
-                                class="w-full px-3 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white focus:ring focus:ring-blue-400' if current_theme == 'dark' else 'dark:bg-gray-300 dark:text-gray-900 focus:ring focus:ring-blue-400' }}"
-                                placeholder="Masukkan username"
-                                required
-                              />
-                            </div>
-
-                            <!-- Password -->
-                            <div>
-                              <label class="block text-sm font-medium mb-1"
-                                >{{ 'Kata Sandi' if current_lang == 'id' else
-                                'Password' }}</label
-                              >
-                              <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                class="w-full px-3 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white focus:ring focus:ring-blue-400' if current_theme == 'dark' else 'dark:bg-gray-300 dark:text-gray-900 focus:ring focus:ring-blue-400' }}"
-                                placeholder="Minimal 8 karakter"
-                                required
-                              />
-                            </div>
-
-                            <!-- Konfirmasi Password -->
-                            <div>
-                              <label class="block text-sm font-medium mb-1"
-                                >{{ 'Konfirmasi Kata Sandi' if current_lang ==
-                                'id' else 'Confirm Password' }}</label
-                              >
-                              <input
-                                type="password"
-                                id="confirmPassword"
-                                name="confirmPassword"
-                                class="w-full px-3 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white focus:ring focus:ring-blue-400' if current_theme == 'dark' else 'dark:bg-gray-300 dark:text-gray-900 focus:ring focus:ring-blue-400' }}"
-                                placeholder="Minimal 8 karakter"
-                                required
-                              />
-                            </div>
-
-                            <!-- Role -->
-                            <div>
-                              <label class="block text-sm font-medium mb-1"
-                                >{{ 'Role Pengguna' if current_lang == 'id' else
-                                'User Role' }}</label
-                              >
-                              <select
-                                name="level"
-                                id="level"
-                                class="w-full px-3 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white focus:ring focus:ring-blue-400' if current_theme == 'dark' else 'dark:bg-gray-300 dark:text-gray-900 focus:ring focus:ring-blue-400' }}"
-                                required
-                              >
-                                <option value="peserta">
-                                  {{ 'Peserta' if current_lang == 'id' else
-                                  'Participant' }}
-                                </option>
-                                <option value="penilai">
-                                  {{ 'Penilai' if current_lang == 'id' else
-                                  'Evaluator' }}
-                                </option>
-                                <option value="admin">
-                                  {{ 'Admin' if current_lang == 'id' else
-                                  'Admin' }}
-                                </option>
-                              </select>
-                            </div>
-
-                            <!-- Tombol Aksi -->
-                            <div class="flex justify-end gap-3 pt-4">
-                              <button
-                                type="button"
-                                @click="openAddUser = false"
-                                class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
-                              >
-                                <i class="fa-solid fa-xmark"></i>
-                                {{ 'Batal' if current_lang == 'id' else 'Cancel'
-                                }}
-                              </button>
-                              <button
-                                type="submit"
-                                class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition cursor-pointer"
-                              >
-                                <i class="fa-solid fa-floppy-disk"></i>
-                                {{ 'Simpan' if current_lang == 'id' else 'Save'
-                                }}
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      </div>
-                      <!-- Import Data -->
-
-                      <button
-                        @click="openImport = true"
-                        class="flex items-center px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition cursor-pointer"
-                      >
-                        <i class="fa-solid fa-upload mr-2"></i>
-                        {{ 'Import Data' if current_lang == 'id' else 'Import
-                        Data' }}
-                      </button>
-
-                      <!-- Modal Import Data -->
-                      <div
-                        x-show="openImport"
-                        x-cloak
-                        x-transition.opacity
-                        class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }}"
-                      >
-                        <div
-                          class="bg-white rounded-2xl shadow-lg w-full max-w-lg p-6 {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
-                          @click.away="openImport = false"
-                          x-data="{ loading: false, fileName: '', previewData: null }"
-                        >
-                          <!-- Header -->
-                          <div
-                            class="flex justify-between items-center border-b pb-3 mb-12"
-                          >
-                            <div
-                              class="flex justify-between items-start gap-2.5"
-                            >
-                              <i
-                                class="fa-solid fa-file-import size-3.5 mt-2 text-green-700"
-                              ></i>
-                              <h2
-                                class="text-xl font-semibold {{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-900' }}"
-                              >
-                                {{ 'Import Data Pengguna' if current_lang ==
-                                'id' else 'Import User Data' }}
-                              </h2>
-                            </div>
-                            <button
-                              @click="openImport = false"
-                              class="cursor-pointer dark:hover:text-red-600 {{ 'text-gray-500 hover:text-gray-800' if current_theme == 'dark' else 'text-gray-700 hover:text-gray-800' }}"
-                            >
-                              <i class="fa-solid fa-xmark text-lg"></i>
-                            </button>
-                          </div>
-
-                          <!-- Form Import -->
-                          <form
-                            action="{{ url_for('admin_import_users') }}"
-                            method="POST"
-                            enctype="multipart/form-data"
-                            @submit="loading = true"
-                            class="space-y-4"
-                          >
-                            <!-- CSRF Token -->
-                            <input
-                              type="hidden"
-                              name="csrf_token"
-                              value="{{ csrf_token() }}"
-                            />
-                            <!-- Input File -->
-                            <div>
-                              <label
-                                class="block text-sm font-medium mb-1 {{ 'text-gray-200 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-800 dark:text-gray-900' }}"
-                              >
-                                {{ 'Pilih File' if current_lang == 'id' else
-                                'Choose File' }}
-                              </label>
-                              <div
-                                class="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition {{ 'hover:bg-gray-50 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50 dark:hover:bg-gray-300' }}"
-                                @click="$refs.fileInput.click()"
-                              >
-                                <input
-                                  type="file"
-                                  x-ref="fileInput"
-                                  name="file"
-                                  accept=".csv,.xls,.xlsx"
-                                  @change="fileName = $refs.fileInput.files[0]?.name || ''; previewData = null"
-                                  class="hidden"
-                                  required
-                                />
-                                <template x-if="!fileName">
-                                  <p
-                                    class="text-sm {{ 'text-gray-500 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-800 dark:text-gray-900' }}"
-                                  >
-                                    <i
-                                      class="fa-solid fa-cloud-upload-alt mr-1"
-                                    ></i>
-                                    {{ 'Klik untuk memilih file' if current_lang
-                                    == 'id' else 'Click to select file' }}
-                                  </p>
-                                </template>
-                                <template x-if="fileName">
-                                  <p
-                                    class="font-medium {{ 'text-gray-400 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-800 dark:text-gray-900' }}"
-                                  >
-                                    <i
-                                      class="fa-solid fa-file mr-2 {{ 'text-blue-500' if current_theme == 'dark' else 'text-blue-700' }}"
-                                    ></i>
-                                    <span x-text="fileName"></span>
-                                  </p>
-                                </template>
-                              </div>
-                            </div>
-
-                            <!-- Progress Indicator -->
-                            <template x-if="loading">
-                              <div
-                                class="flex items-center justify-center text-blue-500 mt-2"
-                              >
-                                <i
-                                  class="fa-solid fa-spinner animate-spin text-xl mr-2"
-                                ></i>
-                                <span
-                                  >{{'Mengupload dan memproses...' if
-                                  current_lang == 'id' else 'Uploading and
-                                  processing...' }}</span
-                                >
-                              </div>
-                            </template>
-
-                            <!-- Tombol Aksi -->
-                            <div class="flex justify-end gap-3 pt-4">
-                              <button
-                                type="button"
-                                @click="openImport = false"
-                                class="px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition cursor-pointer"
-                              >
-                                {{ 'Batal' if current_lang == 'id' else 'Cancel'
-                                }}
-                              </button>
-                              <button
-                                type="submit"
-                                :disabled="loading"
-                                class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer"
-                              >
-                                {{ 'Upload' if current_lang == 'id' else
-                                'Upload' }}
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
                   <!-- Role & Hak Akses -->
                   <div
-                    class="p-6 bg-white rounded-2xl shadow-md transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
+                    class="p-6 bg-white rounded-2xl shadow-md transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }} hidden"
                   >
                     <div class="flex items-center mb-4">
                       <div
@@ -519,19 +216,13 @@
                       current_lang == 'id' else 'View login history and user
                       activities.' }}
                     </p>
-                    <button
-                      @click="
-                        page = 'log';
-                        $store.page.breadcrumbs =
-                          current_lang === 'id'
-                            ? ['Manajemen Pengguna', 'Log Aktivitas']
-                            : ['Users Management', 'Activity Log']
-                      "
-                      class="flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition cursor-pointer"
+                    <a
+                      href="{{ url_for('admin_log_aktivitas') }}"
+                      class="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition cursor-pointer"
                     >
                       <i class="fa-solid fa-clock-rotate-left mr-2"></i>
                       {{ 'Lihat Log' if current_lang == 'id' else 'View Logs' }}
-                    </button>
+                    </a>
                   </div>
 
                   <!-- Status Akun -->
@@ -554,20 +245,20 @@
                       password.' if current_lang == 'id' else
                       'Activate/deactivate accounts or reset passwords.' }}
                     </p>
-                    <div class="flex flex-wrap gap-2">
-                      <button
-                        class="flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
-                      >
-                        <i class="fa-solid fa-ban mr-2"></i> {{ 'Nonaktifkan' if
-                        current_lang == 'id' else 'Deactivate' }}
-                      </button>
-                      <button
-                        class="flex items-center px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition cursor-pointer"
-                      >
-                        <i class="fa-solid fa-key mr-2"></i> {{ 'Reset Password'
-                        if current_lang == 'id' else 'Reset Password' }}
-                      </button>
-                    </div>
+                    <button
+                      @click="
+                        page = 'status';
+                        $store.page.breadcrumbs =
+                          current_lang === 'id'
+                            ? ['Manajemen Pengguna', 'Kelola Status Akun']
+                            : ['Users Management', 'Manage Account Status']
+                      "
+                      class="flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
+                    >
+                      <i class="fa-solid fa-user-lock mr-2"></i>
+                      {{ 'Kelola Status Akun' if current_lang == 'id' else
+                      'Manage Account Status' }}
+                    </button>
                   </div>
 
                   <!-- Profil Peserta -->
@@ -607,296 +298,17 @@
                   </div>
                 </div>
               </div>
-              <hr class="mt-10" />
-
-              <!-- Content 2 -->
-              <div class="mt-10">
-                <h1 class="text-2xl font-bold mb-8">
-                  {{ 'Daftar Pengguna' if current_lang == 'id' else 'Users List'
-                  }}
-                </h1>
-                <!-- Search Bar -->
-                <div
-                  class="flex flex-wrap items-center justify-between gap-3 mb-14"
-                >
-                  <div class="flex flex-wrap items-center gap-3">
-                    <input
-                      type="text"
-                      x-model="searchQuery"
-                      placeholder="Cari pengguna..."
-                      class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
-                    />
-
-                    <select
-                      x-model="filterRole"
-                      class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
-                    >
-                      <option value="">
-                        {{ 'Semua Role' if current_lang == 'id' else 'All Roles'
-                        }}
-                      </option>
-                      <option value="peserta">
-                        {{ 'Peserta' if current_lang == 'id' else 'Participant'
-                        }}
-                      </option>
-                      <option value="penilai">
-                        {{ 'Penilai' if current_lang == 'id' else 'Evaluator' }}
-                      </option>
-                      <option value="admin">Admin</option>
-                    </select>
-
-                    <select
-                      x-model="filterStatus"
-                      class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
-                    >
-                      <option value="">{{ 'Semua Status' if current_lang == 'id' else 'All Status' }}</option>
-                      <option value="aktif">
-                        {{ 'Aktif' if current_lang == 'id' else 'Active' }}
-                      </option>
-                      <option value="nonaktif">
-                        {{ 'Nonaktif' if current_lang == 'id' else 'Inactive' }}
-                      </option>
-                    </select>
-                  </div>
-
-                  <!-- Tombol di kanan -->
-                  <button
-                    type="button"
-                    class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer"
-                    @click="
-                      fetch('{{ url_for('download_users') }}')
-                        .then(res => res.blob())
-                        .then(blob => {const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'users.csv'; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);});"
-                  >
-                    <i class="fa-solid fa-download mr-2"></i>
-                    {{ 'Unduh' if current_lang == 'id' else 'Download ' }}
-                  </button>
-                </div>
-
-                <!-- Daftar Pengguna -->
-                <div
-                  class="overflow-x-auto mb-10 shadow rounded-lg {{ 'bg-white dark:bg-gray-800' if current_theme == 'dark' else 'bg-white dark:bg-gray-200' }}"
-                >
-                  <table class="w-full text-left border-collapse">
-                    <thead>
-                      <tr
-                        class="{{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-100' }}"
-                      >
-                        <th class="border p-2 px-4 py-2">No</th>
-                        <th class="border p-2 px-4 py-2">
-                          {{ 'Nama Lengkap' if current_lang == 'id' else 'Full
-                          Name' }}
-                        </th>
-                        <th class="border p-2 px-4 py-2">Email</th>
-                        <th class="border p-2 px-4 py-2">Username</th>
-                        <th class="border p-2 px-4 py-2">Role</th>
-                        <th class="border p-2 px-4 py-2">Status</th>
-                        <th class="border p-2 px-4 py-2">
-                          {{ 'Aksi' if current_lang == 'id' else 'Action' }}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for user in users %}
-                      <tr 
-                        class="border-b dark:border-gray-700"
-                        x-show="
-                          (searchQuery === '' || 
-                           '{{ user.nama_lengkap }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           '{{ user.email }}'.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           '{{ user.username }}'.toLowerCase().includes(searchQuery.toLowerCase())) &&
-                          (filterRole === '' || '{{ user.level }}'.toLowerCase() === filterRole.toLowerCase()) &&
-                          (filterStatus === '' || '{{ user.status }}'.toLowerCase() === filterStatus.toLowerCase())
-                        "
-                      >
-                        <td class="border p-2">{{ loop.index }}</td>
-                        <td class="border p-2 px-4 py-2">
-                          {{ user.nama_lengkap }}
-                        </td>
-                        <td class="border p-2 px-4 py-2">{{ user.email }}</td>
-                        <td class="border p-2 px-4 py-2">
-                          {{ user.username }}
-                        </td>
-                        <td class="border p-2 px-4 py-2">{{ user.level }}</td>
-                        <td class="border p-2 px-4 py-2">
-                          <span
-                            class="px-2 py-1 text-xs rounded-lg"
-                            :class="{
-                              'bg-green-100 text-green-600': '{{ user.status|lower }}' === 'aktif',
-                              'bg-red-100 text-red-600': '{{ user.status|lower }}' !== 'aktif'
-                            }"
-                          >
-                            {{ user.status }}
-                          </span>
-                        </td>
-                        <td
-                          class="border p-2 px-4 py-2 flex gap-2"
-                          x-data="{ 
-                            showModal: false, 
-                            deleteUrl: '{{ url_for('delete_user', user_id=user.id) }}', 
-                            username: '{{ user.username }}'
-                          }"
-                        >
-                          <!-- prettier-ignore -->
-                          <button
-                            @click="
-                              let userData = {
-                                id: {{user.id}},
-                                nama_lengkap: '{{user.nama_lengkap|replace("'", "\\'")}}',
-                                email: '{{user.email}}',
-                                username: '{{user.username}}',
-                                jenis_kelamin: '{{user.jenis_kelamin or ''}}',
-                                usia: {{user.usia or 0}},
-                                nomor_hp: '{{user.nomor_hp or ''}}',
-                                level: '{{user.level}}',
-                                status: '{{user.status}}',
-                                foto: '{{user.foto or 'images/profil-default.jpg'}}'
-                              };
-                              {% if user.biodata %}
-                              userData.biodata = {
-                                nama_lengkap: '{{user.biodata.nama_lengkap|replace("'", "\\'")}}',
-                                tanggal_lahir: '{{user.biodata.tanggal_lahir}}',
-                                alamat_tinggal: '{{user.biodata.alamat_tinggal|replace("'", "\\'")}}',
-                                golongan: '{{user.biodata.golongan}}',
-                                tingkatan: '{{user.biodata.tingkatan}}',
-                                asal_gudep: '{{user.biodata.asal_gudep|replace("'", "\\'")}}',
-                                asal_kwarran: '{{user.biodata.asal_kwarran|replace("'", "\\'")}}',
-                                asal_kwarcab: '{{user.biodata.asal_kwarcab|replace("'", "\\'")}}',
-                                asal_kwarda: '{{user.biodata.asal_kwarda|replace("'", "\\'")}}',
-                                usia: {{user.biodata.usia or 0}},
-                                jenis_kelamin: '{{user.biodata.jenis_kelamin}}',
-                                nomor_hp: '{{user.biodata.nomor_hp|replace("'", "\\'")}}',
-                                foto: '{{user.biodata.foto|replace("'", "\\'")}}'
-                              };
-                              // Merge data biodata ke userData jika ada
-                              if (userData.biodata.nama_lengkap) userData.nama_lengkap = userData.biodata.nama_lengkap;
-                              if (userData.biodata.email) userData.email = userData.biodata.email;
-                              if (userData.biodata.jenis_kelamin) userData.jenis_kelamin = userData.biodata.jenis_kelamin;
-                              if (userData.biodata.usia) userData.usia = userData.biodata.usia;
-                              if (userData.biodata.nomor_hp) userData.nomor_hp = userData.biodata.nomor_hp;
-                              {% endif %}
-                              selectedUser = userData;
-                              page = 'edit';
-                              if ($store.page) {
-                                $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Pengguna', 'Edit User'] : ['Users Management', 'Edit User'];
-                              }
-                            "
-                            class="px-3 py-1 rounded bg-blue-500 hover:bg-blue-700 text-white text-xs cursor-pointer"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            type="button"
-                            @click="showModal = true; username = '{{ user.username }}'; deleteUrl = '{{ url_for('delete_user', user_id=user.id) }}';"
-                            class="px-3 py-1 rounded bg-red-500 hover:bg-red-700 text-white text-xs cursor-pointer"
-                          >
-                            {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
-                          </button>
-
-                          <!-- Modal Konfirmasi Hapus -->
-                          <div
-                            x-show="showModal"
-                            @keydown.escape.window="showModal = false"
-                            x-transition.opacity.duration.300ms
-                            x-cloak
-                            class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }}"
-                          >
-                            <div
-                              x-transition.scale.80.duration.300ms
-                              class="p-6 rounded-2xl shadow-2xl w-96 flex flex-col items-center relative bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
-                              @click.away="showModal = false"
-                            >
-                              <!-- Tombol Close -->
-                              <button
-                                @click="showModal = false"
-                                class="absolute top-3 right-3 dark:hover:text-red-600 transition cursor-pointer {{ 'text-gray-500 hover:text-gray-700' if current_theme == 'dark' else 'text-gray-800 hover:text-gray-900' }}"
-                                aria-label="Close"
-                              >
-                                <i class="fa-solid fa-xmark text-lg"></i>
-                              </button>
-
-                              <!-- Icon -->
-                              <div
-                                class="text-3xl mb-2 animate-bounce text-red-600"
-                              >
-                                <i class="fa-solid fa-trash"></i>
-                              </div>
-
-                              <h2
-                                class="text-lg font-semibold mb-6 {{ 'text-red-700' if current_theme == 'dark' else 'text-red-800' }}"
-                              >
-                                {{ 'Konfirmasi Hapus' if current_lang == 'id'
-                                else 'Confirm Delete' }}
-                              </h2>
-
-                              <p class="text-gray-600 text-center mb-10">
-                                {{ 'Apakah Anda yakin ingin menghapus pengguna'
-                                if current_lang == 'id' else 'Are you sure you
-                                want to delete user' }}
-                                <span
-                                  class="font-semibold text-red-600"
-                                  x-text="username"
-                                ></span
-                                >?
-                              </p>
-
-                              <form
-                                :action="deleteUrl"
-                                method="POST"
-                                id="deleteForm{{ user.id }}"
-                              >
-                                <input
-                                  type="hidden"
-                                  name="csrf_token"
-                                  value="{{ csrf_token() }}"
-                                />
-                                <div class="flex justify-end gap-5 mb-5">
-                                  <button
-                                    type="button"
-                                    @click="showModal = false"
-                                    class="px-4 py-2 rounded-lg cursor-pointer bg-gray-300 hover:bg-gray-400 text-gray-800"
-                                  >
-                                    {{ 'Batal' if current_lang == 'id' else
-                                    'Cancel' }}
-                                  </button>
-                                  <button
-                                    type="submit"
-                                    class="px-4 py-2 rounded-lg cursor-pointer bg-red-600 hover:bg-red-700 text-white"
-                                  >
-                                    {{ 'Hapus' if current_lang == 'id' else
-                                    'Delete' }}
-                                  </button>
-                                </div>
-                              </form>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                      {% else %}
-                      <tr>
-                        <td
-                          colspan="7"
-                          class="p-4 text-center text-gray-500 mt-4"
-                        >
-                          {{ 'Tidak ada data' if current_lang == 'id' else 'No
-                          data available' }}
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
             </div>
 
             <!-- === (Tabs) === -->
             <template x-if="page === 'edit'">
               {% include 'manajemen-pengguna/edit_data_user.html' %}
             </template>
-            {%include 'manajemen-pengguna/kelola_role.html'%} {%include
+            {%include 'manajemen-pengguna/kelola_pengguna.html'%} {%include
+            'manajemen-pengguna/kelola_role.html'%} {%include
             'manajemen-pengguna/log_activity.html'%} {%include
-            'manajemen-pengguna/kelola_profil.html'%}
+            'manajemen-pengguna/kelola_profil.html'%} {%include
+            'manajemen-pengguna/kelola_status_akun.html'%}
           </section>
         </main>
       </div>
@@ -937,5 +349,157 @@
     <!-- Animation & Notification Script -->
     {% include 'script_animation.html' %} {% include 'script_notification.html'
     %}
+
+    <!-- Script untuk Toggle Status Akun -->
+    <script>
+      // Fungsi untuk toggle status akun
+      async function toggleUserStatus(
+        userId,
+        currentStatus,
+        username,
+        buttonElement
+      ) {
+        // Tentukan status baru
+        const isAktif = currentStatus.toLowerCase() === "aktif";
+        const newStatus = isAktif ? "non-aktif" : "aktif";
+
+        // Konfirmasi perubahan
+        const statusText =
+          newStatus === "aktif" ? "mengaktifkan" : "menonaktifkan";
+        const confirmMessage = `{{ 'Apakah Anda yakin ingin ' if current_lang == 'id' else 'Are you sure you want to ' }}${statusText} akun ${username}?`;
+
+        if (!confirm(confirmMessage)) {
+          return;
+        }
+
+        // Get Alpine component dari button
+        const alpineComponent = Alpine.$data(buttonElement.closest("[x-data]"));
+        if (alpineComponent) {
+          alpineComponent.loading = true;
+        }
+
+        try {
+          // Get CSRF token
+          const csrfToken =
+            document
+              .querySelector('meta[name="csrf-token"]')
+              ?.getAttribute("content") ||
+            document.querySelector('input[name="csrf_token"]')?.value;
+
+          // Kirim request ke API
+          const response = await fetch(`/api/user/update_status/${userId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({
+              status: newStatus,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // Update status di Alpine component
+            if (alpineComponent) {
+              alpineComponent.currentStatus = newStatus;
+              alpineComponent.loading = false;
+            }
+
+            // Tampilkan notifikasi sukses
+            showNotification(
+              data.message ||
+                `Status akun berhasil diubah menjadi ${newStatus}`,
+              "success"
+            );
+
+            // Reload halaman setelah 1.5 detik untuk sinkronisasi
+            setTimeout(() => {
+              location.reload();
+            }, 1500);
+          } else {
+            // Tampilkan notifikasi error
+            showNotification(
+              data.message || "Gagal mengubah status akun",
+              "error"
+            );
+
+            // Reset loading state
+            if (alpineComponent) {
+              alpineComponent.loading = false;
+            }
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showNotification(
+            '{{ "Terjadi kesalahan saat mengubah status akun" if current_lang == "id" else "An error occurred while changing account status" }}',
+            "error"
+          );
+
+          // Reset loading state
+          if (alpineComponent) {
+            alpineComponent.loading = false;
+          }
+        }
+      }
+
+      // Fungsi helper untuk show notification (jika belum ada)
+      function showNotification(message, type = "info") {
+        // Cek apakah ada fungsi notification dari script_notification.html
+        if (typeof window.showNotification === "function") {
+          window.showNotification(message, type);
+          return;
+        }
+
+        // Fallback: buat notifikasi sederhana
+        const notification = document.createElement("div");
+        notification.className = `fixed bottom-6 right-6 z-50 px-6 py-4 rounded-2xl shadow-xl border ${
+          type === "success"
+            ? "bg-green-600 text-white border-green-500"
+            : type === "error"
+            ? "bg-red-600 text-white border-red-500"
+            : type === "warning"
+            ? "bg-yellow-500 text-gray-900 border-yellow-400"
+            : "bg-gray-800 text-white border-gray-700"
+        }`;
+        notification.innerHTML = `
+          <div class="flex items-center gap-3">
+            <i class="fa-solid ${
+              type === "success"
+                ? "fa-circle-check"
+                : type === "error"
+                ? "fa-triangle-exclamation"
+                : type === "warning"
+                ? "fa-exclamation-circle"
+                : "fa-info-circle"
+            } text-lg"></i>
+            <div>
+              <strong>${
+                type === "success"
+                  ? '{{ "Berhasil" if current_lang == "id" else "Success" }}'
+                  : type === "error"
+                  ? '{{ "Error" if current_lang == "id" else "Error" }}'
+                  : '{{ "Info" if current_lang == "id" else "Info" }}'
+              }</strong><br>
+              <span class="text-sm">${message}</span>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.style.transition = "opacity 0.3s";
+          notification.style.opacity = "0";
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+      }
+
+      // Export fungsi ke global scope
+      window.toggleUserStatus = toggleUserStatus;
+      if (typeof window.showNotification === "undefined") {
+        window.showNotification = showNotification;
+      }
+    </script>
   </body>
 </html>

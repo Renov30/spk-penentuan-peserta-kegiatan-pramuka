@@ -148,37 +148,6 @@
                     </div>
                 </div>
 
-                <!-- Passed -->
-                <div class="rounded-xl shadow p-6 {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }} flex items-center justify-between border-l-4 border-green-500">
-                    <div>
-                        <p class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}">Lolos Seleksi</p>
-                        <p class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
-                            {% set count_passed = namespace(value=0) %}
-                            {% for item in results %}
-                                {% if item.is_passed %}
-                                    {% set count_passed.value = count_passed.value + 1 %}
-                                {% endif %}
-                            {% endfor %}
-                            {{ count_passed.value }}
-                        </p>
-                    </div>
-                    <div class="p-3 rounded-full bg-green-100 text-green-600">
-                        <i class="fas fa-check-circle text-xl"></i>
-                    </div>
-                </div>
-
-                <!-- Not Passed -->
-                <div class="rounded-xl shadow p-6 {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }} flex items-center justify-between border-l-4 border-red-500">
-                    <div>
-                        <p class="text-sm font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}">Tidak Lolos</p>
-                        <p class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
-                            {{ results|length - count_passed.value }}
-                        </p>
-                    </div>
-                    <div class="p-3 rounded-full bg-red-100 text-red-600">
-                        <i class="fas fa-times-circle text-xl"></i>
-                    </div>
-                </div>
               </div>
 
               <!-- Main Results Table -->
@@ -201,12 +170,11 @@
                         <th class="p-4 font-semibold">Nama Peserta</th>
                         <th class="p-4 font-semibold">Tingkatan / Golongan</th>
                         <th class="p-4 font-semibold text-center">JK</th>
-                        <th class="p-4 font-semibold text-center">Status Akhir</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}">
                       {% for item in results %}
-                      <tr class="transition-colors {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }} {% if item.is_passed %} {{ 'bg-green-900/10' if current_theme == 'dark' else 'bg-green-50' }} {% endif %}">
+                      <tr class="transition-colors {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}">
                         <td class="p-4 text-center font-bold">
                            #{{ item.hasil.ranking }}
                         </td>
@@ -228,17 +196,6 @@
                                 <span class="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded">P</span>
                             {% else %}
                                 -
-                            {% endif %}
-                        </td>
-                        <td class="p-4 text-center">
-                            {% if item.is_passed %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
-                                    <i class="fas fa-check mr-1.5"></i> LOLOS
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
-                                    TIDAK LOLOS
-                                </span>
                             {% endif %}
                         </td>
                       </tr>

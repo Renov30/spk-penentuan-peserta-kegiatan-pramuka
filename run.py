@@ -1,9 +1,10 @@
-from flask import Flask, Response, abort, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app
+from flask import Flask, Response, abort, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app, send_file
 from flask_session import Session
+from flask_session.filesystem import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, News, Comment, CommentLike, ParticipantKegiatan
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, News, Comment, CommentLike, tb_participant_kegiatan, PairwiseComparison, AHPResults, ArsipSeleksi, LogAktivitas, Settings
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -41,14 +42,132 @@ app.config['SESSION_FILE_PATH'] = os.path.join(app.root_path, 'flask_session')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
-app.secret_key = os.getenv("APP_SECRET_KEY")
+secret_key = os.getenv("APP_SECRET_KEY")
+# Ensure secret_key is a string, not bytes
+if isinstance(secret_key, bytes):
+    secret_key = secret_key.decode('utf-8')
+app.secret_key = secret_key or secrets.token_hex(32)
+
+# Custom Session Interface to fix bytes/string issue
+class FixedFileSystemSessionInterface(FileSystemSessionInterface):
+    def generate_sid(self):
+        """Generate session ID and ensure it's always a string"""
+        sid = super().generate_sid()
+        if isinstance(sid, bytes):
+            try:
+                sid = sid.decode('utf-8')
+            except (UnicodeDecodeError, AttributeError):
+                import base64
+                sid = base64.urlsafe_b64encode(sid).decode('utf-8').rstrip('=')
+        return sid
+    
+    def save_session(self, app, session, response):
+        """Override save_session to ensure session_id is always a string"""
+        original_set_cookie = response.set_cookie
+        
+        def patched_set_cookie(key, value='', *args, **kwargs):
+            if isinstance(value, bytes):
+                try:
+                    value = value.decode('utf-8')
+                except (UnicodeDecodeError, AttributeError):
+                    import base64
+                    value = base64.urlsafe_b64encode(value).decode('utf-8').rstrip('=')
+            return original_set_cookie(key, value, *args, **kwargs)
+        response.set_cookie = patched_set_cookie
+        try:
+            super().save_session(app, session, response)
+        finally:
+            response.set_cookie = original_set_cookie
+
+# Initialize Flask-Session first to set up configuration
 Session(app)
+existing_interface = app.session_interface
+existing_interface.__class__ = FixedFileSystemSessionInterface
 
 csrf = CSRFProtect(app)
 app.config.from_object(Config)
 limiter = Limiter(get_remote_address, app=app)
 logging.basicConfig(filename='login.log', level=logging.INFO,
                     format='%(asctime)s %(levelname)s:%(message)s')
+
+# Helper function untuk membuat notifikasi
+def create_notification(user_id, message):
+    """
+    Membuat notifikasi untuk user tertentu
+    
+    Args:
+        user_id: ID user yang akan menerima notifikasi
+        message: Pesan notifikasi (maks 255 karakter)
+    
+    Returns:
+        Notification object atau None jika gagal
+    """
+    try:
+        # Validasi user_id
+        if not user_id:
+            logging.error("create_notification: user_id is None or empty")
+            return None
+        
+        # Validasi message
+        if not message or not message.strip():
+            logging.error("create_notification: message is None or empty")
+            return None
+        
+        # Potong message jika terlalu panjang
+        if len(message) > 255:
+            message = message[:252] + "..."
+        
+        notification = Notification(
+            user_id=user_id,
+            message=message.strip(),
+            is_read=False
+        )
+        db.session.add(notification)
+        db.session.flush()  # Flush untuk memastikan ID tersedia
+        db.session.commit()
+        logging.info(f"Notification created successfully for user_id: {user_id}, message: {message[:50]}...")
+        return notification
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error creating notification for user_id {user_id}: {e}")
+        if hasattr(current_app, 'logger'):
+            current_app.logger.exception('Error in create_notification:')
+        return None
+
+# Helper function untuk membuat notifikasi ke semua admin
+def create_notification_to_all_admins(message):
+    """
+    Membuat notifikasi untuk semua admin
+    
+    Args:
+        message: Pesan notifikasi
+    """
+    try:
+        if not message or not message.strip():
+            logging.error("create_notification_to_all_admins: message is None or empty")
+            return
+        
+        admins = Users.query.filter_by(level='admin').all()
+        if not admins:
+            logging.warning("No admin users found to send notification to")
+            return
+        
+        logging.info(f"[NOTIFICATION] Creating notifications for {len(admins)} admin(s): {message[:50]}...")
+        success_count = 0
+        for admin in admins:
+            logging.info(f"[NOTIFICATION] Sending to admin: {admin.username} (ID: {admin.id}, Email: {admin.email})")
+            result = create_notification(admin.id, message)
+            if result:
+                success_count += 1
+                logging.info(f"[NOTIFICATION] ✓ Notification sent to admin: {admin.username} (ID: {admin.id})")
+            else:
+                logging.warning(f"[NOTIFICATION] ✗ Failed to send notification to admin: {admin.username} (ID: {admin.id})")
+        
+        logging.info(f"[NOTIFICATION] Summary: Successfully created {success_count}/{len(admins)} notifications")
+    except Exception as e:
+        logging.error(f"Error creating notification to admins: {e}")
+        if hasattr(current_app, 'logger'):
+            current_app.logger.exception('Error in create_notification_to_all_admins:')
 
 # Inisialisasi Flask-Login
 login_manager = LoginManager()
@@ -78,34 +197,131 @@ def allowed_file(filename, file_type='image'):
         allowed = ALLOWED_EXTENSIONS_DOC
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed
 
-# Configure Flask-Mail OTP
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
-app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")
+# Helper function untuk mendapatkan pengaturan dari database
+def get_setting(key, default=None):
+    """Mendapatkan pengaturan dari database, fallback ke default jika tidak ada"""
+    try:
+        setting = Settings.query.filter_by(key=key).first()
+        if setting and setting.value:
+            return setting.value
+    except:
+        pass
+    return default
+
+def get_email_settings():
+    """Mendapatkan pengaturan email dari database atau env/config"""
+    return {
+        'mail_server': get_setting('mail_server') or os.getenv("MAIL_SERVER", "smtp.gmail.com"),
+        'mail_port': int(get_setting('mail_port') or os.getenv("MAIL_PORT", "465")),
+        'mail_use_tls': get_setting('mail_use_tls', 'false') == 'true',
+        'mail_use_ssl': get_setting('mail_use_ssl', 'true') == 'true',
+        'mail_username': get_setting('mail_username') or os.getenv("MAIL_USERNAME", ""),
+        'mail_password': get_setting('mail_password') or os.getenv("MAIL_PASSWORD", ""),
+        'mail_enabled': get_setting('mail_enabled', 'true') == 'true'
+    }
+
+def get_sms_settings():
+    """Mendapatkan pengaturan SMS/WhatsApp dari database atau env/config"""
+    return {
+        'twilio_account_sid': get_setting('twilio_account_sid') or os.getenv("TWILIO_ACCOUNT_SID", ""),
+        'twilio_auth_token': get_setting('twilio_auth_token') or os.getenv("TWILIO_AUTH_TOKEN", ""),
+        'twilio_whatsapp_from': get_setting('twilio_whatsapp_from') or os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886"),
+        'sms_enabled': get_setting('sms_enabled', 'true') == 'true'
+    }
+
+# Configure Flask-Mail OTP - akan diupdate dari database saat runtime
+email_config = get_email_settings()
+app.config['MAIL_SERVER'] = email_config['mail_server']
+app.config['MAIL_PORT'] = email_config['mail_port']
+app.config['MAIL_USE_TLS'] = email_config['mail_use_tls']
+app.config['MAIL_USE_SSL'] = email_config['mail_use_ssl']
+app.config['MAIL_USERNAME'] = email_config['mail_username']
+app.config['MAIL_PASSWORD'] = email_config['mail_password']
 mail = Mail(app)
 
-# Whatsapp OTP
-account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-client = Client(account_sid, auth_token)
-
 def send_whatsapp_code(phone, code):
-    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-    client = Client(account_sid, auth_token)
-    message_body = f"Kode verifikasi Anda adalah: *{code}*.\nJangan bagikan kode ini kepada siapa pun."
+    """Mengirim kode verifikasi via WhatsApp menggunakan pengaturan dari database"""
+    sms_config = get_sms_settings()
+    
+    if not sms_config['sms_enabled']:
+        print("SMS/WhatsApp tidak diaktifkan")
+        return False
+    
+    if not sms_config['twilio_account_sid'] or not sms_config['twilio_auth_token']:
+        print("Twilio credentials tidak ditemukan")
+        return False
+    
     try:
+        client = Client(sms_config['twilio_account_sid'], sms_config['twilio_auth_token'])
+        message_body = f"Kode verifikasi Anda adalah: *{code}*.\nJangan bagikan kode ini kepada siapa pun."
         message = client.messages.create(
             body=message_body,
-            from_='whatsapp:+14155238886',
+            from_=sms_config['twilio_whatsapp_from'],
             to=f'whatsapp:{phone}'
         )
         print("Pesan berhasil dikirim:", message.sid)
+        return True
     except Exception as e:
         print("Gagal mengirim pesan:", e)
+        return False
+
+def send_email_message(subject, recipients, html_body, sender=None):
+    """Mengirim email menggunakan pengaturan dari database"""
+    email_config = get_email_settings()
+    
+    if not email_config['mail_enabled']:
+        print("Email tidak diaktifkan")
+        return False
+    
+    if not email_config['mail_username'] or not email_config['mail_password']:
+        print("Email credentials tidak ditemukan")
+        return False
+    
+    try:
+        # Update config sementara
+        original_config = {
+            'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+            'MAIL_PORT': app.config.get('MAIL_PORT'),
+            'MAIL_USE_SSL': app.config.get('MAIL_USE_SSL'),
+            'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
+            'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+            'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD')
+        }
+        
+        app.config['MAIL_SERVER'] = email_config['mail_server']
+        app.config['MAIL_PORT'] = email_config['mail_port']
+        app.config['MAIL_USE_SSL'] = email_config['mail_use_ssl']
+        app.config['MAIL_USE_TLS'] = email_config['mail_use_tls']
+        app.config['MAIL_USERNAME'] = email_config['mail_username']
+        app.config['MAIL_PASSWORD'] = email_config['mail_password']
+        
+        # Reinitialize mail dengan config baru
+        mail.init_app(app)
+        
+        msg = Message(
+            subject=subject,
+            recipients=recipients if isinstance(recipients, list) else [recipients],
+            html=html_body,
+            sender=sender or email_config['mail_username']
+        )
+        mail.send(msg)
+        
+        # Restore original config
+        for key, value in original_config.items():
+            app.config[key] = value
+        mail.init_app(app)
+        
+        return True
+    except Exception as e:
+        print(f"Gagal mengirim email: {e}")
+        # Restore original config
+        try:
+            for key, value in original_config.items():
+                app.config[key] = value
+            mail.init_app(app)
+        except:
+            pass
+        return False
 
 def normalize_phone_number(phone):
     phone = phone.strip()
@@ -186,13 +402,20 @@ def ratelimit_handler(e):
 def inject_notifications():
     user = None
     unread_count = 0
+    notifications = []
     if session.get('username'):
         user = Users.query.filter_by(username=session.get('username')).first()
     elif session.get('user'):
         user = Users.query.filter_by(username=session['user'].get('username')).first()
     if user:
         unread_count = Notification.query.filter_by(user_id=user.id, is_read=False).count()
-    return dict(notification_count=unread_count)
+        # Get recent notifications (last 10) for the notification tray
+        notifications = Notification.query.filter_by(
+            user_id=user.id
+        ).order_by(
+            Notification.id.desc()
+        ).limit(10).all()
+    return dict(notification_count=unread_count, notifications=notifications)
 
 # --- Middleware untuk cek login dan role ---
 def my_decorator(f):
@@ -592,18 +815,15 @@ def find_account():
                 session['verification_code'] = verification_code
                 session['verification_code_expiry'] = time.time() + 180
                 session['username'] = username
-                # Kirim kode via email
-                msg = Message('Verifikasi Akun Anda',
-                              sender='adip98816@gmail.com',
-                              recipients=[email])
+                # Kirim kode via email menggunakan helper function
                 safe_code = escape(verification_code)
-                msg.html = f"""
+                html_body = f"""
                 <p>Halo,</p>
                 <p>Berikut adalah kode verifikasi 6 digit untuk mengakses akun Anda:</p>
                 <h2>{safe_code}</h2>
                 <p>Atau klik <a href="{url_for('verify_code', _external=True)}" style="color: blue;">link ini</a> untuk melanjutkan.</p>
                 """
-                mail.send(msg)
+                send_email_message('Verifikasi Akun Anda', email, html_body)
                 flash(f"{t['email_sent_code']} {escape(email)}", 'success')
                 return redirect(url_for('verify_code'))
             elif not user_exists and not email_exists:
@@ -859,6 +1079,94 @@ def admin_dashboard():
         sidebar_state=sidebar_state
     )
 
+# API untuk data chart dashboard admin
+@app.route('/api/admin/dashboard/charts')
+@login_required
+def api_admin_dashboard_charts():
+    """API untuk mendapatkan data chart dashboard admin"""
+    # Cek apakah user adalah admin
+    if current_user.level != 'admin':
+        return jsonify({
+            'success': False,
+            'message': 'Akses ditolak. Hanya admin yang bisa mengakses data ini.'
+        }), 403
+    
+    try:
+        # 1. Distribusi User (Admin, Penilai, Peserta)
+        admin_count = Users.query.filter_by(level='admin').count()
+        penilai_count = Users.query.filter_by(level='penilai').count()
+        peserta_count = Users.query.filter_by(level='peserta').count()
+        
+        # 2. Statistik Peserta (Status)
+        peserta_aktif = Users.query.filter_by(level='peserta', status='aktif').count()
+        peserta_nonaktif = Users.query.filter_by(level='peserta', status='non-aktif').count()
+        
+        # 3. Statistik Peserta (Jenis Kelamin)
+        peserta_laki = db.session.query(Users).filter_by(level='peserta').filter(
+            (Users.jenis_kelamin == 'laki-laki') | (Users.jenis_kelamin == 'Laki-laki')
+        ).count()
+        peserta_perempuan = db.session.query(Users).filter_by(level='peserta').filter(
+            (Users.jenis_kelamin == 'perempuan') | (Users.jenis_kelamin == 'Perempuan')
+        ).count()
+        
+        # 4. Statistik Notifikasi (Read vs Unread)
+        notifications_read = Notification.query.filter_by(is_read=True).count()
+        notifications_unread = Notification.query.filter_by(is_read=False).count()
+        
+        # 5. Statistik Kegiatan/Event
+        total_events = Event.query.count()
+        events_aktif = Event.query.filter(
+            Event.waktu_pelaksanaan_dimulai <= date.today(),
+            Event.waktu_pelaksanaan_selesai >= date.today()
+        ).count()
+        events_selesai = Event.query.filter(
+            Event.waktu_pelaksanaan_selesai < date.today()
+        ).count()
+        events_mendatang = Event.query.filter(
+            Event.waktu_pelaksanaan_dimulai > date.today()
+        ).count()
+        
+        # 6. Statistik Hasil Seleksi (jika ada)
+        total_hasil_seleksi = HasilSeleksi.query.count()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'user_distribution': {
+                    'admin': admin_count,
+                    'penilai': penilai_count,
+                    'peserta': peserta_count
+                },
+                'peserta_status': {
+                    'aktif': peserta_aktif,
+                    'nonaktif': peserta_nonaktif
+                },
+                'peserta_gender': {
+                    'laki_laki': peserta_laki,
+                    'perempuan': peserta_perempuan
+                },
+                'notifications': {
+                    'read': notifications_read,
+                    'unread': notifications_unread
+                },
+                'events': {
+                    'total': total_events,
+                    'aktif': events_aktif,
+                    'selesai': events_selesai,
+                    'mendatang': events_mendatang
+                },
+                'hasil_seleksi': {
+                    'total': total_hasil_seleksi
+                }
+            }
+        })
+    except Exception as e:
+        logging.error(f"Error in api_admin_dashboard_charts: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
 # Route untuk melihat data penugasan penilai
 @app.route('/admin/view_penugasan_penilai')
 @login_required
@@ -930,10 +1238,10 @@ def get_penilaian_peserta(kegiatan_id):
     try:
         # Ambil semua peserta yang terdaftar di kegiatan ini melalui many-to-many relationship
         peserta_list = Participants.query.join(
-            ParticipantKegiatan,
-            Participants.id == ParticipantKegiatan.c.participant_id
+            tb_participant_kegiatan,
+            Participants.id == tb_participant_kegiatan.c.participant_id
         ).filter(
-            ParticipantKegiatan.c.kegiatan_id == kegiatan_id
+            tb_participant_kegiatan.c.kegiatan_id == kegiatan_id
         ).all()
         
         data = []
@@ -1195,8 +1503,15 @@ def admin_add_user():
                 )
                 db.session.add(new_user)
                 db.session.commit()
+                
+                # Buat notifikasi untuk admin jika user yang dibuat adalah peserta
+                if level == 'peserta':
+                    create_notification_to_all_admins(
+                        f"Peserta baru terdaftar: {nama_lengkap} ({email})"
+                    )
+                
                 flash(t['user_created'], "success")
-                return redirect(url_for('admin_users'))
+                return redirect(url_for('admin_users', page='kelola'))
             except Exception as e:
                 db.session.rollback()
                 logging.error(f"Error during registration: {e}")
@@ -1552,6 +1867,47 @@ def edit_user(user_id):
         traceback.print_exc()
     return redirect(url_for('admin_users'))
 
+@app.route('/api/user/update_status/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def api_update_user_status(user_id):
+    """API endpoint untuk update status akun user"""
+    try:
+        user = Users.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User tidak ditemukan'}), 404
+        
+        data = request.get_json()
+        new_status = data.get('status', '').strip()
+        
+        # Normalisasi status
+        if new_status == 'nonaktif':
+            new_status = 'non-aktif'
+        elif new_status not in ['aktif', 'non-aktif']:
+            return jsonify({'success': False, 'message': 'Status tidak valid'}), 400
+        
+        # Update status
+        old_status = user.status
+        user.status = new_status
+        db.session.commit()
+        
+        # Log aktivitas
+        status_text = 'mengaktifkan' if new_status == 'aktif' else 'menonaktifkan'
+        log_activity(
+            current_user.id,
+            f'{status_text.capitalize()} akun pengguna: {user.username}'
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'Status akun {user.username} berhasil diubah menjadi {new_status}',
+            'status': new_status
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in api_update_user_status:')
+        return jsonify({'success': False, 'message': f'Terjadi kesalahan: {str(e)}'}), 500
+
 # Manajemen Seleksi   
 @app.route('/admin/manajemen_seleksi')
 @login_required
@@ -1577,7 +1933,30 @@ def admin_manajemen_seleksi():
             'jumlah_peserta': jumlah_peserta
         })
     
-    return render_template("manajemen_seleksi.html", kegiatan_list=kegiatan_list, kegiatan_data=kegiatan_data, sidebar_state=sidebar_state)
+    # Ambil semua arsip untuk ditampilkan
+    arsip_list = ArsipSeleksi.query.order_by(ArsipSeleksi.tanggal_arsip.desc()).all()
+    arsip_data = []
+    for arsip in arsip_list:
+        arsip_data.append({
+            'id': arsip.id_arsip,
+            'event_id': arsip.event_id,
+            'nama_kegiatan': arsip.event.nama_kegiatan if arsip.event else 'N/A',
+            'nama_arsip': arsip.nama_arsip,
+            'deskripsi': arsip.deskripsi,
+            'file_path': arsip.file_path,
+            'file_type': arsip.file_type,
+            'tanggal_arsip': arsip.tanggal_arsip.strftime('%d %b %Y') if arsip.tanggal_arsip else '',
+            'pembuat': arsip.pembuat.nama_lengkap if arsip.pembuat else 'System',
+            'status': arsip.status
+        })
+    
+    return render_template(
+        "manajemen_seleksi.html", 
+        kegiatan_list=kegiatan_list, 
+        kegiatan_data=kegiatan_data,
+        arsip_list=arsip_data,
+        sidebar_state=sidebar_state
+    )
 
 # Route untuk halaman penugasan penilai
 @app.route('/admin/penugasan_penilai')
@@ -1605,7 +1984,7 @@ def admin_penugasan_penilai():
     
     # Prepare criteria data for frontend
     events_criteria = {}
-    for event in events:
+    for event in events:    
         events_criteria[event.id_kegiatan] = [
             {'id': c.id_kriteria, 'nama': c.nama_kriteria} 
             for c in event.kriteria
@@ -1842,14 +2221,48 @@ def save_config():
             if not waktu_pelaksanaan_selesai_date:
                 waktu_pelaksanaan_selesai_date = waktu_pelaksanaan_dimulai_date
             
+            # Validasi: Periode Seleksi harus selesai sebelum Waktu Pelaksanaan dimulai
+            # Cek apakah mulai periode seleksi >= waktu pelaksanaan
+            if mulai_date >= waktu_pelaksanaan_dimulai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Periode Seleksi (mulai) untuk kegiatan "{nama}" harus sebelum Waktu Pelaksanaan dimulai'
+                }), 400
+            
+            # Cek apakah selesai periode seleksi >= waktu pelaksanaan
+            if selesai_date >= waktu_pelaksanaan_dimulai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Periode Seleksi (selesai) untuk kegiatan "{nama}" harus sebelum Waktu Pelaksanaan dimulai'
+                }), 400
+            
+            # Validasi: Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi
+            # Cek apakah waktu pelaksanaan mulai dalam periode seleksi
+            if waktu_pelaksanaan_dimulai_date >= mulai_date and waktu_pelaksanaan_dimulai_date <= selesai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Waktu Pelaksanaan (mulai) untuk kegiatan "{nama}" tidak boleh dalam kurun waktu Periode Seleksi'
+                }), 400
+            
+            # Cek apakah waktu pelaksanaan selesai dalam periode seleksi
+            if waktu_pelaksanaan_selesai_date >= mulai_date and waktu_pelaksanaan_selesai_date <= selesai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Waktu Pelaksanaan (selesai) untuk kegiatan "{nama}" tidak boleh dalam kurun waktu Periode Seleksi'
+                }), 400
+            
+            # Cek apakah waktu pelaksanaan overlap dengan periode seleksi (waktu pelaksanaan mencakup seluruh periode seleksi)
+            if waktu_pelaksanaan_dimulai_date <= mulai_date and waktu_pelaksanaan_selesai_date >= selesai_date:
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'Waktu Pelaksanaan untuk kegiatan "{nama}" tidak boleh mencakup seluruh Periode Seleksi'
+                }), 400
+            
             # Parse jadwal tes (now as text)
             tanggal_tes = (act.get('tanggalTes') or '').strip()
             
             # Parse tempat tes
             tempat_tes = (act.get('tempatTes') or '').strip()
-            
-            # Parse batas lolos
-            batas_lolos = int(act.get('batasLolos') or 3)
             
             event = Event(
                 jenis_kegiatan=jenis_kegiatan,
@@ -1862,8 +2275,7 @@ def save_config():
                 mulai=mulai_date,
                 selesai=selesai_date,
                 tanggal_tes=tanggal_tes if tanggal_tes else None,
-                tempat_tes=tempat_tes if tempat_tes else None,
-                batas_lolos=batas_lolos
+                tempat_tes=tempat_tes if tempat_tes else None
             )
             db.session.add(event)
             db.session.flush()
@@ -1967,6 +2379,24 @@ def save_config():
                 )
                 db.session.add(crit)
         db.session.commit()
+        
+        # Buat notifikasi untuk admin setelah commit berhasil
+        if created_events:
+            for event in created_events:
+                notification_message = f"Kegiatan baru dibuat: {event.nama_kegiatan} ({event.jenis_kegiatan})"
+                logging.info(f"[NOTIFICATION] Attempting to create notification: {notification_message}")
+                
+                try:
+                    create_notification_to_all_admins(notification_message)
+                    logging.info(f"[NOTIFICATION] Successfully created notifications for event: {event.nama_kegiatan}")
+                except Exception as e:
+                    # Log error tapi jangan gagalkan proses utama
+                    logging.error(f"[NOTIFICATION] Failed to create notification for new event '{event.nama_kegiatan}': {e}")
+                    import traceback
+                    logging.error(f"[NOTIFICATION] Traceback: {traceback.format_exc()}")
+                    if hasattr(current_app, 'logger'):
+                        current_app.logger.exception('Error creating notification for new event:')
+        
         return jsonify({'status': 'success', 'message': 'Konfigurasi berhasil disimpan'}), 200
     except Exception as e:
         db.session.rollback()
@@ -1996,8 +2426,7 @@ def get_config(event_id):
                 'mulai': event.mulai.isoformat() if event.mulai else None,
                 'selesai': event.selesai.isoformat() if event.selesai else None,
                 'tanggal_tes': event.tanggal_tes,
-                'tempat_tes': event.tempat_tes,
-                'batas_lolos': event.batas_lolos if event.batas_lolos else 3
+                'tempat_tes': event.tempat_tes
             },
             'kuota': {
                 'putra': kuota.putra if kuota else 0,
@@ -2087,14 +2516,6 @@ def update_config(event_id):
                 event.tanggal_tes = evt_data['tanggal_tes'].strip() if evt_data['tanggal_tes'] else None
             if 'tempat_tes' in evt_data:
                 event.tempat_tes = evt_data['tempat_tes'].strip() if evt_data['tempat_tes'] else None
-            if 'batas_lolos' in evt_data:
-                try:
-                    batas_lolos_value = evt_data['batas_lolos']
-                    event.batas_lolos = int(batas_lolos_value) if batas_lolos_value else 3
-                    current_app.logger.info(f"Updated batas_lolos to {event.batas_lolos}")
-                except Exception as e:
-                    current_app.logger.error(f"Error updating batas_lolos: {e}")
-                    event.batas_lolos = 3
         
         # Update Kuota
         if 'kuota' in data:
@@ -2174,6 +2595,17 @@ def delete_config(event_id):
         event = Event.query.get_or_404(event_id)
         event_name = event.nama_kegiatan
         
+        # Ambil semua kriteria ID dari kegiatan
+        criteria = Criteria.query.filter_by(event_id=event_id).all()
+        criteria_ids = [c.id_kriteria for c in criteria]
+        
+        # Hapus penilaian yang terkait dengan kriteria tersebut
+        if criteria_ids:
+            Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+        
+        # Hapus hasil seleksi yang terkait dengan kegiatan
+        HasilSeleksi.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
         # Hapus akan cascade otomatis ke Kuota dan Criteria karena cascade="all, delete-orphan"
         db.session.delete(event)
         db.session.commit()
@@ -2215,6 +2647,19 @@ def delete_config_bulk():
         # Simpan nama-nama event untuk pesan sukses
         event_names = [event.nama_kegiatan for event in events]
         deleted_count = len(events)
+        
+        # Ambil semua kriteria ID dari kegiatan yang akan dihapus
+        criteria_ids = []
+        for event in events:
+            criteria = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
+            criteria_ids.extend([c.id_kriteria for c in criteria])
+        
+        # Hapus penilaian yang terkait dengan kriteria tersebut
+        if criteria_ids:
+            Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+        
+        # Hapus hasil seleksi yang terkait dengan kegiatan
+        HasilSeleksi.query.filter(HasilSeleksi.event_id.in_(event_ids)).delete(synchronize_session=False)
         
         # Hapus semua event (cascade akan menghapus Kuota dan Criteria secara otomatis)
         for event in events:
@@ -2351,6 +2796,9 @@ def api_search_peserta():
 def api_list_peserta():
     """API untuk mendapatkan semua data peserta (gabungan users dan participants)"""
     try:
+        # Get optional filter parameters
+        kegiatan_id = request.args.get('kegiatan_id', type=int)
+        
         # Ambil semua user dengan level peserta
         users_peserta = Users.query.filter_by(level='peserta').all()
         
@@ -2358,6 +2806,47 @@ def api_list_peserta():
         for user in users_peserta:
             # Cari data biodata dari tabel participants berdasarkan email
             biodata = Participants.query.filter_by(email=user.email).first()
+            
+            # Jika filter kegiatan_id diberikan, cek apakah peserta terdaftar di kegiatan tersebut
+            if kegiatan_id and biodata:
+                # Cek apakah peserta terdaftar di kegiatan ini
+                is_registered = db.session.query(tb_participant_kegiatan).filter_by(
+                    participant_id=biodata.id,
+                    kegiatan_id=kegiatan_id
+                ).first()
+                
+                if not is_registered:
+                    continue  # Skip peserta yang tidak terdaftar di kegiatan ini
+            
+            # Get hasil seleksi untuk kegiatan tertentu atau latest
+            if kegiatan_id:
+                hasil_seleksi = HasilSeleksi.query.filter_by(
+                    id_users=user.id,
+                    event_id=kegiatan_id
+                ).first()
+            else:
+                # Get latest or highest score
+                hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user.id).order_by(
+                    HasilSeleksi.skor_akhir.desc()
+                ).first()
+            
+            # Get registered activities for this participant
+            registered_activities = []
+            if biodata:
+                activities = biodata.registered_activities.all()
+                for activity in activities:
+                    hasil_activity = HasilSeleksi.query.filter_by(
+                        id_users=user.id,
+                        event_id=activity.id_kegiatan
+                    ).first()
+                    
+                    registered_activities.append({
+                        'id': activity.id_kegiatan,
+                        'nama': activity.nama_kegiatan,
+                        'jenis': activity.jenis_kegiatan,
+                        'skor': hasil_activity.skor_akhir if hasil_activity else None,
+                        'ranking': hasil_activity.ranking if hasil_activity else None
+                    })
             
             # Gabungkan data dari users dan participants
             peserta_item = {
@@ -2379,15 +2868,29 @@ def api_list_peserta():
                 'asal_gudep': biodata.asal_gudep if biodata else '',
                 'asal_kwarran': biodata.asal_kwarran if biodata else '',
                 'asal_kwarcab': biodata.asal_kwarcab if biodata else '',
-                'asal_kwarda': biodata.asal_kwarda if biodata else ''
+                'asal_kwarda': biodata.asal_kwarda if biodata else '',
+                'skor_akhir': hasil_seleksi.skor_akhir if hasil_seleksi else None,
+                'ranking': hasil_seleksi.ranking if hasil_seleksi else None,
+                'registered_activities': registered_activities
             }
             peserta_data.append(peserta_item)
         
-        return jsonify({'success': True, 'peserta': peserta_data})
+        # Always return success with array, even if empty
+        return jsonify({
+            'success': True, 
+            'peserta': peserta_data,
+            'count': len(peserta_data)
+        })
     except Exception as e:
         logging.error(f"Error in api_list_peserta: {e}")
         current_app.logger.exception('Error in api_list_peserta:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        # Return error response in JSON format
+        return jsonify({
+            'success': False, 
+            'message': str(e),
+            'peserta': [],
+            'count': 0
+        }), 500
 
 # API Add Peserta
 @app.route("/api/peserta/add", methods=['POST'])
@@ -2626,6 +3129,140 @@ def api_delete_peserta(user_id):
         current_app.logger.exception('Error in api_delete_peserta:')
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# API Get Detail Peserta
+@app.route("/api/peserta/detail/<int:user_id>")
+@login_required
+@admin_required
+def api_detail_peserta(user_id):
+    """API untuk mendapatkan detail data peserta"""
+    try:
+        user = Users.query.get(user_id)
+        if not user or user.level != 'peserta':
+            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+        
+        # Cari data biodata dari tabel participants berdasarkan email
+        biodata = Participants.query.filter_by(email=user.email).first()
+        
+        # Get registered activities
+        registered_activities = []
+        if biodata:
+            activities = biodata.registered_activities.all()
+            for activity in activities:
+                # Get hasil seleksi if exists
+                hasil = HasilSeleksi.query.filter_by(
+                    id_users=user.id,
+                    event_id=activity.id_kegiatan
+                ).first()
+                
+                registered_activities.append({
+                    'id': activity.id_kegiatan,
+                    'nama': activity.nama_kegiatan,
+                    'jenis': activity.jenis_kegiatan,
+                    'skor': hasil.skor_akhir if hasil else None,
+                    'ranking': hasil.ranking if hasil else None
+                })
+        
+        # Gabungkan data dari users dan participants
+        peserta_data = {
+            'id': user.id,
+            'user_id': user.id,
+            'participant_id': biodata.id if biodata else None,
+            'username': user.username or '',
+            'nama_lengkap': biodata.nama_lengkap if biodata and biodata.nama_lengkap else (user.nama_lengkap or ''),
+            'email': user.email or '',
+            'jenis_kelamin': biodata.jenis_kelamin if biodata and biodata.jenis_kelamin else (user.jenis_kelamin or ''),
+            'usia': str(biodata.usia) if biodata and biodata.usia else (user.usia or '0'),
+            'nomor_hp': biodata.nomor_hp if biodata and biodata.nomor_hp else (user.nomor_hp or ''),
+            'foto': user.foto if user.foto and user.foto != 'img/default-user.png' else (biodata.foto if biodata and biodata.foto else 'img/default-user.png'),
+            'status': user.status or 'aktif',
+            'golongan': biodata.golongan if biodata else '',
+            'tingkatan': biodata.tingkatan if biodata else '',
+            'tanggal_lahir': biodata.tanggal_lahir.strftime('%Y-%m-%d') if biodata and biodata.tanggal_lahir else '',
+            'alamat_tinggal': biodata.alamat_tinggal if biodata else '',
+            'asal_gudep': biodata.asal_gudep if biodata else '',
+            'asal_kwarran': biodata.asal_kwarran if biodata else '',
+            'asal_kwarcab': biodata.asal_kwarcab if biodata else '',
+            'asal_kwarda': biodata.asal_kwarda if biodata else '',
+            'registered_activities': registered_activities
+        }
+        
+        return jsonify({'success': True, 'peserta': peserta_data})
+    except Exception as e:
+        logging.error(f"Error in api_detail_peserta: {e}")
+        current_app.logger.exception('Error in api_detail_peserta:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Get Statistics Peserta
+@app.route("/api/peserta/statistics")
+@login_required
+@admin_required
+def api_peserta_statistics():
+    """API untuk mendapatkan statistik peserta untuk chart"""
+    try:
+        # Count by status
+        total = Users.query.filter_by(level='peserta').count()
+        aktif = Users.query.filter_by(level='peserta', status='aktif').count()
+        nonaktif = Users.query.filter_by(level='peserta', status='non-aktif').count()
+        
+        # Count by gender (from Users table first, then Participants)
+        laki_laki = Users.query.filter_by(level='peserta', jenis_kelamin='laki-laki').count()
+        perempuan = Users.query.filter_by(level='peserta', jenis_kelamin='perempuan').count()
+        
+        # Also count from Participants table
+        peserta_laki = Participants.query.filter_by(jenis_kelamin='laki-laki').join(
+            Users, Participants.email == Users.email
+        ).filter(Users.level == 'peserta').count()
+        
+        peserta_perempuan = Participants.query.filter_by(jenis_kelamin='perempuan').join(
+            Users, Participants.email == Users.email
+        ).filter(Users.level == 'peserta').count()
+        
+        # Combine counts
+        laki_laki = max(laki_laki, peserta_laki)
+        perempuan = max(perempuan, peserta_perempuan)
+        
+        # Count by golongan
+        golongan_stats = db.session.query(
+            Participants.golongan,
+            db.func.count(Participants.id).label('count')
+        ).join(
+            Users, Participants.email == Users.email
+        ).filter(
+            Users.level == 'peserta'
+        ).group_by(Participants.golongan).all()
+        
+        golongan_data = {golongan: count for golongan, count in golongan_stats if golongan}
+        
+        # Get average scores
+        avg_score = db.session.query(
+            db.func.avg(HasilSeleksi.skor_akhir)
+        ).join(
+            Users, HasilSeleksi.id_users == Users.id
+        ).filter(
+            Users.level == 'peserta'
+        ).scalar() or 0
+        
+        return jsonify({
+            'success': True,
+            'statistics': {
+                'status': {
+                    'total': total,
+                    'aktif': aktif,
+                    'nonaktif': nonaktif
+                },
+                'gender': {
+                    'laki_laki': laki_laki,
+                    'perempuan': perempuan
+                },
+                'golongan': golongan_data,
+                'average_score': float(avg_score)
+            }
+        })
+    except Exception as e:
+        logging.error(f"Error in api_peserta_statistics: {e}")
+        current_app.logger.exception('Error in api_peserta_statistics:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # Tambah Kegiatan
 @app.route('/admin/tambah_seleksi', methods=['GET', 'POST'])
 @login_required
@@ -2666,6 +3303,21 @@ def tambah_seleksi():
             
         db.session.add(new_event)
         db.session.commit()
+        
+        # Buat notifikasi untuk admin setelah commit berhasil
+        notification_message = f"Kegiatan baru dibuat: {nama} ({jenis})"
+        logging.info(f"[NOTIFICATION] Attempting to create notification: {notification_message}")
+        
+        try:
+            create_notification_to_all_admins(notification_message)
+            logging.info(f"[NOTIFICATION] Successfully created notifications for event: {nama}")
+        except Exception as e:
+            # Log error tapi jangan gagalkan proses utama
+            logging.error(f"[NOTIFICATION] Failed to create notification for new event '{nama}': {e}")
+            import traceback
+            logging.error(f"[NOTIFICATION] Traceback: {traceback.format_exc()}")
+            if hasattr(current_app, 'logger'):
+                current_app.logger.exception('Error creating notification for new event:')
 
         flash('Kegiatan berhasil ditambahkan!', 'success')
         return redirect(url_for('admin_manajemen_seleksi'))
@@ -2727,6 +3379,18 @@ def hapus_kegiatan(id):
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
     event = Event.query.get_or_404(id)
+    
+    # Ambil semua kriteria ID dari kegiatan
+    criteria = Criteria.query.filter_by(event_id=id).all()
+    criteria_ids = [c.id_kriteria for c in criteria]
+    
+    # Hapus penilaian yang terkait dengan kriteria tersebut
+    if criteria_ids:
+        Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+    
+    # Hapus hasil seleksi yang terkait dengan kegiatan
+    HasilSeleksi.query.filter_by(event_id=id).delete(synchronize_session=False)
+    
     db.session.delete(event)
     db.session.commit()
     flash(f"{t['event_deleted']}", "danger")
@@ -2753,23 +3417,830 @@ def admin_kriteria():
 def admin_pembobotan_kriteria():
     sidebar_state = current_user.sidebar_state or 'expanded'
     users = Users.query.count()
-    return render_template('pembobotan_kriteria.html', sidebar_state=sidebar_state, user=users, time=time)
+    
+    # Ambil semua kegiatan untuk dropdown
+    events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Ambil event_id dari query parameter jika ada
+    selected_event_id = request.args.get('event_id', type=int)
+    selected_event = None
+    criteria_list = []
+    pairwise_matrix = None
+    ahp_results = None
+    
+    if selected_event_id:
+        selected_event = Event.query.get(selected_event_id)
+        if selected_event:
+            criteria_list = Criteria.query.filter_by(event_id=selected_event_id).order_by(Criteria.id_kriteria).all()
+            
+            # Cek apakah sudah ada matriks perbandingan
+            from app.fuzzy_ahp import get_pairwise_matrix_from_db
+            import numpy as np
+            criteria_ids = [c.id_kriteria for c in criteria_list]
+            if criteria_ids:
+                pairwise_matrix = get_pairwise_matrix_from_db(selected_event_id, criteria_ids)
+            
+            # Ambil hasil AHP jika ada
+            ahp_results = AHPResults.query.filter_by(event_id=selected_event_id).first()
+    
+    return render_template(
+        'pembobotan_kriteria.html', 
+        sidebar_state=sidebar_state, 
+        user=users, 
+        time=time,
+        events=events,
+        selected_event=selected_event,
+        criteria_list=criteria_list,
+        pairwise_matrix=pairwise_matrix.tolist() if pairwise_matrix is not None else None,
+        ahp_results=ahp_results
+    )
+
+
+# API untuk menyimpan matriks perbandingan berpasangan
+@app.route('/api/save_pairwise_matrix/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def save_pairwise_matrix(event_id):
+    """API untuk menyimpan matriks perbandingan berpasangan"""
+    try:
+        data = request.get_json(force=True)
+        matrix_data = data.get('matrix', [])
+        
+        if not matrix_data:
+            return jsonify({'success': False, 'message': 'Matriks tidak boleh kosong'}), 400
+        
+        # Ambil kriteria
+        criterias = Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
+        if not criterias:
+            return jsonify({'success': False, 'message': 'Tidak ada kriteria untuk kegiatan ini'}), 400
+        
+        criteria_ids = [c.id_kriteria for c in criterias]
+        n = len(criterias)
+        
+        # Validasi ukuran matriks
+        if len(matrix_data) != n or any(len(row) != n for row in matrix_data):
+            return jsonify({'success': False, 'message': f'Ukuran matriks harus {n}x{n}'}), 400
+        
+        # Konversi ke numpy array
+        import numpy as np
+        matrix = np.array(matrix_data, dtype=float)
+        
+        # Validasi nilai (harus 1-9 atau kebalikannya)
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    if matrix[i, j] != 1.0:
+                        return jsonify({'success': False, 'message': f'Diagonal harus 1.0 (baris {i+1}, kolom {j+1})'}), 400
+                else:
+                    val = matrix[i, j]
+                    if val < 1/9 or val > 9:
+                        return jsonify({'success': False, 'message': f'Nilai harus antara 1/9 sampai 9 (baris {i+1}, kolom {j+1})'}), 400
+        
+        # Simpan matriks
+        from app.fuzzy_ahp import save_pairwise_matrix
+        success, message = save_pairwise_matrix(event_id, criteria_ids, matrix)
+        
+        if success:
+            return jsonify({'success': True, 'message': message})
+        else:
+            return jsonify({'success': False, 'message': message}), 400
+            
+    except Exception as e:
+        logging.error(f"Error saving pairwise matrix: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+# API untuk menghitung bobot AHP
+@app.route('/api/calculate_ahp/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def calculate_ahp(event_id):
+    """API untuk menghitung bobot menggunakan AHP"""
+    try:
+        data = request.get_json(force=True)
+        use_fuzzy = data.get('use_fuzzy', True)
+        
+        from app.fuzzy_ahp import calculate_ahp_weights, calculate_fuzzy_ahp_weights
+        
+        if use_fuzzy:
+            success, message, results = calculate_fuzzy_ahp_weights(event_id)
+        else:
+            success, message, results = calculate_ahp_weights(event_id)
+        
+        if success:
+            # Ambil hasil AHP yang sudah disimpan
+            ahp_result = AHPResults.query.filter_by(event_id=event_id).first()
+            result_data = {
+                'success': True,
+                'message': message,
+                'results': results
+            }
+            
+            if ahp_result:
+                result_data['ahp_result'] = {
+                    'lambda_max': float(ahp_result.lambda_max) if ahp_result.lambda_max else None,
+                    'ci': float(ahp_result.ci) if ahp_result.ci else None,
+                    'cr': float(ahp_result.cr) if ahp_result.cr else None,
+                    'is_consistent': ahp_result.is_consistent,
+                    'weights_json': ahp_result.weights_json
+                }
+            
+            return jsonify(result_data)
+        else:
+            return jsonify({'success': False, 'message': message}), 400
+            
+    except Exception as e:
+        logging.error(f"Error calculating AHP: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+# Route untuk Laporan & Arsip Seleksi
+@app.route('/admin/laporan_arsip_seleksi')
+@login_required
+@admin_required
+def admin_laporan_arsip_seleksi():
+    """Halaman laporan dan arsip seleksi"""
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    # Ambil semua kegiatan
+    events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Ambil semua arsip
+    arsip_list = ArsipSeleksi.query.order_by(ArsipSeleksi.tanggal_arsip.desc()).all()
+    
+    # Format data arsip
+    arsip_data = []
+    for arsip in arsip_list:
+        arsip_data.append({
+            'id': arsip.id_arsip,
+            'event_id': arsip.event_id,
+            'nama_kegiatan': arsip.event.nama_kegiatan if arsip.event else 'N/A',
+            'nama_arsip': arsip.nama_arsip,
+            'deskripsi': arsip.deskripsi,
+            'file_path': arsip.file_path,
+            'file_type': arsip.file_type,
+            'tanggal_arsip': arsip.tanggal_arsip.strftime('%d %b %Y') if arsip.tanggal_arsip else '',
+            'pembuat': arsip.pembuat.nama_lengkap if arsip.pembuat else 'System',
+            'status': arsip.status
+        })
+    
+    return render_template(
+        'manajemen_seleksi.html',
+        kegiatan_list=events,
+        kegiatan_data=[],
+        arsip_list=arsip_data,
+        sidebar_state=sidebar_state
+    )
+
+# API untuk generate laporan Excel
+@app.route('/api/generate_laporan_excel/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def generate_laporan_excel(event_id):
+    """Generate laporan Excel untuk hasil seleksi"""
+    try:
+        event = Event.query.get_or_404(event_id)
+        
+        # Ambil hasil seleksi
+        hasil_seleksi = db.session.query(
+            HasilSeleksi,
+            Users,
+            Participants
+        ).join(
+            Users, HasilSeleksi.id_users == Users.id
+        ).outerjoin(
+            Participants, Users.email == Participants.email
+        ).filter(
+            HasilSeleksi.event_id == event_id
+        ).order_by(
+            HasilSeleksi.ranking.asc()
+        ).all()
+        
+        if not hasil_seleksi:
+            return jsonify({'success': False, 'message': 'Tidak ada data hasil seleksi'}), 400
+        
+        # Buat workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Laporan Hasil Seleksi"
+        
+        # Header
+        headers = ['No', 'Peringkat', 'Nama Lengkap', 'Email', 'Golongan', 'Tingkatan', 'Asal Gudep', 'Skor Akhir']
+        ws.append(headers)
+        
+        # Style header
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_fill = PatternFill("solid", fgColor="4F81BD")
+        center_align = Alignment(horizontal="center", vertical="center")
+        thin_border = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin"),
+        )
+        
+        for cell in ws[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = thin_border
+        
+        # Data
+        for idx, (hasil, user, participant) in enumerate(hasil_seleksi, start=1):
+            ws.append([
+                idx,
+                hasil.ranking,
+                user.nama_lengkap or '',
+                user.email or '',
+                participant.golongan if participant else '',
+                participant.tingkatan if participant else '',
+                participant.asal_gudep if participant else '',
+                round(hasil.skor_akhir, 2)
+            ])
+        
+        # Auto width
+        for column_cells in ws.columns:
+            length = max(len(str(cell.value)) for cell in column_cells)
+            ws.column_dimensions[column_cells[0].column_letter].width = min(length + 2, 50)
+        
+        ws.freeze_panes = "A2"
+        
+        # Save to BytesIO
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Simpan ke arsip
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.xlsx"
+        
+        # Simpan file ke folder static/uploads/reports
+        upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'reports')
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, filename)
+        
+        with open(file_path, 'wb') as f:
+            f.write(output.getvalue())
+        
+        # Simpan ke database arsip
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=f"Laporan Excel - {event.nama_kegiatan}",
+            deskripsi=f"Laporan hasil seleksi dalam format Excel untuk kegiatan {event.nama_kegiatan}",
+            file_path=f"static/uploads/reports/{filename}",
+            file_type='excel',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Laporan Excel berhasil dibuat dan diarsipkan',
+            'file_path': f"/{file_path}",
+            'arsip_id': arsip.id_arsip
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error generating Excel report: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+# API untuk generate laporan PDF (menggunakan HTML to PDF atau reportlab)
+@app.route('/api/generate_laporan_pdf/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def generate_laporan_pdf(event_id):
+    """Generate laporan PDF untuk hasil seleksi"""
+    try:
+        event = Event.query.get_or_404(event_id)
+        
+        # Ambil hasil seleksi
+        hasil_seleksi = db.session.query(
+            HasilSeleksi,
+            Users,
+            Participants
+        ).join(
+            Users, HasilSeleksi.id_users == Users.id
+        ).outerjoin(
+            Participants, Users.email == Participants.email
+        ).filter(
+            HasilSeleksi.event_id == event_id
+        ).order_by(
+            HasilSeleksi.ranking.asc()
+        ).all()
+        
+        if not hasil_seleksi:
+            return jsonify({'success': False, 'message': 'Tidak ada data hasil seleksi'}), 400
+        
+        # Generate HTML untuk PDF (bisa menggunakan weasyprint atau pdfkit)
+        # Untuk sekarang, kita simpan sebagai HTML dan bisa dikonversi nanti
+        html_content = render_template(
+            'laporan_pdf_template.html',
+            event=event,
+            hasil_seleksi=hasil_seleksi,
+            tanggal_laporan=datetime.now().strftime('%d %B %Y')
+        )
+        
+        # Simpan HTML (atau konversi ke PDF jika ada library)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.html"
+        
+        upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'reports')
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, filename)
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        # Simpan ke database arsip
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=f"Laporan PDF - {event.nama_kegiatan}",
+            deskripsi=f"Laporan hasil seleksi dalam format PDF untuk kegiatan {event.nama_kegiatan}",
+            file_path=f"static/uploads/reports/{filename}",
+            file_type='pdf',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Laporan PDF berhasil dibuat dan diarsipkan',
+            'file_path': f"/{file_path}",
+            'arsip_id': arsip.id_arsip
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error generating PDF report: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+# API untuk download file arsip
+@app.route('/api/download_arsip/<int:arsip_id>')
+@login_required
+@admin_required
+def download_arsip(arsip_id):
+    """Download file arsip"""
+    try:
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+        
+        if not arsip.file_path:
+            flash('File tidak ditemukan', 'error')
+            return redirect(url_for('admin_manajemen_seleksi'))
+        
+        file_path = os.path.join(app.root_path, arsip.file_path)
+        
+        if not os.path.exists(file_path):
+            flash('File tidak ditemukan di server', 'error')
+            return redirect(url_for('admin_manajemen_seleksi'))
+        
+        return send_file(file_path, as_attachment=True, download_name=arsip.nama_arsip)
+        
+    except Exception as e:
+        logging.error(f"Error downloading archive: {str(e)}")
+        flash('Error saat mengunduh file', 'error')
+        return redirect(url_for('admin_manajemen_seleksi'))
+
+# API untuk hapus arsip
+@app.route('/api/hapus_arsip/<int:arsip_id>', methods=['DELETE', 'POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def hapus_arsip(arsip_id):
+    """Hapus arsip seleksi"""
+    try:
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+        
+        # Hapus file jika ada
+        if arsip.file_path:
+            file_path = os.path.join(app.root_path, arsip.file_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        
+        db.session.delete(arsip)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Arsip berhasil dihapus'})
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting archive: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
 @app.route('/admin/peserta')
 @login_required
 @admin_required
 def admin_peserta():
     sidebar_state = current_user.sidebar_state or 'expanded'
-    participants = Participants.query.order_by(Participants.id.asc()).all()
-    return render_template('data_peserta.html', sidebar_state=sidebar_state, participants=participants, time=time)
+    
+    # Get statistics
+    total_peserta = Users.query.filter_by(level='peserta').count()
+    
+    # Count by status
+    peserta_aktif = Users.query.filter_by(level='peserta', status='aktif').count()
+    peserta_nonaktif = Users.query.filter_by(level='peserta', status='non-aktif').count()
+    
+    # Get all events for filter
+    events = Event.query.all()
+    
+    return render_template(
+        'data_peserta.html', 
+        sidebar_state=sidebar_state, 
+        total_peserta=total_peserta,
+        peserta_aktif=peserta_aktif,
+        peserta_nonaktif=peserta_nonaktif,
+        events=events,
+        time=time
+    )
+
+# Route untuk halaman detail peserta
+@app.route('/admin/peserta/detail/<int:user_id>')
+@login_required
+@admin_required
+def detail_peserta(user_id):
+    """Halaman detail peserta dengan sidebar"""
+    try:
+        # Get user data
+        user = Users.query.get(user_id)
+        if not user or user.level != 'peserta':
+            flash("Peserta tidak ditemukan", "error")
+            return redirect(url_for('admin_peserta'))
+        
+        # Get participant biodata
+        biodata = Participants.query.filter_by(email=user.email).first()
+        
+        # Get registered activities
+        registered_activities = []
+        if biodata:
+            activities = biodata.registered_activities.all()
+            for activity in activities:
+                hasil_activity = HasilSeleksi.query.filter_by(
+                    id_users=user.id,
+                    event_id=activity.id_kegiatan
+                ).first()
+                
+                registered_activities.append({
+                    'id': activity.id_kegiatan,
+                    'nama': activity.nama_kegiatan,
+                    'jenis': activity.jenis_kegiatan,
+                    'skor': hasil_activity.skor_akhir if hasil_activity else None,
+                    'ranking': hasil_activity.ranking if hasil_activity else None
+                })
+        
+        sidebar_state = current_user.sidebar_state or 'expanded'
+        
+        return render_template(
+            'detail_peserta.html',
+            user=user,
+            biodata=biodata,
+            registered_activities=registered_activities,
+            sidebar_state=sidebar_state
+        )
+    except Exception as e:
+        logging.error(f"Error in detail_peserta: {e}")
+        flash("Terjadi kesalahan saat memuat data peserta", "error")
+        return redirect(url_for('admin_peserta'))
+
+# Route untuk cetak kartu peserta
+@app.route('/admin/peserta/kartu/<int:user_id>')
+@login_required
+@admin_required
+def cetak_kartu_peserta(user_id):
+    """Halaman untuk mencetak kartu peserta"""
+    try:
+        # Get user data
+        user = Users.query.get(user_id)
+        if not user or user.level != 'peserta':
+            flash("Peserta tidak ditemukan", "error")
+            return redirect(url_for('admin_peserta'))
+        
+        # Get participant biodata
+        biodata = Participants.query.filter_by(email=user.email).first()
+        
+        # Get registered activities
+        registered_activities = []
+        if biodata:
+            activities = biodata.registered_activities.all()
+            for activity in activities:
+                hasil_activity = HasilSeleksi.query.filter_by(
+                    id_users=user.id,
+                    event_id=activity.id_kegiatan
+                ).first()
+                
+                registered_activities.append({
+                    'id': activity.id_kegiatan,
+                    'nama': activity.nama_kegiatan,
+                    'jenis': activity.jenis_kegiatan,
+                    'skor': hasil_activity.skor_akhir if hasil_activity else None,
+                    'ranking': hasil_activity.ranking if hasil_activity else None
+                })
+        
+        return render_template(
+            'kartu_peserta.html',
+            user=user,
+            biodata=biodata,
+            registered_activities=registered_activities
+        )
+    except Exception as e:
+        logging.error(f"Error in cetak_kartu_peserta: {e}")
+        flash("Terjadi kesalahan saat memuat data peserta", "error")
+        return redirect(url_for('admin_peserta'))
+    
+# Route untuk halaman tambah peserta ke kegiatan
+@app.route('/admin/peserta/tambah-kegiatan')
+@login_required
+@admin_required
+def tambah_peserta_kegiatan():
+    """Halaman untuk menambahkan peserta ke kegiatan"""
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    # Get all events
+    events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Get all participants (users with level peserta)
+    users_peserta = Users.query.filter_by(level='peserta').all()
+    
+    # Get all participants biodata
+    participants = Participants.query.all()
+    
+    return render_template(
+        'tambah_peserta_kegiatan.html',
+        sidebar_state=sidebar_state,
+        events=events,
+        users_peserta=users_peserta,
+        participants=participants
+    )
+
+# API untuk menambahkan peserta ke kegiatan
+@app.route('/api/peserta/tambah-kegiatan', methods=['POST'])
+@login_required
+@admin_required
+def api_tambah_peserta_kegiatan():
+    """API untuk menambahkan peserta ke kegiatan"""
+    try:
+        data = request.get_json()
+        participant_id = data.get('participant_id')
+        kegiatan_id = data.get('kegiatan_id')
+        
+        if not participant_id or not kegiatan_id:
+            return jsonify({
+                'success': False,
+                'message': 'Participant ID dan Kegiatan ID harus diisi'
+            }), 400
+        
+        # Cek apakah peserta sudah terdaftar di kegiatan ini
+        existing = db.session.query(tb_participant_kegiatan).filter_by(
+            participant_id=participant_id,
+            kegiatan_id=kegiatan_id
+        ).first()
+        
+        if existing:
+            return jsonify({
+                'success': False,
+                'message': 'Peserta sudah terdaftar di kegiatan ini'
+            }), 400
+        
+        # Cek apakah participant dan event ada
+        participant = Participants.query.get(participant_id)
+        event = Event.query.get(kegiatan_id)
+        
+        if not participant:
+            return jsonify({
+                'success': False,
+                'message': 'Peserta tidak ditemukan'
+            }), 404
+        
+        if not event:
+            return jsonify({
+                'success': False,
+                'message': 'Kegiatan tidak ditemukan'
+            }), 404
+        
+        # Tambahkan peserta ke kegiatan
+        db.session.execute(
+            tb_participant_kegiatan.insert().values(
+                participant_id=participant_id,
+                kegiatan_id=kegiatan_id,
+                tanggal_daftar=datetime.now()
+            )
+        )
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Menambahkan peserta {participant.nama_lengkap} ke kegiatan {event.nama_kegiatan}')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Peserta berhasil ditambahkan ke kegiatan {event.nama_kegiatan}'
+        })
+        
+    except IntegrityError as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Peserta sudah terdaftar di kegiatan ini'
+        }), 400
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_tambah_peserta_kegiatan: {e}")
+        current_app.logger.exception('Error in api_tambah_peserta_kegiatan:')
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+# API untuk menambahkan multiple peserta ke kegiatan
+@app.route('/api/peserta/tambah-kegiatan-bulk', methods=['POST'])
+@login_required
+@admin_required
+def api_tambah_peserta_kegiatan_bulk():
+    """API untuk menambahkan multiple peserta ke kegiatan sekaligus"""
+    try:
+        data = request.get_json()
+        participant_ids = data.get('participant_ids', [])
+        kegiatan_id = data.get('kegiatan_id')
+        
+        if not participant_ids or not kegiatan_id:
+            return jsonify({
+                'success': False,
+                'message': 'Participant IDs dan Kegiatan ID harus diisi'
+            }), 400
+        
+        # Cek apakah event ada
+        event = Event.query.get(kegiatan_id)
+        if not event:
+            return jsonify({
+                'success': False,
+                'message': 'Kegiatan tidak ditemukan'
+            }), 404
+        
+        added_count = 0
+        skipped_count = 0
+        errors = []
+        
+        for participant_id in participant_ids:
+            try:
+                # Cek apakah ini user_id atau participant_id
+                # Coba cari di Participants dulu
+                participant = Participants.query.get(participant_id)
+                
+                # Jika tidak ada participant, cari user dan buat biodata minimal
+                if not participant:
+                    user = Users.query.get(participant_id)
+                    if not user or user.level != 'peserta':
+                        errors.append(f'User ID {participant_id} tidak ditemukan atau bukan peserta')
+                        continue
+                    
+                    # Cek apakah sudah ada participant dengan email yang sama
+                    participant = Participants.query.filter_by(email=user.email).first()
+                    
+                    # Jika belum ada, buat biodata minimal
+                    if not participant:
+                        participant = Participants(
+                            nama_lengkap=user.nama_lengkap or user.username or 'Peserta',
+                            email=user.email,
+                            jenis_kelamin=user.jenis_kelamin if user.jenis_kelamin else 'laki-laki',
+                            usia=int(user.usia) if user.usia and str(user.usia).isdigit() else 0,
+                            nomor_hp=user.nomor_hp or '',
+                            tanggal_lahir=date.today(),
+                            alamat_tinggal='',
+                            golongan='siaga',
+                            tingkatan='siaga mula',
+                            asal_gudep='',
+                            asal_kwarran='',
+                            asal_kwarcab='',
+                            asal_kwarda='',
+                            foto=user.foto if user.foto and user.foto != 'img/default-user.png' else 'img/default-user.png',
+                            level='peserta'
+                        )
+                        db.session.add(participant)
+                        db.session.flush()  # Untuk mendapatkan ID
+                
+                # Cek apakah peserta sudah terdaftar di kegiatan ini
+                existing = db.session.query(tb_participant_kegiatan).filter_by(
+                    participant_id=participant.id,
+                    kegiatan_id=kegiatan_id
+                ).first()
+                
+                if existing:
+                    skipped_count += 1
+                    continue
+                
+                # Tambahkan peserta ke kegiatan
+                db.session.execute(
+                    tb_participant_kegiatan.insert().values(
+                        participant_id=participant.id,
+                        kegiatan_id=kegiatan_id,
+                        tanggal_daftar=datetime.now()
+                    )
+                )
+                added_count += 1
+                
+            except Exception as e:
+                errors.append(f'Error untuk peserta ID {participant_id}: {str(e)}')
+                continue
+        
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Menambahkan {added_count} peserta ke kegiatan {event.nama_kegiatan}')
+        
+        # Buat notifikasi untuk admin
+        if added_count > 0:
+            create_notification_to_all_admins(
+                f"{added_count} peserta ditambahkan ke kegiatan: {event.nama_kegiatan}"
+            )
+        
+        message = f'Berhasil menambahkan {added_count} peserta'
+        if skipped_count > 0:
+            message += f', {skipped_count} peserta sudah terdaftar'
+        if errors:
+            message += f', {len(errors)} error'
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'added': added_count,
+            'skipped': skipped_count,
+            'errors': errors
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_tambah_peserta_kegiatan_bulk: {e}")
+        current_app.logger.exception('Error in api_tambah_peserta_kegiatan_bulk:')
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
     
 @app.route('/admin/hasil_seleksi')
 @login_required
 @admin_required
 def admin_hasil_seleksi():
+    # Get all events
+    all_events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Get selected event from query parameter
+    selected_event_id = request.args.get('event_id', type=int)
+    selected_event = None
+    results = []
+    
+    if selected_event_id:
+        selected_event = Event.query.get(selected_event_id)
+        if selected_event:
+            from app.fuzzy_ahp import calculate_spk
+            
+            # Calculate SPK for this event
+            success, msg = calculate_spk(selected_event_id)
+            if not success:
+                logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            else:
+                # Buat notifikasi untuk admin saat hasil seleksi selesai
+                create_notification_to_all_admins(
+                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
+                )
+            
+            # Fetch results for this event only
+            hasil_seleksi = db.session.query(
+                HasilSeleksi,
+                Users,
+                Participants
+            ).join(
+                Users, HasilSeleksi.id_users == Users.id
+            ).outerjoin(
+                Participants, Users.email == Participants.email
+            ).filter(
+                HasilSeleksi.event_id == selected_event_id
+            ).order_by(
+                HasilSeleksi.ranking.asc()
+            ).all()
+            
+            # Build results list
+            for hasil, user, participant in hasil_seleksi:
+                results.append({
+                    'hasil': hasil,
+                    'user': user,
+                    'participant': participant
+                })
+        else:
+            flash("Kegiatan tidak ditemukan.", "error")
+            selected_event = None
+
     sidebar_state = current_user.sidebar_state or 'expanded'
-    users = Users.query.count()
-    return render_template('hasil_seleksi.html', sidebar_state=sidebar_state, user=users, time=time)
+    return render_template(
+        'admin/hasil_penilaian.html',
+        assigned_events=all_events,
+        selected_event=selected_event,
+        results=results,
+        sidebar_state=sidebar_state,
+        show_back_button=False  # Tidak tampilkan tombol kembali karena dibuka dari sidebar
+    )
 
 # Manajemen Berita
 @app.route('/admin/manajemen_berita')
@@ -3184,17 +4655,304 @@ def edit_comment(id):
 @login_required
 @admin_required
 def admin_notifikasi():
+    # Get notifications for admin user
+    notifications = Notification.query.filter_by(
+        user_id=current_user.id
+    ).order_by(
+        Notification.id.desc()
+    ).all()
+    
+    # Count unread notifications
+    unread_count = Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False
+    ).count()
+    
+    # Debug logging
+    logging.info(f"Admin notifications page - User ID: {current_user.id}, Total notifications: {len(notifications)}, Unread: {unread_count}")
+    
     sidebar_state = current_user.sidebar_state or 'expanded'
-    users = Users.query.count()
-    return render_template('notifikasi.html', sidebar_state=sidebar_state, user=users, time=time)
+    return render_template(
+        'notifikasi.html',
+        notifications=notifications,
+        unread_count=unread_count,
+        sidebar_state=sidebar_state
+    )
+
+# API Mark Notification as Read
+@app.route('/api/notifikasi/mark-read/<int:notification_id>', methods=['POST'])
+@login_required
+def api_mark_notification_read(notification_id):
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not notification:
+            return jsonify({'success': False, 'message': 'Notifikasi tidak ditemukan'}), 404
+        
+        notification.is_read = True
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Notifikasi ditandai sebagai dibaca'})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_mark_notification_read: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Mark All Notifications as Read
+@app.route('/api/notifikasi/mark-all-read', methods=['POST'])
+@login_required
+def api_mark_all_notifications_read():
+    try:
+        updated = Notification.query.filter_by(
+            user_id=current_user.id,
+            is_read=False
+        ).update({'is_read': True})
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{updated} notifikasi ditandai sebagai dibaca'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_mark_all_notifications_read: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Delete Notification
+@app.route('/api/notifikasi/delete/<int:notification_id>', methods=['DELETE'])
+@login_required
+def api_delete_notification(notification_id):
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not notification:
+            return jsonify({'success': False, 'message': 'Notifikasi tidak ditemukan'}), 404
+        
+        db.session.delete(notification)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Notifikasi berhasil dihapus'})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error in api_delete_notification: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
     
 @app.route('/admin/log_aktivitas')
 @login_required
 @admin_required
 def admin_log_aktivitas():
     sidebar_state = current_user.sidebar_state or 'expanded'
-    users = Users.query.count()
-    return render_template('log_aktivity.html', sidebar_state=sidebar_state, user=users, time=time)
+    
+    # Get query parameters for filtering
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    search = request.args.get('search', '', type=str)
+    role_filter = request.args.get('role', '', type=str)
+    date_filter = request.args.get('date', '', type=str)
+    
+    # Build query
+    query = LogAktivitas.query.join(Users).order_by(LogAktivitas.timestamp.desc())
+    
+    # Apply filters
+    if search:
+        query = query.filter(
+            db.or_(
+                Users.username.ilike(f'%{search}%'),
+                Users.nama_lengkap.ilike(f'%{search}%'),
+                LogAktivitas.aktivitas.ilike(f'%{search}%')
+            )
+        )
+    
+    if role_filter:
+        query = query.filter(Users.level == role_filter)
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter(db.cast(LogAktivitas.timestamp, db.Date) == filter_date)
+        except ValueError:
+            pass
+    
+    # Pagination
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    logs = pagination.items
+    
+    return render_template(
+        'log_aktivity.html',
+        sidebar_state=sidebar_state,
+        logs=logs,
+        pagination=pagination,
+        search=search,
+        role_filter=role_filter,
+        date_filter=date_filter,
+        current_page=page
+    )
+
+@app.route('/api/log_aktivitas/detail/<int:log_id>')
+@login_required
+@admin_required
+def api_log_detail(log_id):
+    try:
+        log = LogAktivitas.query.get_or_404(log_id)
+        return jsonify({
+            'success': True,
+            'log': {
+                'id_log': log.id_log,
+                'user_name': log.user.nama_lengkap or log.user.username,
+                'user_role': log.user.level,
+                'aktivitas': log.aktivitas,
+                'ip_address': log.ip_address,
+                'user_agent': log.user_agent,
+                'timestamp': log.timestamp.strftime('%d/%m/%Y %H:%M:%S') if log.timestamp else '-'
+            }
+        })
+    except Exception as e:
+        current_app.logger.exception('Error in api_log_detail:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/log_aktivitas/delete/<int:log_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def api_log_delete(log_id):
+    try:
+        log = LogAktivitas.query.get_or_404(log_id)
+        db.session.delete(log)
+        db.session.commit()
+        log_activity(current_user.id, f'Menghapus log aktivitas ID: {log_id}')
+        return jsonify({'success': True, 'message': 'Log aktivitas berhasil dihapus'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in api_log_delete:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/admin/log_aktivitas/export')
+@login_required
+@admin_required
+def admin_log_export():
+    try:
+        export_format = request.args.get('export', 'csv')
+        search = request.args.get('search', '', type=str)
+        role_filter = request.args.get('role', '', type=str)
+        date_filter = request.args.get('date', '', type=str)
+        
+        # Build query (same as main route)
+        query = LogAktivitas.query.join(Users).order_by(LogAktivitas.timestamp.desc())
+        
+        if search:
+            query = query.filter(
+                db.or_(
+                    Users.username.ilike(f'%{search}%'),
+                    Users.nama_lengkap.ilike(f'%{search}%'),
+                    LogAktivitas.aktivitas.ilike(f'%{search}%')
+                )
+            )
+        
+        if role_filter:
+            query = query.filter(Users.level == role_filter)
+        
+        if date_filter:
+            try:
+                filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                query = query.filter(db.cast(LogAktivitas.timestamp, db.Date) == filter_date)
+            except ValueError:
+                pass
+        
+        logs = query.all()
+        
+        if export_format == 'csv':
+            # Export CSV
+            output = io.StringIO()
+            output.write('User,Role,Aktivitas,IP Address,User Agent,Tanggal & Waktu\n')
+            
+            for log in logs:
+                user_name = log.user.nama_lengkap or log.user.username
+                role = log.user.level
+                aktivitas = log.aktivitas.replace('"', '""')  # Escape quotes
+                ip = log.ip_address or '-'
+                ua = (log.user_agent or '-').replace('"', '""')
+                timestamp = log.timestamp.strftime('%d/%m/%Y %H:%M:%S') if log.timestamp else '-'
+                
+                output.write(f'"{user_name}","{role}","{aktivitas}","{ip}","{ua}","{timestamp}"\n')
+            
+            output.seek(0)
+            return Response(
+                output.getvalue(),
+                mimetype='text/csv',
+                headers={'Content-Disposition': f'attachment; filename=log_aktivitas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
+            )
+        else:
+            # Export PDF - Generate HTML and convert to PDF using weasyprint or return HTML
+            # For now, return HTML that can be printed as PDF
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Log Aktivitas</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                    h1 {{ color: #333; }}
+                    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+                    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                    th {{ background-color: #4CAF50; color: white; }}
+                    tr:nth-child(even) {{ background-color: #f2f2f2; }}
+                </style>
+            </head>
+            <body>
+                <h1>Log Aktivitas</h1>
+                <p>Tanggal Export: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Aktivitas</th>
+                            <th>IP Address</th>
+                            <th>Tanggal & Waktu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            """
+            
+            for log in logs:
+                user_name = log.user.nama_lengkap or log.user.username
+                role = log.user.level
+                aktivitas = log.aktivitas.replace('<', '&lt;').replace('>', '&gt;')
+                ip = log.ip_address or '-'
+                timestamp = log.timestamp.strftime('%d/%m/%Y %H:%M:%S') if log.timestamp else '-'
+                html_content += f"""
+                        <tr>
+                            <td>{user_name}</td>
+                            <td>{role}</td>
+                            <td>{aktivitas}</td>
+                            <td>{ip}</td>
+                            <td>{timestamp}</td>
+                        </tr>
+                """
+            
+            html_content += """
+                    </tbody>
+                </table>
+            </body>
+            </html>
+            """
+            
+            return Response(
+                html_content,
+                mimetype='text/html',
+                headers={'Content-Disposition': f'attachment; filename=log_aktivitas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'}
+            )
+    except Exception as e:
+        current_app.logger.exception('Error in admin_log_export:')
+        flash('Error exporting logs: ' + str(e), 'error')
+        return redirect(url_for('admin_log_aktivitas'))
 
 @app.route('/admin/settings')
 @login_required
@@ -3202,7 +4960,59 @@ def admin_log_aktivitas():
 def admin_settings():
     sidebar_state = current_user.sidebar_state or 'expanded'
     users = Users.query.count()
-    return render_template('settings.html', sidebar_state=sidebar_state, user=users, time=time)
+    
+    # Ambil semua pengaturan dari database
+    settings = Settings.query.all()
+    settings_dict = {s.key: s.value for s in settings}
+    
+    # Default values jika belum ada di database
+    email_settings = {
+        'mail_server': settings_dict.get('mail_server') or os.getenv("MAIL_SERVER", "smtp.gmail.com"),
+        'mail_port': settings_dict.get('mail_port') or os.getenv("MAIL_PORT", "465"),
+        'mail_use_tls': settings_dict.get('mail_use_tls', 'false'),
+        'mail_use_ssl': settings_dict.get('mail_use_ssl', 'true'),
+        'mail_username': settings_dict.get('mail_username') or os.getenv("MAIL_USERNAME", ""),
+        'mail_password': "",  # Jangan tampilkan password
+        'mail_enabled': settings_dict.get('mail_enabled', 'true')
+    }
+    
+    sms_settings = {
+        'twilio_account_sid': settings_dict.get('twilio_account_sid') or os.getenv("TWILIO_ACCOUNT_SID", ""),
+        'twilio_auth_token': "",  # Jangan tampilkan token
+        'twilio_whatsapp_from': settings_dict.get('twilio_whatsapp_from') or os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886"),
+        'sms_enabled': settings_dict.get('sms_enabled', 'true')
+    }
+    
+    # Format logo_path untuk ditampilkan di template
+    logo_path_raw = settings_dict.get('logo_path') or 'img/logo.png'
+    if logo_path_raw.startswith('uploads/'):
+        logo_path_display = f'/static/{logo_path_raw}'
+    elif logo_path_raw.startswith('/static/'):
+        logo_path_display = logo_path_raw
+    elif not logo_path_raw.startswith('/'):
+        logo_path_display = f'/static/{logo_path_raw}'
+    else:
+        logo_path_display = logo_path_raw
+    
+    app_settings = {
+        'app_name': settings_dict.get('app_name') or 'SPK Pramuka',
+        'app_description': settings_dict.get('app_description') or 'Sistem Pendukung Keputusan untuk Seleksi Pramuka',
+        'app_version': settings_dict.get('app_version') or '1.0.0',
+        'organization_name': settings_dict.get('organization_name') or 'Kwartir',
+        'organization_address': settings_dict.get('organization_address') or '',
+        'organization_phone': settings_dict.get('organization_phone') or '',
+        'organization_email': settings_dict.get('organization_email') or '',
+        'logo_path': logo_path_display,
+        'default_language': settings_dict.get('default_language') or 'id'
+    }
+    
+    return render_template('settings.html', 
+                         sidebar_state=sidebar_state, 
+                         user=users, 
+                         time=time,
+                         email_settings=email_settings,
+                         sms_settings=sms_settings,
+                         app_settings=app_settings)
     
 @app.route('/penilai/dashboard')
 @login_required
@@ -3517,6 +5327,11 @@ def penilai_hasil_penilaian():
             success, msg = calculate_spk(selected_event_id)
             if not success:
                 logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            else:
+                # Buat notifikasi untuk admin saat hasil seleksi selesai
+                create_notification_to_all_admins(
+                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
+                )
             
             # Fetch results for this event only
             hasil_seleksi = db.session.query(
@@ -3665,6 +5480,11 @@ def admin_hasil_penilaian():
             success, msg = calculate_spk(selected_event_id)
             if not success:
                 logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            else:
+                # Buat notifikasi untuk admin saat hasil seleksi selesai
+                create_notification_to_all_admins(
+                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
+                )
             
             # Fetch results for this event only
             hasil_seleksi = db.session.query(
@@ -3692,7 +5512,7 @@ def admin_hasil_penilaian():
             flash(f"{t['event_not_found']}", "error")
             selected_event = None
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template('admin/hasil_penilaian.html', assigned_events=all_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state)
+    return render_template('admin/hasil_penilaian.html', assigned_events=all_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state, show_back_button=True)  # Tampilkan tombol kembali karena dibuka dari manajemen seleksi)
 
 @app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
 @login_required
@@ -3825,25 +5645,10 @@ def penilai_hasil_seleksi():
             kuota = Kuota.query.filter_by(event_id=selected_event_id).first()
             
             for hasil, user, participant in hasil_seleksi_query:
-                is_passed = False
-                if kuota and participant:
-                    limit = 0
-                    if participant.jenis_kelamin == 'laki-laki':
-                        limit = kuota.putra
-                    elif participant.jenis_kelamin == 'perempuan':
-                        limit = kuota.putri
-                    
-                    if hasil.ranking <= limit:
-                        is_passed = True
-                elif selected_event.batas_lolos: # Fallback to simple limit if no quota
-                     if hasil.ranking <= selected_event.batas_lolos:
-                        is_passed = True
-
                 results.append({
                     'hasil': hasil,
                     'user': user,
-                    'participant': participant,
-                    'is_passed': is_passed
+                    'participant': participant
                 })
         else:
             flash(f"{t['event_not_found_or_no_access']}", "error")
@@ -3900,10 +5705,10 @@ def peserta_dashboard():
     registered_activities = []
     if participant:
         registered_activities = Event.query.join(
-            ParticipantKegiatan,
-            Event.id_kegiatan == ParticipantKegiatan.c.kegiatan_id
+            tb_participant_kegiatan,
+            Event.id_kegiatan == tb_participant_kegiatan.c.kegiatan_id
         ).filter(
-            ParticipantKegiatan.c.participant_id == participant.id
+            tb_participant_kegiatan.c.participant_id == participant.id
         ).all()
     
     # Calculate scores for each activity
@@ -3933,26 +5738,12 @@ def peserta_dashboard():
             id_users=current_user.id,
             event_id=event.id_kegiatan
         ).first()
-
-        # Calculate pass/fail status
-        status_lulus = None
-        if hasil and hasil.ranking:
-            kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
-            if kuota and participant:
-                limit = 0
-                if participant.jenis_kelamin == 'laki-laki':
-                    limit = kuota.putra
-                elif participant.jenis_kelamin == 'perempuan':
-                    limit = kuota.putri
-                
-                status_lulus = hasil.ranking <= limit
         
         activity_scores.append({
             'event': event,
             'final_score': round(total_score, 2) if has_scores else None,
             'ranking': hasil.ranking if hasil else None,
-            'has_scores': has_scores,
-            'status_lulus': status_lulus
+            'has_scores': has_scores
         })
     
     # Check if any selection period has ended
@@ -4019,35 +5810,11 @@ def peserta_hasil_seleksi():
                 event_id=event.id_kegiatan
             ).first()
             
-            status_lulus = None
             status_text = "Dalam Proses"
             temp_score = 0
             has_temp_score = False
             
             if hasil:
-                # Determine pass/fail if result exists
-                kuota = Kuota.query.filter_by(event_id=event.id_kegiatan).first()
-                if kuota:
-                    limit = 0
-                    if biodata.jenis_kelamin == 'laki-laki':
-                        limit = kuota.putra
-                    elif biodata.jenis_kelamin == 'perempuan':
-                        limit = kuota.putri
-                        
-                    if hasil.ranking <= limit:
-                        status_lulus = True
-                        status_text = "Lolos Seleksi"
-                    else:
-                        status_lulus = False
-                        status_text = "Tidak Lolos"
-                elif event.batas_lolos: # Fallback if no quota but cutoff exists
-                     if hasil.ranking <= event.batas_lolos:
-                        status_lulus = True
-                        status_text = "Lolos Seleksi"
-                     else:
-                        status_lulus = False
-                        status_text = "Tidak Lolos"
-                else:
                     status_text = "Selesai"
             else:
                 # If no final result, calculate temporary score from Penilaian
@@ -4089,13 +5856,69 @@ def peserta_hasil_seleksi():
             results_data.append({
                 'event': event,
                 'hasil': hasil,
-                'status_lulus': status_lulus,
                 'status_text': status_text,
                 'temp_score': temp_score,
                 'has_temp_score': has_temp_score
             })
 
     return render_template('peserta/hasil_seleksi.html', results_data=results_data, biodata=biodata, sidebar_state=sidebar_state, user=current_user)
+
+@app.route('/peserta/hasil_seleksi/<int:event_id>')
+@login_required
+def peserta_detail_nilai(event_id):
+    """Halaman detail nilai semua peserta untuk kegiatan tertentu"""
+    if current_user.level != 'peserta':
+        flash("Anda tidak memiliki akses ke halaman ini.", "error")
+        return redirect(url_for('index'))
+    
+    # Verify that the current user is registered for this event
+    biodata = Participants.query.filter_by(email=current_user.email).first()
+    if not biodata:
+        flash("Data peserta tidak ditemukan.", "error")
+        return redirect(url_for('peserta_hasil_seleksi'))
+    
+    # Check if user is registered for this event
+    event = Event.query.get_or_404(event_id)
+    if event not in biodata.registered_activities.all():
+        flash("Anda tidak terdaftar untuk kegiatan ini.", "error")
+        return redirect(url_for('peserta_hasil_seleksi'))
+    
+    # Get all results for this event, ordered by ranking
+    hasil_seleksi_query = db.session.query(
+        HasilSeleksi,
+        Users,
+        Participants
+    ).join(
+        Users, HasilSeleksi.id_users == Users.id
+    ).outerjoin(
+        Participants, Users.email == Participants.email
+    ).filter(
+        HasilSeleksi.event_id == event_id
+    ).order_by(
+        HasilSeleksi.ranking.asc()
+    ).all()
+    
+    # Process results
+    results = []
+    kuota = Kuota.query.filter_by(event_id=event_id).first()
+    
+    for hasil, user, participant in hasil_seleksi_query:
+        results.append({
+            'hasil': hasil,
+            'user': user,
+            'participant': participant
+        })
+    
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template(
+        'peserta/detail_nilai.html',
+        event=event,
+        results=results,
+        kuota=kuota,
+        sidebar_state=sidebar_state,
+        user=current_user,
+        biodata=biodata
+    )
 
 @app.route('/peserta/data', methods=['GET', 'POST'])
 @login_required
@@ -4342,6 +6165,11 @@ def api_daftar_seleksi():
             current_user.id,
             f"{t['register_event']}: {kegiatan.nama_kegiatan}"
         )
+        
+        # Buat notifikasi untuk admin
+        create_notification_to_all_admins(
+            f"Peserta {biodata.nama_lengkap or current_user.nama_lengkap} mendaftar ke seleksi: {kegiatan.nama_kegiatan}"
+        )
         return jsonify({
             'status': 'success', 
             'message': f"{t['register_event_success']}: {kegiatan.nama_kegiatan}"
@@ -4417,6 +6245,252 @@ def api_batal_daftar_seleksi():
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception('Error in /api/batal_daftar_seleksi:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/save_settings', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def save_settings():
+    try:
+        data = request.get_json()
+        category = data.get('category')
+        
+        if not category:
+            return jsonify({'status': 'error', 'message': 'Category is required'}), 400
+        
+        # Simpan setiap setting berdasarkan category
+        if category == 'email':
+            settings_to_save = {
+                'mail_server': data.get('mail_server', ''),
+                'mail_port': data.get('mail_port', '465'),
+                'mail_use_tls': data.get('mail_use_tls', 'false'),
+                'mail_use_ssl': data.get('mail_use_ssl', 'true'),
+                'mail_username': data.get('mail_username', ''),
+                'mail_enabled': data.get('mail_enabled', 'true')
+            }
+            # Hanya update password jika diisi
+            if data.get('mail_password'):
+                settings_to_save['mail_password'] = data.get('mail_password')
+                
+        elif category == 'sms':
+            settings_to_save = {
+                'twilio_account_sid': data.get('twilio_account_sid', ''),
+                'twilio_whatsapp_from': data.get('twilio_whatsapp_from', 'whatsapp:+14155238886'),
+                'sms_enabled': data.get('sms_enabled', 'true')
+            }
+            # Hanya update auth token jika diisi
+            if data.get('twilio_auth_token'):
+                settings_to_save['twilio_auth_token'] = data.get('twilio_auth_token')
+                
+        elif category == 'app':
+            settings_to_save = {
+                'app_name': data.get('app_name', ''),
+                'app_description': data.get('app_description', ''),
+                'app_version': data.get('app_version', ''),
+                'organization_name': data.get('organization_name', ''),
+                'organization_address': data.get('organization_address', ''),
+                'organization_phone': data.get('organization_phone', ''),
+                'organization_email': data.get('organization_email', ''),
+                'default_language': data.get('default_language', 'id')
+            }
+        elif category == 'logo':
+            settings_to_save = {
+                'logo_path': data.get('logo_path', 'img/logo.png')
+            }
+        else:
+            return jsonify({'status': 'error', 'message': 'Invalid category'}), 400
+        
+        # Simpan ke database
+        for key, value in settings_to_save.items():
+            setting = Settings.query.filter_by(key=key).first()
+            if setting:
+                setting.value = str(value)
+                setting.updated_by = current_user.id
+            else:
+                setting = Settings(
+                    key=key,
+                    value=str(value),
+                    category=category,
+                    updated_by=current_user.id
+                )
+                db.session.add(setting)
+        
+        db.session.commit()
+        
+        # Update app config untuk email jika category email
+        if category == 'email':
+            app.config['MAIL_SERVER'] = settings_to_save.get('mail_server', app.config.get('MAIL_SERVER'))
+            app.config['MAIL_PORT'] = int(settings_to_save.get('mail_port', app.config.get('MAIL_PORT', 465)))
+            app.config['MAIL_USE_TLS'] = settings_to_save.get('mail_use_tls', 'false') == 'true'
+            app.config['MAIL_USE_SSL'] = settings_to_save.get('mail_use_ssl', 'true') == 'true'
+            app.config['MAIL_USERNAME'] = settings_to_save.get('mail_username', app.config.get('MAIL_USERNAME'))
+            if 'mail_password' in settings_to_save:
+                app.config['MAIL_PASSWORD'] = settings_to_save['mail_password']
+        
+        # Log aktivitas
+        log_activity(
+            current_user.id,
+            f'Mengubah pengaturan {category}'
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Pengaturan {category} berhasil disimpan'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/save_settings:')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/test_email', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def test_email():
+    try:
+        data = request.get_json()
+        test_email_address = data.get('email', current_user.email)
+        
+        # Ambil pengaturan email dari database
+        mail_settings = {}
+        settings = Settings.query.filter_by(category='email').all()
+        for s in settings:
+            mail_settings[s.key] = s.value
+        
+        # Gunakan pengaturan dari database atau fallback ke env/config
+        mail_server = mail_settings.get('mail_server') or app.config.get('MAIL_SERVER')
+        mail_port = int(mail_settings.get('mail_port') or app.config.get('MAIL_PORT', 465))
+        mail_use_ssl = mail_settings.get('mail_use_ssl', 'true') == 'true'
+        mail_use_tls = mail_settings.get('mail_use_tls', 'false') == 'true'
+        mail_username = mail_settings.get('mail_username') or app.config.get('MAIL_USERNAME')
+        mail_password = mail_settings.get('mail_password') or app.config.get('MAIL_PASSWORD')
+        
+        # Buat Mail instance sementara dengan konfigurasi baru
+        from flask_mail import Mail
+        test_mail = Mail()
+        test_mail.init_app(app)
+        
+        # Update config sementara
+        original_config = {
+            'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+            'MAIL_PORT': app.config.get('MAIL_PORT'),
+            'MAIL_USE_SSL': app.config.get('MAIL_USE_SSL'),
+            'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
+            'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+            'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD')
+        }
+        
+        app.config['MAIL_SERVER'] = mail_server
+        app.config['MAIL_PORT'] = mail_port
+        app.config['MAIL_USE_SSL'] = mail_use_ssl
+        app.config['MAIL_USE_TLS'] = mail_use_tls
+        app.config['MAIL_USERNAME'] = mail_username
+        app.config['MAIL_PASSWORD'] = mail_password
+        
+        # Reinitialize mail dengan config baru
+        mail.init_app(app)
+        
+        try:
+            msg = Message(
+                subject='Test Email - SPK Pramuka',
+                recipients=[test_email_address],
+                body='Ini adalah email test dari sistem SPK Pramuka. Jika Anda menerima email ini, berarti konfigurasi email sudah benar.',
+                sender=mail_username
+            )
+            mail.send(msg)
+            
+            # Reinitialize mail dengan config asli
+            mail.init_app(app)
+            
+            # Restore original config
+            for key, value in original_config.items():
+                app.config[key] = value
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Email test berhasil dikirim ke {test_email_address}'
+            }), 200
+        except Exception as e:
+            # Restore original config
+            for key, value in original_config.items():
+                app.config[key] = value
+            raise e
+            
+    except Exception as e:
+        current_app.logger.exception('Error in /api/test_email:')
+        return jsonify({'status': 'error', 'message': f'Gagal mengirim email test: {str(e)}'}), 500
+
+@app.route('/api/upload_logo', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def upload_logo():
+    try:
+        if 'logo' not in request.files:
+            return jsonify({'status': 'error', 'message': 'Tidak ada file yang diupload'}), 400
+        
+        file = request.files['logo']
+        if file.filename == '':
+            return jsonify({'status': 'error', 'message': 'Tidak ada file yang dipilih'}), 400
+        
+        # Validasi file
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
+        if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+            return jsonify({'status': 'error', 'message': 'Format file tidak didukung. Gunakan PNG, JPG, JPEG, GIF, atau SVG'}), 400
+        
+        # Simpan file
+        filename = secure_filename(file.filename)
+        logo_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'logo')
+        os.makedirs(logo_dir, exist_ok=True)
+        
+        # Generate unique filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"logo_{timestamp}_{filename}"
+        filepath = os.path.join(logo_dir, filename)
+        file.save(filepath)
+        
+        # Simpan path ke database
+        logo_path = f"uploads/logo/{filename}"
+        setting = Settings.query.filter_by(key='logo_path').first()
+        if setting:
+            # Hapus logo lama jika ada
+            old_value = setting.value
+            # Bersihkan path dari prefix /static/ jika ada
+            if old_value.startswith('/static/'):
+                old_value = old_value.replace('/static/', '')
+            # Pastikan path relatif dari uploads/
+            if old_value.startswith('uploads/'):
+                old_value = old_value.replace('uploads/', '')
+            old_path = os.path.join(app.config['UPLOAD_FOLDER'], old_value)
+            if os.path.exists(old_path):
+                try:
+                    os.remove(old_path)
+                except:
+                    pass
+            setting.value = logo_path
+        else:
+            setting = Settings(key='logo_path', value=logo_path, category='logo', updated_by=current_user.id)
+            db.session.add(setting)
+        
+        db.session.commit()
+        
+        # Log aktivitas
+        log_activity(current_user.id, 'Mengupload logo aplikasi')
+        
+        # Kembalikan path dengan /static/ untuk ditampilkan di frontend
+        logo_path_display = f'/static/{logo_path}'
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Logo berhasil diupload',
+            'logo_path': logo_path_display
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/upload_logo:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/logout/')

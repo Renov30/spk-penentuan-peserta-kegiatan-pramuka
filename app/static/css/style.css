@@ -233,3 +233,72 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out both;
 }
+
+/* Cursor pointer untuk semua tombol saat hover */
+button:hover:not([disabled]):not(:disabled),
+input[type="button"]:hover:not([disabled]):not(:disabled),
+input[type="submit"]:hover:not([disabled]):not(:disabled),
+input[type="reset"]:hover:not([disabled]):not(:disabled),
+[role="button"]:hover:not([aria-disabled="true"]):not([disabled]),
+.btn:hover:not([disabled]):not(.disabled),
+a.btn:hover:not([disabled]):not(.disabled),
+a[role="button"]:hover:not([aria-disabled="true"]),
+[onclick]:hover:not([disabled]),
+[data-action]:hover:not([disabled]) {
+  cursor: pointer !important;
+}
+
+/* Memastikan semua tombol memiliki cursor pointer secara default */
+button:not([disabled]):not(:disabled),
+input[type="button"]:not([disabled]):not(:disabled),
+input[type="submit"]:not([disabled]):not(:disabled),
+input[type="reset"]:not([disabled]):not(:disabled),
+[role="button"]:not([aria-disabled="true"]):not([disabled]),
+.btn:not([disabled]):not(.disabled),
+a.btn:not([disabled]):not(.disabled),
+a[role="button"]:not([aria-disabled="true"]):not([disabled]),
+[onclick]:not([disabled]):not([aria-disabled="true"]),
+[data-action]:not([disabled]):not([aria-disabled="true"]) {
+  cursor: pointer !important;
+}
+
+/* Tombol yang disabled tidak boleh menunjukkan pointer */
+button[disabled],
+button:disabled,
+input[type="button"][disabled],
+input[type="button"]:disabled,
+input[type="submit"][disabled],
+input[type="submit"]:disabled,
+input[type="reset"][disabled],
+input[type="reset"]:disabled,
+[role="button"][aria-disabled="true"],
+[role="button"][disabled],
+.btn.disabled,
+.btn[disabled] {
+  cursor: not-allowed !important;
+}
+
+/* Cursor pointer untuk tombol di confirm dialog - spesifik untuk memastikan prioritas */
+#confirm-cancel,
+#confirm-ok,
+#confirm-cancel:hover,
+#confirm-ok:hover,
+button[id*="confirm"]:not([disabled]):not(:disabled),
+button[id*="confirm"]:hover:not([disabled]):not(:disabled),
+/* Tombol di dalam modal konfirmasi */
+#confirm-dialog button:not([disabled]):not(:disabled),
+#confirm-dialog button:hover:not([disabled]):not(:disabled),
+/* Tombol di semua modal dialog */
+[class*="modal"] button:not([disabled]):not(:disabled),
+[class*="modal"] button:hover:not([disabled]):not(:disabled),
+[id*="modal"] button:not([disabled]):not(:disabled),
+[id*="modal"] button:hover:not([disabled]):not(:disabled),
+[id*="dialog"] button:not([disabled]):not(:disabled),
+[id*="dialog"] button:hover:not([disabled]):not(:disabled),
+/* Tombol di dalam div yang mengandung kata konfirmasi/confirm */
+[class*="confirm"] button:not([disabled]):not(:disabled),
+[class*="confirm"] button:hover:not([disabled]):not(:disabled),
+[id*="confirm"] button:not([disabled]):not(:disabled),
+[id*="confirm"] button:hover:not([disabled]):not(:disabled) {
+  cursor: pointer !important;
+}

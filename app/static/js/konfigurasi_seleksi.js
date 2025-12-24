@@ -18,6 +18,93 @@ async function saveConfig() {
       return;
     }
 
+    // Validasi: Periode Seleksi harus selesai sebelum Waktu Pelaksanaan dimulai
+    if (act.waktuMulai) {
+      const waktuMulai = new Date(act.waktuMulai);
+
+      // Cek apakah mulai periode seleksi >= waktu pelaksanaan
+      if (act.mulai) {
+        const mulai = new Date(act.mulai);
+        if (mulai >= waktuMulai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Periode Seleksi (mulai) untuk kegiatan "${
+              act.nama || "ini"
+            }" harus sebelum Waktu Pelaksanaan dimulai`,
+          };
+          return;
+        }
+      }
+
+      // Cek apakah selesai periode seleksi >= waktu pelaksanaan
+      if (act.selesai) {
+        const selesai = new Date(act.selesai);
+        if (selesai >= waktuMulai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Periode Seleksi (selesai) untuk kegiatan "${
+              act.nama || "ini"
+            }" harus sebelum Waktu Pelaksanaan dimulai`,
+          };
+          return;
+        }
+      }
+    }
+
+    // Validasi: Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi
+    if (act.mulai && act.selesai) {
+      const mulai = new Date(act.mulai);
+      const selesai = new Date(act.selesai);
+
+      // Cek apakah waktu pelaksanaan mulai dalam periode seleksi
+      if (act.waktuMulai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        if (waktuMulai >= mulai && waktuMulai <= selesai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Waktu Pelaksanaan (mulai) untuk kegiatan "${
+              act.nama || "ini"
+            }" tidak boleh dalam kurun waktu Periode Seleksi`,
+          };
+          return;
+        }
+      }
+
+      // Cek apakah waktu pelaksanaan selesai dalam periode seleksi
+      if (act.waktuSelesai) {
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuSelesai >= mulai && waktuSelesai <= selesai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Waktu Pelaksanaan (selesai) untuk kegiatan "${
+              act.nama || "ini"
+            }" tidak boleh dalam kurun waktu Periode Seleksi`,
+          };
+          return;
+        }
+      }
+
+      // Cek apakah waktu pelaksanaan overlap dengan periode seleksi (waktu pelaksanaan mencakup seluruh periode seleksi)
+      if (act.waktuMulai && act.waktuSelesai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuMulai <= mulai && waktuSelesai >= selesai) {
+          bodyState.modal = {
+            show: true,
+            title: "Peringatan",
+            message: `Waktu Pelaksanaan untuk kegiatan "${
+              act.nama || "ini"
+            }" tidak boleh mencakup seluruh Periode Seleksi`,
+          };
+          return;
+        }
+      }
+    }
+
     for (let c of act.criteria || []) {
       if (!c.nama) {
         bodyState.modal = {
@@ -51,9 +138,16 @@ async function saveConfig() {
     }
   }
 
-  // Sinkronkan data contingents ke activities
+  // Sinkronkan data contingents ke activities (jumlahkan semua umpi)
   for (let i = 0; i < state.activities.length; i++) {
-    if (state.contingents[i]) {
+    if (state.contingents[i] && Array.isArray(state.contingents[i])) {
+      // Jumlahkan semua umpi untuk activity ini
+      const totalPutra = state.contingents[i].reduce((sum, umpi) => sum + (umpi.umpiPutra || 0), 0);
+      const totalPutri = state.contingents[i].reduce((sum, umpi) => sum + (umpi.umpiPutri || 0), 0);
+      state.activities[i].putra = totalPutra;
+      state.activities[i].putri = totalPutri;
+    } else if (state.contingents[i]) {
+      // Backward compatibility: jika masih format lama
       state.activities[i].putra = state.contingents[i].umpiPutra || 0;
       state.activities[i].putri = state.contingents[i].umpiPutri || 0;
     }
@@ -121,6 +215,72 @@ function savePeriode() {
   if (invalidAct) {
     state.errorMessage = "Nama kegiatan dan periode harus diisi";
     return;
+  }
+
+  // Validasi: Periode Seleksi harus selesai sebelum Waktu Pelaksanaan dimulai
+  for (let act of state.activities) {
+    if (act.waktuMulai) {
+      const waktuMulai = new Date(act.waktuMulai);
+
+      // Cek apakah mulai periode seleksi >= waktu pelaksanaan
+      if (act.mulai) {
+        const mulai = new Date(act.mulai);
+        if (mulai >= waktuMulai) {
+          state.errorMessage =
+            "Periode Seleksi (mulai) harus sebelum Waktu Pelaksanaan dimulai";
+          return;
+        }
+      }
+
+      // Cek apakah selesai periode seleksi >= waktu pelaksanaan
+      if (act.selesai) {
+        const selesai = new Date(act.selesai);
+        if (selesai >= waktuMulai) {
+          state.errorMessage =
+            "Periode Seleksi (selesai) harus sebelum Waktu Pelaksanaan dimulai";
+          return;
+        }
+      }
+    }
+  }
+
+  // Validasi: Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi
+  for (let act of state.activities) {
+    if (act.mulai && act.selesai) {
+      const mulai = new Date(act.mulai);
+      const selesai = new Date(act.selesai);
+
+      // Cek apakah waktu pelaksanaan mulai dalam periode seleksi
+      if (act.waktuMulai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        if (waktuMulai >= mulai && waktuMulai <= selesai) {
+          state.errorMessage =
+            "Waktu Pelaksanaan (mulai) tidak boleh dalam kurun waktu Periode Seleksi";
+          return;
+        }
+      }
+
+      // Cek apakah waktu pelaksanaan selesai dalam periode seleksi
+      if (act.waktuSelesai) {
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuSelesai >= mulai && waktuSelesai <= selesai) {
+          state.errorMessage =
+            "Waktu Pelaksanaan (selesai) tidak boleh dalam kurun waktu Periode Seleksi";
+          return;
+        }
+      }
+
+      // Cek apakah waktu pelaksanaan overlap dengan periode seleksi (waktu pelaksanaan mencakup seluruh periode seleksi)
+      if (act.waktuMulai && act.waktuSelesai) {
+        const waktuMulai = new Date(act.waktuMulai);
+        const waktuSelesai = new Date(act.waktuSelesai);
+        if (waktuMulai <= mulai && waktuSelesai >= selesai) {
+          state.errorMessage =
+            "Waktu Pelaksanaan tidak boleh mencakup seluruh Periode Seleksi";
+          return;
+        }
+      }
+    }
   }
 
   // ✅ Sinkronisasi array contingents agar sama panjang dengan activities

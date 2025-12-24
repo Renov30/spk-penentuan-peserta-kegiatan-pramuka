@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
-      {{ 'Dashboard | SPK Pramuka' if current_lang == 'id' else 'Dashboard |
+      {{ 'Pengaturan | SPK Pramuka' if current_lang == 'id' else 'Settings |
       Scout DSS' }}
     </title>
 
@@ -13,6 +13,10 @@
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
     />
 
     <!-- Icons -->
@@ -70,231 +74,554 @@
             {% include 'notification_box.html' %}
 
             <!-- Content -->
-            <div class="container mx-auto p-6">
-              <h1 class="text-2xl font-bold mb-8">
+            <div class="container mx-auto p-6 max-w-6xl">
+              <h1
+                class="text-3xl font-bold mb-6 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
                 {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
               </h1>
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <!-- Pengguna -->
+
+              <!-- Tabs -->
+              <div
+                x-data="settingsPage"
+                class="bg-white {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-white' }} rounded-xl shadow-lg overflow-hidden"
+              >
+                <!-- Tab Navigation -->
                 <div
-                  class="bg-white shadow-lg rounded-xl p-6 transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
+                  class="border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                 >
-                  <div class="flex items-center mb-4">
-                    <div
-                      class="w-12 h-12 flex items-center justify-center rounded-full bg-blue-100 text-blue-600"
-                    >
-                      <i class="fas fa-users text-xl"></i>
-                    </div>
-                    <h3 class="ml-4 text-lg font-semibold">
-                      {{ 'Manajemen Pengguna' if current_lang == 'id' else 'User
-                      Management' }}
-                    </h3>
-                  </div>
-                  <p
-                    class="text-sm mb-4 {{ 'text-gray-600 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-600' }}"
-                  >
-                    {{ 'Kelola akun peserta, penilai, dan admin beserta hak
-                    aksesnya.' if current_lang == 'id' else 'Manage accounts for
-                    participants, judges, and admins with role settings.' }}
-                  </p>
-                  <div class="space-y-2">
+                  <nav class="flex -mb-px">
                     <button
-                      class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+                      @click="activeTab = 'email'"
+                      :class="activeTab === 'email' ? 'border-blue-500 text-blue-600 {{ 'dark:text-blue-400' if current_theme == 'dark' else '' }}' : 'border-transparent {{ 'text-gray-500 hover:text-gray-700 hover:border-gray-300' if current_theme == 'dark' else 'text-gray-500 hover:text-gray-700 hover:border-gray-300' }}'"
+                      class="px-6 py-4 text-sm font-medium border-b-2 transition cursor-pointer"
                     >
-                      <i class="fas fa-user-plus mr-2"></i>{{ 'Tambah Pengguna'
-                      if current_lang == 'id' else 'Add User' }}
+                      <i class="fas fa-envelope mr-2"></i>
+                      {{ 'Email & SMS/WhatsApp' if current_lang == 'id' else
+                      'Email & SMS/WhatsApp' }}
                     </button>
                     <button
-                      class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer"
+                      @click="activeTab = 'app'"
+                      :class="activeTab === 'app' ? 'border-blue-500 text-blue-600 {{ 'dark:text-blue-400' if current_theme == 'dark' else '' }}' : 'border-transparent {{ 'text-gray-500 hover:text-gray-700 hover:border-gray-300' if current_theme == 'dark' else 'text-gray-500 hover:text-gray-700 hover:border-gray-300' }}'"
+                      class="px-6 py-4 text-sm font-medium border-b-2 transition cursor-pointer"
                     >
-                      <i class="fas fa-user-shield mr-2"></i>{{ 'Kelola Role &
-                      Hak Akses' if current_lang == 'id' else 'Manage Roles &
-                      Access' }}
+                      <i class="fas fa-info-circle mr-2"></i>
+                      {{ 'Detail Aplikasi' if current_lang == 'id' else 'App
+                      Details' }}
                     </button>
                     <button
-                      class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 cursor-pointer"
+                      @click="activeTab = 'logo'"
+                      :class="activeTab === 'logo' ? 'border-blue-500 text-blue-600 {{ 'dark:text-blue-400' if current_theme == 'dark' else '' }}' : 'border-transparent {{ 'text-gray-500 hover:text-gray-700 hover:border-gray-300' if current_theme == 'dark' else 'text-gray-500 hover:text-gray-700 hover:border-gray-300' }}'"
+                      class="px-6 py-4 text-sm font-medium border-b-2 transition cursor-pointer"
                     >
-                      <i class="fas fa-list mr-2"></i>{{ 'Log Aktivitas' if
-                      current_lang == 'id' else 'Activity Log' }}
+                      <i class="fas fa-image mr-2"></i>
+                      {{ 'Logo' if current_lang == 'id' else 'Logo' }}
                     </button>
-                  </div>
+                    <button
+                      @click="activeTab = 'language'"
+                      :class="activeTab === 'language' ? 'border-blue-500 text-blue-600 {{ 'dark:text-blue-400' if current_theme == 'dark' else '' }}' : 'border-transparent {{ 'text-gray-500 hover:text-gray-700 hover:border-gray-300' if current_theme == 'dark' else 'text-gray-500 hover:text-gray-700 hover:border-gray-300' }}'"
+                      class="px-6 py-4 text-sm font-medium border-b-2 transition cursor-pointer"
+                    >
+                      <i class="fas fa-language mr-2"></i>
+                      {{ 'Bahasa' if current_lang == 'id' else 'Language' }}
+                    </button>
+                  </nav>
                 </div>
 
-                <!-- Kriteria & Bobot -->
-                <div
-                  class="bg-white shadow-lg rounded-xl p-6 transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
-                >
-                  <div class="flex items-center mb-4">
-                    <div
-                      class="w-12 h-12 flex items-center justify-center rounded-full bg-green-100 text-green-600"
+                <!-- Tab Content -->
+                <div class="p-6">
+                  <!-- Email & SMS/WhatsApp Tab -->
+                  <div x-show="activeTab === 'email'" x-transition>
+                    <h2
+                      class="text-2xl font-semibold mb-6 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                     >
-                      <i class="fas fa-balance-scale text-xl"></i>
-                    </div>
-                    <h3 class="ml-4 text-lg font-semibold">
-                      {{ 'Kriteria & Bobot' if current_lang == 'id' else
-                      'Criteria & Weights' }}
-                    </h3>
-                  </div>
-                  <p
-                    class="text-sm mb-4 {{ 'text-gray-600 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-600' }}"
-                  >
-                    {{ 'Atur kriteria seleksi, bobot Fuzzy-AHP, dan nilai ambang
-                    batas kelulusan.' if current_lang == 'id' else 'Configure
-                    selection criteria, Fuzzy-AHP weights, and passing
-                    thresholds.' }}
-                  </p>
-                  <div class="space-y-2">
-                    <button
-                      class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
-                    >
-                      <i class="fas fa-cogs mr-2"></i>{{ 'Kelola Kriteria' if
-                      current_lang == 'id' else 'Manage Criteria' }}
-                    </button>
-                    <button
-                      class="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 cursor-pointer"
-                    >
-                      <i class="fas fa-percentage mr-2"></i>{{ 'Input Bobot
-                      Fuzzy-AHP' if current_lang == 'id' else 'Input Fuzzy-AHP
-                      Weights' }}
-                    </button>
-                    <button
-                      class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 cursor-pointer"
-                    >
-                      <i class="fas fa-sliders-h mr-2"></i>{{ 'Atur Ambang
-                      Batas' if current_lang == 'id' else 'Set Threshold' }}
-                    </button>
-                  </div>
-                </div>
+                      {{ 'Konfigurasi Email & SMS/WhatsApp' if current_lang ==
+                      'id' else 'Email & SMS/WhatsApp Configuration' }}
+                    </h2>
 
-                <!-- Seleksi -->
-                <div
-                  class="bg-white shadow-lg rounded-xl p-6 transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
-                >
-                  <div class="flex items-center mb-4">
-                    <div
-                      class="w-12 h-12 flex items-center justify-center rounded-full bg-purple-100 text-purple-600"
-                    >
-                      <i class="fas fa-calendar-check text-xl"></i>
-                    </div>
-                    <h3 class="ml-4 text-lg font-semibold">
-                      {{ 'Pengaturan Seleksi' if current_lang == 'id' else
-                      'Selection Settings' }}
-                    </h3>
-                  </div>
-                  <p
-                    class="text-sm mb-4 {{ 'text-gray-600 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-600' }}"
-                  >
-                    {{ 'Kelola jadwal seleksi, tahapan, dan kuota peserta pada
-                    sistem.' if current_lang == 'id' else 'Manage selection
-                    schedules, stages, and participant quotas.' }}
-                  </p>
-                  <div class="space-y-2">
-                    <button
-                      class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
-                    >
-                      <i class="fas fa-calendar-alt mr-2"></i>{{ 'Atur Jadwal
-                      Seleksi' if current_lang == 'id' else 'Set Schedule' }}
-                    </button>
-                    <button
-                      class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 cursor-pointer"
-                    >
-                      <i class="fas fa-tasks mr-2"></i>{{ 'Atur Tahapan' if
-                      current_lang == 'id' else 'Manage Stages' }}
-                    </button>
-                    <button
-                      class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 cursor-pointer"
-                    >
-                      <i class="fas fa-user-friends mr-2"></i>{{ 'Atur Kuota
-                      Peserta' if current_lang == 'id' else 'Set Quota' }}
-                    </button>
-                  </div>
-                </div>
+                    <!-- Email Settings -->
+                    <div class="mb-8">
+                      <h3
+                        class="text-xl font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                      >
+                        <i class="fas fa-envelope mr-2 text-blue-500"></i>
+                        {{ 'Pengaturan Email' if current_lang == 'id' else
+                        'Email Settings' }}
+                      </h3>
+                      <div
+                        class="bg-gray-50 {{ 'dark:bg-gray-800' if current_theme == 'dark' else '' }} rounded-lg p-6 space-y-4"
+                      >
+                        <div class="flex items-center mb-4">
+                          <input
+                            type="checkbox"
+                            id="mail_enabled"
+                            :checked="emailSettings.mail_enabled === 'true' || emailSettings.mail_enabled === true"
+                            @change="emailSettings.mail_enabled = $event.target.checked ? 'true' : 'false'"
+                            class="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                          />
+                          <label
+                            for="mail_enabled"
+                            class="ml-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                          >
+                            {{ 'Aktifkan Email' if current_lang == 'id' else
+                            'Enable Email' }}
+                          </label>
+                        </div>
 
-                <!-- Sistem & Tampilan -->
-                <div
-                  class="bg-white shadow-lg rounded-xl p-6 transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
-                >
-                  <div class="flex items-center mb-4">
-                    <div
-                      class="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600"
-                    >
-                      <i class="fas fa-cog text-xl"></i>
-                    </div>
-                    <h3 class="ml-4 text-lg font-semibold">
-                      {{ 'Sistem & Tampilan' if current_lang == 'id' else
-                      'System & Display' }}
-                    </h3>
-                  </div>
-                  <p
-                    class="text-sm mb-4 {{ 'text-gray-600 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-600' }}"
-                  >
-                    {{ 'Atur bahasa, tema, logo, serta preferensi notifikasi
-                    aplikasi.' if current_lang == 'id' else 'Configure language,
-                    theme, logo, and notification preferences.' }}
-                  </p>
-                  <div class="space-y-2">
-                    <button
-                      class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer"
-                    >
-                      <i class="fas fa-language mr-2"></i>{{ 'Atur Bahasa &
-                      Tema' if current_lang == 'id' else 'Language & Theme' }}
-                    </button>
-                    <button
-                      class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 cursor-pointer"
-                    >
-                      <i class="fas fa-image mr-2"></i>{{ 'Upload Logo' if
-                      current_lang == 'id' else 'Upload Logo' }}
-                    </button>
-                    <button
-                      class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 cursor-pointer"
-                    >
-                      <i class="fas fa-bell mr-2"></i>{{ 'Atur Notifikasi' if
-                      current_lang == 'id' else 'Notifications' }}
-                    </button>
-                  </div>
-                </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'SMTP Server' if current_lang == 'id' else
+                              'SMTP Server' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="emailSettings.mail_server"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                              placeholder="smtp.gmail.com"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Port' if current_lang == 'id' else 'Port' }}
+                            </label>
+                            <input
+                              type="number"
+                              x-model="emailSettings.mail_port"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                              placeholder="465"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Username/Email' if current_lang == 'id' else
+                              'Username/Email' }}
+                            </label>
+                            <input
+                              type="email"
+                              x-model="emailSettings.mail_username"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                              placeholder="your-email@gmail.com"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Password' if current_lang == 'id' else
+                              'Password' }}
+                            </label>
+                            <input
+                              type="password"
+                              x-model="emailSettings.mail_password"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                              placeholder="{{ 'Kosongkan jika tidak ingin mengubah' if current_lang == 'id' else 'Leave blank to keep current' }}"
+                            />
+                          </div>
+                        </div>
 
-                <!-- Keamanan -->
-                <div
-                  class="bg-white shadow-lg rounded-xl p-6 transition {{ 'dark:bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'dark:bg-gray-100 hover:shadow-gray-700' }}"
-                >
-                  <div class="flex items-center mb-4">
-                    <div
-                      class="w-12 h-12 flex items-center justify-center rounded-full bg-red-100 text-red-600"
-                    >
-                      <i class="fas fa-shield-alt text-xl"></i>
+                        <div class="flex items-center space-x-4">
+                          <div class="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="mail_use_ssl"
+                              :checked="emailSettings.mail_use_ssl === 'true' || emailSettings.mail_use_ssl === true"
+                              @change="emailSettings.mail_use_ssl = $event.target.checked ? 'true' : 'false'"
+                              class="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                            />
+                            <label
+                              for="mail_use_ssl"
+                              class="ml-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Gunakan SSL' if current_lang == 'id' else 'Use
+                              SSL' }}
+                            </label>
+                          </div>
+                          <div class="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="mail_use_tls"
+                              :checked="emailSettings.mail_use_tls === 'true' || emailSettings.mail_use_tls === true"
+                              @change="emailSettings.mail_use_tls = $event.target.checked ? 'true' : 'false'"
+                              class="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                            />
+                            <label
+                              for="mail_use_tls"
+                              class="ml-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Gunakan TLS' if current_lang == 'id' else 'Use
+                              TLS' }}
+                            </label>
+                          </div>
+                        </div>
+
+                        <button
+                          @click="testEmail()"
+                          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition cursor-pointer"
+                        >
+                          <i class="fas fa-paper-plane mr-2"></i>
+                          {{ 'Test Email' if current_lang == 'id' else 'Test
+                          Email' }}
+                        </button>
+                      </div>
                     </div>
-                    <h3 class="ml-4 text-lg font-semibold">
-                      {{ 'Keamanan' if current_lang == 'id' else 'Security' }}
-                    </h3>
+
+                    <!-- SMS/WhatsApp Settings -->
+                    <div>
+                      <h3
+                        class="text-xl font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                      >
+                        <i class="fab fa-whatsapp mr-2 text-green-500"></i>
+                        {{ 'Pengaturan SMS/WhatsApp' if current_lang == 'id'
+                        else 'SMS/WhatsApp Settings' }}
+                      </h3>
+                      <div
+                        class="bg-gray-50 {{ 'dark:bg-gray-800' if current_theme == 'dark' else '' }} rounded-lg p-6 space-y-4"
+                      >
+                        <div class="flex items-center mb-4">
+                          <input
+                            type="checkbox"
+                            id="sms_enabled"
+                            :checked="smsSettings.sms_enabled === 'true' || smsSettings.sms_enabled === true"
+                            @change="smsSettings.sms_enabled = $event.target.checked ? 'true' : 'false'"
+                            class="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                          />
+                          <label
+                            for="sms_enabled"
+                            class="ml-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                          >
+                            {{ 'Aktifkan SMS/WhatsApp' if current_lang == 'id'
+                            else 'Enable SMS/WhatsApp' }}
+                          </label>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Twilio Account SID' if current_lang == 'id'
+                              else 'Twilio Account SID' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="smsSettings.twilio_account_sid"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                              placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Auth Token' if current_lang == 'id' else 'Auth
+                              Token' }}
+                            </label>
+                            <input
+                              type="password"
+                              x-model="smsSettings.twilio_auth_token"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                              placeholder="{{ 'Kosongkan jika tidak ingin mengubah' if current_lang == 'id' else 'Leave blank to keep current' }}"
+                            />
+                          </div>
+                          <div class="md:col-span-2">
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'WhatsApp From Number' if current_lang == 'id'
+                              else 'WhatsApp From Number' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="smsSettings.twilio_whatsapp_from"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                              placeholder="whatsapp:+14155238886"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                      <button
+                        @click="saveSettings('email')"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer"
+                      >
+                        <i class="fas fa-save mr-2"></i>
+                        {{ 'Simpan Pengaturan Email' if current_lang == 'id'
+                        else 'Save Email Settings' }}
+                      </button>
+                      <button
+                        @click="saveSettings('sms')"
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition cursor-pointer"
+                      >
+                        <i class="fas fa-save mr-2"></i>
+                        {{ 'Simpan Pengaturan SMS/WhatsApp' if current_lang ==
+                        'id' else 'Save SMS/WhatsApp Settings' }}
+                      </button>
+                    </div>
                   </div>
-                  <p
-                    class="text-sm mb-4 {{ 'text-gray-600 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-600' }}"
-                  >
-                    {{ 'Kelola backup database, kebijakan password, serta
-                    autentikasi ganda (2FA).' if current_lang == 'id' else
-                    'Manage database backups, password policies, and two-factor
-                    authentication.' }}
-                  </p>
-                  <div class="space-y-2">
-                    <button
-                      class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer"
+
+                  <!-- App Details Tab -->
+                  <div x-show="activeTab === 'app'" x-transition>
+                    <h2
+                      class="text-2xl font-semibold mb-6 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                     >
-                      <i class="fas fa-database mr-2"></i>{{ 'Backup Database'
-                      if current_lang == 'id' else 'Backup Database' }}
-                    </button>
-                    <button
-                      class="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 cursor-pointer"
+                      {{ 'Detail Aplikasi' if current_lang == 'id' else
+                      'Application Details' }}
+                    </h2>
+
+                    <div class="space-y-6">
+                      <div>
+                        <label
+                          class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                        >
+                          {{ 'Nama Aplikasi' if current_lang == 'id' else
+                          'Application Name' }}
+                        </label>
+                        <input
+                          type="text"
+                          x-model="appSettings.app_name"
+                          class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                        >
+                          {{ 'Deskripsi Aplikasi' if current_lang == 'id' else
+                          'Application Description' }}
+                        </label>
+                        <textarea
+                          x-model="appSettings.app_description"
+                          rows="3"
+                          class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                        ></textarea>
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                        >
+                          {{ 'Versi Aplikasi' if current_lang == 'id' else
+                          'Application Version' }}
+                        </label>
+                        <input
+                          type="text"
+                          x-model="appSettings.app_version"
+                          class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                        />
+                      </div>
+
+                      <div
+                        class="border-t pt-6 {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                      >
+                        <h3
+                          class="text-lg font-semibold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                        >
+                          {{ 'Informasi Organisasi' if current_lang == 'id' else
+                          'Organization Information' }}
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Nama Organisasi' if current_lang == 'id' else
+                              'Organization Name' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="appSettings.organization_name"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Email Organisasi' if current_lang == 'id' else
+                              'Organization Email' }}
+                            </label>
+                            <input
+                              type="email"
+                              x-model="appSettings.organization_email"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Nomor Telepon' if current_lang == 'id' else
+                              'Phone Number' }}
+                            </label>
+                            <input
+                              type="text"
+                              x-model="appSettings.organization_phone"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                            />
+                          </div>
+                          <div class="md:col-span-2">
+                            <label
+                              class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            >
+                              {{ 'Alamat' if current_lang == 'id' else 'Address'
+                              }}
+                            </label>
+                            <textarea
+                              x-model="appSettings.organization_address"
+                              rows="2"
+                              class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                            ></textarea>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex justify-end">
+                        <button
+                          @click="saveSettings('app')"
+                          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer"
+                        >
+                          <i class="fas fa-save mr-2"></i>
+                          {{ 'Simpan Detail Aplikasi' if current_lang == 'id'
+                          else 'Save App Details' }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Logo Tab -->
+                  <div x-show="activeTab === 'logo'" x-transition>
+                    <h2
+                      class="text-2xl font-semibold mb-6 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                     >
-                      <i class="fas fa-key mr-2"></i>{{ 'Kebijakan Password' if
-                      current_lang == 'id' else 'Password Policy' }}
-                    </button>
-                    <button
-                      class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
+                      {{ 'Upload Logo' if current_lang == 'id' else 'Upload
+                      Logo' }}
+                    </h2>
+
+                    <div class="space-y-6">
+                      <div>
+                        <label
+                          class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                        >
+                          {{ 'Logo Saat Ini' if current_lang == 'id' else
+                          'Current Logo' }}
+                        </label>
+                        <div
+                          class="border-2 border-dashed rounded-lg p-8 text-center {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-300' }}"
+                        >
+                          <img
+                            :src="logoPath || '/static/img/logo.png'"
+                            alt="Logo"
+                            class="max-h-32 mx-auto mb-4"
+                            onerror="this.src='/static/img/logo.png'"
+                          />
+                          <p
+                            class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                          >
+                            {{ 'Format yang didukung: PNG, JPG, JPEG, GIF, SVG'
+                            if current_lang == 'id' else 'Supported formats:
+                            PNG, JPG, JPEG, GIF, SVG' }}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                        >
+                          {{ 'Upload Logo Baru' if current_lang == 'id' else
+                          'Upload New Logo' }}
+                        </label>
+                        <input
+                          type="file"
+                          id="logoFile"
+                          accept="image/*"
+                          @change="handleLogoUpload($event)"
+                          class="file-input-custom w-full px-4 py-3 border-2 rounded-lg cursor-pointer {{ 'bg-gray-800 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }}"
+                        />
+                      </div>
+
+                      <div class="flex justify-end">
+                        <button
+                          @click="uploadLogo()"
+                          :disabled="!logoFile"
+                          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <i class="fas fa-upload mr-2"></i>
+                          {{ 'Upload Logo' if current_lang == 'id' else 'Upload
+                          Logo' }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Language Tab -->
+                  <div x-show="activeTab === 'language'" x-transition>
+                    <h2
+                      class="text-2xl font-semibold mb-6 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                     >
-                      <i class="fas fa-lock mr-2"></i>{{ 'Aktifkan 2FA' if
-                      current_lang == 'id' else 'Enable 2FA' }}
-                    </button>
+                      {{ 'Pengaturan Bahasa' if current_lang == 'id' else
+                      'Language Settings' }}
+                    </h2>
+
+                    <div class="space-y-6">
+                      <div>
+                        <label
+                          class="block text-sm font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                        >
+                          {{ 'Bahasa Default' if current_lang == 'id' else
+                          'Default Language' }}
+                        </label>
+                        <select
+                          x-model="appSettings.default_language"
+                          class="w-full px-4 py-2 border rounded-lg {{ 'bg-gray-700 border-gray-600 text-white' if current_theme == 'dark' else 'bg-white border-gray-300' }}"
+                        >
+                          <option value="id">Bahasa Indonesia</option>
+                          <option value="en">English</option>
+                        </select>
+                        <p
+                          class="text-sm mt-2 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                        >
+                          {{ 'Bahasa default yang akan digunakan untuk pengguna
+                          baru' if current_lang == 'id' else 'Default language
+                          for new users' }}
+                        </p>
+                      </div>
+
+                      <div
+                        class="bg-blue-50 {{ 'dark:bg-blue-900' if current_theme == 'dark' else '' }} rounded-lg p-4"
+                      >
+                        <p
+                          class="text-sm {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                        >
+                          <i class="fas fa-info-circle mr-2"></i>
+                          {{ 'Pengguna dapat mengubah bahasa mereka sendiri
+                          melalui menu di header' if current_lang == 'id' else
+                          'Users can change their language through the header
+                          menu' }}
+                        </p>
+                      </div>
+
+                      <div class="flex justify-end">
+                        <button
+                          @click="saveSettings('app')"
+                          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer"
+                        >
+                          <i class="fas fa-save mr-2"></i>
+                          {{ 'Simpan Pengaturan Bahasa' if current_lang == 'id'
+                          else 'Save Language Settings' }}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -303,6 +630,311 @@
         </main>
       </div>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div
+      id="toast-container"
+      class="fixed bottom-6 right-6 z-[9999] space-y-3"
+    ></div>
+
+    <style>
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideOutRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+
+      .toast {
+        animation: slideInRight 0.3s ease-out;
+      }
+
+      .toast.hide {
+        animation: slideOutRight 0.3s ease-in;
+      }
+
+      /* Custom File Input Styling - Modern Browsers */
+      .file-input-custom::file-selector-button {
+        background-color: #2563eb !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.625rem 1.25rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        margin-right: 1rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .file-input-custom::file-selector-button:hover {
+        background-color: #1d4ed8 !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        transform: translateY(-1px);
+      }
+
+      .file-input-custom::file-selector-button:active {
+        background-color: #1e40af !important;
+        transform: translateY(0);
+      }
+
+      /* WebKit/Chrome specific styling (for older browsers) */
+      .file-input-custom::-webkit-file-upload-button {
+        background-color: #2563eb !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.625rem 1.25rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        margin-right: 1rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+      }
+
+      .file-input-custom::-webkit-file-upload-button:hover {
+        background-color: #1d4ed8 !important;
+      }
+
+      /* Dark mode styling for file input button */
+      .dark .file-input-custom::file-selector-button,
+      .dark .file-input-custom::-webkit-file-upload-button {
+        background-color: #3b82f6 !important;
+      }
+
+      .dark .file-input-custom::file-selector-button:hover,
+      .dark .file-input-custom::-webkit-file-upload-button:hover {
+        background-color: #2563eb !important;
+      }
+
+      .dark .file-input-custom::file-selector-button:active,
+      .dark .file-input-custom::-webkit-file-upload-button:active {
+        background-color: #1d4ed8 !important;
+      }
+    </style>
+
+    <script>
+      // Toast Notification Function
+      function showNotification(message, type = "info") {
+        const container = document.getElementById("toast-container");
+        if (!container) {
+          console.error("Toast container not found");
+          return;
+        }
+
+        // Create toast element
+        const toast = document.createElement("div");
+        toast.className = `toast flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg min-w-[300px] max-w-md ${
+          type === "success"
+            ? "bg-green-500 text-white"
+            : type === "error"
+            ? "bg-red-500 text-white"
+            : type === "warning"
+            ? "bg-yellow-500 text-gray-900"
+            : "bg-blue-500 text-white"
+        }`;
+
+        // Icon based on type
+        const icon =
+          type === "success"
+            ? '<i class="fas fa-check-circle text-xl"></i>'
+            : type === "error"
+            ? '<i class="fas fa-times-circle text-xl"></i>'
+            : type === "warning"
+            ? '<i class="fas fa-exclamation-triangle text-xl"></i>'
+            : '<i class="fas fa-info-circle text-xl"></i>';
+
+        toast.innerHTML = `
+          ${icon}
+          <span class="flex-1 font-medium">${message}</span>
+          <button onclick="this.parentElement.classList.add('hide'); setTimeout(() => this.parentElement.remove(), 300)" 
+                  class="text-white hover:text-gray-200 transition cursor-pointer">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+          toast.classList.add("hide");
+          setTimeout(() => toast.remove(), 300);
+        }, 4000);
+      }
+    </script>
+
+    <script>
+      document.addEventListener('alpine:init', () => {
+        Alpine.data('settingsPage', () => ({
+          init() {
+            console.log('Settings page initialized');
+            console.log('Active tab:', this.activeTab);
+          },
+          activeTab: 'email',
+          emailSettings: {
+            mail_server: {{ email_settings.mail_server|tojson }},
+            mail_port: {{ email_settings.mail_port|tojson }},
+            mail_use_tls: {{ 'true' if email_settings.mail_use_tls == 'true' else 'false' }},
+            mail_use_ssl: {{ 'true' if email_settings.mail_use_ssl == 'true' else 'false' }},
+            mail_username: {{ email_settings.mail_username|tojson }},
+            mail_password: '',
+            mail_enabled: {{ 'true' if email_settings.mail_enabled == 'true' else 'false' }}
+          },
+          smsSettings: {
+            twilio_account_sid: {{ sms_settings.twilio_account_sid|tojson }},
+            twilio_auth_token: '',
+            twilio_whatsapp_from: {{ sms_settings.twilio_whatsapp_from|tojson }},
+            sms_enabled: {{ 'true' if sms_settings.sms_enabled == 'true' else 'false' }}
+          },
+          appSettings: {
+            app_name: {{ app_settings.app_name|tojson }},
+            app_description: {{ app_settings.app_description|tojson }},
+            app_version: {{ app_settings.app_version|tojson }},
+            organization_name: {{ app_settings.organization_name|tojson }},
+            organization_address: {{ app_settings.organization_address|tojson }},
+            organization_phone: {{ app_settings.organization_phone|tojson }},
+            organization_email: {{ app_settings.organization_email|tojson }},
+            default_language: {{ app_settings.default_language|tojson }}
+          },
+          logoPath: {{ app_settings.logo_path|tojson }},
+          logoFile: null,
+
+          handleLogoUpload(event) {
+            this.logoFile = event.target.files[0];
+          },
+
+          async saveSettings(category) {
+            try {
+              let data = { category };
+
+              if (category === 'email') {
+                // Convert boolean to string for email settings
+                data.mail_server = this.emailSettings.mail_server;
+                data.mail_port = this.emailSettings.mail_port;
+                data.mail_use_tls = this.emailSettings.mail_use_tls ? 'true' : 'false';
+                data.mail_use_ssl = this.emailSettings.mail_use_ssl ? 'true' : 'false';
+                data.mail_username = this.emailSettings.mail_username;
+                data.mail_enabled = this.emailSettings.mail_enabled ? 'true' : 'false';
+                if (this.emailSettings.mail_password) {
+                  data.mail_password = this.emailSettings.mail_password;
+                }
+              } else if (category === 'sms') {
+                // Convert boolean to string for SMS settings
+                data.twilio_account_sid = this.smsSettings.twilio_account_sid;
+                data.twilio_whatsapp_from = this.smsSettings.twilio_whatsapp_from;
+                data.sms_enabled = this.smsSettings.sms_enabled ? 'true' : 'false';
+                if (this.smsSettings.twilio_auth_token) {
+                  data.twilio_auth_token = this.smsSettings.twilio_auth_token;
+                }
+              } else if (category === 'app') {
+                data = { ...data, ...this.appSettings };
+              }
+
+              const response = await fetch('/api/save_settings', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(data)
+              });
+
+              const result = await response.json();
+
+              if (result.status === 'success') {
+                showNotification('{{ "Pengaturan berhasil disimpan" if current_lang == "id" else "Settings saved successfully" }}', 'success');
+                // Clear password fields after successful save
+                if (category === 'email') {
+                  this.emailSettings.mail_password = '';
+                } else if (category === 'sms') {
+                  this.smsSettings.twilio_auth_token = '';
+                }
+              } else {
+                showNotification('{{ "Gagal menyimpan pengaturan" if current_lang == "id" else "Failed to save settings" }}: ' + result.message, 'error');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              showNotification('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}', 'error');
+            }
+          },
+
+          async testEmail() {
+            const email = prompt('{{ "Masukkan email untuk test" if current_lang == "id" else "Enter email for test" }}:', '{{ current_user.email if current_user else "" }}');
+            if (!email) return;
+
+            try {
+              const response = await fetch('/api/test_email', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ email })
+              });
+
+              const result = await response.json();
+              const messageType = result.status === 'success' ? 'success' : 'error';
+              showNotification(result.message, messageType);
+            } catch (error) {
+              console.error('Error:', error);
+              showNotification('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}', 'error');
+            }
+          },
+
+          async uploadLogo() {
+            if (!this.logoFile) {
+              showNotification('{{ "Pilih file logo terlebih dahulu" if current_lang == "id" else "Please select a logo file first" }}', 'warning');
+              return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            const formData = new FormData();
+            formData.append('logo', this.logoFile);
+            formData.append('csrf_token', csrfToken);
+
+            try {
+              const response = await fetch('/api/upload_logo', {
+                method: 'POST',
+                headers: {
+                  'X-CSRFToken': csrfToken
+                },
+                body: formData
+              });
+
+              const result = await response.json();
+
+              if (result.status === 'success') {
+                this.logoPath = result.logo_path;
+                showNotification('{{ "Logo berhasil diupload" if current_lang == "id" else "Logo uploaded successfully" }}', 'success');
+                document.getElementById('logoFile').value = '';
+                this.logoFile = null;
+              } else {
+                showNotification('{{ "Gagal mengupload logo" if current_lang == "id" else "Failed to upload logo" }}: ' + result.message, 'error');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              showNotification('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}', 'error');
+            }
+          }
+        }));
+      });
+    </script>
 
     <!-- Animation & Notification Script -->
     {% include 'script_animation.html' %} {% include 'script_notification.html'
