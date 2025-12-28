@@ -34,7 +34,6 @@ def get_tfn_reciprocal(tfn: Tuple[float, float, float]) -> Tuple[float, float, f
     l, m, u = tfn
     return (1/u, 1/m, 1/l)
 
-
 class AHPCalculator:
     """Kelas untuk perhitungan AHP lengkap"""
     
@@ -88,7 +87,6 @@ class AHPCalculator:
         total = np.sum(geometric_means)
         if total == 0:
             raise ValueError("Total geometric mean tidak boleh nol")
-        
         self.eigenvector = geometric_means / total
         return self.eigenvector
     
@@ -113,7 +111,6 @@ class AHPCalculator:
         for i in range(self.n):
             if self.eigenvector[i] != 0:
                 lambdas.append(aw[i] / self.eigenvector[i])
-        
         self.lambda_max = np.mean(lambdas)
         return self.lambda_max
     
@@ -136,7 +133,6 @@ class AHPCalculator:
         
         # Matriks konsisten jika CR <= 0.1 (10%)
         is_consistent = self.cr <= 0.1
-        
         return self.ci, self.cr, is_consistent
     
     def calculate_weights(self) -> Dict[str, float]:
@@ -153,7 +149,6 @@ class AHPCalculator:
             self.criteria_names[i]: float(self.eigenvector[i])
             for i in range(self.n)
         }
-        
         return self.weights
     
     def get_results(self) -> Dict:
@@ -178,7 +173,6 @@ class AHPCalculator:
             'is_consistent': self.cr <= 0.1 if self.cr is not None else False,
             'weights': self.weights
         }
-
 
 class FuzzyAHPCalculator:
     """Kelas untuk perhitungan Fuzzy AHP sesuai PDF"""
@@ -234,7 +228,6 @@ class FuzzyAHPCalculator:
                     reciprocal_value = 1.0 / matrix[i, j]
                     tfn = self.crisp_to_tfn(reciprocal_value)
                     fuzzy_matrix[i, j] = get_tfn_reciprocal(tfn)
-        
         self.fuzzy_pairwise_matrix = fuzzy_matrix
     
     def calculate_fuzzy_synthetic_extent(self) -> List[Tuple[float, float, float]]:
@@ -279,7 +272,6 @@ class FuzzyAHPCalculator:
                 synthetic_extents.append((si_l, si_m, si_u))
             else:
                 synthetic_extents.append((0, 0, 0))
-        
         self.fuzzy_synthetic_extent = synthetic_extents
         return synthetic_extents
     
@@ -334,7 +326,6 @@ class FuzzyAHPCalculator:
                     sk = self.fuzzy_synthetic_extent[k]
                     prob = self.compare_fuzzy_probability(sk, si)
                     min_prob = min(min_prob, prob)
-            
             d_values.append(min_prob)
         
         # Normalisasi d values
@@ -354,7 +345,6 @@ class FuzzyAHPCalculator:
             si = self.fuzzy_synthetic_extent[i]
             self.fuzzy_weights[name] = si
             self.normalized_weights[name] = normalized_d[i]
-        
         return self.normalized_weights
     
     def get_results(self) -> Dict:

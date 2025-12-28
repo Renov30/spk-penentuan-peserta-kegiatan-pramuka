@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{{ 'Cari Akun' if current_lang == 'id' else 'Find Account' }}</title>
     <!-- Tailwind CSS -->
     <link
@@ -42,6 +43,7 @@
         class="space-y-8"
         autocomplete="off"
       >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div>
           <label
             for="username"

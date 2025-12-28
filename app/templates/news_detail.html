@@ -89,7 +89,7 @@
     <main class="pb-24">
       <div class="max-w-5xl mx-auto px-6">
         <article
-          class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden"
+          class="rounded-2xl shadow-xl overflow-hidden {{ 'bg-white dark:bg-gray-800' if current_theme == 'dark' else 'bg-white dark:bg-gray-300' }}"
         >
           <!-- Thumbnail -->
           <img
@@ -182,7 +182,7 @@
 
             <!-- Author Card -->
             <div
-              class="p-8 md:p-10 border-t dark:border-gray-700 mt-6 flex items-center gap-4 rounded-xl bg-gray-50 dark:bg-gray-900 shadow-sm"
+              class="p-8 md:p-10 border-t mt-6 flex items-center gap-4 rounded-xl shadow-sm {{ 'bg-white dark:bg-gray-900 dark:border-gray-700 hover:shadow-yellow-500' if current_theme == 'dark' else 'bg-white dark:bg-gray-200 hover:shadow-gray-700' }}"
             >
               <img
                 src="{{ url_for('static', filename=news.author.foto if news.author.foto else 'images/profil-default.jpg') }}"
@@ -210,16 +210,21 @@
         <!-- ================= COMMENTS ================= -->
         <section class="mt-20">
           <div
-            class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 md:p-10"
+            class="rounded-2xl shadow-xl p-8 md:p-10 {{ 'bg-white dark:bg-gray-800' if current_theme == 'dark' else 'bg-white dark:bg-gray-300' }}"
           >
             <h2 class="text-2xl font-bold mb-1">
               {{ 'Komentar' if current_lang == 'id' else 'Comments' }}
-              <span id="comment-count" class="text-sm text-gray-500">
+              <span
+                id="comment-count"
+                class="text-sm  {{ 'text-gray-500' if current_theme == 'dark' else 'text-gray-700' }}"
+              >
                 ({{ comment_count }})
               </span>
             </h2>
 
-            <p class="text-sm text-gray-500 mb-8">
+            <p
+              class="text-sm mb-8 {{ 'text-gray-500' if current_theme == 'dark' else 'text-gray-700' }}"
+            >
               {{ 'Diskusi dan tanggapan pembaca' if current_lang == 'id' else
               'Reader discussions' }}
             </p>
@@ -261,12 +266,13 @@
                     name="content"
                     rows="4"
                     placeholder="{{ 'Tulis komentar...' if current_lang == 'id' else 'Write a comment...' }}"
-                    class="w-full p-4 rounded-xl border focus:ring-2 focus:ring-yellow-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600"
+                    class="w-full p-4 rounded-xl border focus:ring-2  {{ 'bg-gray-100 dark:bg-gray-700 dark:border-gray-600 focus:ring-yellow-500' if current_theme == 'dark' else 'bg-gray-100 dark:bg-gray-200 dark:border-gray-600 focus:ring-gray-600' }}"
                     required
                   ></textarea>
 
                   <div class="flex justify-between items-center mt-4">
-                    <span class="text-xs text-gray-500"
+                    <span
+                      class="text-xs {{ 'text-gray-500' if current_theme == 'dark' else 'text-gray-700' }}"
                       >reCAPTCHA protected</span
                     >
                     <button
@@ -283,10 +289,12 @@
                   placeholder="{{ 'Login untuk menulis komentar' if current_lang == 'id' else 'Login to write a comment' }}"
                   readonly
                   onclick="openLoginModal()"
-                  class="w-full p-4 rounded-xl border cursor-pointer bg-gray-200 text-gray-500 hover:bg-gray-700 transition dark:bg-gray-800 dark:text-gray-400"
+                  class="w-full p-4 rounded-xl border cursor-pointer transition  {{ 'bg-gray-200 dark:bg-gray-800 hover:bg-gray-700 text-gray-500  dark:text-gray-400' if current_theme == 'dark' else 'bg-gray-100 dark:bg-gray-200 hover:bg-gray-100 text-gray-800 dark:text-gray-900' }}"
                 ></textarea>
 
-                <p class="mt-2 text-sm text-gray-500">
+                <p
+                  class="mt-2 text-sm {{ 'text-gray-500' if current_theme == 'dark' else 'text-gray-700' }}"
+                >
                   {{ 'Silakan login untuk dapat memberikan komentar.' if
                   current_lang == 'id' else 'Please login to post a comment.' }}
                 </p>
@@ -327,7 +335,7 @@
       class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm"
     >
       <div
-        class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md p-6"
+        class="rounded-2xl shadow-xl w-full max-w-md p-6 {{ 'bg-white dark:bg-gray-900' if current_theme == 'dark' else 'bg-white dark:bg-gray-200' }}"
       >
         <div class="text-center">
           <i class="fa-solid fa-lock text-yellow-500 text-4xl mb-3 mt-3.5"></i>
@@ -337,7 +345,9 @@
             }}
           </h3>
 
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-10">
+          <p
+            class="text-sm  mb-10 {{ 'text-gray-600 dark:text-gray-400' if current_theme == 'dark' else 'text-gray-600 dark:text-gray-800' }}"
+          >
             {{ 'Silakan login terlebih dahulu untuk ikut berdiskusi dan
             memberikan komentar.' if current_lang == 'id' else 'Please login
             first to join the discussion and post a comment.' }}
@@ -362,7 +372,9 @@
       </div>
     </div>
 
-    <footer class="py-8 text-center text-sm text-gray-500 bg-gray-800">
+    <footer
+      class="py-8 text-center text-sm  {{ 'text-gray-500 bg-gray-800' if current_theme == 'dark' else 'text-gray-800 bg-gray-300' }}"
+    >
       © {{ current_year }} • {{ 'Semua Hak Dilindungi' if current_lang == 'id'
       else 'All Rights Reserved' }}
     </footer>

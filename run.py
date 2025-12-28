@@ -34,7 +34,6 @@ import os
 import re
 import pandas as pd
 from dotenv import load_dotenv
-
 load_dotenv()
 
 app = create_app()
@@ -244,11 +243,9 @@ def send_whatsapp_code(phone, code):
     sms_config = get_sms_settings()
     
     if not sms_config['sms_enabled']:
-        print("SMS/WhatsApp tidak diaktifkan")
         return False
     
     if not sms_config['twilio_account_sid'] or not sms_config['twilio_auth_token']:
-        print("Twilio credentials tidak ditemukan")
         return False
     
     try:
@@ -259,24 +256,17 @@ def send_whatsapp_code(phone, code):
             from_=sms_config['twilio_whatsapp_from'],
             to=f'whatsapp:{phone}'
         )
-        print("Pesan berhasil dikirim:", message.sid)
         return True
     except Exception as e:
-        print("Gagal mengirim pesan:", e)
         return False
 
 def send_email_message(subject, recipients, html_body, sender=None):
     """Mengirim email menggunakan pengaturan dari database"""
-    email_config = get_email_settings()
-    
+    email_config = get_email_settings()  
     if not email_config['mail_enabled']:
-        print("Email tidak diaktifkan")
         return False
-    
     if not email_config['mail_username'] or not email_config['mail_password']:
-        print("Email credentials tidak ditemukan")
         return False
-    
     try:
         # Update config sementara
         original_config = {

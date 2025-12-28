@@ -105,7 +105,9 @@ function renderComment(comment) {
         ${avatar}
         <div class="w-full">
           <p class="font-semibold">${escapeHTML(userName)}</p>
-          <p class="text-sm text-gray-400">${escapeHTML(comment.content)}</p>
+          <p class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">${escapeHTML(
+            comment.content
+          )}</p>
           <div class="flex gap-4 text-xs mt-1">
             <button id="reply-btn-${comment.id}" onclick="openReplyForm(${
     comment.id
