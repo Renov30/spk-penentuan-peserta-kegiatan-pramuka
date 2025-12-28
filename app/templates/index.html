@@ -492,7 +492,7 @@
       id="news"
       class="py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
     >
-      <div class="container mx-auto px-6 mt-7">
+      <div class="container mx-auto px-6 mt-12">
         <div class="text-center mb-12">
           <h2
             class="text-2xl font-semibold mb-4 {{ 'text-yellow-400' if current_theme == 'dark' else 'text-yellow-500' }}"
@@ -509,167 +509,57 @@
         </div>
 
         <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
-          <!-- Card 1 -->
+          {% for news in latest_news %}
           <div
             class="rounded-xl shadow-lg overflow-hidden hover:shadow-yellow-400/30 transition cursor-pointer flex flex-col {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }}"
           >
+            <!-- Thumbnail -->
             <img
-              src="{{ url_for('static', filename='images/kwarcab_01.JPG') }}"
-              alt="{{ 'Berita 1' if current_lang == 'id' else 'News 1' }}"
+              src="{{ url_for('static', filename=news.thumbnail) }}"
+              alt="{{ news.title }}"
               class="w-full h-48 object-cover"
             />
-            <div class="flex-grow p-3.5">
-              <h3
-                class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-              >
-                {{ 'Kwarcab Merauke Prakarsai Pembentukkan Kwartir Ranting
-                (Kwarran) Okaba' if current_lang == 'id' else 'The Merauke Scout
-                Branch (Kwarcab) Initiates the Establishment of the Okaba
-                Subdistrict Scout Branch (Kwarran)' }}
-              </h3>
-              <p
-                class="text-sm mb-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-              >
-                {{ '20 September 2025' if current_lang == 'id' else 'September
-                20, 2025' }}
-              </p>
-              <p
-                class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-              >
-                {{ 'Kwartir Cabang (Kwarcab) Gerakan Pramuka Merauke
-                memprakarsai pembentukan Kwartir Ranting (Kwarran) di Distrik
-                Okaba sebagai upaya memperluas jangkauan pembinaan kepramukaan
-                di wilayah pedalaman. Pembentukan Kwarran ini diharapkan dapat
-                memperkuat struktur organisasi Gerakan Pramuka di tingkat
-                distrik, serta mendorong tumbuhnya kegiatan kepramukaan yang
-                aktif, kreatif, dan berdaya guna bagi generasi muda di Okaba...'
-                if current_lang == 'id' else 'The Merauke Scout Branch (Kwarcab)
-                initiated the establishment of a Subdistrict Scout Branch
-                (Kwarran) in Okaba as part of efforts to expand scouting
-                development in remote areas. The formation of this Kwarran is
-                expected to strengthen the organizational structure of the Scout
-                Movement at the subdistrict level and encourage active,
-                creative, and meaningful scouting activities among the youth in
-                Okaba...' }}
-              </p>
-            </div>
-            <a
-              href="#"
-              class="text-yellow-400 text-[0.9rem] hover:underline font-semibold mt-6 self-start p-3.5"
-            >
-              {{ 'Selengkapnya →' if current_lang == 'id' else 'Learn More →' }}
-            </a>
-          </div>
 
-          <!-- Card 2 -->
-          <div
-            class="rounded-xl shadow-lg overflow-hidden hover:shadow-yellow-400/30 transition cursor-pointer flex flex-col {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }}"
-          >
-            <img
-              src="{{ url_for('static', filename='images/kwarcab_02.JPG') }}"
-              alt="{{ 'Berita 2' if current_lang == 'id' else 'News 2' }}"
-              class="w-full h-48 object-cover"
-            />
             <div class="flex-grow p-3.5">
+              <!-- Title -->
               <h3
                 class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >
-                {{ 'Kwarcab Merauke dan Bawaslu Kabupaten Merauke Teken MoU
-                Bentuk Saka Adhyasta Pemilu' if current_lang == 'id' else
-                'Merauke Scout Branch (Kwarcab) and the Merauke Regency General
-                Election Supervisory Agency (Bawaslu) Sign MoU to Establish the
-                Election Oversight Scout Unit (Saka Adhyasta Pemilu)' }}
+                {{ news.title }}
               </h3>
-              <p
-                class="text-sm mb-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-              >
-                {{ '25 September 2025' if current_lang == 'id' else 'September
-                25, 2025' }}
-              </p>
-              <p
-                class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-              >
-                {{ 'Kwarcab Merauke bersama Badan Pengawas Pemilihan Umum
-                (Bawaslu) Kabupaten Merauke resmi menandatangani Nota
-                Kesepahaman (MoU) tentang pembentukan Saka Adhyasta Pemilu.
-                Kerja sama ini bertujuan untuk menanamkan nilai-nilai
-                kepemiluan, pengawasan partisipatif, serta meningkatkan peran
-                generasi muda Pramuka dalam mendukung penyelenggaraan pemilu
-                yang jujur, adil, dan berintegritas di Kabupaten Merauke...' if
-                current_lang == 'id' else 'The Merauke Scout Branch (Kwarcab)
-                together with the General Election Supervisory Agency (Bawaslu)
-                of Merauke Regency officially signed a Memorandum of
-                Understanding (MoU) on the establishment of the Election
-                Oversight Scout Unit (Saka Adhyasta Pemilu). This collaboration
-                aims to instill electoral values, promote participatory
-                supervision, and enhance the role of young Scouts in supporting
-                the implementation of fair, honest, and integrity-based
-                elections in Merauke Regency...' }}
-              </p>
-            </div>
-            <a
-              href="#"
-              class="text-yellow-400 text-[0.9rem] hover:underline font-semibold mt-6 self-start p-3.5"
-            >
-              {{ 'Selengkapnya →' if current_lang == 'id' else 'Learn More →' }}
-            </a>
-          </div>
 
-          <!-- Card 3 -->
-          <div
-            class="rounded-xl shadow-lg overflow-hidden hover:shadow-yellow-400/30 transition cursor-pointer flex flex-col {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }}"
-          >
-            <img
-              src="{{ url_for('static', filename='images/kwarcab_03.JPG') }}"
-              alt="{{ 'Berita 3' if current_lang == 'id' else 'News 3' }}"
-              class="w-full h-48 object-cover"
-            />
-            <div class="flex-grow p-3.5">
-              <h3
-                class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-              >
-                {{ 'Kwarcab Merauke bersama Dinas Pemuda dan Olahraga Kabupaten
-                Merauke Laksanakan Lomba Senam Pramuka Tingkat Penggalang SD &
-                SMP Tahun 2025' if current_lang == 'id' else 'The Merauke Scout
-                Branch (Kwarcab) together with the Youth and Sports Office of
-                Merauke Regency held the 2025 Scout Gymnastics Competition for
-                Elementary and Junior High School (Penggalang) Levels' }}
-              </h3>
+              <!-- Date -->
               <p
                 class="text-sm mb-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
               >
-                {{ '10 November 2025' if current_lang == 'id' else 'November 10,
-                2025' }}
+                {{ news.published_at.strftime('%d %B %Y') }}
               </p>
+
+              <!-- Excerpt -->
               <p
                 class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
               >
-                {{ 'Kwartir Cabang (Kwarcab) Gerakan Pramuka Merauke bekerja
-                sama dengan Dinas Pemuda dan Olahraga Kabupaten Merauke
-                menyelenggarakan Lomba Senam Pramuka Tingkat Penggalang SD dan
-                SMP Tahun 2025. Kegiatan ini bertujuan untuk meningkatkan
-                semangat kebugaran jasmani, kekompakan, serta rasa disiplin di
-                kalangan Pramuka Penggalang. Selain sebagai ajang kompetisi,
-                lomba ini juga menjadi wadah pembinaan karakter dan penguatan
-                semangat cinta tanah air melalui aktivitas yang sehat dan
-                menyenangkan....' if current_lang == 'id' else 'The Merauke
-                Scout Branch (Kwarcab) in collaboration with the Youth and
-                Sports Office of Merauke Regency organized the 2025 Scout
-                Gymnastics Competition for Elementary and Junior High School
-                (Penggalang) levels. This event aims to enhance physical
-                fitness, teamwork, and discipline among Scout members. In
-                addition to being a competition, it also serves as a platform
-                for character development and fostering patriotism through
-                healthy and enjoyable activities...' }}
+                {{ news.excerpt }}
               </p>
             </div>
+
+            <!-- Read More -->
             <a
-              href="#"
+              href="{{ url_for('news_detail', slug=news.slug) }}"
               class="text-yellow-400 text-[0.9rem] hover:underline font-semibold mt-6 self-start p-3.5"
             >
               {{ 'Selengkapnya →' if current_lang == 'id' else 'Learn More →' }}
             </a>
           </div>
+          {% endfor %} {% if latest_news|length == 0 %}
+          <div class="text-center text-gray-400 py-12">
+            <i class="fa-regular fa-newspaper text-4xl mb-4"></i>
+            <p class="text-lg font-semibold">
+              {{ 'Belum ada berita' if current_lang == 'id' else 'No news
+              available' }}
+            </p>
+          </div>
+          {% endif %}
         </div>
       </div>
     </section>
@@ -1003,8 +893,22 @@
     {% include 'script_animation.html' %}
 
     <script>
-      console.log("first_time_login: {{ first_time_login }}");
       document.addEventListener("DOMContentLoaded", function () {
+        // === Set Bahasa ===
+        const TRANSLATIONS = {{ TRANSLATIONS|default({})|tojson }};
+        const CURRENT_LANG = "{{ current_lang|default('id') }}";
+
+        function t(key, params = {}) {
+          let msg = TRANSLATIONS[CURRENT_LANG]?.[key] || key;
+
+          // Ganti placeholder dinamis, misal {username}, {error}
+          Object.keys(params).forEach(k => {
+            msg = msg.replaceAll(`{${k}}`, params[k]);
+          });
+
+          return msg;
+        }
+
         // === Smooth Scroll ===
         $('a[href^="#"]').on("click", function (e) {
           e.preventDefault();
@@ -1105,7 +1009,7 @@
 
             if (!emailRegex.test(email)) {
               e.preventDefault();
-              showError("Email tidak valid!");
+              showError(t("invalid_email_format"));
               return;
             }
 
@@ -1115,24 +1019,20 @@
 
             if (!hpRegex.test(nomor_hp)) {
               e.preventDefault();
-              showError(
-                "Nomor HP harus dimulai dengan 08 atau +628, panjang 10-13 digit!"
-              );
+              showError(t("invalid_phone_format"));
               return;
             }
 
             const prefix = nomor_hp.substring(0, 4);
             if (!validPrefixes.includes(prefix)) {
               e.preventDefault();
-              showError(
-                "Prefix nomor HP tidak dikenal. Periksa kembali nomor Anda."
-              );
+              showError(t("invalid_phone_prefix"));
               return;
             }
 
             if (/^(0+|08[0-9]{7}1234|08[0-9]{9}000)$/.test(nomor_hp)) {
               e.preventDefault();
-              showError("Nomor HP tampaknya tidak valid!");
+              showError(t("invalid_phone_number"));
               return;
             }
 

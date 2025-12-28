@@ -2,13 +2,16 @@
 from app import db
 from sqlalchemy.dialects.mysql import ENUM
 from flask_login import UserMixin
+from datetime import datetime
+from flask_login import current_user
+from slugify import slugify
     
 # Access to table users
 class Users(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column('id', db.Integer, primary_key=True)
     username = db.Column(db.String(255), nullable=False)
-    password = db.Column(db.String(255), nullable=False)
+    password = db.Column(db.String(255), nullable=True)
     nama_lengkap = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     jenis_kelamin = db.Column(ENUM('laki-laki', 'perempuan', name='jenis_kelamin'), nullable=False, default="laki-laki")
@@ -21,6 +24,7 @@ class Users(db.Model, UserMixin):
     login_method = db.Column(db.String(100), nullable=False, default="manual")
     sidebar_state = db.Column(db.String(10), nullable=False, default='expanded')
     status = db.Column(ENUM('aktif', 'non-aktif', '', '', name='user_status'), nullable=False, default='aktif', server_default='aktif')
+    news = db.relationship('News', backref='author', lazy=True)
     
     def to_dict(self):
         return {
@@ -36,19 +40,21 @@ class Users(db.Model, UserMixin):
             'foto': self.foto
         }
 
+# Access to table tb_event_evaluator
+class EventEvaluator(db.Model):
+    __tablename__ = 'tb_event_evaluator'
+    event_id = db.Column(db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 
-# Association Table for Event and Evaluator
-tb_event_evaluator = db.Table('tb_event_evaluator',
-    db.Column('event_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), primary_key=True),
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
-)
+    # Relationship
+    kegiatan = db.relationship("Event", backref=db.backref("assigned_evaluators", lazy=True))
+    evaluator = db.relationship("Users", backref=db.backref("events_assigned", lazy=True))
 
-# Association Table for Participant and Event (Many-to-Many)
-tb_participant_kegiatan = db.Table('tb_participant_kegiatan',
-    db.Column('id', db.Integer, primary_key=True, autoincrement=True),
-    db.Column('participant_id', db.Integer, db.ForeignKey('participants.id'), nullable=False),
-    db.Column('kegiatan_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), nullable=False),
-    db.Column('tanggal_daftar', db.DateTime, default=db.func.current_timestamp(), nullable=False)
+# Access to table tb_participant_kegiatan
+tb_participant_kegiatan = db.Table(
+    'tb_participant_kegiatan',
+    db.Column('participant_id', db.Integer, db.ForeignKey('participants.id'), primary_key=True),
+    db.Column('kegiatan_id', db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), primary_key=True)
 )
 
 # Access to table tb_kegiatan
@@ -64,18 +70,15 @@ class Event(db.Model):
     kwartir_penyelenggara = db.Column(db.String(255), nullable=False)
     mulai = db.Column(db.Date, nullable=False)
     selesai = db.Column(db.Date, nullable=False)
-    
-    # New fields for Test Details
     tanggal_tes = db.Column(db.String(255), nullable=True)
     tempat_tes = db.Column(db.String(100), nullable=True)
-    
     kuota = db.relationship("Kuota", backref="event", lazy=True, cascade="all, delete-orphan")
     kriteria = db.relationship("Criteria", backref="event", lazy=True, cascade="all, delete-orphan")
     
     # Relationship with Evaluators
-    evaluators = db.relationship('Users', secondary=tb_event_evaluator, lazy='subquery',
-        backref=db.backref('assigned_events', lazy=True))
+    evaluators = db.relationship('Users', secondary='tb_event_evaluator', lazy='subquery', backref=db.backref('assigned_events', lazy=True))
 
+# Access to table tb_kuota
 class Kuota(db.Model):
     __tablename__ = 'tb_kuota'
     id = db.Column(db.Integer, primary_key=True)
@@ -83,8 +86,9 @@ class Kuota(db.Model):
     putra = db.Column(db.Integer, default=0)
     putri = db.Column(db.Integer, default=0)   
 
-# Association Table for Evaluator and Criteria
-tb_evaluator_criteria = db.Table('tb_evaluator_criteria',
+# Access to table tb_evaluator_criteria
+EvaluatorCriteria = db.Table(
+    'tb_evaluator_criteria',
     db.Column('criteria_id', db.Integer, db.ForeignKey('tb_kriteria.id_kriteria'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True)
 )
@@ -102,8 +106,12 @@ class Criteria(db.Model):
     jumlah_soal = db.Column(db.Integer, nullable=True)
     
     # Relationship with Evaluators
-    evaluators = db.relationship('Users', secondary=tb_evaluator_criteria, lazy='subquery',
-        backref=db.backref('assigned_criteria', lazy=True))
+    evaluators = db.relationship(
+        'Users',
+        secondary=EvaluatorCriteria,
+        lazy='subquery',
+        backref=db.backref('assigned_criteria', lazy=True)
+    )
 
 # Access to table tb_pairwise_comparison (untuk menyimpan matriks perbandingan AHP)
 class PairwiseComparison(db.Model):
@@ -162,30 +170,17 @@ class Participants(db.Model):
     asal_kwarcab = db.Column(db.String(100), nullable=False)
     asal_kwarda = db.Column(db.String(100), nullable=False)
     usia = db.Column(db.Integer, nullable=False)
-    jenis_kelamin = db.Column(
-        db.Enum('laki-laki', 'perempuan', '', '', name='jenis_kelamin_enum'),
-        nullable=False)
+    jenis_kelamin = db.Column(db.Enum('laki-laki', 'perempuan', '', '', name='jenis_kelamin_enum'), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     nomor_hp = db.Column(db.String(100), nullable=False)
     foto = db.Column(db.String(100), nullable=False)
     kegiatan_id = db.Column(db.Integer, db.ForeignKey("tb_kegiatan.id_kegiatan"), nullable=True)
-
-    # kolom yang selalu berisi "peserta"
     level = db.Column(db.String(50), nullable=False, default="peserta", server_default="peserta")
-    
-    # Relationship dengan Event (backward compatibility - deprecated)
     kegiatan = db.relationship("Event", backref="peserta_list", lazy=True)
-    
-    # Many-to-many relationship dengan Event untuk multiple registrations
-    registered_activities = db.relationship(
-        "Event",
-        secondary=tb_participant_kegiatan,
-        backref=db.backref("registered_participants", lazy="dynamic"),
-        lazy="dynamic"
-    )
+    registered_activities = db.relationship("Event", secondary=tb_participant_kegiatan, backref=db.backref("registered_participants", lazy="dynamic"), lazy="dynamic")
 
     def __repr__(self):
-        return f"<Participant {self.nama_lengkap}>"
+        return f"<Participants {self.nama_lengkap}>"
 
 # Access to table himpunan_kriteria
 class HimpunanKriteria(db.Model):
@@ -203,7 +198,6 @@ class Penilaian(db.Model):
     evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Penilai
     id_kriteria = db.Column(db.Integer, db.ForeignKey('tb_kriteria.id_kriteria'), nullable=False)
     nilai = db.Column(db.Float, nullable=False)
-
 
 # Access to table tb_hasil_seleksi
 class HasilSeleksi(db.Model):
@@ -243,7 +237,7 @@ class ArsipSeleksi(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), nullable=False)
     nama_arsip = db.Column(db.String(255), nullable=False)
     deskripsi = db.Column(db.Text, nullable=True)
-    file_path = db.Column(db.String(500), nullable=True)  # Path file PDF/Excel
+    file_path = db.Column(db.String(500), nullable=True) 
     file_type = db.Column(db.String(50), nullable=False, default='pdf')  # pdf atau excel
     tanggal_arsip = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
     dibuat_oleh = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
@@ -271,3 +265,101 @@ class Settings(db.Model):
             'category': self.category,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+
+# Access to table tb_news
+class News(db.Model):
+    __tablename__ = 'tb_news'
+    id_news = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(255), unique=True, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    excerpt = db.Column(db.Text)
+    thumbnail = db.Column(db.String(255), nullable=False, default='images/default-news.jpg')
+    status = db.Column(ENUM('draft', 'published', 'archived', name='news_status'), default='draft')
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    published_at = db.Column(db.DateTime)
+
+# Access to table comment_like
+class CommentLike(db.Model):
+    __tablename__ = "comment_like"
+
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey("news_comment.id", ondelete="CASCADE"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # 🔐 UNIQUE: 1 USER HANYA BISA LIKE 1X
+    __table_args__ = (db.UniqueConstraint("comment_id", "user_id", name="uq_comment_user_like"),)
+
+    def __repr__(self):
+        return f"<CommentLike comment_id={self.comment_id} user_id={self.user_id}>"
+
+# Access to table news_comment
+class Comment(db.Model):
+    __tablename__ = 'news_comment'  # nama tabel di database
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    news_id = db.Column(db.Integer, db.ForeignKey('tb_news.id_news'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('news_comment.id'), nullable=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
+    is_approved = db.Column(db.Boolean, default=True, nullable=False)
+    likes = db.Column(db.Integer, default=0)
+
+    # Relationship opsional
+    news = db.relationship('News', backref=db.backref('news_comment', lazy='dynamic'))
+    user = db.relationship('Users', backref=db.backref('news_comment', lazy='dynamic'))
+    parent = db.relationship('Comment', remote_side=[id], backref='replies')
+    likes_rel = db.relationship("CommentLike", backref="comment", cascade="all, delete-orphan", lazy="dynamic")
+    
+    def to_dict(self, depth=1):
+        data = {
+            "id": self.id,
+            "parent_id": self.parent_id,
+            "content": self.content,
+            
+            "user": {
+                "id": self.user.id,
+                "nama_lengkap": self.user.nama_lengkap,
+                "foto": self.user.foto if self.user and self.user.foto else None
+            },
+            
+            "created_at": self.created_at.strftime('%d %B %Y'),
+            "likes": self.likes,
+            
+            "reply_count": Comment.query.filter_by(
+                parent_id=self.id,
+                is_deleted=False,
+                is_approved=True
+            ).count(),
+            
+            "is_owner": (
+                current_user.is_authenticated
+                and self.user_id == current_user.id
+            ),
+        }
+        
+        # 🔁 OPSIONAL (REKOMENDASI): STATUS LIKE USER
+        if current_user.is_authenticated:
+            data["is_liked"] = self.likes_rel.filter_by(
+                user_id=current_user.id
+            ).first() is not None
+        else:
+            data["is_liked"] = False
+
+        # Batasi kedalaman reply (keamanan & performa)
+        if depth > 0:
+            data["replies"] = [
+                reply.to_dict(depth - 1)
+                for reply in self.replies
+                if not reply.is_deleted and reply.is_approved
+            ]
+        return data
+
+    def __repr__(self):
+        return f"<Comment id={self.id} news_id={self.news_id} user_id={self.user_id}>"

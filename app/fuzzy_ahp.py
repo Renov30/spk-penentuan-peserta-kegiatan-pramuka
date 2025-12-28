@@ -346,20 +346,17 @@ def calculate_spk(event_id: int, use_fuzzy_ahp: bool = True) -> Tuple[bool, str]
     
     # 4. Proses Penilaian (Fuzzifikasi & Agregasi)
     final_scores = []
-    
     for uid in participant_ids:
         fuzzy_total_l = 0
         fuzzy_total_m = 0
         fuzzy_total_u = 0
         has_score = False
-        
         for cid, weight in criteria_weights.items():
             # Ambil rata-rata nilai dari semua penilai untuk kriteria ini
             avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(
                 id_users=uid,
                 id_kriteria=cid
             ).scalar()
-            
             if avg_score is not None:
                 has_score = True
                 score = float(avg_score)
@@ -371,7 +368,6 @@ def calculate_spk(event_id: int, use_fuzzy_ahp: bool = True) -> Tuple[bool, str]
                 fuzzy_total_l += l * weight
                 fuzzy_total_m += m * weight
                 fuzzy_total_u += u * weight
-        
         if has_score:
             # Defuzzifikasi menggunakan Center of Area
             defuzzified_score = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3
@@ -407,7 +403,6 @@ def calculate_spk(event_id: int, use_fuzzy_ahp: bool = True) -> Tuple[bool, str]
         
         db.session.commit()
         return True, "Perhitungan Fuzzy AHP berhasil."
-        
     except Exception as e:
         db.session.rollback()
         return False, f"Error menyimpan hasil: {str(e)}"

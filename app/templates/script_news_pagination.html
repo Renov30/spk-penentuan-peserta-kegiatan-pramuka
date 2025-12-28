@@ -1,0 +1,88 @@
+<script>
+  /* ===============================
+   * GLOBAL CSRF FETCH HELPER
+   * =============================== */
+  const csrfToken = document
+    .querySelector('meta[name="csrf-token"]')
+    ?.getAttribute("content");
+
+  function csrfFetch(url, options = {}) {
+    return fetch(url, {
+      credentials: "same-origin",
+      ...options,
+      headers: {
+        "X-CSRFToken": csrfToken,
+        ...(options.headers || {}),
+      },
+    });
+  }
+</script>
+
+<script>
+  /* ===============================
+   * ALPINE STORE: PAGINATION
+   * =============================== */
+  document.addEventListener("alpine:init", () => {
+    Alpine.store("pagination", {
+      page: 1,
+      perPage: 6,
+      totalPages: 1,
+      totalItems: 0,
+      loading: false,
+      items: [],
+    });
+  });
+</script>
+
+<script>
+  /* ===============================
+   * PAGINATION COMPONENT
+   * =============================== */
+  function beritaPagination() {
+    return {
+      init() {
+        this.fetchData(1);
+      },
+
+      pageNumbers() {
+        const total = this.$store.pagination.totalPages;
+        const current = this.$store.pagination.page;
+        const delta = 2;
+
+        let start = Math.max(1, current - delta);
+        let end = Math.min(total, current + delta);
+
+        return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+      },
+
+      async fetchData(page = 1) {
+        if (page < 1 || page > this.$store.pagination.totalPages) return;
+
+        this.$store.pagination.loading = true;
+
+        try {
+          const res = await fetch(
+            `/admin/api/berita?page=${page}&per_page=${this.$store.pagination.perPage}`
+          );
+
+          if (!res.ok) throw new Error("API error");
+
+          const json = await res.json();
+
+          this.$store.pagination.items = json.data;
+          this.$store.pagination.page = json.pagination.page;
+          this.$store.pagination.totalPages = Math.max(
+            1,
+            json.pagination.total_pages
+          );
+          this.$store.pagination.totalItems = json.pagination.total_items;
+        } catch (e) {
+          console.error(e);
+          this.$store.pagination.items = [];
+        } finally {
+          this.$store.pagination.loading = false;
+        }
+      },
+    };
+  }
+</script>

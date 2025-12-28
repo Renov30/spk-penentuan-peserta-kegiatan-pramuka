@@ -1,13 +1,19 @@
 <!-- Header -->
 <header
   id="main-header"
-  class="fixed top-0 bg-opacity-100 backdrop-blur transition-all duration-300 shadow z-40 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-gray-100' }}"
-  x-data
-  :class="$store.sidebar.open 
-          ? 'left-[15%] w-[85%]' 
-          : 'left-[5%] w-[95%]'"
+  x-data="{
+    isPublic: {{ is_public_page | default(false) | lower }}
+  }"
+  class="fixed top-0 bg-opacity-100 backdrop-blur transition-all duration-300 shadow z-40
+         {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-gray-100' }}"
+  :class="isPublic
+    ? 'left-0 w-full'
+    : ($store.sidebar?.open ? 'left-[15%] w-[85%]' : 'left-[5%] w-[95%]')"
 >
-  <div class="container mx-auto flex items-center justify-between py-6 px-6">
+  <div
+    class="container mx-auto flex py-6 px-6 {{ 'w-full' if is_public_page else 'items-center justify-between' }}"
+  >
+    {% if not (is_public_page|string|lower == 'true') %}
     <div class="flex items-center space-x-2 gap-3.5">
       <img
         src="{{ url_for('static', filename='images/SPARK.png') }} "
@@ -21,6 +27,7 @@
         current_user.nama_lengkap }}
       </h1>
     </div>
+    {% endif %}
 
     <!-- Center: Search + Language (Mobile) -->
     <div class="flex md:hidden items-center space-x-4">
@@ -76,7 +83,9 @@
         </div>
       </div>
 
-      <!-- Sign Up -->
+      <!-- Login / Sign Up (MASIH BERMASALAH) -->
+      {% if not (is_public_page|string|lower == 'true') %}
+      <!-- Halaman PRIVAT -->
       <a
         href="/login/"
         class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
@@ -84,9 +93,20 @@
       >
         <i class="fas fa-user-plus"></i>
       </a>
+      {% else %}
+      <!-- Halaman PUBLIK → dengan next -->
+      <a
+        href="{{ url_for('login', next=request.path) }}"
+        class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
+        title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
+      >
+        <i class="fas fa-bell"></i>
+      </a>
+      {% endif %}
 
       <!-- Notifikasi -->
-      {% if session.get('username') or session.get('user') %}
+      {% if not (is_public_page|string|lower == 'true') and
+      (session.get('username') or session.get('user')) %}
       <button
         title="{{ 'Notifikasi' if current_lang == 'id' else 'Notification' }}"
         class="relative flex items-center justify-center text-yellow-400 hover:text-yellow-300 transition text-2xl cursor-pointer my-3"
@@ -101,6 +121,7 @@
       {% endif %}
 
       <!-- Hamburger Icon (Mobile Only) -->
+      {% if not (is_public_page|string|lower == 'true') %}
       <button
         @click="open = !open"
         class="md:hidden text-3xl focus:outline-none {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
@@ -111,17 +132,20 @@
           :class="open ? 'fa-solid fa-xmark cursor-pointer' : 'fa-solid fa-bars cursor-pointer'"
         ></i>
       </button>
+      {% endif %}
     </div>
 
     <!-- Desktop Navigation -->
-    <div class="hidden md:flex items-center space-x-6">
-      <!-- Search + Language (Desktop) -->
-      <div class="flex items-center space-x-3">
-        <div class="relative">
+    <div
+      class="hidden md:flex space-x-6 {{ 'w-full flex justify-end' if is_public_page else 'items-center' }}"
+    >
+      <!-- Search bar + Language on Desktop -->
+      <div class="flex space-x-3 items-center">
+        <div class="relative {{ 'mr-32' if is_public_page else 'mr-3' }}">
           <input
             type="text"
             placeholder="{{ 'Cari...' if current_lang == 'id' else 'Search...' }}"
-            class="pl-4 pr-10 py-2 rounded-full focus:outline-none focus:ring-2  {{ 'bg-gray-700 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
+            class="pl-4 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 {{ 'w-dvh' if is_public_page else 'w-96' }} {{ 'bg-gray-700 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
           />
           <div
             class="absolute inset-y-0 right-3 flex items-center pointer-events-none"
@@ -212,7 +236,8 @@
         </button>
 
         <!-- Notifikasi -->
-        {% if session.get('username') or session.get('user') %}
+        {% if not (is_public_page|string|lower == 'true') and
+        (session.get('username') or session.get('user')) %}
         <button
           id="notification-toggle"
           title="{{ 'Notifikasi' if current_lang == 'id' else 'Notification' }}"
@@ -226,12 +251,14 @@
           </span>
         </button>
         {% endif %}
-
         <!-- Notification Box -->
-        {% include 'notification_box.html' %}
 
-        {% if session.get('username') or session.get('user') %}
+        {% if not (is_public_page|string|lower == 'true') %} {% include
+        'notification_box.html' %} {% endif %}
+
         <!-- Profil Icon (setelah login) -->
+        {% if session.get('username') or session.get('user') or
+        current_user.is_authenticated %}
         <div x-data="{ open: false }" class="relative group">
           <!-- Tombol Gambar Profil -->
           <button
@@ -239,8 +266,7 @@
             :aria-expanded="open.toString()"
             aria-haspopup="true"
             class="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition text-sm focus:outline-none cursor-pointer"
-            title="{{ 'Akun' if current_lang == 'id' else
-                    'Account' }}"
+            title="{{ 'Akun' if current_lang == 'id' else 'Account' }}"
           >
             {% set user_foto = current_user.foto if
             current_user.is_authenticated and current_user.foto else
@@ -254,6 +280,7 @@
             url_for('static', filename='images/profil-default.jpg') %} {% endif
             %} {% set default_foto = url_for('static',
             filename='images/profil-default.jpg') %}
+
             <img
               src="{{ foto_url }}"
               alt="Foto Profil"
@@ -272,19 +299,36 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 translate-y-0"
             x-transition:leave-end="opacity-0 translate-y-1"
-            class="absolute -right-3.5 mt-2 w-36 border rounded-md shadow-md z-50 {{ 'bg-gray-900 border-gray-600' if current_theme == 'dark' else 'bg-white border-gray-200' }}"
+            class="absolute -right-3.5 mt-2 w-36 border rounded-md shadow-md z-50
+           {{ 'bg-gray-900 border-gray-600' if current_theme == 'dark'
+              else 'bg-white border-gray-200' }}"
           >
             <a
+              href="{{ url_for('admin_settings') }}"
+              class="block px-4 py-2 text-sm
+             {{ 'text-white hover:bg-gray-600'
+                if current_theme == 'dark'
+                else 'text-gray-700 hover:bg-yellow-100' }}"
+            >
+              <i class="fas fa-cog mr-2"></i>
+              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
+            </a>
+
+            <a
               href="/logout/"
-              class="block px-4 py-2 text-sm text-red-600 {{ 'hover:bg-gray-600' if current_theme == 'dark' else 'hover:bg-yellow-100' }}"
+              class="block px-4 py-2 text-sm text-red-600
+             {{ 'hover:bg-gray-600'
+                if current_theme == 'dark'
+                else 'hover:bg-yellow-100' }}"
             >
               <i class="fas fa-sign-out-alt mr-2 text-red-500"></i>
               {{ 'Keluar' if current_lang == 'id' else 'Logout' }}
             </a>
           </div>
         </div>
+
         {% else %}
-        <!-- Link Login System (sebelum login) -->
+        <!-- Link Login (Belum Login) -->
         <a
           href="/login/"
           class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
@@ -298,6 +342,7 @@
   </div>
 
   <!-- Mobile Navigation Menu -->
+  {% if not (is_public_page|string|lower == 'true') %}
   <div
     x-show="open"
     x-cloak
@@ -344,4 +389,5 @@
       {{ 'Layanan' if current_lang == 'id' else 'Services' }}
     </a>
   </div>
+  {% endif %}
 </header>

@@ -1,10 +1,14 @@
 <!-- sidebar.html -->
+{% if current_user.is_authenticated %}
 <div class="flex">
   <aside
     :class="$store.sidebar.open ? 'w-[15%]' : 'w-[5%]'"
     class="transition-all duration-300 h-full border-r fixed z-50 {{ 'dark:bg-gray-900 border-gray-200 dark:border-gray-700' if current_theme == 'dark' else 'bg-gray-100' }}"
   >
-    <div class="flex items-center h-20 shadow-md" :class="$store.sidebar.open ? 'justify-around' : 'justify-center'">
+    <div
+      class="flex items-center h-20 shadow-md"
+      :class="$store.sidebar.open ? 'justify-around' : 'justify-center'"
+    >
       <span
         x-show="$store.sidebar.open"
         x-transition
@@ -130,9 +134,32 @@
           </a>
         </li>
 
+        <!-- Pengaturan -->
+        <li>
+          <a
+            href="{{ url_for('peserta_settings') }}"
+            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'peserta_settings' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
+          >
+            <i
+              class="fas fa-cogs w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
+            ></i>
+            <span
+              x-show="$store.sidebar.open"
+              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
+            >
+              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
+            </span>
+            <span
+              x-show="!$store.sidebar.open"
+              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
+            >
+              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
+            </span>
+          </a>
+        </li>
+
         {% elif current_user.level == 'penilai' %}
         <!-- Menu untuk Penilai -->
-
         <!-- Biodata Penilai -->
         <li>
           <a
@@ -262,6 +289,30 @@
           </a>
         </li>
 
+        <!-- Pengaturan -->
+        <li>
+          <a
+            href="{{ url_for('penilai_settings') }}"
+            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'penilai_settings' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
+          >
+            <i
+              class="fas fa-cogs w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
+            ></i>
+            <span
+              x-show="$store.sidebar.open"
+              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
+            >
+              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
+            </span>
+            <span
+              x-show="!$store.sidebar.open"
+              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
+            >
+              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
+            </span>
+          </a>
+        </li>
+
         {% else %}
         <!-- Menu untuk Admin -->
         {% for menu in [ ('admin_users', 'fas fa-users', 'Manajemen Pengguna',
@@ -270,9 +321,11 @@
         ('admin_peserta', 'fas fa-user-check', 'Data Peserta', 'Participant
         Data'), ('admin_hasil_seleksi', 'fa-solid fa-square-poll-vertical',
         'Hasil Seleksi', 'Selection Results'), ('admin_notifikasi', 'fas
-        fa-bell', 'Notifikasi', 'Notifications'), ('admin_log_aktivitas',
-        'fa-solid fa-chart-line', 'Log Aktivitas', 'Activity Log'),
-        ('admin_settings', 'fas fa-cogs', 'Pengaturan', 'Settings') ] %}
+        fa-bell', 'Notifikasi', 'Notifications'), ('admin_manajemen_berita',
+        'fa-solid fa-newspaper', 'Manajemen Berita', 'News Management'),
+        ('admin_log_aktivitas', 'fa-solid fa-chart-line', 'Log Aktivitas',
+        'Activity Log'), ('admin_settings', 'fas fa-cogs', 'Pengaturan',
+        'Settings') ] %}
         <li>
           <a
             href="{{ url_for(menu[0]) }}"
@@ -324,3 +377,4 @@
     </nav>
   </aside>
 </div>
+{% endif %}

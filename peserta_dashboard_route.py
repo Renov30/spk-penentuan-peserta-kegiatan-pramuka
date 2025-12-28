@@ -1,4 +1,10 @@
 # Peserta Dashboard Route
+from datetime import datetime
+from flask import app, render_template
+from flask_login import current_user, login_required
+from app.models import Criteria, Event, HasilSeleksi, Participants, Penilaian, ParticipantKegiatan
+
+
 @app.route('/peserta/dashboard')
 @login_required
 def peserta_dashboard():
@@ -11,10 +17,10 @@ def peserta_dashboard():
     registered_activities = []
     if participant:
         registered_activities = Event.query.join(
-            tb_participant_kegiatan,
-            Event.id_kegiatan == tb_participant_kegiatan.c.kegiatan_id
+            ParticipantKegiatan,
+            Event.id_kegiatan == ParticipantKegiatan.c.kegiatan_id
         ).filter(
-            tb_participant_kegiatan.c.participant_id == participant.id
+            ParticipantKegiatan.c.participant_id == participant.id
         ).all()
     
     # Calculate scores for each activity

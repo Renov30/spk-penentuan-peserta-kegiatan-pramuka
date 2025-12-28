@@ -56,12 +56,12 @@
       <!-- Main content -->
       <div class="flex flex-col flex-1 overflow-hidden h-full">
         <!-- Top Navbar -->
-        {% include 'header.html' %}
+        {% set is_public_page = false %} {% include 'header.html' %}
 
         <!-- Page Content -->
         <main
           class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
-          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[1%]'"
+          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
         >
           <section
             class="flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
@@ -191,11 +191,12 @@
                     <tr>
                       <th class="px-4 py-3">No.</th>
                       <th class="px-4 py-3">
-                        {{ 'Nama' if current_lang == 'id' else 'Name' }}
+                        {{ 'Nama Lengkap' if current_lang == 'id' else 'Full
+                        Name' }}
                       </th>
                       <th class="px-4 py-3">
-                        {{ 'Asal Gudep' if current_lang == 'id' else 'Gudep
-                        Origin' }}
+                        {{ 'Asal Gugus Depan' if current_lang == 'id' else
+                        'Gudep Origin' }}
                       </th>
                       <th class="px-4 py-3">
                         {{ 'Kegiatan' if current_lang == 'id' else 'Activity' }}
@@ -205,7 +206,7 @@
                         'Selection Status' }}
                       </th>
                       <th class="px-4 py-3">
-                        {{ 'Nilai' if current_lang == 'id' else 'Score' }}
+                        {{ 'Usia' if current_lang == 'id' else 'Age' }}
                       </th>
                       <th class="px-4 py-3">
                         {{ 'Aksi' if current_lang == 'id' else 'Actions' }}
