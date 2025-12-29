@@ -23,7 +23,7 @@ class Users(db.Model, UserMixin):
     token_exp = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
     login_method = db.Column(db.String(100), nullable=False, default="manual")
     sidebar_state = db.Column(db.String(10), nullable=False, default='expanded')
-    status = db.Column(ENUM('aktif', 'non-aktif', '', '', name='user_status'), nullable=False, default='aktif', server_default='aktif')
+    status = db.Column(ENUM('aktif', 'non-aktif', name='user_status'), nullable=False, default='aktif', server_default='aktif')
     news = db.relationship('News', backref='author', lazy=True)
     
     def to_dict(self):
@@ -170,7 +170,7 @@ class Participants(db.Model):
     asal_kwarcab = db.Column(db.String(100), nullable=False)
     asal_kwarda = db.Column(db.String(100), nullable=False)
     usia = db.Column(db.Integer, nullable=False)
-    jenis_kelamin = db.Column(db.Enum('laki-laki', 'perempuan', '', '', name='jenis_kelamin_enum'), nullable=False)
+    jenis_kelamin = db.Column(db.Enum('laki-laki', 'perempuan', name='jenis_kelamin_enum'), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     nomor_hp = db.Column(db.String(100), nullable=False)
     foto = db.Column(db.String(100), nullable=False)
