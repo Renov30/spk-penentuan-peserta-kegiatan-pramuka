@@ -202,18 +202,18 @@
                       <tr
                         class="border-b {{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-400 text-gray-900 dark:text-gray-800' }}"
                       >
-                        <th>No</th>
-                        <th>
+                        <th class="text-left p-4">No</th>
+                        <th class="text-left p-4">
                           {{ 'Judul' if current_lang == 'id' else 'Title' }}
                         </th>
-                        <th>
+                        <th class="text-left p-4">
                           {{ 'Penulis' if current_lang == 'id' else 'Author' }}
                         </th>
-                        <th>Status</th>
-                        <th>
+                        <th class="text-left p-4">Status</th>
+                        <th class="text-left p-4">
                           {{ 'Tanggal' if current_lang == 'id' else 'Date' }}
                         </th>
-                        <th class="text-center">
+                        <th class="text-center p-4">
                           {{ 'Aksi' if current_lang == 'id' else 'Action' }}
                         </th>
                       </tr>
