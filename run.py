@@ -4344,6 +4344,22 @@ def api_berita():
         }
     })
 
+
+# Halaman Tambah Berita (Baru)
+@app.route('/admin/news/add', methods=['GET'])
+@login_required
+@admin_required
+def admin_add_news_page():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    if current_user.level != 'admin':
+        flash(f"{t['evaluator_access_denied']}", "error")
+        return redirect(url_for('index'))
+        
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template('admin_add_news.html', sidebar_state=sidebar_state, user=current_user)
+
 # Tambah Berita
 @app.route('/admin/news/create', methods=['POST'])
 @login_required

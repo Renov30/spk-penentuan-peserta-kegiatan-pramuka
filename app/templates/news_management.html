@@ -119,13 +119,7 @@
                 </div>
 
                 <button
-                  @click="
-                        modalMode = 'create';
-                        editId = null;
-                        form = { title: '', content: '', status: 'draft' };
-                        thumbnailPreview = null;
-                        newsModal = true;
-                    "
+                  @click="window.location.href = '{{ url_for('admin_add_news_page') }}'"
                   class="flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow cursor-pointer"
                 >
                   <i class="fa-solid fa-plus"></i>
