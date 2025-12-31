@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
+<html
+  style="font-size: 80%"
+  class="transition duration-300 ease-in-out"
+  lang="{{ current_lang }}"
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -193,14 +197,14 @@
               <div
                 x-data="beritaPagination()"
                 x-init="init()"
-                class="overflow-x-auto rounded-xl shadow"
+                class="overflow-x-auto rounded-xl shadow {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
               >
                 <!-- ====== TABEL BERITA ====== -->
                 <template x-if="$store.pagination.items.length > 0">
                   <table class="w-full border-collapse border-spacing-y-2">
                     <thead>
                       <tr
-                        class="border-b {{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-400 text-gray-900 dark:text-gray-800' }}"
+                        class="border-b {{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-100 text-gray-900' }}"
                       >
                         <th class="text-left p-4">No</th>
                         <th class="text-left p-4">
@@ -242,7 +246,7 @@
                           <td class="p-4">
                             <span
                               :class="news.status === 'published'
-                                    ? 'px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400'
+                                    ? 'px-3 py-1 rounded-full text-xs bg-green-200 text-green-800'
                                     : 'px-3 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-400'"
                               x-text="news.status === 'published'
                                     ? '{{ 'Publik' if current_lang == 'id' else 'Public' }}'
@@ -292,7 +296,7 @@
                   </table>
                 </template>
 
-                <p class="text-sm text-gray-500 text-center mt-2">
+                <p class="text-sm text-gray-500 text-center mt-2 mb-4">
                   {{ 'Showing' if current_lang == 'en' else 'Menampilkan' }}
                   <span
                     x-text="(($store.pagination.page - 1) * $store.pagination.perPage) + 1"

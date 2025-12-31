@@ -553,10 +553,10 @@
                   datasets: [{
                     label: '{{ "Total" if current_lang == "id" else "Total" }}',
                     data: [
-                      {{ total_users }},
-                      {{ total_participants }},
-                      {{ total_criteria }},
-                      {{ total_notifications }},
+                      {{ total_users|default(0) }},
+                      {{ total_participants|default(0) }},
+                      {{ total_criteria|default(0) }},
+                      {{ total_notifications|default(0) }},
                       chartData.events.total,
                       chartData.hasil_seleksi.total
                     ],

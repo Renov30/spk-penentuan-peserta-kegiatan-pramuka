@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
+<html
+  style="font-size: 80%"
+  class="transition duration-300 ease-in-out"
+  lang="{{ current_lang }}"
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
-      {{ 'Pembobotan Kriteria | SPK Pramuka' if current_lang == 'id' else 'Criteria Weighting | Scout DSS' }}
+      {{ 'Pembobotan Kriteria | SPK Pramuka' if current_lang == 'id' else
+      'Criteria Weighting | Scout DSS' }}
     </title>
 
     <!-- Tailwind CSS -->
@@ -71,36 +76,56 @@
             <!-- Content -->
             <div class="container mx-auto p-6 max-w-7xl">
               <h1 class="text-3xl font-bold mb-6">
-                {{ 'Pembobotan Kriteria dengan Fuzzy AHP' if current_lang == 'id' else 'Criteria Weighting with Fuzzy AHP' }}
+                {{ 'Pembobotan Kriteria dengan Fuzzy AHP' if current_lang ==
+                'id' else 'Criteria Weighting with Fuzzy AHP' }}
               </h1>
 
               <!-- Pilih Kegiatan -->
-              <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+              <div
+                class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6"
+              >
                 <label class="block text-sm font-medium mb-2">
-                  {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Event' }}
+                  {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select
+                  Event' }}
                 </label>
-                <select 
+                <select
                   x-model="selectedEventId"
                   @change="loadEventData()"
                   class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                 >
-                  <option value="">{{ '-- Pilih Kegiatan --' if current_lang == 'id' else '-- Select Event --' }}</option>
+                  <option value="">
+                    {{ '-- Pilih Kegiatan --' if current_lang == 'id' else '--
+                    Select Event --' }}
+                  </option>
                   {% for event in events %}
-                  <option value="{{ event.id_kegiatan }}">{{ event.nama_kegiatan }}</option>
+                  <option value="{{ event.id_kegiatan }}">
+                    {{ event.nama_kegiatan }}
+                  </option>
                   {% endfor %}
                 </select>
               </div>
 
               <!-- Form Input Matriks Perbandingan Berpasangan -->
-              <div x-show="criteriaList.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+              <div
+                x-show="criteriaList.length > 0"
+                class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6"
+              >
                 <h2 class="text-xl font-bold mb-4">
-                  {{ 'Matriks Perbandingan Berpasangan' if current_lang == 'id' else 'Pairwise Comparison Matrix' }}
+                  {{ 'Matriks Perbandingan Berpasangan' if current_lang == 'id'
+                  else 'Pairwise Comparison Matrix' }}
                 </h2>
-                
+
                 <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
                   <p class="text-sm">
-                    <strong>{{ 'Petunjuk:' if current_lang == 'id' else 'Instructions:' }}</strong><br>
-                    {{ 'Gunakan skala 1-9 untuk membandingkan kepentingan kriteria. Nilai 1 = sama penting, 9 = mutlak lebih penting.' if current_lang == 'id' else 'Use scale 1-9 to compare criteria importance. Value 1 = equal importance, 9 = absolutely more important.' }}
+                    <strong
+                      >{{ 'Petunjuk:' if current_lang == 'id' else
+                      'Instructions:' }}</strong
+                    ><br />
+                    {{ 'Gunakan skala 1-9 untuk membandingkan kepentingan
+                    kriteria. Nilai 1 = sama penting, 9 = mutlak lebih penting.'
+                    if current_lang == 'id' else 'Use scale 1-9 to compare
+                    criteria importance. Value 1 = equal importance, 9 =
+                    absolutely more important.' }}
                   </p>
                 </div>
 
@@ -108,16 +133,27 @@
                   <table class="w-full border-collapse">
                     <thead>
                       <tr>
-                        <th class="border p-2 bg-gray-100 dark:bg-gray-700"></th>
-                        <template x-for="(criteria, index) in criteriaList" :key="index">
-                          <th class="border p-2 bg-gray-100 dark:bg-gray-700 text-center" x-text="criteria.nama_kriteria"></th>
+                        <th
+                          class="border p-2 bg-gray-100 dark:bg-gray-700"
+                        ></th>
+                        <template
+                          x-for="(criteria, index) in criteriaList"
+                          :key="index"
+                        >
+                          <th
+                            class="border p-2 bg-gray-100 dark:bg-gray-700 text-center"
+                            x-text="criteria.nama_kriteria"
+                          ></th>
                         </template>
                       </tr>
                     </thead>
                     <tbody>
                       <template x-for="(row, i) in pairwiseMatrix" :key="i">
                         <tr>
-                          <td class="border p-2 bg-gray-100 dark:bg-gray-700 font-semibold" x-text="criteriaList[i].nama_kriteria"></td>
+                          <td
+                            class="border p-2 bg-gray-100 dark:bg-gray-700 font-semibold"
+                            x-text="criteriaList[i].nama_kriteria"
+                          ></td>
                           <template x-for="(cell, j) in row" :key="j">
                             <td class="border p-1">
                               <input
@@ -144,64 +180,101 @@
                     @click="saveMatrix()"
                     class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                   >
-                    <i class="fas fa-save mr-2"></i>{{ 'Simpan Matriks' if current_lang == 'id' else 'Save Matrix' }}
+                    <i class="fas fa-save mr-2"></i>{{ 'Simpan Matriks' if
+                    current_lang == 'id' else 'Save Matrix' }}
                   </button>
                   <button
                     @click="calculateAHP(true)"
                     class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
                   >
-                    <i class="fas fa-calculator mr-2"></i>{{ 'Hitung Fuzzy AHP' if current_lang == 'id' else 'Calculate Fuzzy AHP' }}
+                    <i class="fas fa-calculator mr-2"></i>{{ 'Hitung Fuzzy AHP'
+                    if current_lang == 'id' else 'Calculate Fuzzy AHP' }}
                   </button>
                   <button
                     @click="calculateAHP(false)"
                     class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
                   >
-                    <i class="fas fa-calculator mr-2"></i>{{ 'Hitung AHP' if current_lang == 'id' else 'Calculate AHP' }}
+                    <i class="fas fa-calculator mr-2"></i>{{ 'Hitung AHP' if
+                    current_lang == 'id' else 'Calculate AHP' }}
                   </button>
                 </div>
               </div>
 
               <!-- Hasil Perhitungan -->
-              <div x-show="ahpResults" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+              <div
+                x-show="ahpResults"
+                class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6"
+              >
                 <h2 class="text-xl font-bold mb-4">
-                  {{ 'Hasil Perhitungan' if current_lang == 'id' else 'Calculation Results' }}
+                  {{ 'Hasil Perhitungan' if current_lang == 'id' else
+                  'Calculation Results' }}
                 </h2>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded">
-                    <strong>{{ 'Lambda Max:' if current_lang == 'id' else 'Lambda Max:' }}</strong>
+                    <strong
+                      >{{ 'Lambda Max:' if current_lang == 'id' else 'Lambda
+                      Max:' }}</strong
+                    >
                     <span x-text="ahpResults?.lambda_max"></span>
                   </div>
                   <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded">
-                    <strong>{{ 'CI (Consistency Index):' if current_lang == 'id' else 'CI (Consistency Index):' }}</strong>
+                    <strong
+                      >{{ 'CI (Consistency Index):' if current_lang == 'id' else
+                      'CI (Consistency Index):' }}</strong
+                    >
                     <span x-text="ahpResults?.ci"></span>
                   </div>
                   <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded">
-                    <strong>{{ 'CR (Consistency Ratio):' if current_lang == 'id' else 'CR (Consistency Ratio):' }}</strong>
+                    <strong
+                      >{{ 'CR (Consistency Ratio):' if current_lang == 'id' else
+                      'CR (Consistency Ratio):' }}</strong
+                    >
                     <span x-text="ahpResults?.cr"></span>
                   </div>
                   <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded">
-                    <strong>{{ 'Konsisten:' if current_lang == 'id' else 'Consistent:' }}</strong>
-                    <span :class="ahpResults?.is_consistent ? 'text-green-600' : 'text-red-600'" x-text="ahpResults?.is_consistent ? 'Ya' : 'Tidak'"></span>
+                    <strong
+                      >{{ 'Konsisten:' if current_lang == 'id' else
+                      'Consistent:' }}</strong
+                    >
+                    <span
+                      :class="ahpResults?.is_consistent ? 'text-green-600' : 'text-red-600'"
+                      x-text="ahpResults?.is_consistent ? 'Ya' : 'Tidak'"
+                    ></span>
                   </div>
                 </div>
 
                 <h3 class="text-lg font-semibold mb-2">
-                  {{ 'Bobot Kriteria:' if current_lang == 'id' else 'Criteria Weights:' }}
+                  {{ 'Bobot Kriteria:' if current_lang == 'id' else 'Criteria
+                  Weights:' }}
                 </h3>
                 <div class="overflow-x-auto">
                   <table class="w-full border-collapse">
                     <thead>
                       <tr>
-                        <th class="border p-2 bg-gray-100 dark:bg-gray-700">{{ 'Kriteria' if current_lang == 'id' else 'Criteria' }}</th>
-                        <th class="border p-2 bg-gray-100 dark:bg-gray-700">{{ 'Bobot' if current_lang == 'id' else 'Weight' }}</th>
+                        <th class="border p-2 bg-gray-100 dark:bg-gray-700">
+                          {{ 'Kriteria' if current_lang == 'id' else 'Criteria'
+                          }}
+                        </th>
+                        <th class="border p-2 bg-gray-100 dark:bg-gray-700">
+                          {{ 'Bobot' if current_lang == 'id' else 'Weight' }}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <template x-for="(criteria, index) in criteriaList" :key="index">
+                      <template
+                        x-for="(criteria, index) in criteriaList"
+                        :key="index"
+                      >
                         <tr>
-                          <td class="border p-2" x-text="criteria.nama_kriteria"></td>
-                          <td class="border p-2 text-center" x-text="(weights[criteria.nama_kriteria] || criteria.bobot || 0).toFixed(4)"></td>
+                          <td
+                            class="border p-2"
+                            x-text="criteria.nama_kriteria"
+                          ></td>
+                          <td
+                            class="border p-2 text-center"
+                            x-text="(weights[criteria.nama_kriteria] || criteria.bobot || 0).toFixed(4)"
+                          ></td>
                         </tr>
                       </template>
                     </tbody>
@@ -215,8 +288,8 @@
     </div>
 
     <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} 
-    {% include 'script_notification.html' %}
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
 
     <script>
       function pembobotanData() {
@@ -268,7 +341,7 @@
 
           async loadEventData() {
             if (!this.selectedEventId) return;
-            
+
             window.location.href = `/admin/pembobotan_kriteria?event_id=${this.selectedEventId}`;
           },
 
@@ -277,7 +350,7 @@
               this.pairwiseMatrix[i][j] = 1;
               return;
             }
-            
+
             const value = parseFloat(this.pairwiseMatrix[i][j]);
             if (value > 0) {
               this.pairwiseMatrix[j][i] = (1 / value).toFixed(3);
@@ -291,7 +364,7 @@
             }
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-            
+
             try {
               const response = await fetch(`/api/save_pairwise_matrix/${this.selectedEventId}`, {
                 method: 'POST',
@@ -305,7 +378,7 @@
               });
 
               const data = await response.json();
-              
+
               if (data.success) {
                 alert(data.message);
                 this.loadEventData();
@@ -325,7 +398,7 @@
             }
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-            
+
             try {
               const response = await fetch(`/api/calculate_ahp/${this.selectedEventId}`, {
                 method: 'POST',
@@ -339,7 +412,7 @@
               });
 
               const data = await response.json();
-              
+
               if (data.success) {
                 alert(data.message);
                 this.loadEventData();
