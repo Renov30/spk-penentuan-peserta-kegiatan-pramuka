@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html
+  style="font-size: 80%"
   class="transition duration-300 ease-in-out"
   lang="{{ current_lang }}"
   x-data
@@ -156,9 +157,14 @@
               <!-- Charts Section -->
               <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Chart 1: Distribusi Pengguna -->
-                <div class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
-                  <h3 class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
-                    {{ 'Distribusi Pengguna' if current_lang == 'id' else 'User Distribution' }}
+                <div
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <h3
+                    class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                  >
+                    {{ 'Distribusi Pengguna' if current_lang == 'id' else 'User
+                    Distribution' }}
                   </h3>
                   <div class="h-48">
                     <canvas id="userDistributionChart"></canvas>
@@ -166,9 +172,14 @@
                 </div>
 
                 <!-- Chart 2: Status Peserta -->
-                <div class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
-                  <h3 class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
-                    {{ 'Status Peserta' if current_lang == 'id' else 'Participant Status' }}
+                <div
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <h3
+                    class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                  >
+                    {{ 'Status Peserta' if current_lang == 'id' else
+                    'Participant Status' }}
                   </h3>
                   <div class="h-48">
                     <canvas id="pesertaStatusChart"></canvas>
@@ -176,9 +187,14 @@
                 </div>
 
                 <!-- Chart 3: Jenis Kelamin Peserta -->
-                <div class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
-                  <h3 class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
-                    {{ 'Jenis Kelamin Peserta' if current_lang == 'id' else 'Participant Gender' }}
+                <div
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <h3
+                    class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                  >
+                    {{ 'Jenis Kelamin Peserta' if current_lang == 'id' else
+                    'Participant Gender' }}
                   </h3>
                   <div class="h-48">
                     <canvas id="pesertaGenderChart"></canvas>
@@ -186,9 +202,14 @@
                 </div>
 
                 <!-- Chart 4: Status Notifikasi -->
-                <div class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
-                  <h3 class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
-                    {{ 'Status Notifikasi' if current_lang == 'id' else 'Notification Status' }}
+                <div
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <h3
+                    class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                  >
+                    {{ 'Status Notifikasi' if current_lang == 'id' else
+                    'Notification Status' }}
                   </h3>
                   <div class="h-48">
                     <canvas id="notificationStatusChart"></canvas>
@@ -196,9 +217,14 @@
                 </div>
 
                 <!-- Chart 5: Statistik Kegiatan -->
-                <div class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
-                  <h3 class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
-                    {{ 'Statistik Kegiatan' if current_lang == 'id' else 'Event Statistics' }}
+                <div
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <h3
+                    class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                  >
+                    {{ 'Statistik Kegiatan' if current_lang == 'id' else 'Event
+                    Statistics' }}
                   </h3>
                   <div class="h-48">
                     <canvas id="eventStatisticsChart"></canvas>
@@ -206,9 +232,14 @@
                 </div>
 
                 <!-- Chart 6: Ringkasan Data -->
-                <div class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}">
-                  <h3 class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}">
-                    {{ 'Ringkasan Data' if current_lang == 'id' else 'Data Summary' }}
+                <div
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                >
+                  <h3
+                    class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
+                  >
+                    {{ 'Ringkasan Data' if current_lang == 'id' else 'Data
+                    Summary' }}
                   </h3>
                   <div class="h-48">
                     <canvas id="dataSummaryChart"></canvas>
@@ -231,7 +262,7 @@
       const isDark = {{ 'true' if current_theme == 'dark' else 'false' }};
       const textColor = isDark ? '#ffffff' : '#000000';
       const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-      
+
       // Chart.js default configuration
       Chart.defaults.color = textColor;
       Chart.defaults.borderColor = gridColor;
