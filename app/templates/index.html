@@ -133,8 +133,8 @@
 
           <!-- Sign Up -->
           <a
-            href="/login/"
-            class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
+            href="{{ url_for('login') }}"
+            class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl relative z-50"
             title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
           >
             <i class="fas fa-user-plus"></i>
