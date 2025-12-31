@@ -174,9 +174,9 @@
               />
               <template x-if="!fileName">
                 <p
-                  class="text-sm {{ 'text-gray-500 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-800 dark:text-gray-900' }}"
+                  class="text-sm {{ 'text-gray-500 dark:text-gray-300' if current_theme == 'dark' else 'text-blue-600' }}"
                 >
-                  <i class="fa-solid fa-cloud-upload-alt mr-1"></i>
+                  <i class="fa-solid fa-cloud-upload-alt mr-1 text-blue-600"></i>
                   {{ 'Klik untuk memilih file' if current_lang == 'id' else 'Click to select file' }}
                 </p>
               </template>
@@ -206,8 +206,9 @@
             <button
               type="button"
               @click="openImport = false"
-              class="px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition cursor-pointer"
+              class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
             >
+              <i class="fa-solid fa-xmark"></i>
               {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
             </button>
             <button

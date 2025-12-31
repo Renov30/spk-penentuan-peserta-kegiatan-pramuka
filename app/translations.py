@@ -1,6 +1,7 @@
 TRANSLATIONS = {
     'id': {
         'logged_out': 'Anda telah logout.',
+        'too_many_login_attempts': ('Terlalu banyak percobaan login. Silakan coba lagi nanti.'),
         
         # === NEWS ===
         'add_news': 'Tambah Berita',
@@ -25,7 +26,7 @@ TRANSLATIONS = {
         
         # === LOGIN MANUAL ===
         'username_invalid': 'Username salah!',
-        'password_invalid': 'Password salah!',
+        'login_password_invalid': 'Password salah!',
         'login_success': 'Login berhasil! Selamat datang',
         
         # === GOOGLE LOGIN ===
@@ -36,7 +37,7 @@ TRANSLATIONS = {
         
         # === REGISTER MANUAL ===
         'all_fields_required': 'Semua kolom wajib diisi.',
-        'password_invalid': (
+        'register_password_invalid': (
             'Password harus minimal 8 karakter, mengandung huruf besar, '
             'huruf kecil, angka, dan karakter khusus.'
         ),
@@ -68,6 +69,10 @@ TRANSLATIONS = {
         'username_email_not_found': 'Username dan email tidak ditemukan.',
         'username_not_found': 'Username tidak ditemukan.',
         'email_not_found': 'Email tidak ditemukan.',
+        'email_verify_subject': 'Verifikasi Akun Anda',
+        'email_verify_greeting': 'Halo,',
+        'email_verify_intro': 'Berikut adalah kode verifikasi 6 digit untuk mengakses akun Anda:',
+        'email_verify_link': 'Atau klik link ini untuk melanjutkan.',
 
         'invalid_phone_format': 'Format nomor HP tidak valid. Gunakan nomor Indonesia.',
         'whatsapp_sent_code': 'Kode verifikasi telah dikirim ke nomor WhatsApp',
@@ -76,6 +81,13 @@ TRANSLATIONS = {
 
         'email_or_phone_required': 'Harap isi email atau nomor HP.',
         'verify_account_title': 'Verifikasi Akun Anda',
+        
+        # === VERIFY CODE ===
+        'verification_code_required': 'Kode verifikasi wajib diisi.',
+        'verification_code_expired': 'Kode verifikasi telah kedaluwarsa.',
+        'verification_success': 'Verifikasi berhasil.',
+        'verification_code_invalid': 'Kode verifikasi tidak valid.',
+        'user_not_found': 'Pengguna tidak ditemukan.',
         
         # === ADMIN DASHBOARD ===
         'access_denied_not_admin': 'Akses ditolak. Anda bukan admin!',
@@ -123,6 +135,28 @@ TRANSLATIONS = {
         'event_updated': 'Kegiatan berhasil diupdate!',
         'event_deleted': 'Kegiatan berhasil dihapus!',
         'event_not_found': 'Kegiatan tidak ditemukan.',
+        'admin_api_access_denied': 'Akses ditolak. Hanya admin yang bisa mengakses data ini.',
+        'penilaian_not_rated': 'Belum Dinilai',
+        'penilaian_rated': 'Sudah Dinilai',
+        'api_success': 'Sukses',
+        'api_error': 'error',
+        'api_internal_error': 'Terjadi kesalahan pada server.',
+        'delete_penilaian_param_incomplete': 'Parameter tidak lengkap.',
+        'delete_penilaian_no_criteria': 'Tidak ada kriteria untuk kegiatan ini.',
+        'delete_penilaian_success': 'Berhasil menghapus {count} data penilaian.',
+        'unsupported_image_format': 'Format file tidak didukung! Gunakan file gambar (png, jpg, jpeg, gif).',
+        'invalid_data': 'Data tidak valid: {error}',
+        'log_user_updated': 'Mengupdate data pengguna: {username}',
+        'user_not_found': 'User tidak ditemukan.',
+        'invalid_user_status': 'Status tidak valid.',
+        'user_status_updated': 'Status akun {username} berhasil diubah menjadi {status}.',
+        'user_status_update_error': 'Terjadi kesalahan pada server.',
+        'log_user_activated': 'Mengaktifkan akun pengguna: {username}',
+        'log_user_deactivated': 'Menonaktifkan akun pengguna: {username}',
+        'missing_parameters': 'Parameter tidak lengkap.',
+        'min_evaluator_required': 'Minimal 3 penilai harus ditugaskan! Tidak dapat menghapus penilai ini.',
+        'evaluator_assignment_updated': 'Penugasan penilai berhasil diperbarui.',
+        'legacy_assign_evaluator_error': 'Endpoint ini sudah tidak digunakan. Silakan gunakan penugasan kriteria.',
         
         # === EVALUATOR DASHBOARD ===
         'evaluator_access_denied': 'Anda tidak memiliki akses ke halaman ini.',
@@ -150,6 +184,33 @@ TRANSLATIONS = {
         'cancel_registration_event': 'Membatalkan pendaftaran seleksi kegiatan',
         'cancel_registration_success': 'Berhasil membatalkan pendaftaran ke seleksi kegiatan',
         
+        # === SECURITY / CSRF ===
+        'csrf_error_title': 'Permintaan Tidak Valid',
+        'csrf_error_message': 'Sesi Anda mungkin telah kedaluwarsa. Silakan refresh halaman dan coba lagi.',
+        
+        # === WHATSAPP / OTP ===
+        'whatsapp_verification_message': (
+            'Kode verifikasi Anda adalah: *{code}*.\n'
+            'Jangan bagikan kode ini kepada siapa pun.'
+        ),
+        
+        # === RESET PASSWORD ===
+        'reset_token_missing': 'Token tidak ditemukan.',
+        'reset_token_invalid_or_expired': 'Token tidak valid atau telah kedaluwarsa.',
+        'reset_data_required': 'Semua data harus diisi.',
+        'reset_password_invalid_format': (
+            'Password harus terdiri dari minimal 8 karakter, '
+            'termasuk huruf besar, huruf kecil, angka, dan simbol.'
+        ),
+        'reset_password_mismatch': 'Password dan konfirmasi password tidak cocok.',
+        'reset_token_invalid': 'Token reset password tidak valid.',
+        'reset_token_expired': 'Token reset password telah kedaluwarsa.',
+        'reset_password_success': 'Password Anda telah berhasil diubah!',
+        
+        # === UI / SIDEBAR ===
+        'sidebar_state_invalid': 'Status sidebar tidak valid.',
+        'sidebar_state_saved': 'Status sidebar berhasil disimpan.',
+        
         # === Javascript Message ===
         'invalid_phone_prefix': 'Prefix nomor HP tidak dikenal. Periksa kembali nomor Anda.',
         'invalid_phone_number': 'Nomor HP tampaknya tidak valid!',
@@ -157,6 +218,7 @@ TRANSLATIONS = {
     },
     'en': {
         'logged_out': 'You have been logged out.',
+        'too_many_login_attempts': ('Too many login attempts. Please try again later.'),
         
         # === NEWS ===
         'add_news': 'Add News',
@@ -181,7 +243,7 @@ TRANSLATIONS = {
         
         # === LOGIN MANUAL ===
         'username_invalid': 'Invalid username!',
-        'password_invalid': 'Invalid password!',
+        'login_password_invalid': 'Invalid password!',
         'login_success': 'Login successful! Welcome',
         
         # === GOOGLE LOGIN ===
@@ -192,7 +254,7 @@ TRANSLATIONS = {
         
         # === REGISTER MANUAL ===
         'all_fields_required': 'All fields are required.',
-        'password_invalid': (
+        'register_password_invalid': (
             'Password must be at least 8 characters and include uppercase, '
             'lowercase, number, and special character.'
         ),
@@ -224,6 +286,10 @@ TRANSLATIONS = {
         'username_email_not_found': 'Username and email were not found.',
         'username_not_found': 'Username not found.',
         'email_not_found': 'Email not found.',
+        'email_verify_subject': 'Verify Your Account',
+        'email_verify_greeting': 'Hello,',
+        'email_verify_intro': 'Here is your 6-digit verification code to access your account:',
+        'email_verify_link': 'Or click this link to continue.',
 
         'invalid_phone_format': 'Invalid phone number format. Use Indonesian numbers.',
         'whatsapp_sent_code': 'Verification code has been sent to WhatsApp number',
@@ -232,6 +298,13 @@ TRANSLATIONS = {
 
         'email_or_phone_required': 'Please provide email or phone number.',
         'verify_account_title': 'Verify Your Account',
+        
+        # === VERIFY CODE ===
+        'verification_code_required': 'Verification code is required.',
+        'verification_code_expired': 'Verification code has expired.',
+        'verification_success': 'Verification successful.',
+        'verification_code_invalid': 'Incorrect verification code.',
+        'user_not_found': 'User not found.',
         
         # === ADMIN DASHBOARD ===
         'access_denied_not_admin': 'Access denied. You are not an admin!',
@@ -279,6 +352,28 @@ TRANSLATIONS = {
         'event_updated': 'Event successfully updated!',
         'event_deleted': 'Event successfully deleted!',
         'event_not_found': 'Event not found.',
+        'admin_api_access_denied': 'Access denied. Only admins can access this data.',
+        'penilaian_not_rated': 'Not Rated Yet',
+        'penilaian_rated': 'Already Rated',
+        'api_success': 'success',
+        'api_error': 'error',
+        'api_internal_error': 'An internal server error occurred.',
+        'delete_penilaian_param_incomplete': 'Incomplete parameters.',
+        'delete_penilaian_no_criteria': 'No criteria found for this activity.',
+        'delete_penilaian_success': 'Successfully deleted {count} assessment records.',
+        'unsupported_image_format': 'Unsupported file format! Please use image files (png, jpg, jpeg, gif).',
+        'invalid_data': 'Invalid data: {error}',
+        'log_user_updated': 'Updated user data: {username}',
+        'user_not_found': 'User not found.',
+        'invalid_user_status': 'Invalid status.',
+        'user_status_updated': 'Account status for {username} successfully changed to {status}.',
+        'user_status_update_error': 'An internal server error occurred.',
+        'log_user_activated': 'Activated user account: {username}',
+        'log_user_deactivated': 'Deactivated user account: {username}',
+        'missing_parameters': 'Missing required parameters.',
+        'min_evaluator_required': 'At least 3 evaluators must be assigned. This evaluator cannot be removed.',
+        'evaluator_assignment_updated': 'Evaluator assignment updated successfully.',
+        'legacy_assign_evaluator_error': 'This endpoint is deprecated. Please use criteria assignment.',
         
         # === EVALUATOR DASHBOARD ===
         'evaluator_access_denied': 'You do not have access to this page.',
@@ -306,6 +401,33 @@ TRANSLATIONS = {
         'cancel_registration_event': 'Canceled registration for event',
         'cancel_registration_success': 'Successfully canceled registration for event',
         
+        # === SECURITY / CSRF ===
+        'csrf_error_title': 'Invalid Request',
+        'csrf_error_message': 'Your session may have expired. Please refresh the page and try again.',
+        
+        # === WHATSAPP / OTP ===
+        'whatsapp_verification_message': (
+            'Your verification code is: *{code}*.\n'
+            'Do not share this code with anyone.'
+        ),
+        
+        # === RESET PASSWORD ===
+        'reset_token_missing': 'Token not found.',
+        'reset_token_invalid_or_expired': 'Token is invalid or has expired.',
+        'reset_data_required': 'All fields are required.',
+        'reset_password_invalid_format': (
+            'Password must be at least 8 characters and include uppercase, '
+            'lowercase, number, and special character.'
+        ),
+        'reset_password_mismatch': 'Password and confirmation password do not match.',
+        'reset_token_invalid': 'Invalid reset password token.',
+        'reset_token_expired': 'Reset password token has expired.',
+        'reset_password_success': 'Your password has been successfully updated!',
+        
+        # === UI / SIDEBAR ===
+        'sidebar_state_invalid': 'Invalid sidebar state.',
+        'sidebar_state_saved': 'Sidebar state saved successfully.',
+
         # === Javascript Message ===
         'invalid_phone_prefix': 'Phone number prefix is not recognized. Please check your number.',
         'invalid_phone_number': 'Phone number seems invalid!',
