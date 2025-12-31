@@ -166,7 +166,7 @@
 
 .image-wrapper {
   position: relative;
-  width: 550px;
+  width: 34.375rem; /* 550px */
   height: auto;
   overflow: visible;
 }
@@ -174,14 +174,14 @@
 /* Ukuran untuk tablet */
 @media (max-width: 768px) {
   .image-wrapper {
-    width: 400px;
+    width: 25rem; /* 400px */
   }
 }
 
 /* Ukuran untuk HP */
 @media (max-width: 480px) {
   .image-wrapper {
-    width: 300px;
+    width: 18.75rem; /* 300px */
   }
 }
 
