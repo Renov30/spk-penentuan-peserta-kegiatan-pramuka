@@ -77,21 +77,8 @@
           />
         </div>
 
-        <!-- Center: Search + Language (Mobile) -->
+        <!-- Center: Search (Removed) -->
         <div class="flex md:hidden items-center space-x-4">
-          <div class="relative w-32 sm:w-56">
-            <input
-              type="text"
-              placeholder="{{ 'Cari...' if current_lang == 'id' else 'Search...' }}"
-              class="px-3 py-2 rounded-full text-sm w-full {{ 'bg-gray-700 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
-            />
-            <div
-              class="absolute inset-y-0 right-3 flex items-center pointer-events-none"
-            >
-              <i class="fas fa-search text-gray-400 text-sm"></i>
-            </div>
-          </div>
-
           <!-- Language Selector -->
           <div x-data="{ open: false }" class="relative">
             <!-- Tombol Bahasa -->
@@ -183,23 +170,8 @@
             </a>
           </nav>
 
-          <!-- Search + Language (Desktop) -->
+          <!-- Search (Removed) + Language (Desktop) -->
           <div class="flex items-center space-x-3">
-            <div class="relative">
-              <input
-                type="text"
-                placeholder="{{ 'Cari...' if current_lang == 'id' else 'Search...' }}"
-                class="pl-4 pr-10 py-2 rounded-full focus:outline-none focus:ring-2  {{ 'bg-gray-700 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
-              />
-              <div
-                class="absolute inset-y-0 right-3 flex items-center pointer-events-none"
-              >
-                <i
-                  class="fas fa-search text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-800' }}"
-                ></i>
-              </div>
-            </div>
-
             <!-- Language Selector -->
             <div x-data="{ open: false }" class="relative">
               <!-- Tombol Bahasa -->
@@ -530,7 +502,7 @@
               <p
                 class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
               >
-                {{ news.excerpt }}
+                {{ news.content | striptags | truncate(150) }}
               </p>
             </div>
 
