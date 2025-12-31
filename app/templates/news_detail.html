@@ -36,13 +36,7 @@
     <!-- Script Theme -->
     {% include 'script_theme.html' %}
 
-    <style>
-      @media (max-width: 768px) {
-        .floating-share {
-          display: none;
-        }
-      }
-    </style>
+    <!-- Custom Style Removed (Replaced with Tailwind utilities) -->
   </head>
 
   <body
@@ -71,10 +65,10 @@
 
     <!-- ================= HERO ================= -->
     <section
-      class="pt-32 pb-16 bg-gradient-to-b from-yellow-500/20 to-transparent"
+      class="pt-32 md:pt-40 pb-16 md:pb-20 bg-gradient-to-b from-yellow-500/20 to-transparent"
     >
       <div class="max-w-7xl mx-auto px-6 text-center">
-        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight mb-5">
+        <h1 class="text-3xl md:text-5xl font-extrabold leading-tight mb-5">
           {{ news.title }}
         </h1>
 
@@ -144,7 +138,7 @@
 
           <!-- Content -->
           <div
-            class="p-8 md:p-10 prose text-justify max-w-none relative"
+            class="p-5 md:p-10 prose text-justify max-w-none relative"
             :class="$store.theme.isDark ? 'prose-invert' : ''"
           >
             {{ news.content | safe }}
@@ -152,7 +146,7 @@
 
           <!-- Share -->
           <div
-            class="px-10 pb-8 flex justify-between items-center border-t transition-colors duration-300"
+            class="px-5 md:px-10 pb-8 flex justify-between items-center border-t transition-colors duration-300"
             :class="$store.theme.isDark ? 'border-gray-700' : 'border-gray-200'"
           >
             <a
@@ -164,7 +158,9 @@
             </a>
 
             <!-- Floating Share Buttons -->
-            <div class="fixed right-6 top-1/3 flex flex-col gap-3 z-50">
+            <div
+              class="hidden md:flex fixed right-6 top-1/3 flex-col gap-3 z-50"
+            >
               <a
                 href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}"
                 target="_blank"
@@ -194,9 +190,9 @@
         </article>
 
         <!-- ================= COMMENTS ================= -->
-        <section class="mt-20">
+        <section class="mt-20 leading-relaxed">
           <div
-            class="rounded-2xl shadow-xl p-8 md:p-10 transition-colors duration-300"
+            class="rounded-2xl shadow-xl p-5 md:p-10 transition-colors duration-300"
             :class="$store.theme.isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'"
           >
             <h2 class="text-2xl font-bold mb-1">
@@ -213,15 +209,7 @@
 
             <!-- Form Komentar -->
             <div class="flex gap-4 mb-10">
-              {% if current_user.is_authenticated %} {% set user_foto =
-              current_user.foto if current_user.foto else
-              'images/profil-default.jpg' %} {% if user_foto.startswith('http')
-              %} {% set foto_url = user_foto %} {% elif
-              user_foto.startswith('uploads/') or user_foto.startswith('img/')
-              %} {% set foto_url = url_for('static', filename=user_foto) %} {%
-              else %} {% set foto_url = url_for('static',
-              filename='images/profil-default.jpg') %} {% endif %}
-
+              {% if current_user.is_authenticated %}
               <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
                 <img
                   src="{{ foto_url }}"
@@ -238,7 +226,7 @@
               {% endif %}
 
               <div class="flex-1">
-                {% if current_user.is_authenticated %}
+                <!-- Removed login check to allow anonymous comments -->
                 <form
                   id="commentForm"
                   method="POST"
@@ -249,7 +237,7 @@
                     rows="4"
                     placeholder="{{ 'Tulis komentar...' if current_lang == 'id' else 'Write a comment...' }}"
                     class="w-full p-4 rounded-xl border focus:ring-2 focus:ring-yellow-500 transition-colors duration-300"
-                    :class="$store.theme.isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-100 border-gray-300 text-gray-900'"
+                    :class="$store.theme.isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'"
                     required
                   ></textarea>
 
@@ -265,20 +253,6 @@
                     </button>
                   </div>
                 </form>
-                {% else %}
-                <textarea
-                  rows="4"
-                  placeholder="{{ 'Login untuk menulis komentar' if current_lang == 'id' else 'Login to write a comment' }}"
-                  readonly
-                  onclick="openLoginModal()"
-                  class="w-full p-4 rounded-xl border cursor-pointer bg-gray-200 text-gray-500 hover:bg-gray-700 transition dark:bg-gray-800 dark:text-gray-400"
-                ></textarea>
-
-                <p class="mt-2 text-sm text-gray-500">
-                  {{ 'Silakan login untuk dapat memberikan komentar.' if
-                  current_lang == 'id' else 'Please login to post a comment.' }}
-                </p>
-                {% endif %}
               </div>
             </div>
 

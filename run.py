@@ -4548,7 +4548,7 @@ def get_comment_replies(comment_id):
 
 # Post Komentar Berita (support AJAX)
 @app.route('/news/<slug>/comment', methods=['POST'])
-@login_required
+# @login_required  <-- Removed to allow anonymous comments
 def post_comment_user(slug):
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
@@ -4575,9 +4575,11 @@ def post_comment_user(slug):
             return redirect(url_for('news_detail', slug=slug))
 
     # Buat komentar baru
+    user_id = current_user.id if current_user.is_authenticated else None
+    
     comment = Comment(
         news_id=news.id_news,
-        user_id=current_user.id,
+        user_id=user_id,
         content=content,
         parent_id=parent_id if parent_id else None
     )
