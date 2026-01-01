@@ -404,8 +404,8 @@
     <script>
       function assignmentManager() {
         return {
-          assignments: JSON.parse("{{ assignments|tojson|safe }}"),
-          eventsCriteria: JSON.parse("{{ events_criteria|tojson|safe }}"),
+          assignments: {{ assignments|tojson|safe }},
+          eventsCriteria: {{ events_criteria|tojson|safe }},
 
           // Modal state
           showModal: false,
