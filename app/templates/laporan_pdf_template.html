@@ -47,6 +47,7 @@
       .header-info {
         font-size: 10pt;
         margin: 0;
+        text-align: center; /* Override p justify */
       }
 
       /* Content */
@@ -107,8 +108,8 @@
       .signature-table td {
         border: none;
         vertical-align: top;
-        text-align: center;
-        width: 40%;
+        text-align: left;
+        width: 100%;
       }
       .signature-space {
         height: 80px;
@@ -137,9 +138,9 @@
           <!-- Placeholder Logo Kiri (Tunas Kelapa) -->
           <!-- Gunakan onerror untuk handling jika gambar tidak ada -->
           <img
-            src="{{ url_for('static', filename='images/tunas_kelapa.png') }}"
+            src="{{ url_for('static', filename='images/Logo-Gerakan-Pramuka.png') }}"
             class="header-logo"
-            alt="Logo"
+            alt="Logo Gerakan Pramuka"
             onerror="this.style.display='none'"
           />
         </td>
@@ -156,9 +157,9 @@
         <td style="width: 100px; text-align: right; vertical-align: top">
           <!-- Placeholder Logo Kanan (WOSM) -->
           <img
-            src="{{ url_for('static', filename='images/wosm.png') }}"
+            src="{{ url_for('static', filename='images/Logo-WOSM.png') }}"
             class="header-logo"
-            alt="Logo"
+            alt="Logo WOSM"
             onerror="this.style.display='none'"
           />
         </td>
@@ -239,8 +240,7 @@
     <div class="signature-section">
       <table class="signature-table">
         <tr>
-          <td></td>
-          <td>
+          <td style="text-align: left; width: 100%">
             <p style="margin-bottom: 5px">Gerakan Pramuka</p>
             <p style="margin-bottom: 0">Kwartir Cabang 2601 Merauke</p>
             <p style="margin-top: 5px">Ketua</p>
