@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
+<html
+  class="transition duration-300 ease-in-out"
+  lang="{{ current_lang }}"
+  style="font-size: 80%"
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
-      {{ 'Notifikasi | SPK Pramuka' if current_lang == 'id' else 'Notifications | Scout DSS' }}
+      {{ 'Notifikasi | SPK Pramuka' if current_lang == 'id' else 'Notifications
+      | Scout DSS' }}
     </title>
 
     <!-- Tailwind CSS -->
@@ -106,9 +111,14 @@
               <div
                 class="rounded-xl shadow p-12 text-center {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}"
               >
-                <i class="fa-solid fa-bell-slash text-6xl text-gray-400 mb-4"></i>
-                <p class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
-                  {{ 'Tidak ada notifikasi' if current_lang == 'id' else 'No notifications' }}
+                <i
+                  class="fa-solid fa-bell-slash text-6xl text-gray-400 mb-4"
+                ></i>
+                <p
+                  class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                >
+                  {{ 'Tidak ada notifikasi' if current_lang == 'id' else 'No
+                  notifications' }}
                 </p>
               </div>
               {% endif %}
@@ -119,7 +129,7 @@
     </div>
 
     <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} {% include 'script_notification.html' %}
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
   </body>
 </html>
-
