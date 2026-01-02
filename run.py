@@ -2382,16 +2382,10 @@ def api_add_peserta():
         # Validasi required fields
         if not nama_lengkap or not username or not email:
             return jsonify({'success': False, 'message': t.get('required_identity_fields')}), 400
-        
-        # Cek apakah username sudah ada
         if Users.query.filter_by(username=username).first():
             return jsonify({'success': False, 'message': t.get('username_already_used')}), 400
-        
-        # Cek apakah email sudah ada
         if Users.query.filter_by(email=email).first():
             return jsonify({'success': False, 'message': t.get('email_already_used')}), 400
-        
-        # Hash password jika ada
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16) if password else ''
         
         # Buat user baru
