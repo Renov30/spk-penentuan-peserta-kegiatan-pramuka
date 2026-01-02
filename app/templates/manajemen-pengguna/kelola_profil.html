@@ -675,6 +675,7 @@
   <div
     x-data="{ notifications: [] }"
     x-init="window.showNotification = function(category, title, message) {
+      if (!message) return;
       const notification = { id: Date.now(), category, title, message, show: true };
       $data.notifications.push(notification);
       setTimeout(() => {
