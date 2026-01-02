@@ -5802,8 +5802,17 @@ def peserta_dashboard():
         return redirect(url_for('index'))
     
     # Get current user's participant record
+    # Cek biodata
     participant = Participants.query.filter_by(email=current_user.email).first()
     
+    # Flash warning jika biodata belum ada
+    if not participant:
+        msg = 'Biodata Anda belum terdaftar. Silakan lengkapi biodata terlebih dahulu.' if lang == 'id' else 'Your biodata is not registered yet. Please complete your biodata first.'
+        # Cek apakah pesan sudah ada di flashed messages untuk menghindari duplikasi
+        # Namun karena kita tidak bisa peek message dengan mudah, kita flash saja. 
+        # Frontend sebaiknya handle deduplikasi atau kita asumsikan ini page load baru.
+        flash(msg, 'warning')
+        
     # Get all registered activities for this participant
     registered_activities = []
     if participant:

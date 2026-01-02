@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html
   style="font-size: 80%;"
@@ -1064,6 +1064,7 @@
     <div
       x-data="{ notifications: [] }"
       x-init="window.showNotification = function(category, title, message) {
+        if (!message || message.trim() === '') return;
         const notification = { id: Date.now(), category, title, message, show: true };
         $data.notifications.push(notification);
         setTimeout(() => {
@@ -1108,11 +1109,33 @@
           <button
             @click="notification.show = false; setTimeout(() => notifications = notifications.filter(n => n.id !== notification.id), 300)"
             class="ml-2 text-lg opacity-70 hover:opacity-100 transition-opacity"
+            aria-label="Close"
           >
             <i class="fa-solid fa-times"></i>
           </button>
         </div>
       </template>
     </div>
+
+    <!-- Consume Flash Messages -->
+    <script>
+      document.addEventListener('alpine:init', () => {
+        setTimeout(() => {
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                if (window.showNotification) {
+                  window.showNotification(
+                    "{{ category }}",
+                    "{{ 'Info' if category == 'message' else category|title }}",
+                    "{{ message }}"
+                  );
+                }
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+        }, 500);
+      });
+    </script>
   </body>
 </html>
