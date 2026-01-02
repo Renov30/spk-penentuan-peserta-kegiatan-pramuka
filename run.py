@@ -2606,6 +2606,9 @@ def delete_config(event_id):
         # Hapus hasil seleksi yang terkait dengan kegiatan
         HasilSeleksi.query.filter_by(event_id=event_id).delete(synchronize_session=False)
         
+        # Hapus penugasan penilai
+        event.evaluators = []
+
         # Hapus akan cascade otomatis ke Kuota dan Criteria karena cascade="all, delete-orphan"
         db.session.delete(event)
         db.session.commit()
@@ -2663,6 +2666,8 @@ def delete_config_bulk():
         
         # Hapus semua event (cascade akan menghapus Kuota dan Criteria secara otomatis)
         for event in events:
+            # Hapus penugasan penilai
+            event.evaluators = []
             db.session.delete(event)
         
         db.session.commit()
