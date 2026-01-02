@@ -1358,7 +1358,7 @@ def admin_add_user():
                 db.session.add(new_user)
                 db.session.commit()
                 if level == 'peserta':
-                    create_notification_to_all_admins(f"Peserta baru terdaftar: {nama_lengkap} ({email})")
+                    create_notification_to_all_admins(t.get('notif_new_participant').format(name=nama_lengkap, email=email))
                 flash(t['user_created'], "success")
                 return redirect(url_for('admin_users', page='kelola'))
             except Exception as e:
@@ -1839,7 +1839,7 @@ def save_config():
         criteria_list = data.get('criteria', [])
 
         if not activities and not criteria_list:
-            return jsonify({'status': 'error', 'message': 'No data provided'}), 400
+            return jsonify({'status': 'error', 'message': t['no_data_provided']}), 400
         created_events = []
 
         # Buat Event & Kuota
@@ -1929,38 +1929,23 @@ def save_config():
             
             # Validasi: Periode Seleksi harus selesai sebelum Waktu Pelaksanaan dimulai
             if mulai_date >= waktu_pelaksanaan_dimulai_date:
-                return jsonify({
-                    'status': 'error', 
-                    'message': f'Periode Seleksi (mulai) untuk kegiatan "{nama}" harus sebelum Waktu Pelaksanaan dimulai'
-                }), 400
+                return jsonify({'status': 'error', 'message': t['selection_start_must_before_event'].format(nama=nama)}), 400
             
             # Cek apakah selesai periode seleksi >= waktu pelaksanaan
             if selesai_date >= waktu_pelaksanaan_dimulai_date:
-                return jsonify({
-                    'status': 'error', 
-                    'message': f'Periode Seleksi (selesai) untuk kegiatan "{nama}" harus sebelum Waktu Pelaksanaan dimulai'
-                }), 400
+                return jsonify({'status': 'error', 'message': t['selection_end_must_before_event'].format(nama=nama)}), 400
             
             # Validasi: Waktu Pelaksanaan tidak boleh dalam kurun waktu Periode Seleksi
             if waktu_pelaksanaan_dimulai_date >= mulai_date and waktu_pelaksanaan_dimulai_date <= selesai_date:
-                return jsonify({
-                    'status': 'error', 
-                    'message': f'Waktu Pelaksanaan (mulai) untuk kegiatan "{nama}" tidak boleh dalam kurun waktu Periode Seleksi'
-                }), 400
+                return jsonify({'status': 'error', 'message': t['event_time_overlap_selection_start'].format(nama=nama)}), 400
             
             # Cek apakah waktu pelaksanaan selesai dalam periode seleksi
             if waktu_pelaksanaan_selesai_date >= mulai_date and waktu_pelaksanaan_selesai_date <= selesai_date:
-                return jsonify({
-                    'status': 'error', 
-                    'message': f'Waktu Pelaksanaan (selesai) untuk kegiatan "{nama}" tidak boleh dalam kurun waktu Periode Seleksi'
-                }), 400
+                return jsonify({'status': 'error', 'message': t['event_time_overlap_selection_end'].format(nama=nama)}), 400
             
             # Cek apakah waktu pelaksanaan overlap dengan periode seleksi (waktu pelaksanaan mencakup seluruh periode seleksi)
             if waktu_pelaksanaan_dimulai_date <= mulai_date and waktu_pelaksanaan_selesai_date >= selesai_date:
-                return jsonify({
-                    'status': 'error', 
-                    'message': f'Waktu Pelaksanaan untuk kegiatan "{nama}" tidak boleh mencakup seluruh Periode Seleksi'
-                }), 400
+                return jsonify({'status': 'error', 'message': t['event_time_cover_selection'].format(nama=nama)}), 400
             
             # Parse jadwal tes (now as text)
             tanggal_tes = (act.get('tanggalTes') or '').strip()
@@ -2034,7 +2019,7 @@ def save_config():
         # Buat notifikasi untuk admin setelah commit berhasil
         if created_events:
             for event in created_events:
-                notification_message = f"Kegiatan baru dibuat: {event.nama_kegiatan} ({event.jenis_kegiatan})"
+                notification_message = t['new_event_created'].format(nama=event.nama_kegiatan, jenis=event.jenis_kegiatan)
                 logging.info(f"[NOTIFICATION] Attempting to create notification: {notification_message}")
                 
                 try:
@@ -2048,7 +2033,7 @@ def save_config():
                     if hasattr(current_app, 'logger'):
                         current_app.logger.exception('Error creating notification for new event:')
         
-        return jsonify({'status': 'success', 'message': 'Konfigurasi berhasil disimpan'}), 200
+        return jsonify({'status': 'success', 'message': t['config_saved_success']}), 200
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception('Error in /api/save_config:')
@@ -2129,17 +2114,11 @@ def update_config(event_id):
             if 'nama_kegiatan' in evt_data:
                 event.nama_kegiatan = evt_data['nama_kegiatan'].strip()
             if 'jenis_kegiatan' in evt_data:
-                jenis_kegiatan_map = {
-                    'siaga': 'Siaga', 'penggalang': 'Penggalang', 'penegak': 'Penegak',
-                    'pandega': 'Pandega', 'penegak dan pandega': 'Penegak dan Pandega'
-                }
+                jenis_kegiatan_map = {'siaga': 'Siaga', 'penggalang': 'Penggalang', 'penegak': 'Penegak', 'pandega': 'Pandega', 'penegak dan pandega': 'Penegak dan Pandega'}
                 jenis_raw = evt_data['jenis_kegiatan'].strip().lower()
                 event.jenis_kegiatan = jenis_kegiatan_map.get(jenis_raw, event.jenis_kegiatan)
             if 'skala_kegiatan' in evt_data:
-                skala_kegiatan_map = {
-                    'ranting': 'Ranting', 'cabang': 'Cabang', 'daerah': 'Daerah',
-                    'nasional': 'Nasional', 'internasional': 'Internasional'
-                }
+                skala_kegiatan_map = {'ranting': 'Ranting', 'cabang': 'Cabang', 'daerah': 'Daerah', 'nasional': 'Nasional', 'internasional': 'Internasional'}
                 skala_raw = evt_data['skala_kegiatan'].strip().lower()
                 event.skala_kegiatan = skala_kegiatan_map.get(skala_raw, event.skala_kegiatan)
             if 'kwartir_penyelenggara' in evt_data:
@@ -2180,19 +2159,12 @@ def update_config(event_id):
                 if 'putri' in data['kuota']:
                     kuota.putri = int(data['kuota']['putri'] or 0)
             else:
-                kuota = Kuota(
-                    event_id=event_id,
-                    putra=int(data['kuota'].get('putra', 0)),
-                    putri=int(data['kuota'].get('putri', 0))
-                )
+                kuota = Kuota(event_id=event_id, putra=int(data['kuota'].get('putra', 0)), putri=int(data['kuota'].get('putri', 0)))
                 db.session.add(kuota)
         
         # Update Criteria
         if 'criteria' in data:
-            # Get existing criteria map {id: object}
             existing_criteria = {c.id_kriteria: c for c in Criteria.query.filter_by(event_id=event_id).all()}
-            
-            # Process incoming criteria
             incoming_ids = []
             for c in data['criteria']:
                 crit_id = c.get('id')
@@ -2229,11 +2201,11 @@ def update_config(event_id):
                     except IntegrityError:
                         db.session.rollback()
                         # If referenced, just skip deletion or log warning
-                        current_app.logger.warning(f"Cannot delete criteria {crit_id} because it is referenced.")
+                        current_app.logger.warning(t('criteria_delete_referenced', lang, id=crit.id_kriteria, nama=crit.nama_kriteria))
                         pass
         
         db.session.commit()
-        return jsonify({'status': 'success', 'message': 'Konfigurasi berhasil diperbarui'}), 200
+        return jsonify({'status': t.get('api_success', 'success'), 'message': t.get('config_update_success')}), 200
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception('Error in /api/update_config:')
@@ -2267,7 +2239,7 @@ def delete_config(event_id):
         db.session.delete(event)
         db.session.commit()
         
-        return jsonify({'status': 'success', 'message': f'Konfigurasi "{event_name}" berhasil dihapus'}), 200
+        return jsonify({'status': t.get('api_success', 'success'), 'message': t.get('config_delete_success').format(event_name=event_name)}), 200
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception('Error in /api/delete_config:')
@@ -2287,28 +2259,26 @@ def delete_config_bulk():
         event_ids = data.get('event_ids', [])
         
         if not event_ids or not isinstance(event_ids, list):
-            return jsonify({'status': 'error', 'message': 'Tidak ada ID konfigurasi yang dipilih'}), 400
+            return jsonify({'status': t.get('api_error'), 'message': t.get('config_no_id_selected')}), 400
         
         # Validasi bahwa semua event_id adalah integer
         try:
             event_ids = [int(eid) for eid in event_ids]
         except (ValueError, TypeError):
-            return jsonify({'status': 'error', 'message': 'Format ID konfigurasi tidak valid'}), 400
+            return jsonify({'status': t.get('api_error'), 'message': t.get('config_invalid_id_selected')}), 400
         
         if len(event_ids) == 0:
-            return jsonify({'status': 'error', 'message': 'Tidak ada konfigurasi yang dipilih'}), 400
+            return jsonify({'status': t.get('api_error'), 'message': t.get('config_none_selected')}), 400
         
         # Query semua event yang akan dihapus
         events = Event.query.filter(Event.id_kegiatan.in_(event_ids)).all()
         
         if not events:
-            return jsonify({'status': 'error', 'message': 'Konfigurasi yang dipilih tidak ditemukan'}), 404
+            return jsonify({'status': t.get('api_error'), 'message': t.get('config_not_found')}), 404
         
         # Simpan nama-nama event untuk pesan sukses
         event_names = [event.nama_kegiatan for event in events]
         deleted_count = len(events)
-        
-        # Ambil semua kriteria ID dari kegiatan yang akan dihapus
         criteria_ids = []
         for event in events:
             criteria = Criteria.query.filter_by(event_id=event.id_kegiatan).all()
@@ -2327,11 +2297,11 @@ def delete_config_bulk():
         
         db.session.commit()
         
-        message = f'{deleted_count} konfigurasi berhasil dihapus'
+        message = t.get('config_delete_multiple_count').format(count=deleted_count)
         if deleted_count == 1:
-            message = f'Konfigurasi "{event_names[0]}" berhasil dihapus'
+            message = t.get('config_delete_single').format(event_name=event_names[0])
         elif deleted_count <= 3:
-            message = f'{deleted_count} konfigurasi berhasil dihapus: {", ".join(event_names)}'
+            message = t.get('config_delete_multiple_named').format(count=deleted_count, event_names=', '.join(event_names))
         
         return jsonify({'status': 'success', 'message': message}), 200
     except Exception as e:
@@ -2408,16 +2378,10 @@ def api_search_peserta():
     try:
         query = request.args.get('q', '').strip()
         if not query:
-            return jsonify({'success': False, 'message': 'Query tidak boleh kosong'}), 400
-        
-        # Cari peserta berdasarkan email atau nama
-        peserta = Participants.query.filter(
-            (Participants.email.ilike(f'%{query}%')) |
-            (Participants.nama_lengkap.ilike(f'%{query}%'))
-        ).first()
-        
+            return jsonify({'success': False, 'message': t.get('search_query_empty')}), 400
+        peserta = Participants.query.filter((Participants.email.ilike(f'%{query}%')) | (Participants.nama_lengkap.ilike(f'%{query}%'))).first()
         if not peserta:
-            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+            return jsonify({'success': False, 'message': t.get('participant_not_found')}), 404
         
         # Format data peserta
         data = {
@@ -2445,7 +2409,7 @@ def api_search_peserta():
     except Exception as e:
         logging.error(f"Error in api_search_peserta: {e}")
         current_app.logger.exception('Error in api_search_peserta:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # API List Peserta (gabungan users + participants)
 @app.route("/api/peserta/list")
@@ -2453,58 +2417,31 @@ def api_search_peserta():
 @admin_required
 def api_list_peserta():
     """API untuk mendapatkan semua data peserta (gabungan users dan participants)"""
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     try:
-        # Get optional filter parameters
         kegiatan_id = request.args.get('kegiatan_id', type=int)
-        
-        # Ambil semua user dengan level peserta
         users_peserta = Users.query.filter_by(level='peserta').all()
         
         peserta_data = []
         for user in users_peserta:
-            # Cari data biodata dari tabel participants berdasarkan email
             biodata = Participants.query.filter_by(email=user.email).first()
-            
-            # Jika filter kegiatan_id diberikan, cek apakah peserta terdaftar di kegiatan tersebut
             if kegiatan_id and biodata:
-                # Cek apakah peserta terdaftar di kegiatan ini
-                is_registered = db.session.query(tb_participant_kegiatan).filter_by(
-                    participant_id=biodata.id,
-                    kegiatan_id=kegiatan_id
-                ).first()
-                
+                is_registered = db.session.query(tb_participant_kegiatan).filter_by(participant_id=biodata.id, kegiatan_id=kegiatan_id).first()
                 if not is_registered:
-                    continue  # Skip peserta yang tidak terdaftar di kegiatan ini
-            
-            # Get hasil seleksi untuk kegiatan tertentu atau latest
+                    continue  
             if kegiatan_id:
-                hasil_seleksi = HasilSeleksi.query.filter_by(
-                    id_users=user.id,
-                    event_id=kegiatan_id
-                ).first()
+                hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user.id, event_id=kegiatan_id).first()
             else:
-                # Get latest or highest score
-                hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user.id).order_by(
-                    HasilSeleksi.skor_akhir.desc()
-                ).first()
+                hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user.id).order_by(HasilSeleksi.skor_akhir.desc()).first()
             
-            # Get registered activities for this participant
             registered_activities = []
             if biodata:
                 activities = biodata.registered_activities.all()
                 for activity in activities:
-                    hasil_activity = HasilSeleksi.query.filter_by(
-                        id_users=user.id,
-                        event_id=activity.id_kegiatan
-                    ).first()
-                    
-                    registered_activities.append({
-                        'id': activity.id_kegiatan,
-                        'nama': activity.nama_kegiatan,
-                        'jenis': activity.jenis_kegiatan,
-                        'skor': hasil_activity.skor_akhir if hasil_activity else None,
-                        'ranking': hasil_activity.ranking if hasil_activity else None
-                    })
+                    hasil_activity = HasilSeleksi.query.filter_by(id_users=user.id, event_id=activity.id_kegiatan).first()
+                    registered_activities.append({'id': activity.id_kegiatan, 'nama': activity.nama_kegiatan, 'jenis': activity.jenis_kegiatan, 'skor': hasil_activity.skor_akhir if hasil_activity else None, 'ranking': hasil_activity.ranking if hasil_activity else None})
             
             # Gabungkan data dari users dan participants
             peserta_item = {
@@ -2534,21 +2471,12 @@ def api_list_peserta():
             peserta_data.append(peserta_item)
         
         # Always return success with array, even if empty
-        return jsonify({
-            'success': True, 
-            'peserta': peserta_data,
-            'count': len(peserta_data)
-        })
+        return jsonify({'success': True, 'peserta': peserta_data, 'count': len(peserta_data)})
     except Exception as e:
         logging.error(f"Error in api_list_peserta: {e}")
         current_app.logger.exception('Error in api_list_peserta:')
         # Return error response in JSON format
-        return jsonify({
-            'success': False, 
-            'message': str(e),
-            'peserta': [],
-            'count': 0
-        }), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error'), 'peserta': [], 'count': 0}), 500
 
 # API Add Peserta
 @app.route("/api/peserta/add", methods=['POST'])
@@ -2572,15 +2500,15 @@ def api_add_peserta():
         
         # Validasi required fields
         if not nama_lengkap or not username or not email:
-            return jsonify({'success': False, 'message': 'Nama lengkap, username, dan email wajib diisi'}), 400
+            return jsonify({'success': False, 'message': t.get('required_identity_fields')}), 400
         
         # Cek apakah username sudah ada
         if Users.query.filter_by(username=username).first():
-            return jsonify({'success': False, 'message': 'Username sudah digunakan'}), 400
+            return jsonify({'success': False, 'message': t.get('username_already_used')}), 400
         
         # Cek apakah email sudah ada
         if Users.query.filter_by(email=email).first():
-            return jsonify({'success': False, 'message': 'Email sudah digunakan'}), 400
+            return jsonify({'success': False, 'message': t.get('email_already_used')}), 400
         
         # Hash password jika ada
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16) if password else ''
@@ -2600,7 +2528,7 @@ def api_add_peserta():
             login_method='manual'
         )
         db.session.add(new_user)
-        db.session.flush()  # Untuk mendapatkan ID user
+        db.session.flush() 
         
         # Buat data participants jika ada data tambahan
         golongan = request.form.get('golongan', '').strip()
@@ -2634,16 +2562,16 @@ def api_add_peserta():
             )
             db.session.add(new_participant)
         db.session.commit()
-        log_activity(current_user.id, f'Menambah peserta baru: {username}')
-        return jsonify({'success': True, 'message': 'Peserta berhasil ditambahkan'})
+        log_activity(current_user.id, t.get('log_add_participant').format(username=username))
+        return jsonify({'success': True, 'message': t.get('participant_added_success')})
     except ValueError as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'Data tidak valid: {str(e)}'}), 400
+        return jsonify({'success': False, 'message': t.get('invalid_data').format(error=str(e))}), 400
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in api_add_peserta: {e}")
         current_app.logger.exception('Error in api_add_peserta:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # API Edit Peserta
 @app.route("/api/peserta/edit/<int:user_id>", methods=['POST'])
@@ -2657,7 +2585,7 @@ def api_edit_peserta(user_id):
     try:
         user = Users.query.get(user_id)
         if not user or user.level != 'peserta':
-            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+            return jsonify({'success': False, 'message': t.get('participant_not_found')}), 404
         
         # Update data user
         nama_lengkap = request.form.get('nama_lengkap', '').strip()
@@ -2673,12 +2601,12 @@ def api_edit_peserta(user_id):
         if username and username != user.username:
             # Cek apakah username sudah digunakan
             if Users.query.filter(Users.username == username, Users.id != user_id).first():
-                return jsonify({'success': False, 'message': 'Username sudah digunakan'}), 400
+                return jsonify({'success': False, 'message': t.get('username_already_used')}), 400
             user.username = username
         if email and email != user.email:
             # Cek apakah email sudah digunakan
             if Users.query.filter(Users.email == email, Users.id != user_id).first():
-                return jsonify({'success': False, 'message': 'Email sudah digunakan'}), 400
+                return jsonify({'success': False, 'message': t.get('email_already_used')}), 400
             user.email = email
         if jenis_kelamin:
             user.jenis_kelamin = jenis_kelamin
@@ -2702,7 +2630,6 @@ def api_edit_peserta(user_id):
         asal_kwarda = request.form.get('asal_kwarda', '').strip()
         
         if biodata:
-            # Update existing biodata
             if nama_lengkap:
                 biodata.nama_lengkap = nama_lengkap
             if jenis_kelamin:
@@ -2751,16 +2678,16 @@ def api_edit_peserta(user_id):
             )
             db.session.add(new_biodata)
         db.session.commit()
-        log_activity(current_user.id, f'Mengupdate data peserta: {user.username}')
-        return jsonify({'success': True, 'message': 'Data peserta berhasil diperbarui'})
+        log_activity(current_user.id, f"{t['participant_updated_success']}: {user.username}")
+        return jsonify({'success': True, 'message': t.get('participant_updated_success')})
     except ValueError as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'Data tidak valid: {str(e)}'}), 400
+        return jsonify({'success': False, 'message': t.get('invalid_participant_data')}), 400
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in api_edit_peserta: {e}")
         current_app.logger.exception('Error in api_edit_peserta:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # API Delete Peserta
 @app.route("/api/peserta/delete/<int:user_id>", methods=['POST'])
@@ -2774,7 +2701,7 @@ def api_delete_peserta(user_id):
     try:
         user = Users.query.get(user_id)
         if not user or user.level != 'peserta':
-            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+            return jsonify({'success': False, 'message': t.get('participant_not_found')}), 404
         username = user.username
         email = user.email
         biodata = Participants.query.filter_by(email=email).first()
@@ -2783,13 +2710,13 @@ def api_delete_peserta(user_id):
         db.session.delete(user)
         db.session.commit()
         
-        log_activity(current_user.id, f'Menghapus peserta: {username}')
-        return jsonify({'success': True, 'message': 'Peserta berhasil dihapus'})
+        log_activity(current_user.id, f"{t['participant_deleted_success']}: {username}")
+        return jsonify({'success': True, 'message': t.get('participant_deleted_success')})
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in api_delete_peserta: {e}")
         current_app.logger.exception('Error in api_delete_peserta:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # API Get Detail Peserta
 @app.route("/api/peserta/detail/<int:user_id>")
@@ -2803,24 +2730,14 @@ def api_detail_peserta(user_id):
     try:
         user = Users.query.get(user_id)
         if not user or user.level != 'peserta':
-            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+            return jsonify({'success': False, 'message': t.get('participant_not_found')}), 404
         biodata = Participants.query.filter_by(email=user.email).first()
         registered_activities = []
         if biodata:
             activities = biodata.registered_activities.all()
             for activity in activities:
-                hasil = HasilSeleksi.query.filter_by(
-                    id_users=user.id,
-                    event_id=activity.id_kegiatan
-                ).first()
-                
-                registered_activities.append({
-                    'id': activity.id_kegiatan,
-                    'nama': activity.nama_kegiatan,
-                    'jenis': activity.jenis_kegiatan,
-                    'skor': hasil.skor_akhir if hasil else None,
-                    'ranking': hasil.ranking if hasil else None
-                })
+                hasil = HasilSeleksi.query.filter_by(id_users=user.id, event_id=activity.id_kegiatan).first()
+                registered_activities.append({'id': activity.id_kegiatan, 'nama': activity.nama_kegiatan, 'jenis': activity.jenis_kegiatan, 'skor': hasil.skor_akhir if hasil else None, 'ranking': hasil.ranking if hasil else None})
         peserta_data = {
             'id': user.id,
             'user_id': user.id,
@@ -2848,7 +2765,7 @@ def api_detail_peserta(user_id):
     except Exception as e:
         logging.error(f"Error in api_detail_peserta: {e}")
         current_app.logger.exception('Error in api_detail_peserta:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # API Get Statistics Peserta
 @app.route("/api/peserta/statistics")
@@ -2898,7 +2815,7 @@ def api_peserta_statistics():
     except Exception as e:
         logging.error(f"Error in api_peserta_statistics: {e}")
         current_app.logger.exception('Error in api_peserta_statistics:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # Tambah Kegiatan
 @app.route('/admin/tambah_seleksi', methods=['GET', 'POST'])
@@ -2909,52 +2826,59 @@ def tambah_seleksi():
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
     if request.method == 'POST':
-        nama = request.form['nama_kegiatan']
-        jenis = request.form['jenis_kegiatan']
-        waktu_dimulai = request.form.get('waktu_pelaksanaan_dimulai', request.form.get('waktu_pelaksanaan', ''))
-        waktu_selesai = request.form.get('waktu_pelaksanaan_selesai', waktu_dimulai)
-        tempat = request.form['tempat_pelaksanaan']
-        skala = request.form['skala_kegiatan']
-        kwartir = request.form['kwartir_penyelenggara']
-        
-        # New Fields
-        tanggal_tes = request.form.get('tanggal_tes')
-        tempat_tes = request.form.get('tempat_tes')
-        evaluator_ids = request.form.getlist('evaluators')
-
-        new_event = Event(
-            nama_kegiatan=nama,
-            jenis_kegiatan=jenis,
-            waktu_pelaksanaan_dimulai=datetime.strptime(waktu_dimulai, '%Y-%m-%d').date() if waktu_dimulai else datetime.utcnow().date(),
-            waktu_pelaksanaan_selesai=datetime.strptime(waktu_selesai, '%Y-%m-%d').date() if waktu_selesai else datetime.utcnow().date(),
-            tempat_pelaksanaan=tempat,
-            skala_kegiatan=skala,
-            kwartir_penyelenggara=kwartir,
-            mulai=datetime.utcnow().date(),
-            selesai=datetime.utcnow().date(),
-            tanggal_tes=tanggal_tes if tanggal_tes else None,
-            tempat_tes=tempat_tes
-        )
-        if evaluator_ids:
-            evaluators = Users.query.filter(Users.id.in_(evaluator_ids)).all()
-            new_event.evaluators = evaluators
-            
-        db.session.add(new_event)
-        db.session.commit()
-        notification_message = f"Kegiatan baru dibuat: {nama} ({jenis})"
-        logging.info(f"[NOTIFICATION] Attempting to create notification: {notification_message}")
-        
         try:
-            create_notification_to_all_admins(notification_message)
-            logging.info(f"[NOTIFICATION] Successfully created notifications for event: {nama}")
-        except Exception as e:
-            logging.error(f"[NOTIFICATION] Failed to create notification for new event '{nama}': {e}")
-            import traceback
-            logging.error(f"[NOTIFICATION] Traceback: {traceback.format_exc()}")
-            if hasattr(current_app, 'logger'):
-                current_app.logger.exception('Error creating notification for new event:')
+            nama = request.form['nama_kegiatan']
+            jenis = request.form['jenis_kegiatan']
+            waktu_dimulai = request.form.get('waktu_pelaksanaan_dimulai', request.form.get('waktu_pelaksanaan', ''))
+            waktu_selesai = request.form.get('waktu_pelaksanaan_selesai', waktu_dimulai)
+            tempat = request.form['tempat_pelaksanaan']
+            skala = request.form['skala_kegiatan']
+            kwartir = request.form['kwartir_penyelenggara']
+            tanggal_tes = request.form.get('tanggal_tes')
+            tempat_tes = request.form.get('tempat_tes')
+            evaluator_ids = request.form.getlist('evaluators')
 
-        flash('Kegiatan berhasil ditambahkan!', 'success')
+            new_event = Event(
+                nama_kegiatan=nama,
+                jenis_kegiatan=jenis,
+                waktu_pelaksanaan_dimulai=datetime.strptime(waktu_dimulai, '%Y-%m-%d').date() if waktu_dimulai else datetime.utcnow().date(),
+                waktu_pelaksanaan_selesai=datetime.strptime(waktu_selesai, '%Y-%m-%d').date() if waktu_selesai else datetime.utcnow().date(),
+                tempat_pelaksanaan=tempat,
+                skala_kegiatan=skala,
+                kwartir_penyelenggara=kwartir,
+                mulai=datetime.utcnow().date(),
+                selesai=datetime.utcnow().date(),
+                tanggal_tes=tanggal_tes if tanggal_tes else None,
+                tempat_tes=tempat_tes
+            )
+            if evaluator_ids:
+                evaluators = Users.query.filter(Users.id.in_(evaluator_ids)).all()
+                new_event.evaluators = evaluators
+                
+            db.session.add(new_event)
+            db.session.commit()
+            notification_message = t['event_create_notification'].format(name=nama, type=jenis)
+            logging.info(f"[NOTIFICATION] Attempting to create notification: {notification_message}")
+            
+            try:
+                create_notification_to_all_admins(notification_message)
+                logging.info(f"[NOTIFICATION] Successfully created notifications for event: {nama}")
+            except Exception as e:
+                logging.error(f"[NOTIFICATION] Failed to create notification for new event '{nama}': {e}")
+                import traceback
+                logging.error(f"[NOTIFICATION] Traceback: {traceback.format_exc()}")
+                if hasattr(current_app, 'logger'):
+                    current_app.logger.exception('Error creating notification for new event:')
+
+            flash(t['event_created_success'], 'success')
+            return redirect(url_for('admin_manajemen_seleksi'))
+        except ValueError:
+            db.session.rollback()
+            flash(t['event_invalid_date'], 'danger')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.exception('Error creating event')
+            flash(t['event_create_failed'], 'danger')
         return redirect(url_for('admin_manajemen_seleksi'))
     evaluators = Users.query.filter_by(level='penilai').all()
     return render_template("tambah_kegiatan.html", evaluators=evaluators)
@@ -3065,27 +2989,24 @@ def save_pairwise_matrix(event_id):
         data = request.get_json(force=True)
         matrix_data = data.get('matrix', [])
         if not matrix_data:
-            return jsonify({'success': False, 'message': 'Matriks tidak boleh kosong'}), 400
+            return jsonify({'success': False, 'message': t.get('pairwise_matrix_empty')}), 400
         criterias = Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
         if not criterias:
-            return jsonify({'success': False, 'message': 'Tidak ada kriteria untuk kegiatan ini'}), 400
+            return jsonify({'success': False, 'message': t.get('pairwise_no_criteria')}), 400
         
         criteria_ids = [c.id_kriteria for c in criterias]
         n = len(criterias)
         if len(matrix_data) != n or any(len(row) != n for row in matrix_data):
-            return jsonify({'success': False, 'message': f'Ukuran matriks harus {n}x{n}'}), 400
+            return jsonify({'success': False, 'message': t.get('pairwise_invalid_size').format(n=n)}), 400
         
         import numpy as np
         matrix = np.array(matrix_data, dtype=float)
         for i in range(n):
             for j in range(n):
-                if i == j:
-                    if matrix[i, j] != 1.0:
-                        return jsonify({'success': False, 'message': f'Diagonal harus 1.0 (baris {i+1}, kolom {j+1})'}), 400
-                else:
-                    val = matrix[i, j]
-                    if val < 1/9 or val > 9:
-                        return jsonify({'success': False, 'message': f'Nilai harus antara 1/9 sampai 9 (baris {i+1}, kolom {j+1})'}), 400
+                if i == j and matrix[i, j] != 1.0:
+                    return jsonify({'success': False, 'message': t.get('pairwise_diagonal_invalid_at')}), 400
+                if i != j and (matrix[i, j] < 1/9 or matrix[i, j] > 9):
+                    return jsonify({'success': False, 'message': t.get('pairwise_value_out_of_range_at')}), 400
         from app.fuzzy_ahp import save_pairwise_matrix
         success, message = save_pairwise_matrix(event_id, criteria_ids, matrix)
         if success:
@@ -3094,8 +3015,7 @@ def save_pairwise_matrix(event_id):
             return jsonify({'success': False, 'message': message}), 400    
     except Exception as e:
         logging.error(f"Error saving pairwise matrix: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
-
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # API untuk menghitung bobot AHP
 @app.route('/api/calculate_ahp/<int:event_id>', methods=['POST'])
@@ -3126,7 +3046,7 @@ def calculate_ahp(event_id):
             return jsonify({'success': False, 'message': message}), 400    
     except Exception as e:
         logging.error(f"Error calculating AHP: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': t.get('ahp_internal_error')}), 500
 
 # Route untuk Laporan & Arsip Seleksi
 @app.route('/admin/laporan_arsip_seleksi')
@@ -3184,24 +3104,19 @@ def generate_laporan_excel(event_id):
         ).all()
         
         if not hasil_seleksi:
-            return jsonify({'success': False, 'message': 'Tidak ada data hasil seleksi'}), 400
+            return jsonify({'success': False, 'message': t.get('no_selection_data')}), 400
 
         wb = Workbook()
         ws = wb.active
-        ws.title = "Laporan Hasil Seleksi"
-        headers = ['No', 'Peringkat', 'Nama Lengkap', 'Email', 'Golongan', 'Tingkatan', 'Asal Gudep', 'Skor Akhir']
+        ws.title = t.get('excel_sheet_title')
+        headers = [t.get('excel_col_no'), t.get('excel_col_rank'), t.get('excel_col_name'), t.get('excel_col_email'), t.get('excel_col_group'), t.get('excel_col_level'), t.get('excel_col_origin'), t.get('excel_col_score'),]
         ws.append(headers)
         
         # Style header
         header_font = Font(bold=True, color="FFFFFF", size=12)
         header_fill = PatternFill("solid", fgColor="4F81BD")
         center_align = Alignment(horizontal="center", vertical="center")
-        thin_border = Border(
-            left=Side(style="thin"),
-            right=Side(style="thin"),
-            top=Side(style="thin"),
-            bottom=Side(style="thin"),
-        )  
+        thin_border = Border(left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"), bottom=Side(style="thin"),)  
         for cell in ws[1]:
             cell.font = header_font
             cell.fill = header_fill
@@ -3227,14 +3142,14 @@ def generate_laporan_excel(event_id):
         
         with open(file_path, 'wb') as f:
             f.write(output.getvalue())
-        arsip = ArsipSeleksi(event_id=event_id, nama_arsip=f"Laporan Excel - {event.nama_kegiatan}", deskripsi=f"Laporan hasil seleksi dalam format Excel untuk kegiatan {event.nama_kegiatan}", file_path=f"static/uploads/reports/{filename}", file_type='excel', dibuat_oleh=current_user.id, status='aktif')
+        arsip = ArsipSeleksi(event_id=event_id, nama_arsip=t.get('excel_report_title').format(event=event.nama_kegiatan), deskripsi=t.get('excel_report_description').format(event=event.nama_kegiatan), file_path=f"static/uploads/reports/{filename}", file_type='excel', dibuat_oleh=current_user.id, status='aktif')
         db.session.add(arsip)
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Laporan Excel berhasil dibuat dan diarsipkan', 'file_path': f"/{file_path}", 'arsip_id': arsip.id_arsip})   
+        return jsonify({'success': True, 'message': t.get('excel_report_success'), 'file_path': f"/{file_path}", 'arsip_id': arsip.id_arsip})   
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error generating Excel report: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # API untuk generate laporan PDF (menggunakan HTML to PDF atau reportlab)
 @app.route('/api/generate_laporan_pdf/<int:event_id>', methods=['POST'])
@@ -3263,7 +3178,7 @@ def generate_laporan_pdf(event_id):
         ).all()
         
         if not hasil_seleksi:
-            return jsonify({'success': False, 'message': 'Tidak ada data hasil seleksi'}), 400
+            return jsonify({'success': False, 'message': t.get('report_no_data')}), 400
         html_content = render_template('laporan_pdf_template.html', event=event, hasil_seleksi=hasil_seleksi, tanggal_laporan=datetime.now().strftime('%d %B %Y'))
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.html" 
@@ -3273,14 +3188,14 @@ def generate_laporan_pdf(event_id):
         
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        arsip = ArsipSeleksi(event_id=event_id, nama_arsip=f"Laporan PDF - {event.nama_kegiatan}", deskripsi=f"Laporan hasil seleksi dalam format PDF untuk kegiatan {event.nama_kegiatan}", file_path=f"static/uploads/reports/{filename}", file_type='pdf', dibuat_oleh=current_user.id, status='aktif')
+        arsip = ArsipSeleksi(event_id=event_id, nama_arsip=t.get('archive_report_title').format(event=event.nama_kegiatan), deskripsi=t.get('archive_report_description').format(event=event.nama_kegiatan), file_path=f"static/uploads/reports/{filename}", file_type='pdf', dibuat_oleh=current_user.id, status='aktif')
         db.session.add(arsip)
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Laporan PDF berhasil dibuat dan diarsipkan', 'file_path': f"/{file_path}",'arsip_id': arsip.id_arsip}) 
+        return jsonify({'success': True, 'message': t.get('report_pdf_success'), 'file_path': f"/{file_path}",'arsip_id': arsip.id_arsip}) 
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error generating PDF report: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': t.get('report_pdf_error')}), 500
 
 # API untuk download file arsip
 @app.route('/api/download_arsip/<int:arsip_id>')
@@ -3294,16 +3209,16 @@ def download_arsip(arsip_id):
     try:
         arsip = ArsipSeleksi.query.get_or_404(arsip_id) 
         if not arsip.file_path:
-            flash('File tidak ditemukan', 'error')
+            flash(t.get('archive_file_not_found'), 'error')
             return redirect(url_for('admin_manajemen_seleksi'))
         file_path = os.path.join(app.root_path, arsip.file_path)
         if not os.path.exists(file_path):
-            flash('File tidak ditemukan di server', 'error')
+            flash(t.get('archive_file_missing_on_server'), 'error')
             return redirect(url_for('admin_manajemen_seleksi'))
         return send_file(file_path, as_attachment=True, download_name=arsip.nama_arsip)  
     except Exception as e:
         logging.error(f"Error downloading archive: {str(e)}")
-        flash('Error saat mengunduh file', 'error')
+        flash(t.get('archive_download_error'), 'error')
         return redirect(url_for('admin_manajemen_seleksi'))
 
 # API untuk hapus arsip
@@ -3324,11 +3239,11 @@ def hapus_arsip(arsip_id):
                 os.remove(file_path) 
         db.session.delete(arsip)
         db.session.commit() 
-        return jsonify({'success': True, 'message': 'Arsip berhasil dihapus'})   
+        return jsonify({'success': True, 'message': t.get('archive_deleted_success')})   
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error deleting archive: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': t.get('archive_delete_error')}), 500
 
 @app.route('/admin/peserta')
 @login_required
@@ -3354,29 +3269,20 @@ def detail_peserta(user_id):
     try:
         user = Users.query.get(user_id)
         if not user or user.level != 'peserta':
-            flash("Peserta tidak ditemukan", "error")
+            flash(t.get('participant_not_found'), "error")
             return redirect(url_for('admin_peserta'))
         biodata = Participants.query.filter_by(email=user.email).first()
         registered_activities = []
         if biodata:
             activities = biodata.registered_activities.all()
             for activity in activities:
-                hasil_activity = HasilSeleksi.query.filter_by(
-                    id_users=user.id,
-                    event_id=activity.id_kegiatan
-                ).first()
-                registered_activities.append({
-                    'id': activity.id_kegiatan,
-                    'nama': activity.nama_kegiatan,
-                    'jenis': activity.jenis_kegiatan,
-                    'skor': hasil_activity.skor_akhir if hasil_activity else None,
-                    'ranking': hasil_activity.ranking if hasil_activity else None
-                })
+                hasil_activity = HasilSeleksi.query.filter_by(id_users=user.id, event_id=activity.id_kegiatan).first()
+                registered_activities.append({'id': activity.id_kegiatan, 'nama': activity.nama_kegiatan, 'jenis': activity.jenis_kegiatan, 'skor': hasil_activity.skor_akhir if hasil_activity else None, 'ranking': hasil_activity.ranking if hasil_activity else None})
         sidebar_state = current_user.sidebar_state or 'expanded'
         return render_template('detail_peserta.html', user=user, biodata=biodata, registered_activities=registered_activities, sidebar_state=sidebar_state)
     except Exception as e:
         logging.error(f"Error in detail_peserta: {e}")
-        flash("Terjadi kesalahan saat memuat data peserta", "error")
+        flash(t.get('error_load_participant_data'), "error")
         return redirect(url_for('admin_peserta'))
 
 # Route untuk cetak kartu peserta
@@ -3391,7 +3297,7 @@ def cetak_kartu_peserta(user_id):
     try:
         user = Users.query.get(user_id)
         if not user or user.level != 'peserta':
-            flash("Peserta tidak ditemukan", "error")
+            flash(t.get('participant_not_found'), "error")
             return redirect(url_for('admin_peserta'))
         
         # Get participant biodata
@@ -3400,21 +3306,12 @@ def cetak_kartu_peserta(user_id):
         if biodata:
             activities = biodata.registered_activities.all()
             for activity in activities:
-                hasil_activity = HasilSeleksi.query.filter_by(
-                    id_users=user.id,
-                    event_id=activity.id_kegiatan
-                ).first()
-                registered_activities.append({
-                    'id': activity.id_kegiatan,
-                    'nama': activity.nama_kegiatan,
-                    'jenis': activity.jenis_kegiatan,
-                    'skor': hasil_activity.skor_akhir if hasil_activity else None,
-                    'ranking': hasil_activity.ranking if hasil_activity else None
-                })
+                hasil_activity = HasilSeleksi.query.filter_by(id_users=user.id, event_id=activity.id_kegiatan).first()
+                registered_activities.append({'id': activity.id_kegiatan, 'nama': activity.nama_kegiatan, 'jenis': activity.jenis_kegiatan, 'skor': hasil_activity.skor_akhir if hasil_activity else None, 'ranking': hasil_activity.ranking if hasil_activity else None})
         return render_template('kartu_peserta.html', user=user, biodata=biodata, registered_activities=registered_activities)
     except Exception as e:
         logging.error(f"Error in cetak_kartu_peserta: {e}")
-        flash("Terjadi kesalahan saat memuat data peserta", "error")
+        flash(t.get('error_load_participant_data'), "error")
         return redirect(url_for('admin_peserta'))
     
 # Route untuk halaman tambah peserta ke kegiatan
@@ -3445,41 +3342,31 @@ def api_tambah_peserta_kegiatan():
         kegiatan_id = data.get('kegiatan_id')
         
         if not participant_id or not kegiatan_id:
-            return jsonify({'success': False, 'message': 'Participant ID dan Kegiatan ID harus diisi'}), 400
+            return jsonify({'success': False, 'message': t.get('participant_event_required')}), 400
         
         # Cek apakah peserta sudah terdaftar di kegiatan ini
-        existing = db.session.query(tb_participant_kegiatan).filter_by(
-            participant_id=participant_id,
-            kegiatan_id=kegiatan_id
-        ).first()
-        
+        existing = db.session.query(tb_participant_kegiatan).filter_by(participant_id=participant_id, kegiatan_id=kegiatan_id).first()
         if existing:
-            return jsonify({'success': False, 'message': 'Peserta sudah terdaftar di kegiatan ini'}), 400
+            return jsonify({'success': False, 'message': t.get('participant_already_registered_event')}), 400
         
         participant = Participants.query.get(participant_id)
         event = Event.query.get(kegiatan_id)
         if not participant:
-            return jsonify({'success': False, 'message': 'Peserta tidak ditemukan'}), 404
+            return jsonify({'success': False, 'message': t.get('participant_not_found')}), 404
         if not event:
-            return jsonify({'success': False, 'message': 'Kegiatan tidak ditemukan'}), 404
-        db.session.execute(
-            tb_participant_kegiatan.insert().values(
-                participant_id=participant_id,
-                kegiatan_id=kegiatan_id,
-                tanggal_daftar=datetime.now()
-            )
-        )
+            return jsonify({'success': False, 'message': t.get('event_not_found')}), 404
+        db.session.execute(tb_participant_kegiatan.insert().values(participant_id=participant_id, kegiatan_id=kegiatan_id, tanggal_daftar=datetime.now()))
         db.session.commit()
-        log_activity(current_user.id, f'Menambahkan peserta {participant.nama_lengkap} ke kegiatan {event.nama_kegiatan}')
-        return jsonify({'success': True, 'message': f'Peserta berhasil ditambahkan ke kegiatan {event.nama_kegiatan}'})
+        log_activity(current_user.id, t.get('participant_add_log_single').format(participant=participant.nama_lengkap, event=event.nama_kegiatan))
+        return jsonify({'success': True, 'message': t.get('participant_add_success_single').format(event=event.nama_kegiatan)})
     except IntegrityError as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': 'Peserta sudah terdaftar di kegiatan ini'}), 400
+        return jsonify({'success': False, 'message': t.get('participant_already_registered_event')}), 400
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in api_tambah_peserta_kegiatan: {e}")
         current_app.logger.exception('Error in api_tambah_peserta_kegiatan:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
 # API untuk menambahkan multiple peserta ke kegiatan
 @app.route('/api/peserta/tambah-kegiatan-bulk', methods=['POST'])
@@ -3496,10 +3383,10 @@ def api_tambah_peserta_kegiatan_bulk():
         kegiatan_id = data.get('kegiatan_id')
         
         if not participant_ids or not kegiatan_id:
-            return jsonify({'success': False, 'message': 'Participant IDs dan Kegiatan ID harus diisi'}), 400
+            return jsonify({'success': False, 'message': t.get('participant_and_event_required')}), 400
         event = Event.query.get(kegiatan_id)
         if not event:
-            return jsonify({'success': False, 'message': 'Kegiatan tidak ditemukan'}), 404
+            return jsonify({'success': False, 'message': t.get('event_not_found')}), 404
         
         added_count = 0
         skipped_count = 0
@@ -3511,7 +3398,7 @@ def api_tambah_peserta_kegiatan_bulk():
                 if not participant:
                     user = Users.query.get(participant_id)
                     if not user or user.level != 'peserta':
-                        errors.append(f'User ID {participant_id} tidak ditemukan atau bukan peserta')
+                        errors.append(t.get('user_not_participant').format(id=participant_id))
                         continue
                     participant = Participants.query.filter_by(email=user.email).first()
                     
@@ -3536,42 +3423,31 @@ def api_tambah_peserta_kegiatan_bulk():
                         )
                         db.session.add(participant)
                         db.session.flush()  
-                existing = db.session.query(tb_participant_kegiatan).filter_by(
-                    participant_id=participant.id,
-                    kegiatan_id=kegiatan_id
-                ).first()   
+                existing = db.session.query(tb_participant_kegiatan).filter_by(participant_id=participant.id, kegiatan_id=kegiatan_id).first()   
                 if existing:
                     skipped_count += 1
                     continue
-                db.session.execute(
-                    tb_participant_kegiatan.insert().values(
-                        participant_id=participant.id,
-                        kegiatan_id=kegiatan_id,
-                        tanggal_daftar=datetime.now()
-                    )
-                )
+                db.session.execute(tb_participant_kegiatan.insert().values(participant_id=participant.id, kegiatan_id=kegiatan_id, tanggal_daftar=datetime.now()))
                 added_count += 1 
             except Exception as e:
-                errors.append(f'Error untuk peserta ID {participant_id}: {str(e)}')
+                errors.append(t.get('participant_process_error').format(id=participant_id, error=str(e)))
                 continue
         db.session.commit()
-        log_activity(current_user.id, f'Menambahkan {added_count} peserta ke kegiatan {event.nama_kegiatan}')
+        log_activity(current_user.id, t.get('participant_add_log').format(count=added_count, event=event.nama_kegiatan))
         if added_count > 0:
-            create_notification_to_all_admins(
-                f"{added_count} peserta ditambahkan ke kegiatan: {event.nama_kegiatan}"
-            )
-        message = f'Berhasil menambahkan {added_count} peserta'
+            create_notification_to_all_admins(t.get('participant_added_notification').format(count=added_count, event=event.nama_kegiatan))
+        message = t.get('participant_add_success').format(count=added_count)
         if skipped_count > 0:
-            message += f', {skipped_count} peserta sudah terdaftar'
+            message += ', ' + t.get('participant_already_registered').format(count=skipped_count)
         if errors:
-            message += f', {len(errors)} error'
+            message += ', ' + t.get('participant_add_error_count').format(count=len(errors))
         return jsonify({'success': True, 'message': message, 'added': added_count, 'skipped': skipped_count, 'errors': errors})
         
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in api_tambah_peserta_kegiatan_bulk: {e}")
         current_app.logger.exception('Error in api_tambah_peserta_kegiatan_bulk:')
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
     
 @app.route('/admin/hasil_seleksi')
 @login_required
@@ -3591,11 +3467,9 @@ def admin_hasil_seleksi():
             from app.fuzzy_ahp import calculate_spk
             success, msg = calculate_spk(selected_event_id)
             if not success:
-                logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+                 logging.warning(t.get('spk_failed_log').format(event_id=selected_event_id, msg=msg))
             else:
-                create_notification_to_all_admins(
-                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
-                )
+                 create_notification_to_all_admins(t.get('spk_notification').format(event_name=selected_event.nama_kegiatan))
             
             # Fetch results for this event only
             hasil_seleksi = db.session.query(
@@ -3612,13 +3486,9 @@ def admin_hasil_seleksi():
                 HasilSeleksi.ranking.asc()
             ).all()
             for hasil, user, participant in hasil_seleksi:
-                results.append({
-                    'hasil': hasil,
-                    'user': user,
-                    'participant': participant
-                })
+                results.append({'hasil': hasil, 'user': user, 'participant': participant})
         else:
-            flash("Kegiatan tidak ditemukan.", "error")
+            flash(t.get('event_not_found'), "error")
             selected_event = None
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template('admin/hasil_penilaian.html', assigned_events=all_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state, show_back_button=False)
@@ -3648,30 +3518,12 @@ def admin_manajemen_berita():
     news_list_raw = query.order_by(News.created_at.desc()).all()
     news_list = []
     for news in news_list_raw:
-        news_list.append({
-            "id_news": news.id_news,
-            "title": news.title,
-            "content": news.content,
-            "status": news.status,
-            "created_at": news.created_at.strftime("%d-%m-%Y"),
-            "author": {
-                "nama_lengkap": news.author.nama_lengkap
-            }
-        })
+        news_list.append({"id_news": news.id_news, "title": news.title, "content": news.content, "status": news.status, "created_at": news.created_at.strftime("%d-%m-%Y"), "author": {"nama_lengkap": news.author.nama_lengkap}})
     total_news = len(news_list_raw)
     published_news = News.query.filter_by(status='published').count()
     draft_news = News.query.filter_by(status='draft').count()
-    last_news = (
-        News.query
-        .order_by(
-            db.func.coalesce(News.updated_at, News.created_at).desc()
-        )
-        .first()
-    )
-    last_update = (
-        (last_news.updated_at or last_news.created_at).strftime("%d-%m-%Y")
-        if last_news else '-'
-    )
+    last_news = (News.query.order_by(db.func.coalesce(News.updated_at, News.created_at).desc()).first())
+    last_update = ((last_news.updated_at or last_news.created_at).strftime("%d-%m-%Y") if last_news else '-')
     return render_template('news_management.html', news_list=news_list, total_news=total_news, published_news=published_news, draft_news=draft_news, last_update=last_update, sidebar_state=sidebar_state, user=current_user, search=search, status=status, time=time)
 
 # API Pagination Berita
@@ -3688,11 +3540,7 @@ def api_berita():
     
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 6, type=int)
-    pagination = (
-        News.query
-        .order_by(News.created_at.desc())
-        .paginate(page=page, per_page=per_page, error_out=False)
-    )
+    pagination = (News.query.order_by(News.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False))
 
     data = []
     for news in pagination.items:
@@ -3706,7 +3554,7 @@ def api_berita():
 def admin_create_news():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
+
     if current_user.level != 'admin':
         flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for('index'))
@@ -3737,15 +3585,7 @@ def admin_create_news():
         counter += 1
 
     excerpt = content[:200] + '...' if len(content) > 200 else content
-    news = News(
-        title=title,
-        slug=slug,
-        content=content,
-        excerpt=excerpt,
-        status=status,
-        author_id=current_user.id,
-        thumbnail=thumbnail_path
-    )
+    news = News(title=title, slug=slug, content=content, excerpt=excerpt, status=status, author_id=current_user.id, thumbnail=thumbnail_path)
 
     if status == 'published':
         news.published_at = datetime.utcnow()
@@ -5495,6 +5335,9 @@ def api_batal_daftar_seleksi():
 @admin_required
 @csrf.exempt
 def save_settings():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     try:
         data = request.get_json()
         category = data.get('category')
@@ -5592,6 +5435,9 @@ def save_settings():
 @admin_required
 @csrf.exempt
 def test_email():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     try:
         data = request.get_json()
         test_email_address = data.get('email', current_user.email)
@@ -5637,9 +5483,9 @@ def test_email():
         
         try:
             msg = Message(
-                subject='Test Email - SPK Pramuka',
+                subject = t.get('email_test_subject'),
                 recipients=[test_email_address],
-                body='Ini adalah email test dari sistem SPK Pramuka. Jika Anda menerima email ini, berarti konfigurasi email sudah benar.',
+                body= t.get('email_test_body'),
                 sender=mail_username
             )
             mail.send(msg)
@@ -5651,10 +5497,7 @@ def test_email():
             for key, value in original_config.items():
                 app.config[key] = value
             
-            return jsonify({
-                'status': 'success',
-                'message': f'Email test berhasil dikirim ke {test_email_address}'
-            }), 200
+            return jsonify({'status': 'success', 'message': t.get('email_test_success').format(email=test_email_address)}), 200
         except Exception as e:
             # Restore original config
             for key, value in original_config.items():
@@ -5663,25 +5506,28 @@ def test_email():
             
     except Exception as e:
         current_app.logger.exception('Error in /api/test_email:')
-        return jsonify({'status': 'error', 'message': f'Gagal mengirim email test: {str(e)}'}), 500
+        return jsonify({'status': 'error', 'message': t.get('email_test_failed').format(error=str(e))}), 500
 
 @app.route('/api/upload_logo', methods=['POST'])
 @login_required
 @admin_required
 @csrf.exempt
 def upload_logo():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
     try:
         if 'logo' not in request.files:
-            return jsonify({'status': 'error', 'message': 'Tidak ada file yang diupload'}), 400
+            return jsonify({'status': 'error', 'message': t.get('no_file_selected')}), 400
         
         file = request.files['logo']
         if file.filename == '':
-            return jsonify({'status': 'error', 'message': 'Tidak ada file yang dipilih'}), 400
+            return jsonify({'status': 'error', 'message': t.get('no_file_selected')}), 400
         
         # Validasi file
         allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
         if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-            return jsonify({'status': 'error', 'message': 'Format file tidak didukung. Gunakan PNG, JPG, JPEG, GIF, atau SVG'}), 400
+            return jsonify({'status': 'error', 'message': t.get('unsupported_file_format')}), 400
         
         # Simpan file
         filename = secure_filename(file.filename)
@@ -5727,7 +5573,7 @@ def upload_logo():
         
         return jsonify({
             'status': 'success',
-            'message': 'Logo berhasil diupload',
+            'message': t.get('logo_upload_success'),
             'logo_path': logo_path_display
         }), 200
         
