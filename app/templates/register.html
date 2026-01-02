@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ current_lang }}">
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,10 +16,10 @@
   </head>
 
   <body
-    class="font-sans m-0 p-0 flex justify-center items-center min-h-[120vh] {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
+    class="font-sans m-0 p-0 flex justify-center items-start md:items-center min-h-screen pt-24 pb-24 md:py-10 px-4 {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
   >
     <div
-      class="p-10 md:px-16 rounded-[12px] shadow-lg w-full max-w-[35rem] {{ 'bg-gray-900 transition' if current_theme == 'dark' else 'bg-white' }}"
+      class="p-6 md:p-10 md:px-16 rounded-[12px] shadow-lg w-full max-w-[35rem] {{ 'bg-gray-900 transition' if current_theme == 'dark' else 'bg-white' }}"
     >
       <h1
         class="text-center mb-10 text-3xl md:text-3xl font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
@@ -29,7 +29,7 @@
 
       <div class="flex flex-row justify-between gap-2 mt-9">
         <button
-          class="w-full h-14 flex justify-center items-center gap-2 border border-gray-300 rounded-md px-2.5 text-lg cursor-pointer bg-white transition-colors duration-300 hover:#f5f5f5"
+          class="w-full h-14 flex justify-center items-center gap-2 border border-gray-300 rounded-md px-2.5 text-base md:text-lg cursor-pointer bg-white transition-colors duration-300 hover:#f5f5f5"
           onclick="redirectToRegisterWithGoogle()"
         >
           <img

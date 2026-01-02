@@ -29,20 +29,9 @@
     </div>
     {% endif %}
 
-    <!-- Center: Search + Language (Mobile) -->
+    <!-- Center: Search (Removed) -->
     <div class="flex md:hidden items-center space-x-4">
-      <div class="relative w-56">
-        <input
-          type="text"
-          placeholder="{{ 'Cari...' if current_lang == 'id' else 'Search...' }}"
-          class="px-3 py-2 rounded-full text-sm w-full {{ 'bg-gray-700 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
-        />
-        <div
-          class="absolute inset-y-0 right-3 flex items-center pointer-events-none"
-        >
-          <i class="fas fa-search text-gray-400 text-sm"></i>
-        </div>
-      </div>
+      <!-- Language Selector -->
 
       <!-- Language Selector -->
       <div x-data="{ open: false }" class="relative">
@@ -97,10 +86,10 @@
       <!-- Halaman PUBLIK → dengan next -->
       <a
         href="{{ url_for('login', next=request.path) }}"
-        class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
+        class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl relative z-50"
         title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
       >
-        <i class="fas fa-bell"></i>
+        <i class="fas fa-user-plus"></i>
       </a>
       {% endif %}
 
@@ -139,23 +128,8 @@
     <div
       class="hidden md:flex space-x-6 {{ 'w-full flex justify-end' if is_public_page else 'items-center' }}"
     >
-      <!-- Search bar + Language on Desktop -->
+      <!-- Search (Removed) + Language (Desktop) -->
       <div class="flex space-x-3 items-center">
-        <div class="relative {{ 'mr-32' if is_public_page else 'mr-3' }}">
-          <input
-            type="text"
-            placeholder="{{ 'Cari...' if current_lang == 'id' else 'Search...' }}"
-            class="pl-4 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 {{ 'w-dvh' if is_public_page else 'w-96' }} {{ 'bg-gray-700 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
-          />
-          <div
-            class="absolute inset-y-0 right-3 flex items-center pointer-events-none"
-          >
-            <i
-              class="fas fa-search text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-800' }}"
-            ></i>
-          </div>
-        </div>
-
         <!-- Language Selector -->
         <div x-data="{ open: false }" class="relative">
           <!-- Tombol Bahasa -->

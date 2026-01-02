@@ -119,13 +119,7 @@
                 </div>
 
                 <button
-                  @click="
-                        modalMode = 'create';
-                        editId = null;
-                        form = { title: '', content: '', status: 'draft' };
-                        thumbnailPreview = null;
-                        newsModal = true;
-                    "
+                  @click="window.location.href = '{{ url_for('admin_add_news_page') }}'"
                   class="flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow cursor-pointer"
                 >
                   <i class="fa-solid fa-plus"></i>
@@ -199,27 +193,27 @@
               <div
                 x-data="beritaPagination()"
                 x-init="init()"
-                class="overflow-x-auto rounded-xl shadow"
+                class="overflow-x-auto rounded-xl shadow {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
               >
                 <!-- ====== TABEL BERITA ====== -->
                 <template x-if="$store.pagination.items.length > 0">
                   <table class="w-full border-collapse border-spacing-y-2">
                     <thead>
                       <tr
-                        class="border-b {{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-400 text-gray-900 dark:text-gray-800' }}"
+                        class="border-b {{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-100 text-gray-900' }}"
                       >
-                        <th>No</th>
-                        <th>
+                        <th class="text-left p-4">No</th>
+                        <th class="text-left p-4">
                           {{ 'Judul' if current_lang == 'id' else 'Title' }}
                         </th>
-                        <th>
+                        <th class="text-left p-4">
                           {{ 'Penulis' if current_lang == 'id' else 'Author' }}
                         </th>
-                        <th>Status</th>
-                        <th>
+                        <th class="text-left p-4">Status</th>
+                        <th class="text-left p-4">
                           {{ 'Tanggal' if current_lang == 'id' else 'Date' }}
                         </th>
-                        <th class="text-center">
+                        <th class="text-center p-4">
                           {{ 'Aksi' if current_lang == 'id' else 'Action' }}
                         </th>
                       </tr>
@@ -248,7 +242,7 @@
                           <td class="p-4">
                             <span
                               :class="news.status === 'published'
-                                    ? 'px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400'
+                                    ? 'px-3 py-1 rounded-full text-xs bg-green-200 text-green-800'
                                     : 'px-3 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-400'"
                               x-text="news.status === 'published'
                                     ? '{{ 'Publik' if current_lang == 'id' else 'Public' }}'
@@ -298,7 +292,7 @@
                   </table>
                 </template>
 
-                <p class="text-sm text-gray-500 text-center mt-2">
+                <p class="text-sm text-gray-500 text-center mt-2 mb-4">
                   {{ 'Showing' if current_lang == 'en' else 'Menampilkan' }}
                   <span
                     x-text="(($store.pagination.page - 1) * $store.pagination.perPage) + 1"

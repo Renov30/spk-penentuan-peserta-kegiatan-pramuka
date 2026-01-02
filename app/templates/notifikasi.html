@@ -145,13 +145,12 @@
               <div id="notificationsList" class="space-y-4">
                 {% if notifications %} {% for notification in notifications %}
                 {% set message_lower = (notification.message or '').lower() %}
-                {% set category = 'sistem' %}
-                {% if 'peserta' in message_lower or 'participant' in message_lower %}
-                  {% set category = 'peserta' %}
-                {% elif 'seleksi' in message_lower or 'selection' in message_lower %}
-                  {% set category = 'seleksi' %}
-                {% elif 'penilaian' in message_lower or 'evaluation' in message_lower or 'grading' in message_lower %}
-                  {% set category = 'penilaian' %}
+                {% set category = 'sistem' %} {% if 'peserta' in message_lower
+                or 'participant' in message_lower %} {% set category = 'peserta'
+                %} {% elif 'seleksi' in message_lower or 'selection' in
+                message_lower %} {% set category = 'seleksi' %} {% elif
+                'penilaian' in message_lower or 'evaluation' in message_lower or
+                'grading' in message_lower %} {% set category = 'penilaian' %}
                 {% endif %}
                 <div
                   id="notification-{{ notification.id }}"
@@ -403,7 +402,7 @@
         toast.innerHTML = `
           ${icon}
           <span class="flex-1 font-medium">${message}</span>
-          <button onclick="this.parentElement.classList.add('hide'); setTimeout(() => this.parentElement.remove(), 300)" 
+          <button onclick="this.parentElement.classList.add('hide'); setTimeout(() => this.parentElement.remove(), 300)"
                   class="text-white hover:text-gray-200 transition cursor-pointer">
             <i class="fas fa-times"></i>
           </button>
@@ -644,32 +643,32 @@
         const searchInput = document.getElementById('searchNotification');
         const categoryFilter = document.getElementById('filterCategory');
         const statusFilter = document.getElementById('filterStatus');
-        
+
         if (!searchInput || !categoryFilter || !statusFilter) {
           return;
         }
-        
+
         const searchTerm = (searchInput.value || '').toLowerCase();
         const selectedCategory = categoryFilter.value;
         const selectedStatus = statusFilter.value;
-        
+
         const notificationItems = document.querySelectorAll('.notification-item');
         let visibleCount = 0;
-        
+
         notificationItems.forEach(item => {
           const category = item.getAttribute('data-category');
           const status = item.getAttribute('data-status');
           const message = item.getAttribute('data-message') || '';
-          
+
           // Check search term
           const matchesSearch = searchTerm === '' || message.includes(searchTerm);
-          
+
           // Check category filter
           const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
-          
+
           // Check status filter
           const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
-          
+
           // Show or hide based on all filters
           if (matchesSearch && matchesCategory && matchesStatus) {
             item.style.display = 'flex';
@@ -678,11 +677,11 @@
             item.style.display = 'none';
           }
         });
-        
+
         // Show "no results" message if no notifications are visible
         const notificationsList = document.getElementById('notificationsList');
         let noResultsMsg = notificationsList.querySelector('.no-results-message');
-        
+
         if (visibleCount === 0 && notificationItems.length > 0) {
           if (!noResultsMsg) {
             noResultsMsg = document.createElement('div');
@@ -707,7 +706,7 @@
         const searchInput = document.getElementById('searchNotification');
         const categoryFilter = document.getElementById('filterCategory');
         const statusFilter = document.getElementById('filterStatus');
-        
+
         if (searchInput && categoryFilter && statusFilter) {
           // Apply filter if any filter has a value
           if (searchInput.value || categoryFilter.value !== 'all' || statusFilter.value !== 'all') {

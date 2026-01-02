@@ -172,7 +172,7 @@
 
                 <!-- Chart 2: Status Peserta -->
                 <div
-                  class="rounded-xl shadow p-4 {{ 'bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white hover:shadow-gray-700' }}"
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
                 >
                   <h3
                     class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
@@ -187,7 +187,7 @@
 
                 <!-- Chart 3: Jenis Kelamin Peserta -->
                 <div
-                  class="rounded-xl shadow p-4 {{ 'bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white hover:shadow-gray-700' }}"
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
                 >
                   <h3
                     class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
@@ -217,7 +217,7 @@
 
                 <!-- Chart 5: Statistik Kegiatan -->
                 <div
-                  class="rounded-xl shadow p-4 {{ 'bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white hover:shadow-gray-700' }}"
+                  class="rounded-xl shadow p-4 {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
                 >
                   <h3
                     class="text-base font-bold mb-3 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
@@ -552,10 +552,10 @@
                   datasets: [{
                     label: '{{ "Total" if current_lang == "id" else "Total" }}',
                     data: [
-                      {{ total_users }},
-                      {{ total_participants }},
-                      {{ total_criteria }},
-                      {{ total_notifications }},
+                      {{ total_users|default(0) }},
+                      {{ total_participants|default(0) }},
+                      {{ total_criteria|default(0) }},
+                      {{ total_notifications|default(0) }},
                       chartData.events.total,
                       chartData.hasil_seleksi.total
                     ],

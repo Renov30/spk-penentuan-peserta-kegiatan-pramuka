@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
+<html
+  style="font-size: 80%"
+  class="transition duration-300 ease-in-out"
+  lang="{{ current_lang }}"
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -746,7 +750,6 @@
                               placeholder="{{ 'Masukkan tempat tes' if current_lang == 'id' else 'Enter test location' }}"
                               class="w-full mb-2 rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-300 dark:bg-gray-300 dark:text-gray-900' }}"
                             />
-
                           </div>
 
                           <!-- Komposisi Kontingen -->
@@ -1508,7 +1511,7 @@
 
           // Pastikan selectedItems berisi integer
           const eventIds = this.selectedItems.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
-          
+
           if (eventIds.length === 0) {
             this.loading = false;
             showNotification('{{ "Tidak ada data yang valid untuk dihapus" if current_lang == "id" else "No valid data to delete" }}', 'error');
@@ -1538,7 +1541,7 @@
                 }, 1000);
               } else {
                 showNotification(
-                  data.message || "{{ 'Gagal menghapus konfigurasi' if current_lang == 'id' else 'Failed to delete configuration' }}", 
+                  data.message || "{{ 'Gagal menghapus konfigurasi' if current_lang == 'id' else 'Failed to delete configuration' }}",
                   'error'
                 );
               }

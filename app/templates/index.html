@@ -73,21 +73,8 @@
           />
         </div>
 
-        <!-- Center: Search + Language (Mobile) -->
+        <!-- Center: Search (Removed) -->
         <div class="flex md:hidden items-center space-x-4">
-          <div class="relative w-56">
-            <input
-              type="text"
-              placeholder="{{ 'Cari...' if current_lang == 'id' else 'Search...' }}"
-              class="px-3 py-2 rounded-full text-sm w-full {{ 'bg-gray-700 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
-            />
-            <div
-              class="absolute inset-y-0 right-3 flex items-center pointer-events-none"
-            >
-              <i class="fas fa-search text-gray-400 text-sm"></i>
-            </div>
-          </div>
-
           <!-- Language Selector -->
           <div x-data="{ open: false }" class="relative">
             <!-- Tombol Bahasa -->
@@ -129,27 +116,15 @@
 
           <!-- Sign Up -->
           <a
-            href="/login/"
-            class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
+            href="{{ url_for('login') }}"
+            class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl relative z-50"
             title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
           >
             <i class="fas fa-user-plus"></i>
           </a>
 
           <!-- Notifikasi -->
-          {% if session.get('username') or session.get('user') %}
-          <button
-            title="{{ 'Notifikasi' if current_lang == 'id' else 'Notification' }}"
-            class="relative flex items-center justify-center text-yellow-400 hover:text-yellow-300 transition text-2xl cursor-pointer my-3"
-          >
-            <i class="fas fa-bell"></i>
-            <span
-              class="absolute -top-1 -right-1 text-[10px] bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center font-semibold"
-            >
-              {{ notification_count }}
-            </span>
-          </button>
-          {% endif %}
+          <!-- Notifikasi (Removed) -->
 
           <!-- Hamburger Icon (Mobile Only) -->
           <button
@@ -191,23 +166,8 @@
             </a>
           </nav>
 
-          <!-- Search + Language (Desktop) -->
+          <!-- Search (Removed) + Language (Desktop) -->
           <div class="flex items-center space-x-3">
-            <div class="relative">
-              <input
-                type="text"
-                placeholder="{{ 'Cari...' if current_lang == 'id' else 'Search...' }}"
-                class="pl-4 pr-10 py-2 rounded-full focus:outline-none focus:ring-2  {{ 'bg-gray-700 text-white placeholder-gray-400 focus:ring-yellow-400' if current_theme == 'dark' else 'bg-gray-100 border text-black placeholder-gray-400 focus:ring-gray-900' }}"
-              />
-              <div
-                class="absolute inset-y-0 right-3 flex items-center pointer-events-none"
-              >
-                <i
-                  class="fas fa-search text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-800' }}"
-                ></i>
-              </div>
-            </div>
-
             <!-- Language Selector -->
             <div x-data="{ open: false }" class="relative">
               <!-- Tombol Bahasa -->
@@ -257,7 +217,7 @@
               x-data
               @click="$store.theme.toggle()"
               :title="$store.theme.isDark ? '{{ 'Beralih ke Mode Terang' if current_lang == 'id' else 'Switch to Light Mode' }}' : '{{ 'Beralih ke Mode Gelap' if current_lang == 'id' else 'Switch to Dark Mode' }}'"
-              class="relative w-[80px] flex justify-center items-center bg-gray-800 dark:bg-yellow-400 text-yellow-300 dark:text-gray-900 px-0.5 py-1.5 rounded-md text-sm font-semibold transition hover:brightness-110 cursor-pointer"
+              class="relative w-20 flex justify-center items-center bg-gray-800 dark:bg-yellow-400 text-yellow-300 dark:text-gray-900 px-0.5 py-1.5 rounded-md text-sm font-semibold transition hover:brightness-110 cursor-pointer"
             >
               <template
                 x-if="$store.theme.isDark"
@@ -288,20 +248,7 @@
             </button>
 
             <!-- Notifikasi -->
-            {% if session.get('username') or session.get('user') %}
-            <button
-              id="notification-toggle"
-              title="{{ 'Notifikasi' if current_lang == 'id' else 'Notification' }}"
-              class="relative flex items-center justify-center text-yellow-400 hover:text-yellow-300 transition text-2xl cursor-pointer my-3"
-            >
-              <i class="fas fa-bell"></i>
-              <span
-                class="absolute -top-1 -right-1 text-[10px] bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center font-semibold"
-              >
-                {{ notification_count }}
-              </span>
-            </button>
-            {% endif %}
+            <!-- Notifikasi (Removed) -->
 
             <!-- Profil Icon -->
             {% if session.get('username') or session.get('user') %}
@@ -406,13 +353,25 @@
           <i class="fas fa-concierge-bell"></i>
           {{ 'Layanan' if current_lang == 'id' else 'Services' }}
         </a>
+
+        <!-- Dark Mode Toggle (Mobile) -->
+        <button
+          x-data
+          @click="$store.theme.toggle()"
+          class="hover:text-yellow-400 text-xl flex items-center gap-3 w-full text-left {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+        >
+          <i :class="$store.theme.isDark ? 'fas fa-sun' : 'fas fa-moon'"></i>
+          <span
+            x-text="$store.theme.isDark ? '{{ 'Mode Terang' if current_lang == 'id' else 'Light Mode' }}' : '{{ 'Mode Gelap' if current_lang == 'id' else 'Dark Mode' }}'"
+          ></span>
+        </button>
       </div>
     </header>
 
     <!-- Home Section -->
     <section
       id="home"
-      class="pt-24 min-h-screen flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+      class="pt-20 md:pt-24 min-h-screen flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
     >
       <div
         class="container mx-auto px-6 flex flex-col mt-3.5 lg:flex-row items-center justify-between gap-10 {{ 'text-white' if current_theme == 'dark' else 'text-black' }}"
@@ -490,7 +449,7 @@
     <!-- News Section -->
     <section
       id="news"
-      class="py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
+      class="py-12 md:py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
     >
       <div class="container mx-auto px-6 mt-12">
         <div class="text-center mb-12">
@@ -539,7 +498,7 @@
               <p
                 class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
               >
-                {{ news.excerpt }}
+                {{ news.content | striptags | truncate(150) }}
               </p>
             </div>
 
@@ -567,7 +526,7 @@
     <!-- About Section -->
     <section
       id="about"
-      class="py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+      class="py-12 md:py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
     >
       <div class="container mx-auto px-6 mt-7">
         <div class="text-center mb-12">
@@ -683,7 +642,7 @@
 
     <!-- Footer -->
     <footer
-      class="py-12 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-gray-900' }}"
+      class="py-8 md:py-12 {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-gray-900' }}"
     >
       <div
         class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left"
@@ -1061,81 +1020,14 @@
           document.body.classList.remove("blurred", "overflow-hidden");
         }
 
-        // Fungsi untuk menghapus semua notifikasi (konten system-tab)
-        function clearAllNotifications() {
-          const container = document.getElementById("system-tab");
-          if (container) {
-            container.innerHTML =
-              '<div class="text-sm text-gray-400 italic text-center py-2">Tidak ada notifikasi</div>';
-          }
-        }
+
       });
     </script>
     <script>
-      window.isFirstTimeLogin = {{ 'true' if first_time_login else 'false' }};
-      const toggleButton = document.getElementById("notification-toggle");
-      const notifBox = document.getElementById("notification-box");
-
-      // Toggle show/hide box
-      toggleButton?.addEventListener("click", function (event) {
-        event.stopPropagation();
-        const isOpen = notifBox.classList.contains("opacity-100");
-
-        if (isOpen) {
-          notifBox.classList.remove("opacity-100", "pointer-events-auto", "scale-100", "translate-x-0");
-          notifBox.classList.add("opacity-0", "pointer-events-none", "scale-95", "translate-x-full");
-        } else {
-          notifBox.classList.remove("opacity-0", "pointer-events-none", "scale-95", "translate-x-full");
-          notifBox.classList.add("opacity-100", "pointer-events-auto", "scale-100", "translate-x-0");
-        }
-      });
-
-      // Klik di luar notif box → tutup
-      document.addEventListener("click", function (event) {
-        if (
-          notifBox &&
-          !notifBox.contains(event.target) &&
-          !toggleButton?.contains(event.target)
-        ) {
-          notifBox.classList.remove(
-            "opacity-100", "pointer-events-auto", "scale-100", "translate-x-0"
-          );
-          notifBox.classList.add(
-            "opacity-0", "pointer-events-none", "scale-95", "translate-x-full"
-          );
-        }
-      });
-
-      // Flash → tombol "Tutup" → tampil notifBox selama 6 detik
       window.closeFlashAndShowNotifBox = function (element) {
         const flashOverlay = element.closest(".flash-wrapper");
-
         if (flashOverlay) flashOverlay.classList.add("hidden");
-
-        if (window.isFirstTimeLogin && notifBox) {
-          console.log("🚀 Login pertama kali, tampilkan notifBox selama 6 detik");
-
-          notifBox.classList.remove(
-            "opacity-100", "pointer-events-auto", "scale-100", "translate-x-0"
-          );
-          notifBox.classList.add(
-            "opacity-0", "pointer-events-none", "scale-95", "translate-x-full"
-          );
-          notifBox.style.transform = "none";
-          console.log("[DEBUG] notifBox.classList after show:", notifBox.classList);
-
-          setTimeout(() => {
-            notifBox.classList.remove(
-              "opacity-0", "pointer-events-none", "scale-95", "translate-x-full"
-            );
-            notifBox.classList.add(
-              "opacity-100", "pointer-events-auto", "scale-100", "translate-x-0"
-            );
-            fetch("/clear-first-login-flag", { method: "POST" });
-          }, 200);
-        } else {
-          console.log("ℹ️ Bukan login pertama → notifBox tidak muncul otomatis");
-        }
+        // Notification box logic removed
       };
     </script>
   </body>

@@ -75,13 +75,26 @@
                   {{ 'Data Penugasan Penilai' if current_lang == 'id' else
                   'Evaluator Assignment Data' }}
                 </h1>
+                <!-- Back to Management Selection (Visible when in list view) -->
                 <a
+                  x-show="selectedEvent === null"
                   href="{{ url_for('admin_manajemen_seleksi') }}"
                   class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-gray-500 text-white hover:bg-gray-600 active:scale-95 transition-all shadow cursor-pointer"
                 >
                   <i class="fa-solid fa-arrow-left mr-2"></i>
                   {{ 'Kembali' if current_lang == 'id' else 'Back' }}
                 </a>
+
+                <!-- Back to List (Visible when in detail view) -->
+                <button
+                  x-show="selectedEvent !== null"
+                  @click="selectedEvent = null"
+                  style="display: none"
+                  class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-gray-500 text-white hover:bg-gray-600 active:scale-95 transition-all shadow cursor-pointer"
+                >
+                  <i class="fa-solid fa-arrow-left mr-2"></i>
+                  {{ 'Kembali' if current_lang == 'id' else 'Back' }}
+                </button>
               </div>
 
               <!-- Event List View -->
@@ -227,17 +240,6 @@
               <!-- Event Detail View -->
               {% if assignment_data %} {% for event_data in assignment_data %}
               <div x-show="selectedEvent === {{ loop.index0 }}" x-transition>
-                <div class="mb-4">
-                  <button
-                    @click="selectedEvent = null"
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-gray-500 text-white hover:bg-gray-600 active:scale-95 transition-all shadow cursor-pointer"
-                  >
-                    <i class="fa-solid fa-arrow-left mr-2"></i>
-                    {{ 'Kembali ke Daftar' if current_lang == 'id' else 'Back to
-                    List' }}
-                  </button>
-                </div>
-
                 <div
                   class="rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
                 >
