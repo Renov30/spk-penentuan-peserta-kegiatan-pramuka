@@ -139,70 +139,101 @@
                 >
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">
-                      {{ 'Status Seleksi' if current_lang == 'id' else 'Selection Status' }}
+                      {{ 'Status Seleksi' if current_lang == 'id' else
+                      'Selection Status' }}
                     </h2>
-                    <i class="fa-solid fa-clipboard-check text-2xl text-blue-500"></i>
+                    <i
+                      class="fa-solid fa-clipboard-check text-2xl text-blue-500"
+                    ></i>
                   </div>
-                  
+
                   {% if registered_activities %}
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-2">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                                {{ 'Terdaftar di ' + registered_activities|length|string + ' kegiatan' if current_lang == 'id' else 'Registered in ' + registered_activities|length|string + ' activities' }}
-                            </span>
-                        </div>
-                        
-                        <div class="space-y-2 max-h-48 overflow-y-auto">
-                            {% for kegiatan in registered_activities %}
-                            <div class="p-3 rounded-lg {{ 'bg-gray-800 border border-gray-700' if current_theme == 'dark' else 'bg-gray-50 border border-gray-200' }}">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <p class="font-semibold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}">
-                                            {{ kegiatan.nama_kegiatan }}
-                                        </p>
-                                        <div class="flex gap-3 mt-1 text-xs opacity-70 mb-2">
-                                            <span>{{ kegiatan.jenis_kegiatan }}</span>
-                                            <span>•</span>
-                                            <span>{{ kegiatan.skala_kegiatan }}</span>
-                                        </div>
-                                        
-                                        <!-- Selection Period Status -->
-                                        {% if kegiatan.selesai and kegiatan.selesai < today %}
-                                            <span class="inline-flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                                                <i class="fa-solid fa-clock-rotate-left text-[10px]"></i>
-                                                {{ 'Periode Berakhir' if current_lang == 'id' else 'Period Ended' }}
-                                            </span>
-                                        {% else %}
-                                            <span class="inline-flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                                                <i class="fa-solid fa-check-circle text-[10px]"></i>
-                                                {{ 'Terdaftar' if current_lang == 'id' else 'Registered' }}
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        
-                        {% if is_selection_ended %}
-                        <div class="mt-3 p-2 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-sm flex items-start gap-2">
-                            <i class="fa-solid fa-clock-rotate-left mt-1"></i>
-                            <span>
-                                {{ 'Beberapa periode seleksi telah berakhir. Menunggu hasil pengumuman.' if current_lang == 'id' else 'Some selection periods have ended. Waiting for announcement.' }}
-                            </span>
-                        </div>
-                        {% endif %}
+                  <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                      >
+                        {{ 'Terdaftar di ' + registered_activities|length|string
+                        + ' kegiatan' if current_lang == 'id' else 'Registered
+                        in ' + registered_activities|length|string + '
+                        activities' }}
+                      </span>
                     </div>
-                  {% else %}
-                    <p class="text-2xl font-bold text-gray-500">
-                        {{ status_seleksi }}
-                    </p>
-                    {% if status_seleksi == 'Belum ada status' %}
-                    <p class="text-sm mt-2 opacity-70">
-                        {{ 'Silakan daftar kegiatan seleksi yang tersedia.' if current_lang == 'id' else 'Please register for available selection activities.' }}
-                    </p>
+
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                      {% for kegiatan in registered_activities %}
+                      <div
+                        class="p-3 rounded-lg {{ 'bg-gray-800 border border-gray-700' if current_theme == 'dark' else 'bg-gray-50 border border-gray-200' }}"
+                      >
+                        <div class="flex items-start justify-between">
+                          <div class="flex-1">
+                            <p
+                              class="font-semibold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
+                            >
+                              {{ kegiatan.nama_kegiatan }}
+                            </p>
+                            <div
+                              class="flex gap-3 mt-1 text-xs opacity-70 mb-2"
+                            >
+                              <span>{{ kegiatan.jenis_kegiatan }}</span>
+                              <span>•</span>
+                              <span>{{ kegiatan.skala_kegiatan }}</span>
+                            </div>
+
+                            <!-- Selection Period Status -->
+                            {% if kegiatan.selesai and kegiatan.selesai < today
+                            %}
+                            <span
+                              class="inline-flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            >
+                              <i
+                                class="fa-solid fa-clock-rotate-left text-[10px]"
+                              ></i>
+                              {{ 'Periode Berakhir' if current_lang == 'id' else
+                              'Period Ended' }}
+                            </span>
+                            {% else %}
+                            <span
+                              class="inline-flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                            >
+                              <i
+                                class="fa-solid fa-check-circle text-[10px]"
+                              ></i>
+                              {{ 'Terdaftar' if current_lang == 'id' else
+                              'Registered' }}
+                            </span>
+                            {% endif %}
+                          </div>
+                        </div>
+                      </div>
+                      {% endfor %}
+                    </div>
+
+                    {% if is_selection_ended %}
+                    <div
+                      class="mt-3 p-2 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-sm flex items-start gap-2"
+                    >
+                      <i class="fa-solid fa-clock-rotate-left mt-1"></i>
+                      <span>
+                        {{ 'Beberapa periode seleksi telah berakhir. Menunggu
+                        hasil pengumuman.' if current_lang == 'id' else 'Some
+                        selection periods have ended. Waiting for announcement.'
+                        }}
+                      </span>
+                    </div>
                     {% endif %}
-                  {% endif %}
+                  </div>
+                  {% else %}
+                  <p class="text-2xl font-bold text-gray-500">
+                    {{ status_seleksi }}
+                  </p>
+                  {% if status_seleksi == 'Belum ada status' %}
+                  <p class="text-sm mt-2 opacity-70">
+                    {{ 'Silakan daftar kegiatan seleksi yang tersedia.' if
+                    current_lang == 'id' else 'Please register for available
+                    selection activities.' }}
+                  </p>
+                  {% endif %} {% endif %}
                 </div>
 
                 <!-- Nilai Akhir & Ranking per Kegiatan -->
@@ -213,56 +244,77 @@
                   <!-- Card Title -->
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">
-                      {{ 'Nilai dan Ranking' if current_lang == 'id' else 'Scores and Ranking' }}
+                      {{ 'Nilai dan Ranking' if current_lang == 'id' else
+                      'Scores and Ranking' }}
                     </h2>
                     <i class="fa-solid fa-trophy text-2xl text-yellow-500"></i>
                   </div>
 
                   <div class="space-y-3 max-h-60 overflow-y-auto pr-1">
-                  {% for activity in activity_scores %}
-                    <div class="p-4 rounded-lg border {{ 'bg-gray-800 border-gray-700' if current_theme == 'dark' else 'bg-white border-gray-200' }}">
+                    {% for activity in activity_scores %}
+                    <div
+                      class="p-4 rounded-lg border {{ 'bg-gray-800 border-gray-700' if current_theme == 'dark' else 'bg-white border-gray-200' }}"
+                    >
                       <!-- Title -->
-                      <h3 class="text-base font-semibold mb-3 leading-tight" title="{{ activity.event.nama_kegiatan }}">
-                          {{ activity.event.nama_kegiatan }}
+                      <h3
+                        class="text-base font-semibold mb-3 leading-tight"
+                        title="{{ activity.event.nama_kegiatan }}"
+                      >
+                        {{ activity.event.nama_kegiatan }}
                       </h3>
-                      
-                      {% if activity.final_score is not none and activity.ranking is not none %}
-                         <!-- Scores, Ranking, & Status -->
-                         <div class="flex items-center justify-between mb-3">
-                           <!-- Final Score -->
-                           <div>
-                               <p class="text-xs font-medium opacity-60 uppercase mb-1">
-                                   {{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}
-                               </p>
-                               <p class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
-                                   {{ "%.2f"|format(activity.final_score) }}
-                               </p>
-                           </div>
-                           
-                           <!-- Vertical Separator -->
-                           <div class="h-8 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
-                           
-                           <!-- Ranking -->
-                           <div class="text-right">
-                               <p class="text-xs font-medium opacity-60 uppercase mb-1">
-                                   {{ 'Ranking' if current_lang == 'id' else 'Ranking' }}
-                               </p>
-                               <p class="text-2xl font-bold text-green-500">
-                                   #{{ activity.ranking }}
-                               </p>
-                           </div>
 
-                         </div>
+                      {% if activity.final_score is not none and
+                      activity.ranking is not none %}
+                      <!-- Scores, Ranking, & Status -->
+                      <div class="flex items-center justify-between mb-3">
+                        <!-- Final Score -->
+                        <div>
+                          <p
+                            class="text-xs font-medium opacity-60 uppercase mb-1"
+                          >
+                            {{ 'Nilai Akhir' if current_lang == 'id' else 'Final
+                            Score' }}
+                          </p>
+                          <p
+                            class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ "%.2f"|format(activity.final_score) }}
+                          </p>
+                        </div>
+
+                        <!-- Vertical Separator -->
+                        <div
+                          class="h-8 w-px bg-gray-300 dark:bg-gray-600 mx-2"
+                        ></div>
+
+                        <!-- Ranking -->
+                        <div class="text-right">
+                          <p
+                            class="text-xs font-medium opacity-60 uppercase mb-1"
+                          >
+                            {{ 'Ranking' if current_lang == 'id' else 'Ranking'
+                            }}
+                          </p>
+                          <p class="text-2xl font-bold text-green-500">
+                            #{{ activity.ranking }}
+                          </p>
+                        </div>
+                      </div>
 
                       {% else %}
-                           <!-- Pending State -->
-                           <div class="flex items-center gap-2 text-sm italic opacity-70 py-2">
-                                <i class="fa-solid fa-clock text-orange-500"></i>
-                                <span>{{ 'Belum Selesai' if current_lang == 'id' else 'Pending' }}</span>
-                           </div>
+                      <!-- Pending State -->
+                      <div
+                        class="flex items-center gap-2 text-sm italic opacity-70 py-2"
+                      >
+                        <i class="fa-solid fa-clock text-orange-500"></i>
+                        <span
+                          >{{ 'Belum Selesai' if current_lang == 'id' else
+                          'Pending' }}</span
+                        >
+                      </div>
                       {% endif %}
                     </div>
-                  {% endfor %}
+                    {% endfor %}
                   </div>
                 </div>
                 {% endif %}
@@ -274,15 +326,22 @@
                 >
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">
-                      {{ 'Jadwal Tes Seleksi' if current_lang == 'id' else 'Selection Test Schedule' }}
+                      {{ 'Jadwal Tes Seleksi' if current_lang == 'id' else
+                      'Selection Test Schedule' }}
                     </h2>
-                    <i class="fa-solid fa-calendar-day text-2xl text-purple-500"></i>
+                    <i
+                      class="fa-solid fa-calendar-day text-2xl text-purple-500"
+                    ></i>
                   </div>
-                  
+
                   <div class="space-y-3 max-h-48 overflow-y-auto">
                     {% for kegiatan in registered_activities %}
-                    <div class="p-3 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }}">
-                      <p class="text-sm font-medium mb-1 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">
+                    <div
+                      class="p-3 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }}"
+                    >
+                      <p
+                        class="text-sm font-medium mb-1 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
                         {{ kegiatan.nama_kegiatan }}
                       </p>
                       {% if kegiatan.tanggal_tes %}
@@ -294,7 +353,8 @@
                       </p>
                       {% else %}
                       <p class="text-sm italic opacity-70">
-                        {{ 'Jadwal tes belum ditentukan.' if current_lang == 'id' else 'Test schedule not yet determined.' }}
+                        {{ 'Jadwal tes belum ditentukan.' if current_lang ==
+                        'id' else 'Test schedule not yet determined.' }}
                       </p>
                       {% endif %}
                     </div>
@@ -740,7 +800,8 @@
                   >
                     <div class="flex items-center justify-between mb-4">
                       <h3 class="text-xl font-bold">
-                        {{ 'Konfirmasi Daftar Seleksi' if current_lang == 'id' else 'Confirm Registration' }}
+                        {{ 'Konfirmasi Daftar Seleksi' if current_lang == 'id'
+                        else 'Confirm Registration' }}
                       </h3>
                       <button
                         @click="closeRegisterModal()"
@@ -750,22 +811,34 @@
                         <i class="fa-solid fa-times text-lg"></i>
                       </button>
                     </div>
-                    
+
                     <div class="mb-6">
                       <div class="flex items-center justify-center mb-4">
                         <div class="text-4xl text-blue-500 animate-pulse">
                           <i class="fa-solid fa-user-plus"></i>
                         </div>
                       </div>
-                      <p class="text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Apakah Anda yakin ingin mendaftar ke seleksi kegiatan' if current_lang == 'id' else 'Are you sure you want to register for selection activity' }}?
+                      <p
+                        class="text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Apakah Anda yakin ingin mendaftar ke seleksi
+                        kegiatan' if current_lang == 'id' else 'Are you sure you
+                        want to register for selection activity' }}?
                       </p>
-                      <p class="text-center mt-2 font-semibold" x-text="selectedKegiatanRegister ? selectedKegiatanRegister.nama : ''"></p>
-                      <p class="text-sm text-center mt-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}">
-                        {{ 'Setelah mendaftar, Anda akan mengikuti proses seleksi untuk kegiatan ini.' if current_lang == 'id' else 'After registering, you will participate in the selection process for this activity.' }}
+                      <p
+                        class="text-center mt-2 font-semibold"
+                        x-text="selectedKegiatanRegister ? selectedKegiatanRegister.nama : ''"
+                      ></p>
+                      <p
+                        class="text-sm text-center mt-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                      >
+                        {{ 'Setelah mendaftar, Anda akan mengikuti proses
+                        seleksi untuk kegiatan ini.' if current_lang == 'id'
+                        else 'After registering, you will participate in the
+                        selection process for this activity.' }}
                       </p>
                     </div>
-                    
+
                     <div class="flex justify-end gap-4">
                       <button
                         @click="closeRegisterModal()"
@@ -779,11 +852,13 @@
                         class="px-6 py-2.5 rounded-lg font-semibold cursor-pointer text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span x-show="!isRegistering">
-                          {{ 'Ya, Daftar' if current_lang == 'id' else 'Yes, Register' }}
+                          {{ 'Ya, Daftar' if current_lang == 'id' else 'Yes,
+                          Register' }}
                         </span>
                         <span x-show="isRegistering">
                           <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-                          {{ 'Mendaftar...' if current_lang == 'id' else 'Registering...' }}
+                          {{ 'Mendaftar...' if current_lang == 'id' else
+                          'Registering...' }}
                         </span>
                       </button>
                     </div>
@@ -804,7 +879,8 @@
                   >
                     <div class="flex items-center justify-between mb-4">
                       <h3 class="text-xl font-bold">
-                        {{ 'Konfirmasi Batal Daftar' if current_lang == 'id' else 'Confirm Cancel Registration' }}
+                        {{ 'Konfirmasi Batal Daftar' if current_lang == 'id'
+                        else 'Confirm Cancel Registration' }}
                       </h3>
                       <button
                         @click="closeCancelModal()"
@@ -814,22 +890,34 @@
                         <i class="fa-solid fa-times text-lg"></i>
                       </button>
                     </div>
-                    
+
                     <div class="mb-6">
                       <div class="flex items-center justify-center mb-4">
                         <div class="text-4xl text-orange-500 animate-pulse">
                           <i class="fa-solid fa-triangle-exclamation"></i>
                         </div>
                       </div>
-                      <p class="text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
-                        {{ 'Apakah Anda yakin ingin membatalkan pendaftaran ke seleksi kegiatan' if current_lang == 'id' else 'Are you sure you want to cancel registration for selection activity' }}?
+                      <p
+                        class="text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        {{ 'Apakah Anda yakin ingin membatalkan pendaftaran ke
+                        seleksi kegiatan' if current_lang == 'id' else 'Are you
+                        sure you want to cancel registration for selection
+                        activity' }}?
                       </p>
-                      <p class="text-center mt-2 font-semibold" x-text="selectedKegiatan ? selectedKegiatan.nama : ''"></p>
-                      <p class="text-sm text-center mt-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}">
-                        {{ 'Tindakan ini akan menghapus pendaftaran Anda dari kegiatan ini.' if current_lang == 'id' else 'This action will remove your registration from this activity.' }}
+                      <p
+                        class="text-center mt-2 font-semibold"
+                        x-text="selectedKegiatan ? selectedKegiatan.nama : ''"
+                      ></p>
+                      <p
+                        class="text-sm text-center mt-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                      >
+                        {{ 'Tindakan ini akan menghapus pendaftaran Anda dari
+                        kegiatan ini.' if current_lang == 'id' else 'This action
+                        will remove your registration from this activity.' }}
                       </p>
                     </div>
-                    
+
                     <div class="flex justify-end gap-4">
                       <button
                         @click="closeCancelModal()"
@@ -843,11 +931,13 @@
                         class="px-6 py-2.5 rounded-lg font-semibold cursor-pointer text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span x-show="!isCanceling">
-                          {{ 'Ya, Batalkan' if current_lang == 'id' else 'Yes, Cancel' }}
+                          {{ 'Ya, Batalkan' if current_lang == 'id' else 'Yes,
+                          Cancel' }}
                         </span>
                         <span x-show="isCanceling">
                           <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-                          {{ 'Membatalkan...' if current_lang == 'id' else 'Canceling...' }}
+                          {{ 'Membatalkan...' if current_lang == 'id' else
+                          'Canceling...' }}
                         </span>
                       </button>
                     </div>
@@ -855,264 +945,295 @@
                 </div>
               </div>
 
-    <!-- Script untuk Kegiatan Tersedia -->
-    <script>
-      document.addEventListener("alpine:init", () => {
-        Alpine.data("kegiatanTersedia", () => ({
-          kegiatanList: [],
-          loading: true,
-          isRegistering: false,
-          isCanceling: false,
-          showCancelModal: false,
-          showRegisterModal: false,
-          selectedKegiatan: null,
-          selectedKegiatanRegister: null,
+              <!-- Script untuk Kegiatan Tersedia -->
+              <script>
+                document.addEventListener("alpine:init", () => {
+                  Alpine.data("kegiatanTersedia", () => ({
+                    kegiatanList: [],
+                    loading: true,
+                    isRegistering: false,
+                    isCanceling: false,
+                    showCancelModal: false,
+                    showRegisterModal: false,
+                    selectedKegiatan: null,
+                    selectedKegiatanRegister: null,
 
-          async init() {
-            await this.loadKegiatan();
-          },
+                    async init() {
+                      await this.loadKegiatan();
+                    },
 
-          async loadKegiatan() {
-            try {
-              this.loading = true;
-              const response = await fetch("/api/kegiatan_tersedia");
-              const result = await response.json();
+                    async loadKegiatan() {
+                      try {
+                        this.loading = true;
+                        const response = await fetch("/api/kegiatan_tersedia");
+                        const result = await response.json();
 
-              if (result.status === "success") {
-                this.kegiatanList = result.data;
-              } else {
-                console.error("Error loading kegiatan:", result.message);
-                // Tampilkan notifikasi error jika ada
-                if (window.showNotification) {
-                  window.showNotification(
-                    "error",
-                    '{{ "Error" if current_lang == "id" else "Error" }}',
-                    result.message ||
-                      '{{ "Gagal memuat data kegiatan" if current_lang == "id" else "Failed to load activity data" }}'
-                  );
-                }
-              }
-            } catch (error) {
-              console.error("Error:", error);
-              if (window.showNotification) {
-                window.showNotification(
-                  "error",
-                  '{{ "Error" if current_lang == "id" else "Error" }}',
-                  '{{ "Terjadi kesalahan saat memuat data" if current_lang == "id" else "An error occurred while loading data" }}'
-                );
-              }
-            } finally {
-              this.loading = false;
-            }
-          },
+                        if (result.status === "success") {
+                          this.kegiatanList = result.data;
+                        } else {
+                          console.error(
+                            "Error loading kegiatan:",
+                            result.message
+                          );
+                          // Tampilkan notifikasi error jika ada
+                          if (window.showNotification) {
+                            window.showNotification(
+                              "error",
+                              '{{ "Error" if current_lang == "id" else "Error" }}',
+                              result.message ||
+                                '{{ "Gagal memuat data kegiatan" if current_lang == "id" else "Failed to load activity data" }}'
+                            );
+                          }
+                        }
+                      } catch (error) {
+                        console.error("Error:", error);
+                        if (window.showNotification) {
+                          window.showNotification(
+                            "error",
+                            '{{ "Error" if current_lang == "id" else "Error" }}',
+                            '{{ "Terjadi kesalahan saat memuat data" if current_lang == "id" else "An error occurred while loading data" }}'
+                          );
+                        }
+                      } finally {
+                        this.loading = false;
+                      }
+                    },
 
-          formatDate(dateString) {
-            if (!dateString) return "-";
-            const date = new Date(dateString);
-            const day = String(date.getDate()).padStart(2, "0");
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
-          },
+                    formatDate(dateString) {
+                      if (!dateString) return "-";
+                      const date = new Date(dateString);
+                      const day = String(date.getDate()).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0"
+                      );
+                      const year = date.getFullYear();
+                      return `${day}/${month}/${year}`;
+                    },
 
-          openRegisterModal(kegiatanId, namaKegiatan) {
-            this.selectedKegiatanRegister = { id: kegiatanId, nama: namaKegiatan };
-            this.showRegisterModal = true;
-          },
+                    openRegisterModal(kegiatanId, namaKegiatan) {
+                      this.selectedKegiatanRegister = {
+                        id: kegiatanId,
+                        nama: namaKegiatan,
+                      };
+                      this.showRegisterModal = true;
+                    },
 
-          closeRegisterModal() {
-            this.showRegisterModal = false;
-            this.selectedKegiatanRegister = null;
-          },
+                    closeRegisterModal() {
+                      this.showRegisterModal = false;
+                      this.selectedKegiatanRegister = null;
+                    },
 
-          async daftarSeleksi() {
-            if (this.isRegistering || !this.selectedKegiatanRegister) return;
+                    async daftarSeleksi() {
+                      if (this.isRegistering || !this.selectedKegiatanRegister)
+                        return;
 
-            try {
-              this.isRegistering = true;
-              this.showRegisterModal = false;
+                      try {
+                        this.isRegistering = true;
+                        this.showRegisterModal = false;
 
-              const response = await fetch("/api/daftar_seleksi", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ kegiatan_id: this.selectedKegiatanRegister.id }),
-              });
+                        const response = await fetch("/api/daftar_seleksi", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            kegiatan_id: this.selectedKegiatanRegister.id,
+                          }),
+                        });
 
-              const result = await response.json();
+                        const result = await response.json();
 
-              if (result.status === "success") {
-                // Tampilkan notifikasi sukses
-                if (window.showNotification) {
-                  window.showNotification(
-                    "success",
-                    '{{ "Success" if current_lang == "id" else "Success" }}',
-                    result.message ||
-                      '{{ "Berhasil mendaftar" if current_lang == "id" else "Successfully registered" }}!'
-                  );
-                }
+                        if (result.status === "success") {
+                          // Tampilkan notifikasi sukses
+                          if (window.showNotification) {
+                            window.showNotification(
+                              "success",
+                              '{{ "Success" if current_lang == "id" else "Success" }}',
+                              result.message ||
+                                '{{ "Berhasil mendaftar" if current_lang == "id" else "Successfully registered" }}!'
+                            );
+                          }
 
-                // Reload data kegiatan untuk update status
-                await this.loadKegiatan();
+                          // Reload data kegiatan untuk update status
+                          await this.loadKegiatan();
 
-                // Reload halaman setelah 1 detik untuk update status seleksi
-                setTimeout(() => {
-                  window.location.reload();
-                }, 1000);
-              } else {
-                // Tampilkan notifikasi error
-                if (window.showNotification) {
-                  window.showNotification(
-                    "error",
-                    '{{ "Error" if current_lang == "id" else "Error" }}',
-                    result.message ||
-                      '{{ "Gagal mendaftar" if current_lang == "id" else "Failed to register" }}'
-                  );
-                }
-              }
-            } catch (error) {
-              console.error("Error:", error);
-              if (window.showNotification) {
-                window.showNotification(
-                  "error",
-                  '{{ "Error" if current_lang == "id" else "Error" }}',
-                  '{{ "Terjadi kesalahan saat mendaftar" if current_lang == "id" else "An error occurred while registering" }}'
-                );
-              }
-            } finally {
-              this.isRegistering = false;
-              this.selectedKegiatanRegister = null;
-            }
-          },
+                          // Reload halaman setelah 1 detik untuk update status seleksi
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 1000);
+                        } else {
+                          // Tampilkan notifikasi error
+                          if (window.showNotification) {
+                            window.showNotification(
+                              "error",
+                              '{{ "Error" if current_lang == "id" else "Error" }}',
+                              result.message ||
+                                '{{ "Gagal mendaftar" if current_lang == "id" else "Failed to register" }}'
+                            );
+                          }
+                        }
+                      } catch (error) {
+                        console.error("Error:", error);
+                        if (window.showNotification) {
+                          window.showNotification(
+                            "error",
+                            '{{ "Error" if current_lang == "id" else "Error" }}',
+                            '{{ "Terjadi kesalahan saat mendaftar" if current_lang == "id" else "An error occurred while registering" }}'
+                          );
+                        }
+                      } finally {
+                        this.isRegistering = false;
+                        this.selectedKegiatanRegister = null;
+                      }
+                    },
 
-          openCancelModal(kegiatanId, namaKegiatan) {
-            this.selectedKegiatan = { id: kegiatanId, nama: namaKegiatan };
-            this.showCancelModal = true;
-          },
+                    openCancelModal(kegiatanId, namaKegiatan) {
+                      this.selectedKegiatan = {
+                        id: kegiatanId,
+                        nama: namaKegiatan,
+                      };
+                      this.showCancelModal = true;
+                    },
 
-          closeCancelModal() {
-            this.showCancelModal = false;
-            this.selectedKegiatan = null;
-          },
+                    closeCancelModal() {
+                      this.showCancelModal = false;
+                      this.selectedKegiatan = null;
+                    },
 
-          async batalDaftarSeleksi() {
-            if (this.isCanceling || !this.selectedKegiatan) return;
+                    async batalDaftarSeleksi() {
+                      if (this.isCanceling || !this.selectedKegiatan) return;
 
-            try {
-              this.isCanceling = true;
-              this.showCancelModal = false;
+                      try {
+                        this.isCanceling = true;
+                        this.showCancelModal = false;
 
-              const response = await fetch("/api/batal_daftar_seleksi", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ kegiatan_id: this.selectedKegiatan.id }),
-              });
+                        const response = await fetch(
+                          "/api/batal_daftar_seleksi",
+                          {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                              kegiatan_id: this.selectedKegiatan.id,
+                            }),
+                          }
+                        );
 
-              const result = await response.json();
+                        const result = await response.json();
 
-              if (result.status === "success") {
-                // Tampilkan notifikasi sukses
-                if (window.showNotification) {
-                  window.showNotification(
-                    "success",
-                    '{{ "Success" if current_lang == "id" else "Success" }}',
-                    result.message ||
-                      '{{ "Berhasil membatalkan pendaftaran" if current_lang == "id" else "Successfully canceled registration" }}!'
-                  );
-                }
+                        if (result.status === "success") {
+                          // Tampilkan notifikasi sukses
+                          if (window.showNotification) {
+                            window.showNotification(
+                              "success",
+                              '{{ "Success" if current_lang == "id" else "Success" }}',
+                              result.message ||
+                                '{{ "Berhasil membatalkan pendaftaran" if current_lang == "id" else "Successfully canceled registration" }}!'
+                            );
+                          }
 
-                // Reload data kegiatan untuk update status
-                await this.loadKegiatan();
+                          // Reload data kegiatan untuk update status
+                          await this.loadKegiatan();
 
-                // Reload halaman setelah 1 detik untuk update status seleksi
-                setTimeout(() => {
-                  window.location.reload();
-                }, 1000);
-              } else {
-                // Tampilkan notifikasi error
-                if (window.showNotification) {
-                  window.showNotification(
-                    "error",
-                    '{{ "Error" if current_lang == "id" else "Error" }}',
-                    result.message ||
-                      '{{ "Gagal membatalkan pendaftaran" if current_lang == "id" else "Failed to cancel registration" }}'
-                  );
-                }
-              }
-            } catch (error) {
-              console.error("Error:", error);
-              if (window.showNotification) {
-                window.showNotification(
-                  "error",
-                  '{{ "Error" if current_lang == "id" else "Error" }}',
-                  '{{ "Terjadi kesalahan saat membatalkan pendaftaran" if current_lang == "id" else "An error occurred while canceling registration" }}'
-                );
-              }
-            } finally {
-              this.isCanceling = false;
-              this.selectedKegiatan = null;
-            }
-          },
-        }));
-      });
-    </script>
+                          // Reload halaman setelah 1 detik untuk update status seleksi
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 1000);
+                        } else {
+                          // Tampilkan notifikasi error
+                          if (window.showNotification) {
+                            window.showNotification(
+                              "error",
+                              '{{ "Error" if current_lang == "id" else "Error" }}',
+                              result.message ||
+                                '{{ "Gagal membatalkan pendaftaran" if current_lang == "id" else "Failed to cancel registration" }}'
+                            );
+                          }
+                        }
+                      } catch (error) {
+                        console.error("Error:", error);
+                        if (window.showNotification) {
+                          window.showNotification(
+                            "error",
+                            '{{ "Error" if current_lang == "id" else "Error" }}',
+                            '{{ "Terjadi kesalahan saat membatalkan pendaftaran" if current_lang == "id" else "An error occurred while canceling registration" }}'
+                          );
+                        }
+                      } finally {
+                        this.isCanceling = false;
+                        this.selectedKegiatan = null;
+                      }
+                    },
+                  }));
+                });
+              </script>
 
-    <!-- Notifikasi Toast -->
-    <div
-      x-data="{ notifications: [] }"
-      x-init="window.showNotification = function(category, title, message) {
-        const notification = { id: Date.now(), category, title, message, show: true };
-        $data.notifications.push(notification);
-        setTimeout(() => {
-          notification.show = false;
-          setTimeout(() => {
-            $data.notifications = $data.notifications.filter(n => n.id !== notification.id);
-          }, 300);
-        }, 5000);
-      }"
-      class="fixed bottom-6 right-6 z-[60] space-y-3"
-    >
-      <template x-for="notification in notifications" :key="notification.id">
-        <div
-          x-show="notification.show"
-          x-transition:enter="transition ease-out duration-300"
-          x-transition:enter-start="opacity-0 transform translate-x-full"
-          x-transition:enter-end="opacity-100 transform translate-x-0"
-          x-transition:leave="transition ease-in duration-200"
-          x-transition:leave-start="opacity-100 transform translate-x-0"
-          x-transition:leave-end="opacity-0 transform translate-x-full"
-          class="flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl border min-w-[300px] max-w-md"
-          :class="{
-            'bg-green-600 text-white border-green-500': notification.category === 'success',
-            'bg-red-600 text-white border-red-500': notification.category === 'danger' || notification.category === 'error',
-            'bg-yellow-500 text-gray-900 border-yellow-400': notification.category === 'warning',
-            'bg-gray-800 text-white border-gray-700': !['success', 'danger', 'error', 'warning'].includes(notification.category)
-          }"
-        >
-          <i
-            class="fa-solid text-lg"
-            :class="{
-              'fa-circle-check': notification.category === 'success',
-              'fa-triangle-exclamation': notification.category === 'danger' || notification.category === 'error',
-              'fa-exclamation-circle': notification.category === 'warning',
-              'fa-info-circle': !['success', 'danger', 'error', 'warning'].includes(notification.category)
-            }"
-          ></i>
-          <div class="flex-1">
-            <strong x-text="notification.title"></strong><br />
-            <span class="text-sm" x-text="notification.message"></span>
-          </div>
-          <button
-            @click="notification.show = false; setTimeout(() => notifications = notifications.filter(n => n.id !== notification.id), 300)"
-            class="ml-2 text-lg opacity-70 hover:opacity-100 transition-opacity"
-          >
-            <i class="fa-solid fa-times"></i>
-          </button>
-        </div>
-      </template>
+              <!-- Notifikasi Toast -->
+              <div
+                x-data="{ notifications: [] }"
+                x-init="window.showNotification = function(category, title, message) {
+                  const notification = { id: Date.now(), category, title, message, show: true };
+                  $data.notifications.push(notification);
+                  setTimeout(() => {
+                    notification.show = false;
+                    setTimeout(() => {
+                      $data.notifications = $data.notifications.filter(n => n.id !== notification.id);
+                    }, 300);
+                  }, 5000);
+                }"
+                class="fixed bottom-6 right-6 z-[60] space-y-3"
+              >
+                <template
+                  x-for="notification in notifications"
+                  :key="notification.id"
+                >
+                  <div
+                    x-show="notification.show"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform translate-x-full"
+                    x-transition:enter-end="opacity-100 transform translate-x-0"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform translate-x-0"
+                    x-transition:leave-end="opacity-0 transform translate-x-full"
+                    class="flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl border min-w-[300px] max-w-md"
+                    :class="{
+                      'bg-green-600 text-white border-green-500': notification.category === 'success',
+                      'bg-red-600 text-white border-red-500': notification.category === 'danger' || notification.category === 'error',
+                      'bg-yellow-500 text-gray-900 border-yellow-400': notification.category === 'warning',
+                      'bg-gray-800 text-white border-gray-700': !['success', 'danger', 'error', 'warning'].includes(notification.category)
+                    }"
+                  >
+                    <i
+                      class="fa-solid text-lg"
+                      :class="{
+                        'fa-circle-check': notification.category === 'success',
+                        'fa-triangle-exclamation': notification.category === 'danger' || notification.category === 'error',
+                        'fa-exclamation-circle': notification.category === 'warning',
+                        'fa-info-circle': !['success', 'danger', 'error', 'warning'].includes(notification.category)
+                      }"
+                    ></i>
+                    <div class="flex-1">
+                      <strong x-text="notification.title"></strong><br />
+                      <span
+                        class="text-sm"
+                        x-text="notification.message"
+                      ></span>
+                    </div>
+                    <button
+                      @click="notification.show = false; setTimeout(() => notifications = notifications.filter(n => n.id !== notification.id), 300)"
+                      class="ml-2 text-lg opacity-70 hover:opacity-100 transition-opacity"
+                    >
+                      <i class="fa-solid fa-times"></i>
+                    </button>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   </body>
 </html>

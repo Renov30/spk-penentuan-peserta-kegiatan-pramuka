@@ -20,6 +20,7 @@ from flask_login import current_user, LoginManager, login_user, login_required
 from functools import wraps
 from app.utils.utils import log_activity
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_, not_
 from slugify import slugify
 from urllib.parse import urlparse, urljoin
 import io
@@ -4613,10 +4614,7 @@ def peserta_dashboard():
         activity_scores.append({'event': event, 'final_score': round(total_score, 2) if has_scores else None, 'ranking': hasil.ranking if hasil else None, 'has_scores': has_scores})
     
     # Check if any selection period has ended
-    is_selection_ended = any(
-        event.selesai and event.selesai < date.today()
-        for event in registered_activities
-    )
+    is_selection_ended = any(event.selesai and event.selesai < date.today() for event in registered_activities)
     
     # Determine status
     status_seleksi = 'Terdaftar' if registered_activities else 'Belum ada status'
