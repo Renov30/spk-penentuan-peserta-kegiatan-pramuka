@@ -1067,13 +1067,15 @@ def admin_dashboard():
     total_users = Users.query.count()
     total_participants = Participants.query.count() if db.inspect(db.engine).has_table("participants") else 0
     total_criteria = Criteria.query.count() if db.inspect(db.engine).has_table("criteria") else 0
+    total_events = Event.query.count() if db.inspect(db.engine).has_table("tb_kegiatan") else 0
     total_notifications = Notification.query.count()
-
+    
     return render_template(
         'dashboard_admin.html',
         total_users=total_users,
         total_participants=total_participants,
         total_criteria=total_criteria,
+        total_events=total_events,
         total_notifications=total_notifications,
         user=user,
         sidebar_state=sidebar_state
