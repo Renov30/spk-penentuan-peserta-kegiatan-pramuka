@@ -111,46 +111,5 @@
       </form>
     </div>
   </body>
-  <script>
-    const toggleButton = document.getElementById("toggleButton");
-    const desc = document.getElementById("description");
-    const label = document.getElementById("label-email-or-hp");
-    const input = document.getElementById("input-email-or-hp");
-
-    // Ambil status terakhir dari localStorage
-    let usingPhone = localStorage.getItem("usePhone") === "true";
-
-    // Fungsi untuk update tampilan
-    function updateUI() {
-      if (usingPhone) {
-        desc.textContent =
-          "Masukkan username dan nomor HP Anda untuk mencari akun Anda.";
-        label.textContent = "Nomor HP:";
-        label.setAttribute("for", "no-hp");
-        input.setAttribute("type", "text");
-        input.setAttribute("name", "no-hp");
-        input.setAttribute("placeholder", "Masukkan nomor HP Anda");
-        toggleButton.textContent = "Cari Menggunakan Email";
-      } else {
-        desc.textContent =
-          "Masukkan username dan email Anda untuk mencari akun Anda.";
-        label.textContent = "Email:";
-        label.setAttribute("for", "email");
-        input.setAttribute("type", "email");
-        input.setAttribute("name", "email");
-        input.setAttribute("placeholder", "Masukkan email");
-        toggleButton.textContent = "Cari Menggunakan Nomor HP";
-      }
-    }
-
-    // Panggil fungsi saat halaman dimuat
-    updateUI();
-
-    // Tambahkan event untuk toggle
-    toggleButton.addEventListener("click", function () {
-      usingPhone = !usingPhone;
-      localStorage.setItem("usePhone", usingPhone);
-      updateUI();
-    });
-  </script>
+  <script src="{{ url_for('static', filename='js/find_account.js') }}"></script>
 </html>

@@ -40,6 +40,98 @@
 
     <!-- Script Theme -->
     {% include 'script_theme.html' %}
+
+    <style>
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideOutRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+
+      .toast {
+        animation: slideInRight 0.3s ease-out;
+      }
+
+      .toast.hide {
+        animation: slideOutRight 0.3s ease-in;
+      }
+
+      /* Custom File Input Styling - Modern Browsers */
+      .file-input-custom::file-selector-button {
+        background-color: #2563eb !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.625rem 1.25rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        margin-right: 1rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .file-input-custom::file-selector-button:hover {
+        background-color: #1d4ed8 !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        transform: translateY(-1px);
+      }
+
+      .file-input-custom::file-selector-button:active {
+        background-color: #1e40af !important;
+        transform: translateY(0);
+      }
+
+      /* WebKit/Chrome specific styling (for older browsers) */
+      .file-input-custom::-webkit-file-upload-button {
+        background-color: #2563eb !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.625rem 1.25rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        margin-right: 1rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+      }
+
+      .file-input-custom::-webkit-file-upload-button:hover {
+        background-color: #1d4ed8 !important;
+      }
+
+      /* Dark mode styling for file input button */
+      .dark .file-input-custom::file-selector-button,
+      .dark .file-input-custom::-webkit-file-upload-button {
+        background-color: #3b82f6 !important;
+      }
+
+      .dark .file-input-custom::file-selector-button:hover,
+      .dark .file-input-custom::-webkit-file-upload-button:hover {
+        background-color: #2563eb !important;
+      }
+
+      .dark .file-input-custom::file-selector-button:active,
+      .dark .file-input-custom::-webkit-file-upload-button:active {
+        background-color: #1d4ed8 !important;
+      }
+    </style>
   </head>
   <body
     x-data="{ ready: false }"
@@ -637,307 +729,32 @@
       class="fixed bottom-6 right-6 z-[9999] space-y-3"
     ></div>
 
-    <style>
-      @keyframes slideInRight {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-
-      @keyframes slideOutRight {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-      }
-
-      .toast {
-        animation: slideInRight 0.3s ease-out;
-      }
-
-      .toast.hide {
-        animation: slideOutRight 0.3s ease-in;
-      }
-
-      /* Custom File Input Styling - Modern Browsers */
-      .file-input-custom::file-selector-button {
-        background-color: #2563eb !important;
-        color: white !important;
-        border: none !important;
-        padding: 0.625rem 1.25rem !important;
-        border-radius: 0.5rem !important;
-        font-weight: 600 !important;
-        font-size: 0.875rem !important;
-        margin-right: 1rem !important;
-        cursor: pointer !important;
-        transition: all 0.2s ease !important;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-      }
-
-      .file-input-custom::file-selector-button:hover {
-        background-color: #1d4ed8 !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-        transform: translateY(-1px);
-      }
-
-      .file-input-custom::file-selector-button:active {
-        background-color: #1e40af !important;
-        transform: translateY(0);
-      }
-
-      /* WebKit/Chrome specific styling (for older browsers) */
-      .file-input-custom::-webkit-file-upload-button {
-        background-color: #2563eb !important;
-        color: white !important;
-        border: none !important;
-        padding: 0.625rem 1.25rem !important;
-        border-radius: 0.5rem !important;
-        font-weight: 600 !important;
-        font-size: 0.875rem !important;
-        margin-right: 1rem !important;
-        cursor: pointer !important;
-        transition: all 0.2s ease !important;
-      }
-
-      .file-input-custom::-webkit-file-upload-button:hover {
-        background-color: #1d4ed8 !important;
-      }
-
-      /* Dark mode styling for file input button */
-      .dark .file-input-custom::file-selector-button,
-      .dark .file-input-custom::-webkit-file-upload-button {
-        background-color: #3b82f6 !important;
-      }
-
-      .dark .file-input-custom::file-selector-button:hover,
-      .dark .file-input-custom::-webkit-file-upload-button:hover {
-        background-color: #2563eb !important;
-      }
-
-      .dark .file-input-custom::file-selector-button:active,
-      .dark .file-input-custom::-webkit-file-upload-button:active {
-        background-color: #1d4ed8 !important;
-      }
-    </style>
-
-    <script>
-      // Toast Notification Function
-      function showNotification(message, type = "info") {
-        const container = document.getElementById("toast-container");
-        if (!container) {
-          console.error("Toast container not found");
-          return;
-        }
-
-        // Create toast element
-        const toast = document.createElement("div");
-        toast.className = `toast flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg min-w-[300px] max-w-md ${
-          type === "success"
-            ? "bg-green-500 text-white"
-            : type === "error"
-            ? "bg-red-500 text-white"
-            : type === "warning"
-            ? "bg-yellow-500 text-gray-900"
-            : "bg-blue-500 text-white"
-        }`;
-
-        // Icon based on type
-        const icon =
-          type === "success"
-            ? '<i class="fas fa-check-circle text-xl"></i>'
-            : type === "error"
-            ? '<i class="fas fa-times-circle text-xl"></i>'
-            : type === "warning"
-            ? '<i class="fas fa-exclamation-triangle text-xl"></i>'
-            : '<i class="fas fa-info-circle text-xl"></i>';
-
-        toast.innerHTML = `
-          ${icon}
-          <span class="flex-1 font-medium">${message}</span>
-          <button onclick="this.parentElement.classList.add('hide'); setTimeout(() => this.parentElement.remove(), 300)" 
-                  class="text-white hover:text-gray-200 transition cursor-pointer">
-            <i class="fas fa-times"></i>
-          </button>
-        `;
-
-        container.appendChild(toast);
-
-        // Auto remove after 4 seconds
-        setTimeout(() => {
-          toast.classList.add("hide");
-          setTimeout(() => toast.remove(), 300);
-        }, 4000);
-      }
-    </script>
-
-    <script>
-      document.addEventListener('alpine:init', () => {
-        Alpine.data('settingsPage', () => ({
-          init() {
-            console.log('Settings page initialized');
-            console.log('Active tab:', this.activeTab);
-          },
-          activeTab: 'email',
-          emailSettings: {
-            mail_server: {{ email_settings.mail_server|tojson }},
-            mail_port: {{ email_settings.mail_port|tojson }},
-            mail_use_tls: {{ 'true' if email_settings.mail_use_tls == 'true' else 'false' }},
-            mail_use_ssl: {{ 'true' if email_settings.mail_use_ssl == 'true' else 'false' }},
-            mail_username: {{ email_settings.mail_username|tojson }},
-            mail_password: '',
-            mail_enabled: {{ 'true' if email_settings.mail_enabled == 'true' else 'false' }}
-          },
-          smsSettings: {
-            twilio_account_sid: {{ sms_settings.twilio_account_sid|tojson }},
-            twilio_auth_token: '',
-            twilio_whatsapp_from: {{ sms_settings.twilio_whatsapp_from|tojson }},
-            sms_enabled: {{ 'true' if sms_settings.sms_enabled == 'true' else 'false' }}
-          },
-          appSettings: {
-            app_name: {{ app_settings.app_name|tojson }},
-            app_description: {{ app_settings.app_description|tojson }},
-            app_version: {{ app_settings.app_version|tojson }},
-            organization_name: {{ app_settings.organization_name|tojson }},
-            organization_address: {{ app_settings.organization_address|tojson }},
-            organization_phone: {{ app_settings.organization_phone|tojson }},
-            organization_email: {{ app_settings.organization_email|tojson }},
-            default_language: {{ app_settings.default_language|tojson }}
-          },
-          logoPath: {{ app_settings.logo_path|tojson }},
-          logoFile: null,
-
-          handleLogoUpload(event) {
-            this.logoFile = event.target.files[0];
-          },
-
-          async saveSettings(category) {
-            try {
-              let data = { category };
-
-              if (category === 'email') {
-                // Convert boolean to string for email settings
-                data.mail_server = this.emailSettings.mail_server;
-                data.mail_port = this.emailSettings.mail_port;
-                data.mail_use_tls = this.emailSettings.mail_use_tls ? 'true' : 'false';
-                data.mail_use_ssl = this.emailSettings.mail_use_ssl ? 'true' : 'false';
-                data.mail_username = this.emailSettings.mail_username;
-                data.mail_enabled = this.emailSettings.mail_enabled ? 'true' : 'false';
-                if (this.emailSettings.mail_password) {
-                  data.mail_password = this.emailSettings.mail_password;
-                }
-              } else if (category === 'sms') {
-                // Convert boolean to string for SMS settings
-                data.twilio_account_sid = this.smsSettings.twilio_account_sid;
-                data.twilio_whatsapp_from = this.smsSettings.twilio_whatsapp_from;
-                data.sms_enabled = this.smsSettings.sms_enabled ? 'true' : 'false';
-                if (this.smsSettings.twilio_auth_token) {
-                  data.twilio_auth_token = this.smsSettings.twilio_auth_token;
-                }
-              } else if (category === 'app') {
-                data = { ...data, ...this.appSettings };
-              }
-
-              const response = await fetch('/api/save_settings', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify(data)
-              });
-
-              const result = await response.json();
-
-              if (result.status === 'success') {
-                showNotification('{{ "Pengaturan berhasil disimpan" if current_lang == "id" else "Settings saved successfully" }}', 'success');
-                // Clear password fields after successful save
-                if (category === 'email') {
-                  this.emailSettings.mail_password = '';
-                } else if (category === 'sms') {
-                  this.smsSettings.twilio_auth_token = '';
-                }
-              } else {
-                showNotification('{{ "Gagal menyimpan pengaturan" if current_lang == "id" else "Failed to save settings" }}: ' + result.message, 'error');
-              }
-            } catch (error) {
-              console.error('Error:', error);
-              showNotification('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}', 'error');
-            }
-          },
-
-          async testEmail() {
-            const email = prompt('{{ "Masukkan email untuk test" if current_lang == "id" else "Enter email for test" }}:', '{{ current_user.email if current_user else "" }}');
-            if (!email) return;
-
-            try {
-              const response = await fetch('/api/test_email', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({ email })
-              });
-
-              const result = await response.json();
-              const messageType = result.status === 'success' ? 'success' : 'error';
-              showNotification(result.message, messageType);
-            } catch (error) {
-              console.error('Error:', error);
-              showNotification('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}', 'error');
-            }
-          },
-
-          async uploadLogo() {
-            if (!this.logoFile) {
-              showNotification('{{ "Pilih file logo terlebih dahulu" if current_lang == "id" else "Please select a logo file first" }}', 'warning');
-              return;
-            }
-
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-            const formData = new FormData();
-            formData.append('logo', this.logoFile);
-            formData.append('csrf_token', csrfToken);
-
-            try {
-              const response = await fetch('/api/upload_logo', {
-                method: 'POST',
-                headers: {
-                  'X-CSRFToken': csrfToken
-                },
-                body: formData
-              });
-
-              const result = await response.json();
-
-              if (result.status === 'success') {
-                this.logoPath = result.logo_path;
-                showNotification('{{ "Logo berhasil diupload" if current_lang == "id" else "Logo uploaded successfully" }}', 'success');
-                document.getElementById('logoFile').value = '';
-                this.logoFile = null;
-              } else {
-                showNotification('{{ "Gagal mengupload logo" if current_lang == "id" else "Failed to upload logo" }}: ' + result.message, 'error');
-              }
-            } catch (error) {
-              console.error('Error:', error);
-              showNotification('{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}', 'error');
-            }
-          }
-        }));
-      });
-    </script>
-
     <!-- Animation & Notification Script -->
     {% include 'script_animation.html' %} {% include 'script_notification.html'
     %}
+
+    <script>
+      window.APP_SETTINGS = {
+        lang: "{{ current_lang }}",
+        csrfToken: "{{ csrf_token() }}",
+
+        emailSettings: {{ email_settings | tojson }},
+        smsSettings: {{ sms_settings | tojson }},
+        appSettings: {{ app_settings | tojson }},
+
+        texts: {
+          logo_required: "{{ 'Pilih file logo terlebih dahulu' if current_lang == 'id' else 'Please select a logo file first' }}",
+          logo_success: "{{ 'Logo berhasil diupload' if current_lang == 'id' else 'Logo uploaded successfully' }}",
+          logo_failed: "{{ 'Gagal mengupload logo' if current_lang == 'id' else 'Failed to upload logo' }}",
+          save_success: "{{ 'Pengaturan berhasil disimpan' if current_lang == 'id' else 'Settings saved successfully' }}",
+          save_failed: "{{ 'Gagal menyimpan pengaturan' if current_lang == 'id' else 'Failed to save settings' }}",
+          error_generic: "{{ 'Terjadi kesalahan' if current_lang == 'id' else 'An error occurred' }}",
+          test_email_prompt: "{{ 'Masukkan email untuk test' if current_lang == 'id' else 'Enter email for test' }}",
+          test_email_default: "{{ current_user.email if current_user else '' }}"
+        }
+      };
+    </script>
+
+    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
   </body>
 </html>

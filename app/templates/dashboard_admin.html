@@ -255,355 +255,56 @@
     {% include 'script_animation.html' %} {% include 'script_notification.html'
     %}
 
-    <!-- Chart Script -->
     <script>
-      // Get theme colors
-      const isDark = {{ 'true' if current_theme == 'dark' else 'false' }};
-      const textColor = isDark ? '#ffffff' : '#000000';
-      const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+      window.IS_DARK_THEME = {{ 'true' if current_theme == 'dark' else 'false' }};
 
-      // Chart.js default configuration
-      Chart.defaults.color = textColor;
-      Chart.defaults.borderColor = gridColor;
+      window.DASHBOARD_LABELS = {
+        user_roles: [
+          "{{ 'Admin' if current_lang == 'id' else 'Admin' }}",
+          "{{ 'Penilai' if current_lang == 'id' else 'Evaluator' }}",
+          "{{ 'Peserta' if current_lang == 'id' else 'Participant' }}"
+        ],
+        peserta_status: [
+          "{{ 'Aktif' if current_lang == 'id' else 'Active' }}",
+          "{{ 'Non-Aktif' if current_lang == 'id' else 'Inactive' }}"
+        ],
+        gender: [
+          "{{ 'Laki-laki' if current_lang == 'id' else 'Male' }}",
+          "{{ 'Perempuan' if current_lang == 'id' else 'Female' }}"
+        ],
+        notification_status: [
+          "{{ 'Dibaca' if current_lang == 'id' else 'Read' }}",
+          "{{ 'Belum Dibaca' if current_lang == 'id' else 'Unread' }}"
+        ],
+        events: [
+          "{{ 'Total' if current_lang == 'id' else 'Total' }}",
+          "{{ 'Aktif' if current_lang == 'id' else 'Active' }}",
+          "{{ 'Selesai' if current_lang == 'id' else 'Completed' }}",
+          "{{ 'Mendatang' if current_lang == 'id' else 'Upcoming' }}"
+        ],
+        summary: [
+          "{{ 'Pengguna' if current_lang == 'id' else 'Users' }}",
+          "{{ 'Peserta' if current_lang == 'id' else 'Participants' }}",
+          "{{ 'Kriteria' if current_lang == 'id' else 'Criteria' }}",
+          "{{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}",
+          "{{ 'Kegiatan' if current_lang == 'id' else 'Events' }}",
+          "{{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection Results' }}"
+        ],
+        count: "{{ 'Jumlah' if current_lang == 'id' else 'Count' }}",
+        event_count: "{{ 'Jumlah Kegiatan' if current_lang == 'id' else 'Event Count' }}",
+        total: "{{ 'Total' if current_lang == 'id' else 'Total' }}"
+      };
 
-      // Fetch chart data
-      fetch('/api/admin/dashboard/charts')
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const chartData = data.data;
-
-            // Chart 1: Distribusi Pengguna (Pie Chart)
-            const userDistributionCtx = document.getElementById('userDistributionChart');
-            if (userDistributionCtx) {
-              new Chart(userDistributionCtx, {
-                type: 'pie',
-                data: {
-                  labels: ['{{ "Admin" if current_lang == "id" else "Admin" }}', '{{ "Penilai" if current_lang == "id" else "Evaluator" }}', '{{ "Peserta" if current_lang == "id" else "Participant" }}'],
-                  datasets: [{
-                    data: [
-                      chartData.user_distribution.admin,
-                      chartData.user_distribution.penilai,
-                      chartData.user_distribution.peserta
-                    ],
-                    backgroundColor: [
-                      'rgba(59, 130, 246, 0.8)', // blue
-                      'rgba(16, 185, 129, 0.8)', // green
-                      'rgba(139, 92, 246, 0.8)'  // purple
-                    ],
-                    borderColor: [
-                      'rgba(59, 130, 246, 1)',
-                      'rgba(16, 185, 129, 1)',
-                      'rgba(139, 92, 246, 1)'
-                    ],
-                    borderWidth: 2
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'bottom',
-                      labels: {
-                        color: textColor,
-                        padding: 8,
-                        font: {
-                          size: 11
-                        }
-                      }
-                    }
-                  }
-                }
-              });
-            }
-
-            // Chart 2: Status Peserta (Doughnut Chart)
-            const pesertaStatusCtx = document.getElementById('pesertaStatusChart');
-            if (pesertaStatusCtx) {
-              new Chart(pesertaStatusCtx, {
-                type: 'doughnut',
-                data: {
-                  labels: ['{{ "Aktif" if current_lang == "id" else "Active" }}', '{{ "Non-Aktif" if current_lang == "id" else "Inactive" }}'],
-                  datasets: [{
-                    data: [
-                      chartData.peserta_status.aktif,
-                      chartData.peserta_status.nonaktif
-                    ],
-                    backgroundColor: [
-                      'rgba(16, 185, 129, 0.8)', // green
-                      'rgba(239, 68, 68, 0.8)'   // red
-                    ],
-                    borderColor: [
-                      'rgba(16, 185, 129, 1)',
-                      'rgba(239, 68, 68, 1)'
-                    ],
-                    borderWidth: 2
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'bottom',
-                      labels: {
-                        color: textColor,
-                        padding: 8,
-                        font: {
-                          size: 11
-                        }
-                      }
-                    }
-                  }
-                }
-              });
-            }
-
-            // Chart 3: Jenis Kelamin Peserta (Bar Chart)
-            const pesertaGenderCtx = document.getElementById('pesertaGenderChart');
-            if (pesertaGenderCtx) {
-              new Chart(pesertaGenderCtx, {
-                type: 'bar',
-                data: {
-                  labels: ['{{ "Laki-laki" if current_lang == "id" else "Male" }}', '{{ "Perempuan" if current_lang == "id" else "Female" }}'],
-                  datasets: [{
-                    label: '{{ "Jumlah" if current_lang == "id" else "Count" }}',
-                    data: [
-                      chartData.peserta_gender.laki_laki,
-                      chartData.peserta_gender.perempuan
-                    ],
-                    backgroundColor: [
-                      'rgba(59, 130, 246, 0.8)',
-                      'rgba(236, 72, 153, 0.8)'
-                    ],
-                    borderColor: [
-                      'rgba(59, 130, 246, 1)',
-                      'rgba(236, 72, 153, 1)'
-                    ],
-                    borderWidth: 2
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        color: textColor,
-                        font: {
-                          size: 10
-                        }
-                      },
-                      grid: {
-                        color: gridColor
-                      }
-                    },
-                    x: {
-                      ticks: {
-                        color: textColor,
-                        font: {
-                          size: 10
-                        }
-                      },
-                      grid: {
-                        color: gridColor
-                      }
-                    }
-                  }
-                }
-              });
-            }
-
-            // Chart 4: Status Notifikasi (Pie Chart)
-            const notificationStatusCtx = document.getElementById('notificationStatusChart');
-            if (notificationStatusCtx) {
-              new Chart(notificationStatusCtx, {
-                type: 'pie',
-                data: {
-                  labels: ['{{ "Dibaca" if current_lang == "id" else "Read" }}', '{{ "Belum Dibaca" if current_lang == "id" else "Unread" }}'],
-                  datasets: [{
-                    data: [
-                      chartData.notifications.read,
-                      chartData.notifications.unread
-                    ],
-                    backgroundColor: [
-                      'rgba(16, 185, 129, 0.8)', // green
-                      'rgba(245, 158, 11, 0.8)'   // yellow
-                    ],
-                    borderColor: [
-                      'rgba(16, 185, 129, 1)',
-                      'rgba(245, 158, 11, 1)'
-                    ],
-                    borderWidth: 2
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'bottom',
-                      labels: {
-                        color: textColor,
-                        padding: 8,
-                        font: {
-                          size: 11
-                        }
-                      }
-                    }
-                  }
-                }
-              });
-            }
-
-            // Chart 5: Statistik Kegiatan (Bar Chart)
-            const eventStatisticsCtx = document.getElementById('eventStatisticsChart');
-            if (eventStatisticsCtx) {
-              new Chart(eventStatisticsCtx, {
-                type: 'bar',
-                data: {
-                  labels: [
-                    '{{ "Total" if current_lang == "id" else "Total" }}',
-                    '{{ "Aktif" if current_lang == "id" else "Active" }}',
-                    '{{ "Selesai" if current_lang == "id" else "Completed" }}',
-                    '{{ "Mendatang" if current_lang == "id" else "Upcoming" }}'
-                  ],
-                  datasets: [{
-                    label: '{{ "Jumlah Kegiatan" if current_lang == "id" else "Event Count" }}',
-                    data: [
-                      chartData.events.total,
-                      chartData.events.aktif,
-                      chartData.events.selesai,
-                      chartData.events.mendatang
-                    ],
-                    backgroundColor: [
-                      'rgba(59, 130, 246, 0.8)',
-                      'rgba(16, 185, 129, 0.8)',
-                      'rgba(107, 114, 128, 0.8)',
-                      'rgba(245, 158, 11, 0.8)'
-                    ],
-                    borderColor: [
-                      'rgba(59, 130, 246, 1)',
-                      'rgba(16, 185, 129, 1)',
-                      'rgba(107, 114, 128, 1)',
-                      'rgba(245, 158, 11, 1)'
-                    ],
-                    borderWidth: 2
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        color: textColor,
-                        font: {
-                          size: 10
-                        }
-                      },
-                      grid: {
-                        color: gridColor
-                      }
-                    },
-                    x: {
-                      ticks: {
-                        color: textColor,
-                        font: {
-                          size: 10
-                        }
-                      },
-                      grid: {
-                        color: gridColor
-                      }
-                    }
-                  }
-                }
-              });
-            }
-
-            // Chart 6: Ringkasan Data (Bar Chart)
-            const dataSummaryCtx = document.getElementById('dataSummaryChart');
-            if (dataSummaryCtx) {
-              new Chart(dataSummaryCtx, {
-                type: 'bar',
-                data: {
-                  labels: [
-                    '{{ "Pengguna" if current_lang == "id" else "Users" }}',
-                    '{{ "Peserta" if current_lang == "id" else "Participants" }}',
-                    '{{ "Kriteria" if current_lang == "id" else "Criteria" }}',
-                    '{{ "Notifikasi" if current_lang == "id" else "Notifications" }}',
-                    '{{ "Kegiatan" if current_lang == "id" else "Events" }}',
-                    '{{ "Hasil Seleksi" if current_lang == "id" else "Selection Results" }}'
-                  ],
-                  datasets: [{
-                    label: '{{ "Total" if current_lang == "id" else "Total" }}',
-                    data: [
-                      {{ total_users|default(0) }},
-                      {{ total_participants|default(0) }},
-                      {{ total_criteria|default(0) }},
-                      {{ total_notifications|default(0) }},
-                      chartData.events.total,
-                      chartData.hasil_seleksi.total
-                    ],
-                    backgroundColor: 'rgba(139, 92, 246, 0.8)',
-                    borderColor: 'rgba(139, 92, 246, 1)',
-                    borderWidth: 2
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        color: textColor
-                      },
-                      grid: {
-                        color: gridColor
-                      }
-                    },
-                    x: {
-                      ticks: {
-                        color: textColor,
-                        font: {
-                          size: 9
-                        },
-                        maxRotation: 45,
-                        minRotation: 45
-                      },
-                      grid: {
-                        color: gridColor
-                      }
-                    }
-                  }
-                }
-              });
-            }
-          }
-        })
-        .catch(error => {
-          console.error('Error loading chart data:', error);
-        });
+      window.DASHBOARD_TOTALS = [
+        {{ total_users|default(0) }},
+        {{ total_participants|default(0) }},
+        {{ total_criteria|default(0) }},
+        {{ total_notifications|default(0) }},
+        {{ total_events|default(0) }},
+        {{ total_hasil_seleksi|default(0) }}
+      ];
     </script>
+
+    <script src="{{ url_for('static', filename='js/dashboard_admin.js') }}"></script>
   </body>
 </html>
