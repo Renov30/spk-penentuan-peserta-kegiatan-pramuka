@@ -142,7 +142,7 @@ TRANSLATIONS = {
         'participant_updated': 'Data peserta berhasil diperbarui!',
         'id_event_not_found': 'ID kegiatan tidak ditemukan',
         'registration_closed': 'Pendaftaran seleksi untuk kegiatan ini belum dibuka atau sudah ditutup',
-        'biodata_not_registered': 'Biodata Anda belum terdaftar. Silakan hubungi administrator untuk mendaftarkan biodata.',
+        'biodata_not_registered': 'Biodata Anda belum terdaftar. Silakan lengkapi biodata.',
         'already_registered_for_event': 'Anda sudah terdaftar di kegiatan ini',
         'male_quota_full': 'Kuota untuk peserta putra sudah penuh',
         'female_quota_full': 'Kuota untuk peserta putri sudah penuh',

@@ -1,4 +1,4 @@
-from flask import Flask, Response, abort, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app, send_file
+from flask import Flask, Response, abort, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app, send_file, make_response
 from flask_session import Session
 from flask_session import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
@@ -3710,6 +3710,82 @@ def generate_laporan_excel(event_id):
         return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
 # API untuk generate laporan PDF (menggunakan HTML to PDF atau reportlab)
+@app.route('/admin/laporan/preview/<int:event_id>')
+@login_required
+@admin_required
+def preview_laporan_seleksi(event_id):
+    event = Event.query.get_or_404(event_id)
+    
+    # Ambil hasil seleksi (Logika sama dengan admin_hasil_seleksi)
+    hasil_seleksi = db.session.query(
+        HasilSeleksi, Users, Participants
+    ).join(
+        Users, HasilSeleksi.id_users == Users.id
+    ).outerjoin(
+        Participants, Users.email == Participants.email
+    ).filter(
+        HasilSeleksi.event_id == event_id
+    ).order_by(
+        HasilSeleksi.ranking.asc()
+    ).all()
+    
+    # Format tanggal indonesia
+    now = datetime.now()
+    bulan_list = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ]
+    tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
+    
+    return render_template(
+        'laporan_pdf_template.html',
+        event=event,
+        hasil_seleksi=hasil_seleksi,
+        tanggal_laporan=now.strftime('%d-%m-%Y'),
+        tanggal_laporan_indo=tanggal_laporan_indo
+    )
+
+@app.route('/admin/laporan/word/<int:event_id>')
+@login_required
+@admin_required
+def export_laporan_word(event_id):
+    event = Event.query.get_or_404(event_id)
+    
+    # Render template yang sama
+    # Logic data sama
+    hasil_seleksi = db.session.query(
+        HasilSeleksi, Users, Participants
+    ).join(
+        Users, HasilSeleksi.id_users == Users.id
+    ).outerjoin(
+        Participants, Users.email == Participants.email
+    ).filter(
+        HasilSeleksi.event_id == event_id
+    ).order_by(
+        HasilSeleksi.ranking.asc()
+    ).all()
+    
+    now = datetime.now()
+    bulan_list = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ]
+    tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
+    
+    html_content = render_template(
+        'laporan_pdf_template.html',
+        event=event,
+        hasil_seleksi=hasil_seleksi,
+        tanggal_laporan=now.strftime('%d-%m-%Y'),
+        tanggal_laporan_indo=tanggal_laporan_indo
+    )
+    
+    # Return sebagai file Word (MIME type HTML tetapi extension doc trick)
+    response = make_response(html_content)
+    response.headers["Content-Type"] = "application/msword"
+    response.headers["Content-Disposition"] = f"attachment; filename=Laporan_Hasil_Seleksi_{event.nama_kegiatan.replace(' ', '_')}.doc"
+    return response
+
 @app.route('/api/generate_laporan_pdf/<int:event_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -3739,11 +3815,20 @@ def generate_laporan_pdf(event_id):
         
         # Generate HTML untuk PDF (bisa menggunakan weasyprint atau pdfkit)
         # Untuk sekarang, kita simpan sebagai HTML dan bisa dikonversi nanti
+        # Update: Menggunakan template baru
+        now = datetime.now()
+        bulan_list = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ]
+        tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
+        
         html_content = render_template(
             'laporan_pdf_template.html',
             event=event,
             hasil_seleksi=hasil_seleksi,
-            tanggal_laporan=datetime.now().strftime('%d %B %Y')
+            tanggal_laporan=now.strftime('%d-%m-%Y'),
+            tanggal_laporan_indo=tanggal_laporan_indo
         )
         
         # Simpan HTML (atau konversi ke PDF jika ada library)
