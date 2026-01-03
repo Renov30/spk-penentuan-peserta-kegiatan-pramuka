@@ -676,8 +676,9 @@
 
                       <!-- Action Button -->
                       <!-- Tombol Batal Daftar (jika sudah terdaftar) -->
+                      <!-- Tombol Batal Daftar (jika sudah terdaftar dan belum dinilai) -->
                       <button
-                        x-show="kegiatan.sudah_terdaftar"
+                        x-show="kegiatan.sudah_terdaftar && !kegiatan.is_graded"
                         @click="openCancelModal(kegiatan.id_kegiatan, kegiatan.nama_kegiatan)"
                         :disabled="isCanceling"
                         :class="{
@@ -696,6 +697,18 @@
                           <i class="fa-solid fa-spinner fa-spin mr-2"></i>
                           {{ 'Membatalkan...' if current_lang == 'id' else
                           'Canceling...' }}
+                        </span>
+                      </button>
+
+                      <!-- Tombol Sudah Dinilai (jika sudah terdaftar dan sudah dinilai) -->
+                      <button
+                        x-show="kegiatan.sudah_terdaftar && kegiatan.is_graded"
+                        disabled
+                        class="w-full py-2 px-4 rounded-lg text-white font-semibold bg-green-600 cursor-not-allowed opacity-90"
+                      >
+                        <span>
+                          <i class="fa-solid fa-check-circle mr-2"></i>
+                          {{ 'Sudah Dinilai' if current_lang == 'id' else 'Graded' }}
                         </span>
                       </button>
 

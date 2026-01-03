@@ -6189,6 +6189,21 @@ def api_kegiatan_tersedia():
             
             # Cek apakah peserta sudah terdaftar di kegiatan ini
             sudah_terdaftar = kegiatan.id_kegiatan in peserta_kegiatan_ids
+            
+            # Cek apakah sudah dinilai
+            is_graded = False
+            if sudah_terdaftar:
+                # Get criteria IDs for this event
+                criteria_ids = [c.id_kriteria for c in Criteria.query.filter_by(event_id=kegiatan.id_kegiatan).all()]
+                if criteria_ids:
+                    # Check if any score exists
+                    score_exists = Penilaian.query.filter(
+                        Penilaian.id_users == current_user.id,
+                        Penilaian.id_kriteria.in_(criteria_ids)
+                    ).first()
+                    if score_exists:
+                        is_graded = True
+
             result.append({
                 'id_kegiatan': kegiatan.id_kegiatan,
                 'nama_kegiatan': kegiatan.nama_kegiatan,
@@ -6208,6 +6223,7 @@ def api_kegiatan_tersedia():
                 'sisa_kuota_putra': (kuota.putra if kuota else 0) - peserta_putra,
                 'sisa_kuota_putri': (kuota.putri if kuota else 0) - peserta_putri,
                 'sudah_terdaftar': sudah_terdaftar,
+                'is_graded': is_graded,
                 'status': 'Terdaftar' if sudah_terdaftar else 'Tersedia'
             })
         return jsonify({'status': 'success', 'data': result}), 200
@@ -6339,12 +6355,29 @@ def api_batal_daftar_seleksi():
             }), 400
         
         # Cek apakah sudah ada hasil seleksi (jika sudah ada hasil seleksi, tidak bisa dibatalkan)
-        hasil_seleksi = HasilSeleksi.query.filter_by(id_users=current_user.id).first()
+        hasil_seleksi = HasilSeleksi.query.filter_by(
+            id_users=current_user.id, 
+            event_id=kegiatan.id_kegiatan
+        ).first()
+        
         if hasil_seleksi:
             return jsonify({
                 'status': 'error', 
                 'message': f"{t['cannot_cancel_after_event_ended']}"
             }), 400
+            
+        # Cek apakah sudah ada penilaian (jika sudah dinilai, tidak bisa batal)
+        criteria_ids = [c.id_kriteria for c in Criteria.query.filter_by(event_id=kegiatan.id_kegiatan).all()]
+        if criteria_ids:
+            score_exists = Penilaian.query.filter(
+                Penilaian.id_users == current_user.id,
+                Penilaian.id_kriteria.in_(criteria_ids)
+            ).first()
+            if score_exists:
+                return jsonify({
+                    'status': 'error', 
+                    'message': "Tidak dapat membatalkan pendaftaran karena Anda sudah diberi nilai." if lang == 'id' else "Cannot cancel registration because you have been graded."
+                }), 400
         
         # Batalkan pendaftaran (remove from many-to-many relationship)
         biodata.registered_activities.remove(kegiatan)
