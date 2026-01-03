@@ -627,13 +627,13 @@
                           <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                             {{ 'Umpi Putra' if current_lang == 'id' else 'Male Umpi' }}
                           </label>
-                          <input type="number" min="5" max="12" x-model.number="umpi.umpiPutra" @keydown.enter.prevent placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                          <input type="number" min="5" max="10" x-model.number="umpi.umpiPutra" @keydown.enter.prevent placeholder="5–10" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
                         </div>
                         <div class="w-1/2">
                           <label class="block text-sm mb-1 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}">
                             {{ 'Umpi Putri' if current_lang == 'id' else 'Female Umpi' }}
                           </label>
-                          <input type="number" min="5" max="12" x-model.number="umpi.umpiPutri" @keydown.enter.prevent placeholder="5–12" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
+                          <input type="number" min="5" max="10" x-model.number="umpi.umpiPutri" @keydown.enter.prevent placeholder="5–10" class="w-full rounded-lg {{ 'border-gray-300 dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'border-gray-600 dark:bg-gray-300 dark:text-gray-900' }}" />
                         </div>
                       </div>
                     </div>
@@ -646,7 +646,7 @@
                     class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg text-sm cursor-pointer mt-2"
                   >
                     <i class="fa-solid fa-plus mr-1"></i>
-                    {{ '+ Tambah Umpi' if current_lang == 'id' else '+ Add Umpi' }}
+                    {{ 'Tambah Umpi' if current_lang == 'id' else 'Add Umpi' }}
                   </button>
                 </div>
               </template>
@@ -657,7 +657,7 @@
                   <i class="fa-solid fa-backward"></i>
                   {{ 'Kembali' if current_lang == 'id' else 'Back' }}
                 </button>
-                <button type="button" @click="if (contingents.some(umpiList => umpiList.some(umpi => umpi.umpiPutra < 5 || umpi.umpiPutra > 12 || umpi.umpiPutri < 5 || umpi.umpiPutri > 12))) { errorMessage = '{{ 'Komposisi kontingen harus ditentukan' if current_lang == 'id' else 'Participant quota must be set' }}'; return;} completed.kontingen = true; tab = 'kriteria'" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                <button type="button" @click="if (contingents.some(umpiList => umpiList.some(umpi => umpi.umpiPutra < 5 || umpi.umpiPutra > 10 || umpi.umpiPutri < 5 || umpi.umpiPutri > 10))) { errorMessage = '{{ 'Komposisi kontingen harus ditentukan (5-10 orang)' if current_lang == 'id' else 'Participant quota must be set (5-10 people)' }}'; return;} completed.kontingen = true; tab = 'kriteria'" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
                   <i class="fa-solid fa-download"></i>
                   {{ 'Simpan & Lanjut' if current_lang == 'id' else 'Save & Next' }}
                 </button>
