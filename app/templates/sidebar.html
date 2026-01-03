@@ -96,14 +96,14 @@
               x-show="$store.sidebar.open"
               class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
             >
-              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
               Results' }}
             </span>
             <span
               x-show="!$store.sidebar.open"
               class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
             >
-              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
               Results' }}
             </span>
           </a>
@@ -175,14 +175,14 @@
               x-show="$store.sidebar.open"
               class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
             >
-              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
               Results' }}
             </span>
             <span
               x-show="!$store.sidebar.open"
               class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
             >
-              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
               Results' }}
             </span>
           </a>
@@ -195,7 +195,7 @@
         fa-calendar-days', 'Manajemen Seleksi', 'Selection Management'),
         ('admin_peserta', 'fas fa-user-check', 'Data Peserta', 'Participant
         Data'), ('admin_hasil_seleksi', 'fa-solid fa-square-poll-vertical',
-        'Hasil Seleksi', 'Selection Results'), ('admin_notifikasi', 'fas
+        'Hasil Penilaian', 'Grading Results'), ('admin_notifikasi', 'fas
         fa-bell', 'Notifikasi', 'Notifications'), ('admin_manajemen_berita',
         'fa-solid fa-newspaper', 'Manajemen Berita', 'News Management'),
         ('admin_log_aktivitas', 'fa-solid fa-chart-line', 'Log Aktivitas',
