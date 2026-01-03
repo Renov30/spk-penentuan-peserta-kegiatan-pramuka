@@ -161,38 +161,11 @@
           </a>
         </li>
 
-        <!-- Hasil Penilaian -->
+        <!-- Hasil Seleksi (Sekarang mengarah ke Hasil Penilaian) -->
         <li>
           <a
             href="{{ url_for('penilai_hasil_penilaian') }}"
             class="flex items-center p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'penilai_hasil_penilaian' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
-            :class="$store.sidebar.open ? 'gap-3' : 'justify-center'"
-          >
-            <i
-              class="fas fa-chart-bar w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
-            ></i>
-            <span
-              x-show="$store.sidebar.open"
-              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
-            >
-              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
-              Results' }}
-            </span>
-            <span
-              x-show="!$store.sidebar.open"
-              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
-            >
-              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
-              Results' }}
-            </span>
-          </a>
-        </li>
-
-        <!-- Hasil Seleksi -->
-        <li>
-          <a
-            href="{{ url_for('penilai_hasil_seleksi') }}"
-            class="flex items-center p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'penilai_hasil_seleksi' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
             :class="$store.sidebar.open ? 'gap-3' : 'justify-center'"
           >
             <i
