@@ -255,7 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     : ""
                 }">${kegiatanNames}</td>
                 <td class="px-4 py-3">${statusBadge}</td>
-                <td class="px-4 py-3">${score}</td>
+                <td class="px-4 py-3">${peserta.usia || "-"}</td>
                 <td class="px-4 py-3 flex gap-2">
                     <button 
                         onclick="viewPeserta(${peserta.user_id})"
