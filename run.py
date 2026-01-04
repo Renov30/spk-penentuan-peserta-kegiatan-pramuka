@@ -6267,6 +6267,19 @@ def api_daftar_seleksi():
                 'status': 'error', 
                 'message': t['biodata_not_registered']
             }), 400
+            
+        # Cek kesesuaian golongan
+        # Pastikan string tidak None, lalu lowercase untuk perbandingan case-insensitive
+        participant_golongan = (biodata.golongan or "").lower().strip()
+        event_golongan = (kegiatan.jenis_kegiatan or "").lower().strip()
+        
+        # Logika: Golongan peserta harus ada di dalam jenis kegiatan
+        # Contoh: "penegak" ada di dalam "penegak" atau "penegak dan pandega"
+        if participant_golongan not in event_golongan:
+             return jsonify({
+                'status': 'error', 
+                'message': f"Maaf, golongan Anda ({biodata.golongan}) tidak sesuai dengan golongan kegiatan ({kegiatan.jenis_kegiatan})."
+            }), 400
         
         # Cek apakah sudah terdaftar di kegiatan yang sama
         if kegiatan in biodata.registered_activities.all():
