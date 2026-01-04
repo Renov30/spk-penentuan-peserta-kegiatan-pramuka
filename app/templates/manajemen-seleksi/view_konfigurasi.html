@@ -212,7 +212,7 @@
               >
                 <div
                   x-transition.scale
-                  class="p-6 rounded-2xl shadow-2xl w-[85%] max-w-5xl flex flex-col bg-white"
+                  class="p-6 rounded-2xl shadow-2xl w-[85%] max-w-5xl flex flex-col {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-white' }}"
                   style="max-height: 90vh; height: 90vh"
                 >
                   <!-- Header -->

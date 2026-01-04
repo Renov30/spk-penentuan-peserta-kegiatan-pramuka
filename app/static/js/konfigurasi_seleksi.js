@@ -142,8 +142,14 @@ async function saveConfig() {
   for (let i = 0; i < state.activities.length; i++) {
     if (state.contingents[i] && Array.isArray(state.contingents[i])) {
       // Jumlahkan semua umpi untuk activity ini
-      const totalPutra = state.contingents[i].reduce((sum, umpi) => sum + (umpi.umpiPutra || 0), 0);
-      const totalPutri = state.contingents[i].reduce((sum, umpi) => sum + (umpi.umpiPutri || 0), 0);
+      const totalPutra = state.contingents[i].reduce(
+        (sum, umpi) => sum + (umpi.umpiPutra || 0),
+        0
+      );
+      const totalPutri = state.contingents[i].reduce(
+        (sum, umpi) => sum + (umpi.umpiPutri || 0),
+        0
+      );
       state.activities[i].putra = totalPutra;
       state.activities[i].putri = totalPutri;
     } else if (state.contingents[i]) {

@@ -335,7 +335,6 @@ def check_phone_in_db(phone):
     user = Users.query.filter_by(nomor_hp=phone).first()
     return user is not None
 
-
 def check_email_in_db(email):
     user = Users.query.filter_by(email=email).first()
     return user is not None
@@ -1947,8 +1946,7 @@ def get_config(event_id):
     try:
         event = Event.query.get_or_404(event_id)
         kuota = Kuota.query.filter_by(event_id=event_id).first()
-        criteria_list = Criteria.query.filter_by(event_id=event_id).all()
-        
+        criteria_list = Criteria.query.filter_by(event_id=event_id).all() 
         config_data = {
             'event': {
                 'id': event.id_kegiatan,
