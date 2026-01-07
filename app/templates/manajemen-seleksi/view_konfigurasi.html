@@ -63,8 +63,8 @@
 
         <!-- Page Content -->
         <main
-          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
-          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[1%]'"
+          class="dashboard-main flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
           <section
             class="flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
