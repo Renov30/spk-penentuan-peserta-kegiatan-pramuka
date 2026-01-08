@@ -432,7 +432,7 @@ def is_safe_url(target):
 
 # Endpoint login
 @app.route('/login/', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("20 per minute")
 def login():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
@@ -484,7 +484,7 @@ def login():
 
 # Endpoint login with Google
 @app.route('/login/google/', methods=['GET', 'POST'])
-@limiter.limit("10 per minute")
+@limiter.limit("20 per minute")
 def login_google():
     next_url = request.args.get('next')
 
