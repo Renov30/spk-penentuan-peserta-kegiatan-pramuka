@@ -20,7 +20,7 @@
       <!-- Hamburger Menu for Mobile -->
       <button
         @click="$store.sidebar.toggle()"
-        class="hamburger-menu text-2xl"
+        class="hamburger-menu text-2xl md:hidden"
         :class="$store.theme?.isDark ? 'text-white hover:bg-gray-700' : 'text-gray-800 hover:bg-gray-200'"
         title="{{ 'Toggle Menu' if current_lang == 'en' else 'Toggle Menu' }}"
       >
