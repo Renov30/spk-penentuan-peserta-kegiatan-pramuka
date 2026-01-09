@@ -96,64 +96,15 @@
               x-show="$store.sidebar.open"
               class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
             >
-              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
               Results' }}
             </span>
             <span
               x-show="!$store.sidebar.open"
               class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
             >
-              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
               Results' }}
-            </span>
-          </a>
-        </li>
-
-        <!-- Notifikasi -->
-        <li>
-          <a
-            href="{{ url_for('peserta_notifikasi') }}"
-            class="flex items-center p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'peserta_notifikasi' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
-            :class="$store.sidebar.open ? 'gap-3' : 'justify-center'"
-          >
-            <i
-              class="fas fa-bell w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
-            ></i>
-            <span
-              x-show="$store.sidebar.open"
-              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
-            >
-              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
-            </span>
-            <span
-              x-show="!$store.sidebar.open"
-              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
-            >
-              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
-            </span>
-          </a>
-        </li>
-
-        <!-- Pengaturan -->
-        <li>
-          <a
-            href="{{ url_for('peserta_settings') }}"
-            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'peserta_settings' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
-          >
-            <i
-              class="fas fa-cogs w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
-            ></i>
-            <span
-              x-show="$store.sidebar.open"
-              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
-            >
-              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
-            </span>
-            <span
-              x-show="!$store.sidebar.open"
-              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
-            >
-              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
             </span>
           </a>
         </li>
@@ -210,38 +161,11 @@
           </a>
         </li>
 
-        <!-- Hasil Penilaian -->
+        <!-- Hasil Seleksi (Sekarang mengarah ke Hasil Penilaian) -->
         <li>
           <a
             href="{{ url_for('penilai_hasil_penilaian') }}"
             class="flex items-center p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'penilai_hasil_penilaian' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
-            :class="$store.sidebar.open ? 'gap-3' : 'justify-center'"
-          >
-            <i
-              class="fas fa-chart-bar w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
-            ></i>
-            <span
-              x-show="$store.sidebar.open"
-              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
-            >
-              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
-              Results' }}
-            </span>
-            <span
-              x-show="!$store.sidebar.open"
-              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
-            >
-              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
-              Results' }}
-            </span>
-          </a>
-        </li>
-
-        <!-- Hasil Seleksi -->
-        <li>
-          <a
-            href="{{ url_for('penilai_hasil_seleksi') }}"
-            class="flex items-center p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'penilai_hasil_seleksi' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
             :class="$store.sidebar.open ? 'gap-3' : 'justify-center'"
           >
             <i
@@ -251,64 +175,15 @@
               x-show="$store.sidebar.open"
               class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
             >
-              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
               Results' }}
             </span>
             <span
               x-show="!$store.sidebar.open"
               class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
             >
-              {{ 'Hasil Seleksi' if current_lang == 'id' else 'Selection
+              {{ 'Hasil Penilaian' if current_lang == 'id' else 'Grading
               Results' }}
-            </span>
-          </a>
-        </li>
-
-        <!-- Notifikasi -->
-        <li>
-          <a
-            href="{{ url_for('penilai_notifikasi') }}"
-            class="flex items-center p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'penilai_notifikasi' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
-            :class="$store.sidebar.open ? 'gap-3' : 'justify-center'"
-          >
-            <i
-              class="fas fa-bell w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
-            ></i>
-            <span
-              x-show="$store.sidebar.open"
-              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
-            >
-              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
-            </span>
-            <span
-              x-show="!$store.sidebar.open"
-              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
-            >
-              {{ 'Notifikasi' if current_lang == 'id' else 'Notifications' }}
-            </span>
-          </a>
-        </li>
-
-        <!-- Pengaturan -->
-        <li>
-          <a
-            href="{{ url_for('penilai_settings') }}"
-            class="flex items-center gap-3 p-2 rounded-lg relative group transition {{ 'hover:bg-gray-100 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300' }} {% if request.endpoint == 'penilai_settings' %}{{ 'bg-gray-200 dark:bg-gray-800' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-300' }}{% endif %}"
-          >
-            <i
-              class="fas fa-cogs w-5 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-black'}}"
-            ></i>
-            <span
-              x-show="$store.sidebar.open"
-              class="{{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-black'}}"
-            >
-              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
-            </span>
-            <span
-              x-show="!$store.sidebar.open"
-              class="absolute left-full ml-2 px-2 py-1 text-sm rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-50 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
-            >
-              {{ 'Pengaturan' if current_lang == 'id' else 'Settings' }}
             </span>
           </a>
         </li>
@@ -320,7 +195,7 @@
         fa-calendar-days', 'Manajemen Seleksi', 'Selection Management'),
         ('admin_peserta', 'fas fa-user-check', 'Data Peserta', 'Participant
         Data'), ('admin_hasil_seleksi', 'fa-solid fa-square-poll-vertical',
-        'Hasil Seleksi', 'Selection Results'), ('admin_notifikasi', 'fas
+        'Hasil Penilaian', 'Grading Results'), ('admin_notifikasi', 'fas
         fa-bell', 'Notifikasi', 'Notifications'), ('admin_manajemen_berita',
         'fa-solid fa-newspaper', 'Manajemen Berita', 'News Management'),
         ('admin_log_aktivitas', 'fa-solid fa-chart-line', 'Log Aktivitas',

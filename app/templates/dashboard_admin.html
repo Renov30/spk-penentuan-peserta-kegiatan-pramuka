@@ -110,15 +110,15 @@
                   </p>
                 </div>
                 <div
-                  onclick="window.location.href=''"
-                  class="rounded-xl shadow p-4 cursor-pointer hover:shadow transition {{ 'bg-gray-900 text-white hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-gray-100 text-black hover:shadow-gray-700' }}"
+                  onclick="window.location.href='{{ url_for('view_config') }}'"
+                  class="rounded-xl shadow p-4 cursor-pointer hover:shadow hover:shadow-yellow-300  transition {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
                 >
                   <h2 class="text-lg font-semibold">
-                    {{ 'Total Kriteria' if current_lang == 'id' else 'Total
-                    Criteria' }}
+                    {{ 'Total Kegiatan' if current_lang == 'id' else 'Total
+                    Activities' }}
                   </h2>
                   <p class="text-2xl font-bold text-purple-600">
-                    {{ total_criteria }}
+                    {{ total_events }}
                   </p>
                 </div>
                 <div
@@ -245,6 +245,8 @@
                   </div>
                 </div>
               </div>
+              </div>
+
             </div>
           </section>
         </main>

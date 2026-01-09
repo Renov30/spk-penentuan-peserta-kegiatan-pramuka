@@ -344,22 +344,24 @@
           class="mb-6 {{ 'text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-800' }}"
           x-text="modal.message"
         ></p>
-        <button
-          @click="modal.show = false"
-          class="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 cursor-pointer"
-        >
-          <i class="fa-solid fa-xmark"></i>
-          {{ 'Tutup' if current_lang == 'id' else 'Close' }}
-        </button>
-        <button
-          x-show="modal.title === 'Berhasil'"
-          @click="window.location.href = '/admin/view_config'"
-          class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer mt-2.5"
-        >
-          <i class="fa-solid fa-gear mr-2"></i>
-          {{ 'Kelola Data Seleksi' if current_lang == 'id' else 'Manage
-          Selection Data' }}
-        </button>
+        <div class="flex gap-2 w-full justify-center mt-4">
+          <button
+            @click="modal.show = false"
+            class="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 cursor-pointer transition shadow-md"
+          >
+            <i class="fa-solid fa-xmark mr-1"></i>
+            {{ 'Tutup' if current_lang == 'id' else 'Close' }}
+          </button>
+          <button
+            x-show="modal.title === 'Berhasil'"
+            @click="window.location.href = '/admin/view_config'"
+            class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow-md dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer"
+          >
+            <i class="fa-solid fa-gear mr-2"></i>
+            {{ 'Kelola Data Seleksi' if current_lang == 'id' else 'Manage
+            Selection Data' }}
+          </button>
+        </div>
       </div>
     </div>
 

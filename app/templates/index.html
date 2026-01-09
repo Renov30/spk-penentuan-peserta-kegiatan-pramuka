@@ -167,7 +167,7 @@
           <!-- Hamburger Icon (Mobile Only) -->
           <button
             @click="open = !open"
-            class="md:hidden text-3xl focus:outline-none {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+            class="md:hidden text-2xl focus:outline-none {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
             :aria-expanded="open.toString()"
             aria-label="Toggle navigation menu"
           >
@@ -182,24 +182,24 @@
           <nav class="flex space-x-4">
             <a
               href="#home"
-              class="hover:text-yellow-400 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              class="hover:text-yellow-400 text-lg {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
             >
               {{ 'Beranda' if current_lang == 'id' else 'Home' }}
             </a>
             <a
               href="#news"
-              class="hover:text-yellow-400 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              class="hover:text-yellow-400 text-lg {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
             >
               {{ 'Berita' if current_lang == 'id' else 'News' }}
             </a>
             <a
               href="#about"
-              class="hover:text-yellow-400 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              class="hover:text-yellow-400 text-lg {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >{{ 'Tentang Kami' if current_lang == 'id' else 'About Us' }}
             </a>
             <a
               href="#services"
-              class="hover:text-yellow-400 text-xl {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              class="hover:text-yellow-400 text-lg {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >{{ 'Layanan' if current_lang == 'id' else 'Services' }}
             </a>
           </nav>
@@ -333,7 +333,7 @@
             <!-- Link Login System (sebelum login) -->
             <a
               href="/login/"
-              class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
+              class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-xl"
               title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
             >
               <i class="fas fa-user-plus"></i>
@@ -361,7 +361,7 @@
         <a
           href="#home"
           @click="open = false"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          class="hover:text-yellow-400 text-base flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i class="fas fa-house"></i>
           {{ 'Beranda' if current_lang == 'id' else 'Home' }}
@@ -369,7 +369,7 @@
         <a
           href="#news"
           @click="open = false"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          class="hover:text-yellow-400 text-base flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i class="fas fa-newspaper"></i>
           {{ 'Berita' if current_lang == 'id' else 'News' }}
@@ -377,7 +377,7 @@
         <a
           href="#about"
           @click="open = false"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          class="hover:text-yellow-400 text-base flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i class="fas fa-circle-info"></i>
           {{ 'Tentang Kami' if current_lang == 'id' else 'About Us' }}
@@ -386,7 +386,7 @@
         <a
           href="#services"
           @click="open = false"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          class="hover:text-yellow-400 text-base flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i class="fas fa-concierge-bell"></i>
           {{ 'Layanan' if current_lang == 'id' else 'Services' }}
@@ -396,7 +396,7 @@
         <button
           x-data
           @click="$store.theme.toggle()"
-          class="hover:text-yellow-400 text-xl flex items-center gap-3 w-full text-left {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+          class="hover:text-yellow-400 text-base flex items-center gap-3 w-full text-left {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
         >
           <i :class="$store.theme.isDark ? 'fas fa-sun' : 'fas fa-moon'"></i>
           <span

@@ -986,8 +986,10 @@ def admin_dashboard():
     total_users = Users.query.count()
     total_participants = Participants.query.count() if db.inspect(db.engine).has_table("participants") else 0
     total_criteria = Criteria.query.count() if db.inspect(db.engine).has_table("criteria") else 0
+    total_events = Event.query.count() if db.inspect(db.engine).has_table("tb_kegiatan") else 0
     total_notifications = Notification.query.count()
-    return render_template('dashboard_admin.html', total_users=total_users, total_participants=total_participants, total_criteria=total_criteria, total_notifications=total_notifications, user=user, sidebar_state=sidebar_state)
+
+    return render_template('dashboard_admin.html', total_users=total_users, total_participants=total_participants, total_criteria=total_criteria, total_notifications=total_notifications, user=user, total_events=total_events, sidebar_state=sidebar_state)
 
 # API untuk data chart dashboard admin
 @app.route('/api/admin/dashboard/charts')
@@ -2123,6 +2125,11 @@ def delete_config(event_id):
         if criteria_ids:
             Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
         HasilSeleksi.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Hapus penugasan penilai
+        event.evaluators = []
+
+        # Hapus akan cascade otomatis ke Kuota dan Criteria karena cascade="all, delete-orphan"
         db.session.delete(event)
         db.session.commit()
         
@@ -2177,6 +2184,8 @@ def delete_config_bulk():
         
         # Hapus semua event (cascade akan menghapus Kuota dan Criteria secara otomatis)
         for event in events:
+            # Hapus penugasan penilai
+            event.evaluators = []
             db.session.delete(event)
         db.session.commit()
         message = t.get('config_delete_multiple_count').format(count=deleted_count)
@@ -3030,9 +3039,10 @@ def generate_laporan_excel(event_id):
 @login_required
 @admin_required
 def preview_laporan_seleksi(event_id):
-    event = Event.query.get_or_404(event_id)
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
-    # Ambil hasil seleksi (Logika sama dengan admin_hasil_seleksi)
+    event = Event.query.get_or_404(event_id)
     hasil_seleksi = db.session.query(
         HasilSeleksi, Users, Participants
     ).join(
@@ -3047,19 +3057,9 @@ def preview_laporan_seleksi(event_id):
     
     # Format tanggal indonesia
     now = datetime.now()
-    bulan_list = [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ]
+    bulan_list = t.get('month_list')
     tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
-    
-    return render_template(
-        'laporan_pdf_template.html',
-        event=event,
-        hasil_seleksi=hasil_seleksi,
-        tanggal_laporan=now.strftime('%d-%m-%Y'),
-        tanggal_laporan_indo=tanggal_laporan_indo
-    )
+    return render_template('laporan_template.html',event=event, hasil_seleksi=hasil_seleksi, tanggal_laporan=now.strftime('%d-%m-%Y'), tanggal_laporan_indo=tanggal_laporan_indo)
 
 @app.route('/admin/laporan/word/<int:event_id>')
 @login_required
@@ -3084,7 +3084,7 @@ def export_laporan_word(event_id):
     now = datetime.now()
     bulan_list = t.get('month_list')
     tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
-    html_content = render_template('laporan_pdf_template.html', event=event, hasil_seleksi=hasil_seleksi, tanggal_laporan=now.strftime('%d-%m-%Y'), tanggal_laporan_indo=tanggal_laporan_indo)
+    html_content = render_template('laporan_template.html', event=event, hasil_seleksi=hasil_seleksi, tanggal_laporan=now.strftime('%d-%m-%Y'), tanggal_laporan_indo=tanggal_laporan_indo)
     
     # Return sebagai file Word (MIME type HTML tetapi extension doc trick)
     response = make_response(html_content)
@@ -3980,28 +3980,31 @@ def admin_log_export():
         flash(f"{t.get('log_export_error')}: {str(e)}", 'error')
         return redirect(url_for('admin_log_aktivitas'))
 
+# Route Admin/Hasil Penilaian
 @app.route('/admin/hasil-penilaian')
 @login_required
 @admin_required
 def admin_hasil_penilaian():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    message = t.get('selection_result_calculated', 'Hasil seleksi selesai dihitung').format(event_name=selected_event.nama_kegiatan)
 
     all_events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
     selected_event_id = request.args.get('event_id', type=int)
     selected_event = None
     results = []
-    
+
     if selected_event_id:
         selected_event = Event.query.get(selected_event_id)
         if selected_event:
+            message = t.get('selection_result_calculated', 'Hasil seleksi selesai dihitung').format(event_name=selected_event.nama_kegiatan)
             from app.fuzzy_ahp import calculate_spk
             success, msg = calculate_spk(selected_event_id)
+
             if not success:
                 logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
             else:
                 create_notification_to_all_admins(message)
+
             hasil_seleksi = db.session.query(
                 HasilSeleksi,
                 Users,
@@ -4018,8 +4021,7 @@ def admin_hasil_penilaian():
             for hasil, user, participant in hasil_seleksi:
                 results.append({'hasil': hasil, 'user': user, 'participant': participant})
         else:
-            flash(f"{t['event_not_found']}", "error")
-            selected_event = None
+            flash(t['event_not_found'], 'error')
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template('admin/hasil_penilaian.html', assigned_events=all_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state, show_back_button=True)
 
@@ -4333,6 +4335,32 @@ def penilai_view_score(event_id, participant_id):
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template('penilai/view_penilaian.html', event=event, participant=participant_biodata, participant_user=participant_user, criterias=all_criterias, assigned_criteria_ids=assigned_criteria_ids, existing_scores=existing_scores, sidebar_state=sidebar_state)
 
+# ON PROGRESS!!!
+# @app.route('/prnilai/laporan/preview/<int:event_id>')
+# @login_required
+# def preview_laporan_seleksi(event_id):
+#    lang = session.get('lang', 'id')
+#    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+#    event = Event.query.get_or_404(event_id)
+#    hasil_seleksi = db.session.query(
+#        HasilSeleksi, Users, Participants
+#    ).join(
+#        Users, HasilSeleksi.id_users == Users.id
+#    ).outerjoin(
+#        Participants, Users.email == Participants.email
+#    ).filter(
+#        HasilSeleksi.event_id == event_id
+#    ).order_by(
+#        HasilSeleksi.ranking.asc()
+#    ).all()
+    
+    # Format tanggal indonesia
+#    now = datetime.now()
+#    bulan_list = t.get('month_list')
+#    tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
+#    return render_template('laporan_template.html',event=event, hasil_seleksi=hasil_seleksi, tanggal_laporan=now.strftime('%d-%m-%Y'), tanggal_laporan_indo=tanggal_laporan_indo)
+
 @app.route('/penilai/biodata', methods=['GET', 'POST'])
 @login_required
 def penilai_biodata():
@@ -4581,8 +4609,17 @@ def peserta_dashboard():
         return redirect(url_for('index'))
     
     # Get current user's participant record
+    # Cek biodata
     participant = Participants.query.filter_by(email=current_user.email).first()
     
+    # Flash warning jika biodata belum ada
+    if not participant:
+        msg = 'Biodata Anda belum terdaftar. Silakan lengkapi biodata terlebih dahulu.' if lang == 'id' else 'Your biodata is not registered yet. Please complete your biodata first.'
+        # Cek apakah pesan sudah ada di flashed messages untuk menghindari duplikasi
+        # Namun karena kita tidak bisa peek message dengan mudah, kita flash saja. 
+        # Frontend sebaiknya handle deduplikasi atau kita asumsikan ini page load baru.
+        flash(msg, 'warning')
+        
     # Get all registered activities for this participant
     registered_activities = []
     if participant:
@@ -4876,6 +4913,21 @@ def api_kegiatan_tersedia():
             peserta_putra = kegiatan.registered_participants.filter(Participants.jenis_kelamin == 'laki-laki').count()
             peserta_putri = kegiatan.registered_participants.filter(Participants.jenis_kelamin == 'perempuan').count()
             sudah_terdaftar = kegiatan.id_kegiatan in peserta_kegiatan_ids
+            
+            # Cek apakah sudah dinilai
+            is_graded = False
+            if sudah_terdaftar:
+                # Get criteria IDs for this event
+                criteria_ids = [c.id_kriteria for c in Criteria.query.filter_by(event_id=kegiatan.id_kegiatan).all()]
+                if criteria_ids:
+                    # Check if any score exists
+                    score_exists = Penilaian.query.filter(
+                        Penilaian.id_users == current_user.id,
+                        Penilaian.id_kriteria.in_(criteria_ids)
+                    ).first()
+                    if score_exists:
+                        is_graded = True
+
             result.append({
                 'id_kegiatan': kegiatan.id_kegiatan,
                 'nama_kegiatan': kegiatan.nama_kegiatan,
@@ -4895,6 +4947,7 @@ def api_kegiatan_tersedia():
                 'sisa_kuota_putra': (kuota.putra if kuota else 0) - peserta_putra,
                 'sisa_kuota_putri': (kuota.putri if kuota else 0) - peserta_putri,
                 'sudah_terdaftar': sudah_terdaftar,
+                'is_graded': is_graded,
                 'status': 'Terdaftar' if sudah_terdaftar else 'Tersedia'
             })
         return jsonify({'status': 'success', 'data': result}), 200
@@ -4932,6 +4985,16 @@ def api_daftar_seleksi():
         biodata = Participants.query.filter_by(email=current_user.email).first()
         if not biodata:
             return jsonify({'status': 'error', 'message': t['biodata_not_registered']}), 400
+            
+        # Cek kesesuaian golongan
+        # Pastikan string tidak None, lalu lowercase untuk perbandingan case-insensitive
+        participant_golongan = (biodata.golongan or "").lower().strip()
+        event_golongan = (kegiatan.jenis_kegiatan or "").lower().strip()
+        
+        # Logika: Golongan peserta harus ada di dalam jenis kegiatan
+        # Contoh: "penegak" ada di dalam "penegak" atau "penegak dan pandega"
+        if participant_golongan not in event_golongan:
+             return jsonify({'status': 'error',  'message': f"Maaf, golongan Anda ({biodata.golongan}) tidak sesuai dengan golongan kegiatan ({kegiatan.jenis_kegiatan})."}), 400
         
         # Cek apakah sudah terdaftar di kegiatan yang sama
         if kegiatan in biodata.registered_activities.all():
@@ -4997,9 +5060,29 @@ def api_batal_daftar_seleksi():
             return jsonify({'status': 'error', 'message': f"{t['not_registered_for_event']}"}), 400
         
         # Cek apakah sudah ada hasil seleksi (jika sudah ada hasil seleksi, tidak bisa dibatalkan)
-        hasil_seleksi = HasilSeleksi.query.filter_by(id_users=current_user.id).first()
+        hasil_seleksi = HasilSeleksi.query.filter_by(
+            id_users=current_user.id, 
+            event_id=kegiatan.id_kegiatan
+        ).first()
+        
         if hasil_seleksi:
-            return jsonify({'status': 'error', 'message': f"{t['cannot_cancel_after_event_ended']}"}), 400
+            return jsonify({
+                'status': 'error', 
+                'message': f"{t['cannot_cancel_after_event_ended']}"
+            }), 400
+            
+        # Cek apakah sudah ada penilaian (jika sudah dinilai, tidak bisa batal)
+        criteria_ids = [c.id_kriteria for c in Criteria.query.filter_by(event_id=kegiatan.id_kegiatan).all()]
+        if criteria_ids:
+            score_exists = Penilaian.query.filter(
+                Penilaian.id_users == current_user.id,
+                Penilaian.id_kriteria.in_(criteria_ids)
+            ).first()
+            if score_exists:
+                return jsonify({
+                    'status': 'error', 
+                    'message': "Tidak dapat membatalkan pendaftaran karena Anda sudah diberi nilai." if lang == 'id' else "Cannot cancel registration because you have been graded."
+                }), 400
         
         # Batalkan pendaftaran (remove from many-to-many relationship)
         biodata.registered_activities.remove(kegiatan)

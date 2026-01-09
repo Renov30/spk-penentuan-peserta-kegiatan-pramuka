@@ -2,6 +2,7 @@
 <html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Laporan Hasil Seleksi - {{ event.nama_kegiatan }}</title>
     <style>
       @page {
@@ -26,27 +27,28 @@
         padding-bottom: 10px;
       }
       .header-logo {
-        width: 80px;
+        width: 60px;
         height: auto;
       }
       .header-text {
         text-align: center;
       }
       .header-text h1 {
-        font-size: 14pt;
+        font-size: 12pt;
         font-weight: bold;
         margin: 0;
         text-transform: uppercase;
       }
       .header-text h2 {
-        font-size: 16pt;
+        font-size: 14pt;
         font-weight: bold;
         margin: 5px 0;
         text-transform: uppercase;
       }
       .header-info {
-        font-size: 10pt;
+        font-size: 9pt;
         margin: 0;
+        text-align: center; /* Override p justify */
       }
 
       /* Content */
@@ -107,8 +109,8 @@
       .signature-table td {
         border: none;
         vertical-align: top;
-        text-align: center;
-        width: 40%;
+        text-align: left;
+        width: 100%;
       }
       .signature-space {
         height: 80px;
@@ -133,13 +135,13 @@
     <!-- Header -->
     <table class="header-table">
       <tr>
-        <td style="width: 100px; text-align: left; vertical-align: top">
+        <td style="width: 70px; text-align: left; vertical-align: top">
           <!-- Placeholder Logo Kiri (Tunas Kelapa) -->
           <!-- Gunakan onerror untuk handling jika gambar tidak ada -->
           <img
-            src="{{ url_for('static', filename='images/tunas_kelapa.png') }}"
+            src="{{ url_for('static', filename='images/Logo-Gerakan-Pramuka.png') }}"
             class="header-logo"
-            alt="Logo"
+            alt="Logo Gerakan Pramuka"
             onerror="this.style.display='none'"
           />
         </td>
@@ -148,17 +150,19 @@
           <h2>KWARTIR CABANG 2601 MERAUKE</h2>
           <p class="header-info">
             Sekretariat Pramuka Jl. Trikora Merauke – Papua Selatan (Belakang
-            Kantor Gubernur PPS)<br />
-            HP: 0821-9948-5226 / 0852-1689-3637 &nbsp;&nbsp;&nbsp;&nbsp; E-mail:
-            kwarcabmerauke@gmail.com
+            Kantor Gubernur PPS)
+          </p>
+          <p class="header-info">
+            HP: 0821-9948-5226 / 0852-1689-3637 &nbsp;&nbsp;|&nbsp;&nbsp;
+            E-mail: kwarcabmerauke@gmail.com
           </p>
         </td>
-        <td style="width: 100px; text-align: right; vertical-align: top">
+        <td style="width: 70px; text-align: right; vertical-align: top">
           <!-- Placeholder Logo Kanan (WOSM) -->
           <img
-            src="{{ url_for('static', filename='images/wosm.png') }}"
+            src="{{ url_for('static', filename='images/Logo-WOSM.png') }}"
             class="header-logo"
-            alt="Logo"
+            alt="Logo WOSM"
             onerror="this.style.display='none'"
           />
         </td>
@@ -199,6 +203,7 @@
           <th style="width: 10%">Peringkat</th>
           <th style="width: 35%">Nama Peserta</th>
           <th style="width: 35%">Asal Gudep</th>
+          <th style="width: 35%">Jenis kelamin</th>
           <th style="width: 20%">Skor Akhir</th>
         </tr>
       </thead>
@@ -209,6 +214,7 @@
           <td class="center">{{ hasil.ranking }}</td>
           <td>{{ user.nama_lengkap }}</td>
           <td>{{ participant.asal_gudep if participant else '-' }}</td>
+          <td>{{ participant.jenis_kelamin }}</td>
           <td class="center">{{ "%.4f"|format(hasil.skor_akhir) }}</td>
         </tr>
         {% endfor %}
@@ -239,8 +245,7 @@
     <div class="signature-section">
       <table class="signature-table">
         <tr>
-          <td></td>
-          <td>
+          <td style="text-align: left; width: 100%">
             <p style="margin-bottom: 5px">Gerakan Pramuka</p>
             <p style="margin-bottom: 0">Kwartir Cabang 2601 Merauke</p>
             <p style="margin-top: 5px">Ketua</p>

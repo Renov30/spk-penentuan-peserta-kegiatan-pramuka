@@ -202,16 +202,7 @@
                 </div>
 
                 <!-- 🔔 Action: Mark All as Read -->
-                <div>
-                  <button
-                    onclick="markAllAsRead()"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition flex items-center cursor-pointer"
-                  >
-                    <i class="fa-solid fa-check-double mr-2"></i>
-                    {{ 'Tandai Semua Dibaca' if current_lang == 'id' else 'Mark
-                    All as Read' }}
-                  </button>
-                </div>
+                <!-- 🔔 Action: Mark All as Read (Removed) -->
               </div>
 
               <!-- 📋 List Notifikasi -->
@@ -250,22 +241,8 @@
                     {% endif %}
                   </div>
                   <div class="flex flex-col gap-2">
-                    {% if not notification.is_read %}
-                    <button
-                      onclick="markAsRead({{ notification.id }})"
-                      class="px-3 py-1 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer transition"
-                    >
-                      {{ 'Tandai Dibaca' if current_lang == 'id' else 'Mark
-                      Read' }}
-                    </button>
-                    {% endif %}
-                    <button
-                      onclick="deleteNotification({{ notification.id }})"
-                      class="px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer transition"
-                    >
-                      <i class="fa-solid fa-trash mr-1"></i>
-                      {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
-                    </button>
+                    <!-- Tombol Tandai Dibaca (Removed) -->
+                    <!-- Tombol Hapus (Removed) -->
                   </div>
                 </div>
                 {% endfor %} {% else %}

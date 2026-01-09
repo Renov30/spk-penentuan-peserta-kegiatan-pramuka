@@ -150,12 +150,14 @@
                       class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-50 text-gray-600' }} text-sm uppercase tracking-wider"
                     >
                       <th class="p-4 font-semibold text-center w-16">Rank</th>
-                      <th class="p-4 font-semibold">Peserta</th>
-                      <th class="p-4 font-semibold">Asal Gudep</th>
+                      <th class="p-4 font-semibold"> {{ 'Peserta' if current_lang == 'id' else 'Participant' }}</th>
+                      <th class="p-4 font-semibold"> {{ 'Asal Gudep' if current_lang == 'id' else 'Scout Group' }}</th>
+                      <th class="p-4 font-semibold"> {{ 'Jenis Kelamin' if current_lang == 'id' else 'Gender' }}</th>
                       <th class="p-4 font-semibold text-center">
-                        Skor Akhir (Fuzzy)
+                         {{ 'Skor Akhir (Fuzzy)' if current_lang == 'id' else 'Final Score (Fuzzy)' }}
                       </th>
-                      <th class="p-4 font-semibold text-center">Aksi</th>
+                      <th class="p-4 font-semibold text-center">{{ 'Aksi' if current_lang == 'id' else 'Action' }}
+                      </th>
                     </tr>
                   </thead>
                   <tbody
@@ -215,6 +217,10 @@
                         {{ item.participant.asal_gudep if item.participant else
                         '-' }}
                       </td>
+                      <td class="p-4 text-sm">
+                        {{ item.participant.jenis_kelamin if item.participant else
+                        '-' }}
+                      </td>
                       <td class="p-4 text-center">
                         <span
                           class="text-lg font-bold {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
@@ -228,7 +234,7 @@
                           class="inline-block px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition"
                         >
                           <i class="fa-solid fa-eye mr-1"></i>
-                          Lihat Nilai
+                           {{ 'Lihat Nilai' if current_lang == 'id' else 'View Details' }}
                         </a>
                       </td>
                     </tr>
@@ -274,7 +280,8 @@
         </main>
       </div>
     </div>
-    <!-- Animation Script -->
-    {% include 'script_animation.html' %}
+   <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
   </body>
 </html>

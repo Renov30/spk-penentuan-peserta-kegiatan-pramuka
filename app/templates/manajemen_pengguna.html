@@ -327,8 +327,8 @@
       {% for cat, msg in flashed %} {% set category = cat %} {% if msg is
       mapping %} {% set title = msg.title %} {% set message = msg.message %} {%
       set category = msg.category or category %} {% else %} {% set title =
-      category|capitalize %} {% set message = msg %} {% endif %}
-
+      category|capitalize %} {% set message = msg %} {% endif %} {% if message
+      %}
       <div
         class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl border {% if category == 'success' %} bg-green-600 text-white border-green-500 {% elif category in ['danger', 'error'] %} bg-red-600 text-white border-red-500 {% elif category == 'warning' %} bg-yellow-500 text-gray-900 border-yellow-400 {% else %} bg-gray-800 text-white border-gray-700 {% endif %}"
         x-show="showFlash"
@@ -342,7 +342,7 @@
           <span class="text-sm">{{ message }}</span>
         </div>
       </div>
-      {% endfor %}
+      {% endif %} {% endfor %}
     </div>
     {% endif %} {% endwith %}
 

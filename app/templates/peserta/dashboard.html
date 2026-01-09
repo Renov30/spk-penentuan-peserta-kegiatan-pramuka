@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html
-  class="transition duration-300 ease-in-out"
+  class="transition duration-300 ease-in-out scroll-smooth"
   lang="{{ current_lang }}"
   x-data
 >
@@ -103,11 +103,10 @@
                       <p
                         class="text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
                       >
-                        {{ 'Biodata Anda belum terdaftar. Silakan hubungi
-                        administrator untuk mendaftarkan biodata.' if
-                        current_lang == 'id' else 'Your biodata is not
-                        registered yet. Please contact the administrator to
-                        register your biodata.' }}
+                        {{ 'Biodata Anda belum terdaftar. Silakan lengkapi
+                        biodata terlebih dahulu.' if current_lang == 'id' else
+                        'Your biodata is not registered yet. Please complete
+                        your biodata first.' }}
                       </p>
                     </div>
                   </div>
@@ -151,7 +150,7 @@
                   <div class="space-y-3">
                     <div class="flex items-center gap-2">
                       <span
-                        class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                        class="px-2 py-1 text-xs font-semibold rounded-full {{ 'bg-blue-900 text-blue-300' if current_theme == 'dark' else 'bg-blue-600 text-white' }}"
                       >
                         {{ 'Terdaftar di ' + registered_activities|length|string
                         + ' kegiatan' if current_lang == 'id' else 'Registered
@@ -184,7 +183,7 @@
                             {% if kegiatan.selesai and kegiatan.selesai < today
                             %}
                             <span
-                              class="inline-flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              class="inline-flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold {{ 'bg-red-900/30 text-red-400' if current_theme == 'dark' else 'bg-red-100 text-red-700' }}"
                             >
                               <i
                                 class="fa-solid fa-clock-rotate-left text-[10px]"
@@ -194,7 +193,7 @@
                             </span>
                             {% else %}
                             <span
-                              class="inline-flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                              class="inline-flex items-center gap-2 px-2 py-0.5 rounded text-xs font-semibold {{ 'bg-blue-900/30 text-blue-400' if current_theme == 'dark' else 'bg-blue-600 text-white' }}"
                             >
                               <i
                                 class="fa-solid fa-check-circle text-[10px]"
@@ -736,8 +735,9 @@
 
                       <!-- Action Button -->
                       <!-- Tombol Batal Daftar (jika sudah terdaftar) -->
+                      <!-- Tombol Batal Daftar (jika sudah terdaftar dan belum dinilai) -->
                       <button
-                        x-show="kegiatan.sudah_terdaftar"
+                        x-show="kegiatan.sudah_terdaftar && !kegiatan.is_graded"
                         @click="openCancelModal(kegiatan.id_kegiatan, kegiatan.nama_kegiatan)"
                         :disabled="isCanceling"
                         :class="{
@@ -756,6 +756,19 @@
                           <i class="fa-solid fa-spinner fa-spin mr-2"></i>
                           {{ 'Membatalkan...' if current_lang == 'id' else
                           'Canceling...' }}
+                        </span>
+                      </button>
+
+                      <!-- Tombol Sudah Dinilai (jika sudah terdaftar dan sudah dinilai) -->
+                      <button
+                        x-show="kegiatan.sudah_terdaftar && kegiatan.is_graded"
+                        disabled
+                        class="w-full py-2 px-4 rounded-lg text-white font-semibold bg-green-600 cursor-not-allowed opacity-90"
+                      >
+                        <span>
+                          <i class="fa-solid fa-check-circle mr-2"></i>
+                          {{ 'Sudah Dinilai' if current_lang == 'id' else
+                          'Graded' }}
                         </span>
                       </button>
 
@@ -1174,6 +1187,7 @@
               <div
                 x-data="{ notifications: [] }"
                 x-init="window.showNotification = function(category, title, message) {
+        if (!message || message.trim() === '') return;
                   const notification = { id: Date.now(), category, title, message, show: true };
                   $data.notifications.push(notification);
                   setTimeout(() => {
@@ -1224,12 +1238,34 @@
                     <button
                       @click="notification.show = false; setTimeout(() => notifications = notifications.filter(n => n.id !== notification.id), 300)"
                       class="ml-2 text-lg opacity-70 hover:opacity-100 transition-opacity"
+                      aria-label="Close"
                     >
                       <i class="fa-solid fa-times"></i>
                     </button>
                   </div>
                 </template>
               </div>
+
+              <!-- Consume Flash Messages -->
+              <script>
+                document.addEventListener('alpine:init', () => {
+                  setTimeout(() => {
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                      {% if messages %}
+                        {% for category, message in messages %}
+                          if (window.showNotification) {
+                            window.showNotification(
+                              "{{ category }}",
+                              "{{ 'Info' if category == 'message' else category|title }}",
+                              "{{ message }}"
+                            );
+                          }
+                        {% endfor %}
+                      {% endif %}
+                    {% endwith %}
+                  }, 500);
+                });
+              </script>
             </div>
           </section>
         </main>

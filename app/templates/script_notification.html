@@ -42,6 +42,7 @@
 
     if (flashOverlay) flashOverlay.classList.add("hidden");
 
+    /*
     if (window.isFirstTimeLogin && notifBox) {
       console.log("🚀 Login pertama kali, tampilkan notifBox selama 6 detik");
 
@@ -66,6 +67,7 @@
     } else {
       console.log("ℹ️ Bukan login pertama → notifBox tidak muncul otomatis");
     }
+    */
   };
 
   // Switch Tab Function
@@ -108,7 +110,7 @@
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Reload page to refresh notifications
         location.reload();
@@ -133,30 +135,30 @@
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         const notificationEl = document.getElementById(`notification-tray-${notificationId}`);
         if (notificationEl) {
           // Update UI
           notificationEl.classList.remove('border-l-4', 'border-blue-500');
           notificationEl.classList.add('border-l-4', 'border-gray-300');
-          
+
           const bellIcon = notificationEl.querySelector('i.fa-bell');
           if (bellIcon) {
             bellIcon.classList.remove('text-blue-500');
             bellIcon.classList.add('text-gray-400');
           }
-          
+
           const redDot = notificationEl.querySelector('.bg-red-500.animate-pulse');
           if (redDot) redDot.remove();
-          
+
           const newBadge = notificationEl.querySelector('.bg-blue-500');
           if (newBadge) newBadge.remove();
-          
+
           const markReadBtn = notificationEl.querySelector('button[onclick*="markAsReadTray"]');
           if (markReadBtn) markReadBtn.remove();
         }
-        
+
         // Reload to update count
         setTimeout(() => location.reload(), 500);
       } else {
@@ -184,7 +186,7 @@
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         const notificationEl = document.getElementById(`notification-tray-${notificationId}`);
         if (notificationEl) {
@@ -192,7 +194,7 @@
           notificationEl.style.opacity = '0';
           setTimeout(() => {
             notificationEl.remove();
-            
+
             // Check if no notifications left
             const systemTab = document.getElementById('system-tab');
             if (systemTab && systemTab.children.length === 0) {
@@ -209,7 +211,7 @@
             }
           }, 300);
         }
-        
+
         // Reload to update count
         setTimeout(() => location.reload(), 500);
       } else {
