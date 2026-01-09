@@ -13,6 +13,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
 
     <!-- Icons -->
     <link
@@ -84,8 +88,8 @@
         {% include 'header.html' %}
 
         <main
-          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
-          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
+          class="dashboard-main flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
           <div class="container mx-auto p-6 max-w-7xl">
             <div class="flex justify-between items-center mb-8 no-print">

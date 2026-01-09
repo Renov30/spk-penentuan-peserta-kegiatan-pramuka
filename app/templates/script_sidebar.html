@@ -1,21 +1,54 @@
 <script>
   document.addEventListener("alpine:init", () => {
+    // Check if on mobile
+    const isMobileDevice = window.innerWidth < 768;
+
+    // Get saved state, but override for mobile
+    const savedState = {{ 'false' if sidebar_state == 'collapsed' else 'true' }};
+    const initialOpen = isMobileDevice ? false : savedState;
+
     Alpine.store("sidebar", {
-      open: {{ 'false' if sidebar_state == 'collapsed' else 'true' }},
+      open: initialOpen,
+      isMobile: isMobileDevice,
 
       toggle() {
         this.open = !this.open;
 
-        // Simpan ke database lewat fetch
-        fetch("/save_sidebar_state", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content
-          },
-          body: JSON.stringify({ state: this.open ? "expanded" : "collapsed" })
-        }).catch(err => console.error("Gagal simpan sidebar:", err));
+        // Only save to database on desktop
+        if (!this.isMobile) {
+          fetch("/save_sidebar_state", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ state: this.open ? "expanded" : "collapsed" })
+          }).catch(err => console.error("Gagal simpan sidebar:", err));
+        }
+      },
+
+      close() {
+        this.open = false;
+      },
+
+      handleResize() {
+        const wasMobile = this.isMobile;
+        this.isMobile = window.innerWidth < 768;
+
+        // Auto-close sidebar when switching to mobile
+        if (!wasMobile && this.isMobile) {
+          this.open = false;
+        }
       }
+    });
+
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        Alpine.store('sidebar').handleResize();
+      }, 100);
     });
   });
 </script>

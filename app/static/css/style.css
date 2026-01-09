@@ -302,3 +302,226 @@ button[id*="confirm"]:hover:not([disabled]):not(:disabled),
 [id*="confirm"] button:hover:not([disabled]):not(:disabled) {
   cursor: pointer !important;
 }
+
+/* ============================================== */
+/* RESPONSIVE DASHBOARD - MOBILE FIRST           */
+/* ============================================== */
+
+/* Sidebar Responsive - Base styles */
+.dashboard-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 50;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Backdrop overlay for mobile */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.sidebar-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Hamburger Menu Button */
+.hamburger-menu {
+  display: none;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.hamburger-menu:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark .hamburger-menu:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================== */
+/* MOBILE STYLES (< 768px) - Default / Mobile First */
+/* ============================================== */
+
+/* Mobile: Sidebar as off-canvas menu */
+.dashboard-sidebar {
+  width: 260px !important;
+  transform: translateX(-100%);
+}
+
+.dashboard-sidebar.sidebar-open {
+  transform: translateX(0);
+}
+
+/* Mobile: Main content full width */
+.dashboard-main {
+  margin-left: 0 !important;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* Mobile: Header full width */
+.dashboard-header {
+  left: 0 !important;
+  width: 100% !important;
+  transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* Mobile: Show hamburger menu */
+.hamburger-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile: Hide sidebar toggle button in sidebar header */
+@media (max-width: 767px) {
+  .sidebar-toggle-desktop {
+    display: none !important;
+  }
+}
+
+/* ============================================== */
+/* TABLET STYLES (768px - 1024px)                */
+/* ============================================== */
+
+@media (min-width: 768px) {
+  /* Tablet: Collapsible sidebar */
+  .dashboard-sidebar {
+    width: 70px !important;
+    transform: translateX(0);
+  }
+
+  .dashboard-sidebar.sidebar-open {
+    width: 220px !important;
+    transform: translateX(0);
+  }
+
+  /* Tablet: Main content with margin */
+  .dashboard-main {
+    margin-left: 70px !important;
+  }
+
+  .dashboard-main.sidebar-open {
+    margin-left: 220px !important;
+  }
+
+  /* Tablet: Header adjusted */
+  .dashboard-header {
+    left: 70px !important;
+    width: calc(100% - 70px) !important;
+  }
+
+  .dashboard-header.sidebar-open {
+    left: 220px !important;
+    width: calc(100% - 220px) !important;
+  }
+
+  /* Tablet: Hide hamburger menu */
+  .hamburger-menu {
+    display: none;
+  }
+
+  /* Tablet: Hide backdrop */
+  .sidebar-backdrop {
+    display: none !important;
+  }
+}
+
+/* ============================================== */
+/* DESKTOP STYLES (> 1024px)                     */
+/* ============================================== */
+
+@media (min-width: 1025px) {
+  /* Desktop: Full sidebar */
+  .dashboard-sidebar {
+    width: 80px !important;
+  }
+
+  .dashboard-sidebar.sidebar-open {
+    width: 260px !important;
+  }
+
+  /* Desktop: Main content with larger margin */
+  .dashboard-main {
+    margin-left: 80px !important;
+  }
+
+  .dashboard-main.sidebar-open {
+    margin-left: 260px !important;
+  }
+
+  /* Desktop: Header adjusted */
+  .dashboard-header {
+    left: 80px !important;
+    width: calc(100% - 80px) !important;
+  }
+
+  .dashboard-header.sidebar-open {
+    left: 260px !important;
+    width: calc(100% - 260px) !important;
+  }
+}
+
+/* ============================================== */
+/* RESPONSIVE UTILITIES                          */
+/* ============================================== */
+
+/* Hide text on collapsed sidebar (tablet/desktop) */
+@media (min-width: 768px) {
+  .dashboard-sidebar:not(.sidebar-open) .sidebar-text {
+    display: none;
+  }
+
+  .dashboard-sidebar:not(.sidebar-open) .sidebar-nav-item {
+    justify-content: center;
+  }
+}
+
+/* Responsive table wrapper */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile: Stack buttons vertically */
+@media (max-width: 640px) {
+  .button-group-responsive {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .button-group-responsive > * {
+    width: 100%;
+  }
+}
+
+/* Mobile: Adjust card grids */
+@media (max-width: 640px) {
+  .card-grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Mobile: Adjust form layouts */
+@media (max-width: 640px) {
+  .form-responsive {
+    flex-direction: column;
+  }
+
+  .form-responsive > * {
+    width: 100% !important;
+  }
+}

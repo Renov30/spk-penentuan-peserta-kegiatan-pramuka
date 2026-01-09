@@ -414,7 +414,7 @@ def is_safe_url(target):
 
 # Endpoint login
 @app.route('/login/', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("20 per minute")
 def login():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
@@ -425,7 +425,15 @@ def login():
         if next_url and is_safe_url(next_url):
             logging.info(f"Redirect after login to: {next_url}")
             return redirect(next_url)
-        return redirect(url_for('index'))
+        # Redirect ke dashboard sesuai role, bukan ke landing page
+        if current_user.level == "admin":
+            return redirect(url_for('admin_dashboard'))
+        elif current_user.level == "penilai":
+            return redirect(url_for('penilai_dashboard'))
+        elif current_user.level == "peserta":
+            return redirect(url_for('peserta_dashboard'))
+        else:
+            return redirect(url_for('index'))
 
     if form.validate_on_submit():
         username = form.username.data
@@ -466,7 +474,7 @@ def login():
 
 # Endpoint login with Google
 @app.route('/login/google/', methods=['GET', 'POST'])
-@limiter.limit("10 per minute")
+@limiter.limit("20 per minute")
 def login_google():
     next_url = request.args.get('next')
 

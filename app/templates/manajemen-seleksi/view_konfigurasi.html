@@ -14,6 +14,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
 
     <!-- Icons -->
     <link
@@ -59,8 +63,8 @@
 
         <!-- Page Content -->
         <main
-          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
-          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[1%]'"
+          class="dashboard-main flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
           <section
             class="flex items-center justify-center wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
@@ -154,12 +158,12 @@
                         </h3>
                         <div class="flex flex-wrap gap-2 mb-2">
                           <span
-                            class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            class="px-2 py-1 text-xs rounded-full {{ 'bg-blue-900 text-blue-200' if current_theme == 'dark' else 'bg-blue-100 text-blue-800' }}"
                           >
                             {{ event.jenis_kegiatan }}
                           </span>
                           <span
-                            class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            class="px-2 py-1 text-xs rounded-full {{ 'bg-green-900 text-green-200' if current_theme == 'dark' else 'bg-green-100 text-green-800' }}"
                           >
                             {{ event.skala_kegiatan }}
                           </span>
@@ -883,8 +887,8 @@
                               class="px-3 py-1 bg-green-500 hover:bg-green-700 text-white rounded-lg text-sm mt-3 cursor-pointer"
                             >
                               <i class="fa-solid fa-plus mr-1"></i>
-                              {{ '+ Tambah Kriteria' if current_lang == 'id'
-                              else '+ Add Criteria' }}
+                              {{ 'Tambah Kriteria' if current_lang == 'id' else
+                              'Add Criteria' }}
                             </button>
                           </div>
                         </div>

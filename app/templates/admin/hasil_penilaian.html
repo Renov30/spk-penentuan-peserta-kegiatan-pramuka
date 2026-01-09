@@ -14,6 +14,10 @@
     />
     <link
       rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
     <!-- Animate.css -->
@@ -49,8 +53,8 @@
         {% include 'header.html' %}
 
         <main
-          class="flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
-          :class="Alpine.store('sidebar').open ? 'ml-[15%]' : 'ml-[5%]'"
+          class="dashboard-main flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
+          :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
           <section
             class="wow animate__animated animate__slideInLeft animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"

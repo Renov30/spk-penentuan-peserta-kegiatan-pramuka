@@ -1,9 +1,16 @@
 <!-- sidebar.html -->
 {% if current_user.is_authenticated %}
+<!-- Mobile backdrop overlay -->
+<div
+  class="sidebar-backdrop"
+  :class="{ 'active': $store.sidebar.open }"
+  @click="$store.sidebar.toggle()"
+></div>
+
 <div class="flex">
   <aside
-    :class="$store.sidebar.open ? 'w-[15%]' : 'w-[5%]'"
-    class="transition-all duration-300 h-full border-r fixed z-50 {{ 'dark:bg-gray-900 border-gray-200 dark:border-gray-700' if current_theme == 'dark' else 'bg-gray-100' }}"
+    :class="{ 'sidebar-open': $store.sidebar.open }"
+    class="dashboard-sidebar transition-all duration-300 h-full border-r {{ 'dark:bg-gray-900 border-gray-200 dark:border-gray-700' if current_theme == 'dark' else 'bg-gray-100' }}"
   >
     <div
       class="flex items-center h-20 shadow-md"
@@ -17,7 +24,7 @@
       >
       <button
         @click="$store.sidebar.toggle()"
-        class="p-2 rounded cursor-pointer {{ 'hover:bg-gray-200 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300'}}"
+        class="sidebar-toggle-desktop p-2 rounded cursor-pointer {{ 'hover:bg-gray-200 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-300 dark:hover:bg-gray-300'}}"
       >
         <i
           class="fas fa-bars 
