@@ -644,11 +644,11 @@
             >
               <button
                 @click="open = !open"
-                class="w-full p-4 flex items-center justify-between {{ 'bg-orange-900/30 hover:bg-orange-900/50' if current_theme == 'dark' else 'bg-orange-50 hover:bg-orange-100' }} transition"
+                class="w-full p-4 flex items-center justify-between {{ 'bg-amber-900/30 hover:bg-amber-900/50' if current_theme == 'dark' else 'bg-amber-50 hover:bg-amber-100' }} transition"
               >
                 <div class="flex items-center gap-3">
                   <span
-                    class="w-8 h-8 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold"
+                    class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold"
                     >5</span
                   >
                   <span
@@ -669,7 +669,7 @@
               >
                 {% if probability_matrix %}
                 <h4
-                  class="font-semibold mb-3 {{ 'text-orange-400' if current_theme == 'dark' else 'text-orange-600' }}"
+                  class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
                 >
                   Matriks V(Si ≥ Sj)
                 </h4>
@@ -697,7 +697,7 @@
                         </td>
                         {% for j in range(probability_matrix[i]|length) %}
                         <td
-                          class="p-2 font-mono {{ 'bg-orange-900/20' if i == j else '' }}"
+                          class="p-2 font-mono {{ 'bg-amber-900/20' if i == j else '' }}"
                         >
                           {% if probability_matrix[i][j] == '-' %} - {% else %}
                           {{ probability_matrix[i][j] }} {% endif %}
@@ -710,7 +710,7 @@
                 </div>
 
                 <h4
-                  class="font-semibold mb-3 {{ 'text-orange-400' if current_theme == 'dark' else 'text-orange-600' }}"
+                  class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
                 >
                   Nilai Ordinat d'(Ai) = min V(Si ≥ Sk)
                 </h4>
@@ -733,7 +733,7 @@
                       >
                         <td class="p-2">{{ item.criteria }}</td>
                         <td
-                          class="p-2 text-center font-mono font-bold {{ 'text-orange-400' if current_theme == 'dark' else 'text-orange-600' }}"
+                          class="p-2 text-center font-mono font-bold {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
                         >
                           {{ item.value }}
                         </td>
