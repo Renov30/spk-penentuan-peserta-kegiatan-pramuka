@@ -3727,8 +3727,27 @@ def generate_laporan_excel(event_id):
 # API untuk generate laporan PDF (menggunakan HTML to PDF atau reportlab)
 @app.route('/admin/laporan/preview/<int:event_id>')
 @login_required
-@admin_required
 def preview_laporan_seleksi(event_id):
+    # Allow admin, penilai, and peserta to access
+    if current_user.level == 'penilai':
+        event = Event.query.get_or_404(event_id)
+        if current_user not in event.evaluators:
+            flash('Akses ditolak! Anda tidak memiliki akses ke kegiatan ini.', 'error')
+            return redirect(url_for('index'))
+    elif current_user.level == 'peserta':
+        # Peserta hanya bisa akses event yang dia ikuti
+        participant = Participants.query.filter_by(email=current_user.email).first()
+        if not participant:
+            flash('Akses ditolak! Data peserta tidak ditemukan.', 'error')
+            return redirect(url_for('index'))
+        hasil = HasilSeleksi.query.filter_by(id_users=current_user.id, event_id=event_id).first()
+        if not hasil:
+            flash('Akses ditolak! Anda tidak terdaftar di kegiatan ini.', 'error')
+            return redirect(url_for('index'))
+    elif current_user.level != 'admin':
+        flash('Akses ditolak!', 'error')
+        return redirect(url_for('index'))
+    
     event = Event.query.get_or_404(event_id)
     
     # Ambil hasil seleksi (Logika sama dengan admin_hasil_seleksi)
@@ -3762,8 +3781,27 @@ def preview_laporan_seleksi(event_id):
 
 @app.route('/admin/laporan/word/<int:event_id>')
 @login_required
-@admin_required
 def export_laporan_word(event_id):
+    # Allow admin, penilai, and peserta to access
+    if current_user.level == 'penilai':
+        event = Event.query.get_or_404(event_id)
+        if current_user not in event.evaluators:
+            flash('Akses ditolak! Anda tidak memiliki akses ke kegiatan ini.', 'error')
+            return redirect(url_for('index'))
+    elif current_user.level == 'peserta':
+        # Peserta hanya bisa akses event yang dia ikuti
+        participant = Participants.query.filter_by(email=current_user.email).first()
+        if not participant:
+            flash('Akses ditolak! Data peserta tidak ditemukan.', 'error')
+            return redirect(url_for('index'))
+        hasil = HasilSeleksi.query.filter_by(id_users=current_user.id, event_id=event_id).first()
+        if not hasil:
+            flash('Akses ditolak! Anda tidak terdaftar di kegiatan ini.', 'error')
+            return redirect(url_for('index'))
+    elif current_user.level != 'admin':
+        flash('Akses ditolak!', 'error')
+        return redirect(url_for('index'))
+    
     event = Event.query.get_or_404(event_id)
     
     # Render template yang sama
