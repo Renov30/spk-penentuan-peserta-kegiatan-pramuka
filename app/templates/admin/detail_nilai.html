@@ -204,7 +204,25 @@
                   </table>
                 </div>
 
-                {% if pairwise_data %}
+                {% if pairwise_data %} {% if use_generated_matrix %}
+                <div
+                  class="mb-4 p-3 rounded-lg {{ 'bg-amber-900/30 border border-amber-600' if current_theme == 'dark' else 'bg-amber-50 border border-amber-300' }}"
+                >
+                  <div class="flex items-center gap-2 text-sm">
+                    <i
+                      class="fa-solid fa-info-circle {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
+                    ></i>
+                    <span
+                      class="{{ 'text-amber-300' if current_theme == 'dark' else 'text-amber-700' }}"
+                    >
+                      Matriks ini di-generate otomatis berdasarkan rasio bobot
+                      kriteria yang tersimpan di database. Untuk hasil yang
+                      lebih akurat, silakan input matriks perbandingan
+                      berpasangan secara manual di halaman Pembobotan Kriteria.
+                    </span>
+                  </div>
+                </div>
+                {% endif %}
                 <!-- Crisp Pairwise Matrix -->
                 <h4
                   class="font-semibold mb-3 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"

@@ -5677,6 +5677,27 @@ def admin_detail_nilai(user_id, event_id):
     pairwise_matrix = get_pairwise_matrix_from_db(event_id, criteria_ids)
     pairwise_data = None
     fuzzy_pairwise_data = None
+    use_generated_matrix = False
+    
+    # Jika tidak ada matriks di database tapi ada bobot kriteria, generate matriks dari bobot
+    if pairwise_matrix is None and n > 0:
+        total_bobot_check = sum(c.bobot for c in criterias)
+        if total_bobot_check > 0:
+            # Generate matriks perbandingan dari rasio bobot
+            pairwise_matrix = np.ones((n, n))
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        # Rasio bobot sebagai nilai perbandingan
+                        wi = criterias[i].bobot if criterias[i].bobot > 0 else 0.001
+                        wj = criterias[j].bobot if criterias[j].bobot > 0 else 0.001
+                        ratio = wi / wj
+                        # Batasi ke skala 1-9
+                        if ratio >= 1:
+                            pairwise_matrix[i, j] = min(9, max(1, ratio))
+                        else:
+                            pairwise_matrix[i, j] = max(1/9, ratio)
+            use_generated_matrix = True
     
     if pairwise_matrix is not None and n > 0:
         pairwise_data = pairwise_matrix.tolist()
@@ -5895,6 +5916,7 @@ def admin_detail_nilai(user_id, event_id):
         tfn_scale_table=tfn_scale_table,
         pairwise_data=pairwise_data,
         fuzzy_pairwise_data=fuzzy_pairwise_data,
+        use_generated_matrix=use_generated_matrix,
         eigenvector_data=eigenvector_data,
         lambda_max=lambda_max,
         ci=ci,
