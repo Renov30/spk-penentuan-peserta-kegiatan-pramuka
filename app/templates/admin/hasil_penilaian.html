@@ -8,29 +8,40 @@
       {{ 'Hasil Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading
       Results | Scout DSS' }}
     </title>
+
+    <!-- Tailwindcss -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+
+    <!-- Vanila css -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
+
+    <!-- Font Awesome -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+
     <!-- Animate.css -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
     />
+
+    <!-- Alpine.js -->
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
+
     <!-- Script Sidebar -->
     {% include "script_sidebar.html" %}
+
     <!-- Script Theme -->
     {% include 'script_theme.html' %}
   </head>
@@ -59,6 +70,9 @@
           <section
             class="wow animate__animated animate__slideInLeft animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
           >
+          <!-- Notification Box -->
+          {% include 'notification_box.html' %}
+
           <div class="container mx-auto p-6">
             <div class="flex items-center justify-between mb-6">
               <div>
@@ -192,7 +206,7 @@
                         </div>
                         {% else %}
                         <span class="font-medium opacity-70"
-                          >#{{ item.hasil.ranking }}</span
+                          >{{ item.hasil.ranking }}</span
                         >
                         {% endif %}
                       </td>

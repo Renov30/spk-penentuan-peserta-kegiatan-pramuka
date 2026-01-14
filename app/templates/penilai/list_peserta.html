@@ -46,6 +46,9 @@
           :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
           <div class="container mx-auto p-6">
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
             <div class="flex items-center justify-between mb-6">
               <div>
                 <a
@@ -183,5 +186,9 @@
         </main>
       </div>
     </div>
+
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
   </body>
 </html>

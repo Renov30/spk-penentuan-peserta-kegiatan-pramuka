@@ -130,6 +130,9 @@
           :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
           <div class="container mx-auto p-6 max-w-5xl">
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
             <!-- Back Button -->
             <a
               href="{{ url_for('penilai_event_participants', event_id=event.id_kegiatan) }}"
@@ -304,5 +307,9 @@
         </main>
       </div>
     </div>
+
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
   </body>
 </html>

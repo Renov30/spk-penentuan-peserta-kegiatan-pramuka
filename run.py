@@ -4014,9 +4014,7 @@ def admin_hasil_penilaian():
                 create_notification_to_all_admins(message)
 
             hasil_seleksi = db.session.query(
-                HasilSeleksi,
-                Users,
-                Participants
+                HasilSeleksi, Users, Participants
             ).join(
                 Users, HasilSeleksi.id_users == Users.id
             ).outerjoin(

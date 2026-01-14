@@ -46,6 +46,9 @@
           :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
           <div class="container mx-auto p-6 max-w-7xl">
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
             <!-- Back Button -->
             <div class="mb-6">
               <a
@@ -300,5 +303,9 @@
         </main>
       </div>
     </div>
+
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
   </body>
 </html>

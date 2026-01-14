@@ -3,133 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Laporan Hasil Seleksi - {{ event.nama_kegiatan }}</title>
-    <style>
-      @page {
-        size: A4;
-        margin: 2.54cm; /* Standard Margin */
-      }
-      body {
-        font-family: "Times New Roman", Times, serif;
-        font-size: 12pt;
-        line-height: 1.5;
-        color: #000;
-        background: #fff;
-        max-width: 21cm;
-        margin: 0 auto;
-      }
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>
+      {{ 'Laporan Hasil Seleksi' if current_lang == 'id' else 'Selection Results
+      Report' }} - {{ event.nama_kegiatan }}
+    </title>
 
-      /* Header */
-      .header-table {
-        width: 100%;
-        border-bottom: 3px solid #000;
-        margin-bottom: 2px;
-        padding-bottom: 10px;
-      }
-      .header-logo {
-        width: 60px;
-        height: auto;
-      }
-      .header-text {
-        text-align: center;
-      }
-      .header-text h1 {
-        font-size: 12pt;
-        font-weight: bold;
-        margin: 0;
-        text-transform: uppercase;
-      }
-      .header-text h2 {
-        font-size: 14pt;
-        font-weight: bold;
-        margin: 5px 0;
-        text-transform: uppercase;
-      }
-      .header-info {
-        font-size: 9pt;
-        margin: 0;
-        text-align: center; /* Override p justify */
-      }
-
-      /* Content */
-      .report-title {
-        text-align: center;
-        font-weight: bold;
-        margin-top: 20px;
-        margin-bottom: 30px;
-        text-transform: uppercase;
-      }
-
-      .section-title {
-        font-weight: bold;
-        font-style: italic;
-        margin-top: 20px;
-        margin-bottom: 10px;
-      }
-
-      p {
-        text-align: justify;
-        margin-bottom: 10px;
-        text-indent: 0;
-      }
-
-      /* Table */
-      table.results-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        font-size: 11pt;
-      }
-      table.results-table th,
-      table.results-table td {
-        border: 1px solid #000;
-        padding: 5px 10px;
-      }
-      table.results-table th {
-        background-color: #d9d9d9;
-        text-align: center;
-        font-weight: bold;
-      }
-      table.results-table td {
-        vertical-align: middle;
-      }
-      table.results-table td.center {
-        text-align: center;
-      }
-
-      /* Signature */
-      .signature-section {
-        margin-top: 50px;
-        page-break-inside: avoid;
-      }
-      .signature-table {
-        width: 100%;
-        border: none;
-      }
-      .signature-table td {
-        border: none;
-        vertical-align: top;
-        text-align: left;
-        width: 100%;
-      }
-      .signature-space {
-        height: 80px;
-      }
-      .signature-name {
-        font-weight: bold;
-        text-decoration: underline;
-      }
-
-      @media print {
-        body {
-          width: auto;
-          margin: 0;
-        }
-        .no-print {
-          display: none;
-        }
-      }
-    </style>
+    <!-- Vanila css -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/laporan_template.css') }}"
+    />
   </head>
   <body>
     <!-- Header -->
@@ -137,7 +21,6 @@
       <tr>
         <td style="width: 70px; text-align: left; vertical-align: top">
           <!-- Placeholder Logo Kiri (Tunas Kelapa) -->
-          <!-- Gunakan onerror untuk handling jika gambar tidak ada -->
           <img
             src="{{ url_for('static', filename='images/Logo-Gerakan-Pramuka.png') }}"
             class="header-logo"
@@ -146,15 +29,20 @@
           />
         </td>
         <td class="header-text">
-          <h1>GERAKAN PRAMUKA</h1>
-          <h2>KWARTIR CABANG 2601 MERAUKE</h2>
+          <h2 class="size-7">GERAKAN PRAMUKA</h2>
+          <h2>
+            {{ 'KWARTIR CABANG 2601 MERAUKE' if current_lang == 'id' else
+            'BRANCH SCOUT COUNCIL 2601 MERAUKE' }}
+          </h2>
           <p class="header-info">
-            Sekretariat Pramuka Jl. Trikora Merauke – Papua Selatan (Belakang
-            Kantor Gubernur PPS)
+            {{ 'Sekretariat Pramuka Jl. Trikora Merauke – Papua Selatan
+            (Belakang Kantor Gubernur PPS)' if current_lang == 'id' else 'Scout
+            Secretariat, Trikora Street, Merauke – South Papua (Behind the South
+            Papua Governor’s Office)' }}
           </p>
           <p class="header-info">
             HP: 0821-9948-5226 / 0852-1689-3637 &nbsp;&nbsp;|&nbsp;&nbsp;
-            E-mail: kwarcabmerauke@gmail.com
+            E-mail: <span class="underline">kwarcabmerauke@gmail.com</span>
           </p>
         </td>
         <td style="width: 70px; text-align: right; vertical-align: top">
@@ -173,38 +61,65 @@
 
     <!-- Title -->
     <div class="report-title">
-      LAPORAN HASIL SELEKSI PESERTA KEGIATAN PRAMUKA<br />
-      <span style="font-weight: normal; text-transform: none"
-        >Metode Fuzzy Analytical Hierarchy Process (Fuzzy AHP)</span
+      {{ 'LAPORAN HASIL SELEKSI PESERTA KEGIATAN PRAMUKA' if current_lang ==
+      'id' else 'REPORT ON THE SELECTION RESULTS OF SCOUT ACTIVITY PARTICIPANTS'
+      }}<br />
+      <span style="font-weight: normal; text-transform: none">
+        {{ 'Metode Fuzzy Analytical Hierarchy Process (Fuzzy AHP)' if
+        current_lang == 'id' else 'Fuzzy Analytical Hierarchy Process (Fuzzy
+        AHP) Method' }}</span
       >
     </div>
 
     <!-- Section I -->
-    <div class="section-title">I. PENDAHULUAN</div>
+    <div class="section-title">
+      I. {{ 'PENDAHULUAN' if current_lang == 'id' else 'INTRODUCTION' }}
+    </div>
     <p>
-      Laporan ini disusun untuk menyajikan hasil seleksi peserta kegiatan
-      Pramuka
+      {% if current_lang == 'id' %} Laporan ini disusun untuk menyajikan hasil
+      seleksi peserta kegiatan Pramuka
       <strong>{{ event.nama_kegiatan }}</strong> yang dilaksanakan pada tanggal
       {{ tanggal_laporan_indo }}. Proses seleksi dilakukan secara objektif
       menggunakan Sistem Pendukung Keputusan berbasis metode Fuzzy Analytical
-      Hierarchy Process (Fuzzy AHP).
+      Hierarchy Process (Fuzzy AHP). {% else %} This report is prepared to
+      present the selection results of Scout activity participants for the
+      <strong>{{ event.nama_kegiatan }}</strong> event, which was conducted on
+      {{ tanggal_laporan_indo }}. The selection process was carried out
+      objectively using a Decision Support System based on the Fuzzy Analytical
+      Hierarchy Process (Fuzzy AHP) method. {% endif %}
     </p>
 
     <!-- Section II -->
-    <div class="section-title">II. HASIL SELEKSI DAN PERINGKAT</div>
+    <div class="section-title">
+      II. {{ 'HASIL SELEKSI DAN PERINGKAT' if current_lang == 'id' else
+      'SELECTION RESULTS AND RANKINGS' }}
+    </div>
     <p>
-      Berdasarkan hasil perhitungan Fuzzy AHP terhadap seluruh kriteria yang
-      telah ditetapkan, diperoleh peringkat peserta sebagai berikut:
+      {{ 'Berdasarkan hasil perhitungan Fuzzy AHP terhadap seluruh kriteria yang
+      telah ditetapkan, diperoleh peringkat peserta sebagai berikut:' if
+      current_lang == 'id' else 'Based on the results of the Fuzzy AHP
+      calculations on all established criteria, the participants’ rankings are
+      obtained as follows:' }}
     </p>
 
     <table class="results-table">
       <thead>
         <tr>
-          <th style="width: 10%">Peringkat</th>
-          <th style="width: 35%">Nama Peserta</th>
-          <th style="width: 35%">Asal Gudep</th>
-          <th style="width: 35%">Jenis kelamin</th>
-          <th style="width: 20%">Skor Akhir</th>
+          <th style="width: 10%">
+            {{ 'Peringkat' if current_lang == 'id' else 'Rank' }}
+          </th>
+          <th style="width: 35%">
+            {{ 'Nama Peserta' if current_lang == 'id' else 'Participant Name' }}
+          </th>
+          <th style="width: 35%">
+            {{ 'Asal Gudep' if current_lang == 'id' else 'Scout Group' }}
+          </th>
+          <th style="width: 35%">
+            {{ 'Jenis kelamin' if current_lang == 'id' else 'Gender' }}
+          </th>
+          <th style="width: 20%">
+            {{ 'Skor Akhir' if current_lang == 'id' else 'Final Score' }}
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -222,40 +137,59 @@
     </table>
 
     <!-- Section III -->
-    <div class="section-title">III. KESIMPULAN</div>
+    <div class="section-title">
+      III. {{ 'KESIMPULAN' if current_lang == 'id' else 'CONCLUSION' }}
+    </div>
     <p>
-      Hasil seleksi menunjukkan bahwa {% if hasil_seleksi and
-      hasil_seleksi|length > 0 %}
-      <strong>{{ hasil_seleksi[0][1].nama_lengkap }}</strong> memperoleh skor
-      tertinggi dan menempati peringkat pertama. {% else %} belum ada peserta
-      yang dinilai. {% endif %} Dengan demikian, peserta dengan peringkat
-      tertinggi direkomendasikan sebagai peserta utama kegiatan {{
-      event.nama_kegiatan }}.
+      {% if hasil_seleksi and hasil_seleksi|length > 0 %} {% if current_lang ==
+      'id' %} Hasil seleksi menunjukkan bahwa
+      <strong>{{ hasil_seleksi[0][1].nama_lengkap }}</strong>
+      memperoleh skor tertinggi dan menempati peringkat pertama. Dengan
+      demikian, peserta dengan peringkat tertinggi direkomendasikan sebagai
+      peserta utama kegiatan {{ event.nama_kegiatan }}. {% else %} The selection
+      results indicate that
+      <strong>{{ hasil_seleksi[0][1].nama_lengkap }}</strong>
+      achieved the highest score and ranked first. Therefore, the top-ranked
+      participant is recommended as the main participant for the {{
+      event.nama_kegiatan }} activity. {% endif %} {% else %} {% if current_lang
+      == 'id' %} Hasil seleksi menunjukkan bahwa belum ada peserta yang dinilai.
+      {% else %} The selection results indicate that no participants have been
+      evaluated. {% endif %} {% endif %}
     </p>
 
     <!-- Section IV -->
-    <div class="section-title">IV. PENUTUP</div>
+    <div class="section-title">
+      IV. {{ 'PENUTUP' if current_lang == 'id' else 'CLOSING' }}
+    </div>
+
     <p>
-      Demikian laporan hasil seleksi ini disusun sebagai bentuk
+      {{ 'Demikian laporan hasil seleksi ini disusun sebagai bentuk
       pertanggungjawaban dan dokumentasi proses seleksi peserta kegiatan
-      Pramuka.
+      Pramuka.' if current_lang == 'id' else 'Thus, this selection results
+      report is prepared as a form of accountability and documentation of the
+      Scout activity participant selection process.' }}
     </p>
 
     <!-- Signatures -->
     <div class="signature-section">
       <table class="signature-table">
         <tr>
-          <td style="text-align: left; width: 100%">
-            <p style="margin-bottom: 5px">Gerakan Pramuka</p>
-            <p style="margin-bottom: 0">Kwartir Cabang 2601 Merauke</p>
-            <p style="margin-top: 5px">Ketua</p>
+          <td style="text-left w-full">
+            <p class="mt-0.5">Gerakan Pramuka</p>
+            <p class="mt-0.5">
+              {{ 'Kwartir Cabang 2601 Merauke' if current_lang == 'id' else
+              'Branch Scout Council 2601 Merauke' }}
+            </p>
+            <p class="mt-0.5">
+              {{ 'Ketua,' if current_lang == 'id' else 'Chairperson,' }}
+            </p>
 
             <div class="signature-space">
               <!-- Space for signature or Image -->
             </div>
 
             <div class="signature-name">MUH. ICKSAN, S.PdI</div>
-            <div style="margin-top: 5px">NTA: 26.01.00.261281.0001</div>
+            <div class="mt-0">NTA: 26.01.00.261281.0001</div>
           </td>
         </tr>
       </table>
@@ -278,7 +212,8 @@
           font-weight: bold;
         "
       >
-        <i class="fa fa-print"></i> CETAK / PDF
+        <i class="fa fa-print"></i>{{ 'CETAK / PDF' if current_lang == 'id' else
+        'PRINT / PDF' }}
       </button>
     </div>
   </body>
