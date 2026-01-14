@@ -380,6 +380,13 @@
       });
     </script>
 
+    <script>
+      window.INIT_ARSIP = {{ arsip_list | tojson | safe }};
+      window.CSRF_TOKEN = "{{ csrf_token() }}";
+    </script>
+
+    <script src="{{ url_for('static', filename='js/laporan-arsip.js') }}"></script>
+
     <script src="{{ url_for('static', filename='js/konfigurasi_seleksi.js') }}"></script>
 
     <!-- Animation & Notification Script -->
