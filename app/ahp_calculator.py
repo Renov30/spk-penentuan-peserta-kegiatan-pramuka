@@ -16,17 +16,17 @@ RI_TABLE = {
     11: 1.51, 12: 1.58
 }
 
-# Skala Triangular Fuzzy Number (TFN) sesuai PDF
+# Skala Triangular Fuzzy Number (TFN) sesuai Skripsi
 TFN_SCALE = {
-    1: (1, 1, 1),
-    2: (1/2, 1, 3/2),
-    3: (1, 3/2, 2),
-    4: (3/2, 2, 5/2),
-    5: (2, 5/2, 3),
-    6: (5/2, 3, 7/2),
-    7: (3, 7/2, 4),
-    8: (7/2, 4, 9/2),
-    9: (4, 9/2, 5)
+    1: (1, 1, 1),           # Perbandingan elemen yang sama
+    2: (1/2, 1, 3/2),       # Pertengahan
+    3: (1, 3/2, 2),         # Elemen satu cukup dari yang lainnya
+    4: (3/2, 2, 5/2),       # Mendekati lebih penting dari
+    5: (2, 5/2, 3),         # Lebih penting dari
+    6: (1/2, 3, 7/2),       # Mendekati sangat penting dari (diperbaiki: l=1/2)
+    7: (3, 7/2, 4),         # Sangat penting dari
+    8: (7/2, 4, 9/2),       # Mendekati mutlak dari
+    9: (4, 9/2, 9/2)        # Mutlak sangat penting dari (diperbaiki: u=9/2)
 }
 
 def get_tfn_reciprocal(tfn: Tuple[float, float, float]) -> Tuple[float, float, float]:
