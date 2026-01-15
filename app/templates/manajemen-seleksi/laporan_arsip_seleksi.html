@@ -361,7 +361,16 @@
 
       viewArsip(arsip) {
         if (arsip.file_path) {
-          window.open(`/${arsip.file_path}`, '_blank');
+          const newWindow = window.open(`/${arsip.file_path}`, '_blank');
+
+          // Jika file PDF, buka dialog print setelah window ter-load
+          if (arsip.file_type === 'pdf' && newWindow) {
+            newWindow.onload = function() {
+              setTimeout(() => {
+                newWindow.print();
+              }, 500); // Delay sedikit untuk memastikan PDF ter-render
+            };
+          }
         }
       },
 
