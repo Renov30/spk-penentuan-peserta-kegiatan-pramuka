@@ -5278,11 +5278,14 @@ def penilai_event_participants(event_id):
         # Cari user ID dari tabel Users berdasarkan email peserta
         user_peserta = Users.query.filter_by(email=p.email).first()
         if user_peserta:
-            # Cek apakah sudah ada nilai dari penilai ini untuk peserta ini
-            # Asumsi: jika ada minimal 1 nilai, dianggap sudah dinilai (bisa diperbaiki logikanya nanti)
-            existing_score = Penilaian.query.filter_by(
-                id_users=user_peserta.id, 
-                evaluator_id=current_user.id
+            # Cek apakah sudah ada nilai dari penilai ini untuk peserta ini di EVENT INI
+            # Join dengan Criteria untuk memastikan penilaian terkait dengan event yang sedang dilihat
+            existing_score = db.session.query(Penilaian).join(
+                Criteria, Penilaian.id_kriteria == Criteria.id_kriteria
+            ).filter(
+                Penilaian.id_users == user_peserta.id,
+                Penilaian.evaluator_id == current_user.id,
+                Criteria.event_id == event_id
             ).first()
             p.is_graded = True if existing_score else False
             p.user_id_for_link = user_peserta.id # Use temp attribute for link
