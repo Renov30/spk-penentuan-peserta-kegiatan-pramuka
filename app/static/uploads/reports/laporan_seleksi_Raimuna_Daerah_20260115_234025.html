@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Laporan Hasil Seleksi - Raimuna Daerah</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 2.54cm; /* Standard Margin */
+      }
+      body {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #000;
+        background: #fff;
+        max-width: 21cm;
+        margin: 0 auto;
+      }
+
+      /* Header */
+      .header-table {
+        width: 100%;
+        border-bottom: 3px solid #000;
+        margin-bottom: 2px;
+        padding-bottom: 10px;
+      }
+      .header-logo {
+        width: 60px;
+        height: auto;
+      }
+      .header-text {
+        text-align: center;
+      }
+      .header-text h1 {
+        font-size: 12pt;
+        font-weight: bold;
+        margin: 0;
+        text-transform: uppercase;
+      }
+      .header-text h2 {
+        font-size: 14pt;
+        font-weight: bold;
+        margin: 5px 0;
+        text-transform: uppercase;
+      }
+      .header-info {
+        font-size: 9pt;
+        margin: 0;
+        text-align: center; /* Override p justify */
+      }
+
+      /* Content */
+      .report-title {
+        text-align: center;
+        font-weight: bold;
+        margin-top: 20px;
+        margin-bottom: 30px;
+        text-transform: uppercase;
+      }
+
+      .section-title {
+        font-weight: bold;
+        font-style: italic;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+
+      p {
+        text-align: justify;
+        margin-bottom: 10px;
+        text-indent: 0;
+      }
+
+      /* Table */
+      table.results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 11pt;
+      }
+      table.results-table th,
+      table.results-table td {
+        border: 1px solid #000;
+        padding: 5px 10px;
+      }
+      table.results-table th {
+        background-color: #d9d9d9;
+        text-align: center;
+        font-weight: bold;
+      }
+      table.results-table td {
+        vertical-align: middle;
+      }
+      table.results-table td.center {
+        text-align: center;
+      }
+
+      /* Signature */
+      .signature-section {
+        margin-top: 50px;
+        page-break-inside: avoid;
+      }
+      .signature-table {
+        width: 100%;
+        border: none;
+      }
+      .signature-table td {
+        border: none;
+        vertical-align: top;
+        text-align: left;
+        width: 100%;
+      }
+      .signature-space {
+        height: 80px;
+      }
+      .signature-name {
+        font-weight: bold;
+        text-decoration: underline;
+      }
+
+      @media print {
+        body {
+          width: auto;
+          margin: 0;
+        }
+        .no-print {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        <td style="width: 70px; text-align: left; vertical-align: top">
+          <!-- Placeholder Logo Kiri (Tunas Kelapa) -->
+          <!-- Gunakan onerror untuk handling jika gambar tidak ada -->
+          <img
+            src="/static/images/Logo-Gerakan-Pramuka.png"
+            class="header-logo"
+            alt="Logo Gerakan Pramuka"
+            onerror="this.style.display='none'"
+          />
+        </td>
+        <td class="header-text">
+          <h1>GERAKAN PRAMUKA</h1>
+          <h2>KWARTIR CABANG 2601 MERAUKE</h2>
+          <p class="header-info">
+            Sekretariat Pramuka Jl. Trikora Merauke – Papua Selatan (Belakang
+            Kantor Gubernur PPS)
+          </p>
+          <p class="header-info">
+            HP: 0821-9948-5226 / 0852-1689-3637 &nbsp;&nbsp;|&nbsp;&nbsp;
+            E-mail: kwarcabmerauke@gmail.com
+          </p>
+        </td>
+        <td style="width: 70px; text-align: right; vertical-align: top">
+          <!-- Placeholder Logo Kanan (WOSM) -->
+          <img
+            src="/static/images/Logo-WOSM.png"
+            class="header-logo"
+            alt="Logo WOSM"
+            onerror="this.style.display='none'"
+          />
+        </td>
+      </tr>
+    </table>
+
+    <div style="border-top: 1px solid #000; margin-top: 2px; width: 100%"></div>
+
+    <!-- Title -->
+    <div class="report-title">
+      LAPORAN HASIL SELEKSI PESERTA KEGIATAN PRAMUKA<br />
+      <span style="font-weight: normal; text-transform: none"
+        >Metode Fuzzy Analytical Hierarchy Process (Fuzzy AHP)</span
+      >
+    </div>
+
+    <!-- Section I -->
+    <div class="section-title">I. PENDAHULUAN</div>
+    <p>
+      Laporan ini disusun untuk menyajikan hasil seleksi peserta kegiatan
+      Pramuka
+      <strong>Raimuna Daerah</strong> yang dilaksanakan pada tanggal
+      15 Januari 2026. Proses seleksi dilakukan secara objektif
+      menggunakan Sistem Pendukung Keputusan berbasis metode Fuzzy Analytical
+      Hierarchy Process (Fuzzy AHP).
+    </p>
+
+    <!-- Section II -->
+    <div class="section-title">II. HASIL SELEKSI DAN PERINGKAT</div>
+    <p>
+      Berdasarkan hasil perhitungan Fuzzy AHP terhadap seluruh kriteria yang
+      telah ditetapkan, diperoleh peringkat peserta sebagai berikut:
+    </p>
+
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th style="width: 10%">Peringkat</th>
+          <th style="width: 35%">Nama Peserta</th>
+          <th style="width: 35%">Asal Gudep</th>
+          <th style="width: 20%">Skor Akhir</th>
+        </tr>
+      </thead>
+      <tbody>
+           
+        <tr>
+          <td class="center">1</td>
+          <td>David Kulian</td>
+          <td>Merauke</td>
+          <td class="center">19.5000</td>
+        </tr>
+           
+        <tr>
+          <td class="center">2</td>
+          <td>Taufik Iriansyah</td>
+          <td>Merauke</td>
+          <td class="center">18.1667</td>
+        </tr>
+           
+        <tr>
+          <td class="center">3</td>
+          <td>Gading Martin</td>
+          <td>gudep</td>
+          <td class="center">15.6111</td>
+        </tr>
+        
+      </tbody>
+    </table>
+
+    <!-- Section III -->
+    <div class="section-title">III. KESIMPULAN</div>
+    <p>
+      Hasil seleksi menunjukkan bahwa 
+      <strong>David Kulian</strong> memperoleh skor
+      tertinggi dan menempati peringkat pertama.  Dengan demikian, peserta dengan peringkat
+      tertinggi direkomendasikan sebagai peserta utama kegiatan Raimuna Daerah.
+    </p>
+
+    <!-- Section IV -->
+    <div class="section-title">IV. PENUTUP</div>
+    <p>
+      Demikian laporan hasil seleksi ini disusun sebagai bentuk
+      pertanggungjawaban dan dokumentasi proses seleksi peserta kegiatan
+      Pramuka.
+    </p>
+
+    <!-- Signatures -->
+    <div class="signature-section">
+      <table class="signature-table">
+        <tr>
+          <td style="text-align: left; width: 100%">
+            <p style="margin-bottom: 5px">Gerakan Pramuka</p>
+            <p style="margin-bottom: 0">Kwartir Cabang 2601 Merauke</p>
+            <p style="margin-top: 5px">Ketua</p>
+
+            <div class="signature-space">
+              <!-- Space for signature or Image -->
+            </div>
+
+            <div class="signature-name">MUH. ICKSAN, S.PdI</div>
+            <div style="margin-top: 5px">NTA: 26.01.00.261281.0001</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Print Control (Only visible on screen) -->
+    <div
+      class="no-print"
+      style="position: fixed; top: 20px; right: 20px; text-align: right"
+    >
+      <button
+        onclick="window.print()"
+        style="
+          padding: 10px 20px;
+          background: #4f81bd;
+          color: white;
+          border: none;
+          cursor: pointer;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+      >
+        <i class="fa fa-print"></i> CETAK / PDF
+      </button>
+    </div>
+  </body>
+</html>

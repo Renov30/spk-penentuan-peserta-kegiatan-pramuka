@@ -161,13 +161,6 @@
                   @click="viewArsip(arsip)"
                   class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg cursor-pointer"
                 >
-                  <i class="fa-solid fa-eye"></i>
-                  {{ 'Lihat' if current_lang == 'id' else 'View' }}
-                </button>
-                <button
-                  @click="downloadArsip(arsip.id)"
-                  class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded-lg cursor-pointer"
-                >
                   <i class="fa-solid fa-download"></i>
                   {{ 'Unduh' if current_lang == 'id' else 'Download' }}
                 </button>
@@ -370,10 +363,6 @@
         if (arsip.file_path) {
           window.open(`/${arsip.file_path}`, '_blank');
         }
-      },
-
-      async downloadArsip(arsipId) {
-        window.location.href = `/api/download_arsip/${arsipId}`;
       },
 
       async deleteArsip(arsipId) {

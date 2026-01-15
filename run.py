@@ -28,6 +28,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 import random, string
 import logging
+import os
 import secrets
 import time
 import os
@@ -7172,6 +7173,332 @@ def upload_logo():
         db.session.rollback()
         current_app.logger.exception('Error in /api/upload_logo:')
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# =====================================================
+# API UNTUK LAPORAN & ARSIP SELEKSI
+# =====================================================
+
+# API Download Arsip Seleksi
+@app.route('/api/download_arsip/<int:arsip_id>')
+@login_required
+@admin_required
+def api_download_arsip(arsip_id):
+    """Download file arsip seleksi"""
+    try:
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+        
+        if not arsip.file_path:
+            return jsonify({'success': False, 'message': 'File tidak ditemukan'}), 404
+        
+        # Path file
+        file_path = os.path.join(app.root_path, 'static', arsip.file_path)
+        
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'message': 'File tidak ditemukan di server'}), 404
+        
+        # Tentukan MIME type berdasarkan file_type
+        if arsip.file_type == 'excel':
+            mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        elif arsip.file_type == 'pdf':
+            mimetype = 'application/pdf'
+        else:
+            mimetype = 'application/octet-stream'
+        
+        # Nama file untuk download
+        filename = f"{arsip.nama_arsip}.{'xlsx' if arsip.file_type == 'excel' else 'pdf'}"
+        
+        return send_file(
+            file_path,
+            mimetype=mimetype,
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        current_app.logger.exception('Error in /api/download_arsip:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Hapus Arsip Seleksi
+@app.route('/api/hapus_arsip/<int:arsip_id>', methods=['DELETE'])
+@login_required
+@admin_required
+@csrf.exempt
+def api_hapus_arsip(arsip_id):
+    """Hapus arsip seleksi"""
+    try:
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+        nama_arsip = arsip.nama_arsip
+        
+        # Hapus file fisik jika ada
+        if arsip.file_path:
+            file_path = os.path.join(app.root_path, 'static', arsip.file_path)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    current_app.logger.warning(f'Gagal menghapus file arsip: {e}')
+        
+        # Hapus record dari database
+        db.session.delete(arsip)
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Menghapus arsip seleksi: {nama_arsip}')
+        
+        return jsonify({'success': True, 'message': f'Arsip "{nama_arsip}" berhasil dihapus'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/hapus_arsip:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Generate Laporan Excel
+@app.route('/api/generate_laporan_excel/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def api_generate_laporan_excel(event_id):
+    """Generate laporan hasil seleksi dalam format Excel"""
+    try:
+        event = Event.query.get_or_404(event_id)
+        
+        # Ambil data hasil seleksi
+        hasil_list = HasilSeleksi.query.filter_by(event_id=event_id).order_by(HasilSeleksi.ranking.asc()).all()
+        
+        if not hasil_list:
+            return jsonify({'success': False, 'message': 'Belum ada hasil seleksi untuk kegiatan ini'}), 400
+        
+        # Buat file Excel
+        try:
+            import openpyxl
+            from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+        except ImportError:
+            return jsonify({'success': False, 'message': 'Library openpyxl tidak tersedia. Silakan install dengan: pip install openpyxl'}), 500
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Hasil Seleksi"
+        
+        # Header style
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # Judul
+        ws.merge_cells('A1:F1')
+        ws['A1'] = f"LAPORAN HASIL SELEKSI"
+        ws['A1'].font = Font(bold=True, size=14)
+        ws['A1'].alignment = Alignment(horizontal="center")
+        
+        ws.merge_cells('A2:F2')
+        ws['A2'] = f"{event.nama_kegiatan}"
+        ws['A2'].font = Font(bold=True, size=12)
+        ws['A2'].alignment = Alignment(horizontal="center")
+        
+        ws.merge_cells('A3:F3')
+        ws['A3'] = f"Tanggal: {datetime.now().strftime('%d %B %Y')}"
+        ws['A3'].alignment = Alignment(horizontal="center")
+        
+        # Header tabel
+        headers = ['Ranking', 'Nama Peserta', 'Email', 'Jenis Kelamin', 'Asal Gudep', 'Skor Akhir']
+        for col, header in enumerate(headers, start=1):
+            cell = ws.cell(row=5, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = thin_border
+        
+        # Data
+        for row_idx, hasil in enumerate(hasil_list, start=6):
+            user = Users.query.get(hasil.id_users)
+            participant = Participants.query.filter_by(email=user.email).first() if user else None
+            
+            data = [
+                hasil.ranking,
+                user.nama_lengkap if user else 'N/A',
+                user.email if user else 'N/A',
+                participant.jenis_kelamin if participant else (user.jenis_kelamin if user else 'N/A'),
+                participant.asal_gudep if participant else 'N/A',
+                round(hasil.skor_akhir, 4)
+            ]
+            
+            for col, value in enumerate(data, start=1):
+                cell = ws.cell(row=row_idx, column=col, value=value)
+                cell.border = thin_border
+                if col in [1, 6]:  # Ranking dan skor = center
+                    cell.alignment = Alignment(horizontal="center")
+        
+        # Atur lebar kolom
+        ws.column_dimensions['A'].width = 10
+        ws.column_dimensions['B'].width = 30
+        ws.column_dimensions['C'].width = 30
+        ws.column_dimensions['D'].width = 15
+        ws.column_dimensions['E'].width = 25
+        ws.column_dimensions['F'].width = 15
+        
+        # Simpan file
+        reports_dir = os.path.join(app.root_path, 'static', 'reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"laporan_{event.id_kegiatan}_{timestamp}.xlsx"
+        file_path = os.path.join(reports_dir, filename)
+        wb.save(file_path)
+        
+        # Simpan ke database arsip
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=f"Laporan {event.nama_kegiatan} - {datetime.now().strftime('%d %b %Y')}",
+            deskripsi=f"Laporan hasil seleksi kegiatan {event.nama_kegiatan}",
+            file_path=f"reports/{filename}",
+            file_type='excel',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Generate laporan Excel untuk kegiatan: {event.nama_kegiatan}')
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Laporan Excel berhasil di-generate untuk kegiatan "{event.nama_kegiatan}"'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/generate_laporan_excel:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Generate Laporan PDF
+@app.route('/api/generate_laporan_pdf/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def api_generate_laporan_pdf(event_id):
+    """Generate laporan hasil seleksi dalam format PDF"""
+    try:
+        event = Event.query.get_or_404(event_id)
+        
+        # Ambil data hasil seleksi
+        hasil_list = HasilSeleksi.query.filter_by(event_id=event_id).order_by(HasilSeleksi.ranking.asc()).all()
+        
+        if not hasil_list:
+            return jsonify({'success': False, 'message': 'Belum ada hasil seleksi untuk kegiatan ini'}), 400
+        
+        # Buat file PDF
+        try:
+            from reportlab.lib import colors
+            from reportlab.lib.pagesizes import A4, landscape
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+        except ImportError:
+            return jsonify({'success': False, 'message': 'Library reportlab tidak tersedia. Silakan install dengan: pip install reportlab'}), 500
+        
+        # Simpan file
+        reports_dir = os.path.join(app.root_path, 'static', 'reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"laporan_{event.id_kegiatan}_{timestamp}.pdf"
+        file_path = os.path.join(reports_dir, filename)
+        
+        # Buat dokumen PDF
+        doc = SimpleDocTemplate(file_path, pagesize=landscape(A4))
+        elements = []
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            alignment=1,  # Center
+            spaceAfter=12
+        )
+        subtitle_style = ParagraphStyle(
+            'CustomSubTitle',
+            parent=styles['Heading2'],
+            fontSize=12,
+            alignment=1,
+            spaceAfter=20
+        )
+        
+        # Judul
+        elements.append(Paragraph("LAPORAN HASIL SELEKSI", title_style))
+        elements.append(Paragraph(f"{event.nama_kegiatan}", subtitle_style))
+        elements.append(Paragraph(f"Tanggal: {datetime.now().strftime('%d %B %Y')}", styles['Normal']))
+        elements.append(Spacer(1, 20))
+        
+        # Data tabel
+        table_data = [['Ranking', 'Nama Peserta', 'Email', 'Jenis Kelamin', 'Asal Gudep', 'Skor Akhir']]
+        
+        for hasil in hasil_list:
+            user = Users.query.get(hasil.id_users)
+            participant = Participants.query.filter_by(email=user.email).first() if user else None
+            
+            table_data.append([
+                str(hasil.ranking),
+                user.nama_lengkap if user else 'N/A',
+                user.email if user else 'N/A',
+                participant.jenis_kelamin if participant else (user.jenis_kelamin if user else 'N/A'),
+                participant.asal_gudep if participant else 'N/A',
+                str(round(hasil.skor_akhir, 4))
+            ])
+        
+        # Buat tabel
+        table = Table(table_data, colWidths=[0.7*inch, 2*inch, 2.5*inch, 1.2*inch, 2*inch, 1*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+            ('ALIGN', (-1, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        elements.append(table)
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Simpan ke database arsip
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=f"Laporan {event.nama_kegiatan} - {datetime.now().strftime('%d %b %Y')}",
+            deskripsi=f"Laporan hasil seleksi kegiatan {event.nama_kegiatan}",
+            file_path=f"reports/{filename}",
+            file_type='pdf',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        
+        log_activity(current_user.id, f'Generate laporan PDF untuk kegiatan: {event.nama_kegiatan}')
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Laporan PDF berhasil di-generate untuk kegiatan "{event.nama_kegiatan}"'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/generate_laporan_pdf:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @app.route('/logout/')
 def logout():
