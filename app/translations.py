@@ -281,6 +281,8 @@ TRANSLATIONS = {
         'updated_setting': 'Mengubah pengaturan {category}',
         'setting_saved': 'Pengaturan {category} berhasil disimpan',
         'uploaded_app_logo': 'Mengupload logo aplikasi',
+        'archive_access_forbidden': 'Akses ke file arsip tidak diizinkan.',
+        'archive_preview_only_pdf': 'Hanya file PDF yang dapat ditampilkan. File akan diunduh.',
         
         # === EVALUATOR DASHBOARD ===
         'evaluator_access_denied': 'Anda tidak memiliki akses ke halaman ini.',
@@ -622,6 +624,8 @@ TRANSLATIONS = {
         'updated_setting': 'Updated setting {category}',
         'setting_saved': 'Setting "{category}" saved successfully',
         'uploaded_app_logo': 'Uploaded application logo',
+        'archive_access_forbidden': 'Access to the archive file is not allowed.',
+        'archive_preview_only_pdf': 'Only PDF files can be previewed. The file will be downloaded.',
                 
         # === EVALUATOR DASHBOARD ===
         'evaluator_access_denied': 'You do not have access to this page.',

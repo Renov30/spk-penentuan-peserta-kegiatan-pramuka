@@ -237,15 +237,15 @@ class ArsipSeleksi(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('tb_kegiatan.id_kegiatan'), nullable=False)
     nama_arsip = db.Column(db.String(255), nullable=False)
     deskripsi = db.Column(db.Text, nullable=True)
-    file_path = db.Column(db.String(500), nullable=True) 
-    file_type = db.Column(db.String(50), nullable=False, default='pdf')  # pdf atau excel
+    file_path = db.Column(db.String(500), nullable=True)
+    file_type = db.Column(db.String(50), nullable=False, default='pdf')
     tanggal_arsip = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
     dibuat_oleh = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    status = db.Column(db.String(20), nullable=False, default='aktif')  # aktif, diarsipkan
-    
+    status = db.Column(db.String(20), nullable=False, default='aktif')
+
     # Relationship
     event = db.relationship('Event', backref='arsip_seleksi')
-    pembuat = db.relationship('Users', backref='arsip_yang_dibuat')
+    pembuat = db.relationship('Users', foreign_keys=[dibuat_oleh], backref=db.backref('arsip_yang_dibuat', lazy='dynamic'), lazy='joined')
 
 # Access to table settings
 class Settings(db.Model):

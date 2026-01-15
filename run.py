@@ -2962,7 +2962,7 @@ def admin_laporan_arsip_seleksi():
             'file_path': arsip.file_path,
             'file_type': arsip.file_type,
             'tanggal_arsip': arsip.tanggal_arsip.strftime('%d %b %Y') if arsip.tanggal_arsip else '',
-            'pembuat': arsip.pembuat.nama_lengkap if arsip.pembuat else 'System',
+            'pembuat': ("System" if arsip.pembuat is None else "Admin" if arsip.pembuat.level == "admin" else arsip.pembuat.nama_lengkap),
             'status': arsip.status
         })
     return render_template('manajemen_seleksi.html', kegiatan_list=events, kegiatan_data=[], arsip_list=arsip_data, sidebar_state=sidebar_state)
@@ -2982,9 +2982,7 @@ def generate_laporan_excel(event_id):
         
         # Ambil hasil seleksi
         hasil_seleksi = db.session.query(
-            HasilSeleksi,
-            Users,
-            Participants
+            HasilSeleksi, Users, Participants
         ).join(
             Users, HasilSeleksi.id_users == Users.id
         ).outerjoin(
@@ -3043,6 +3041,49 @@ def generate_laporan_excel(event_id):
         logging.error(f"Error generating Excel report: {str(e)}")
         return jsonify({'success': False, 'message': t.get('api_internal_error')}), 500
 
+@app.route('/api/generate_laporan_pdf/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def generate_laporan_pdf(event_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+
+    try:
+        event = Event.query.get_or_404(event_id)
+        hasil_seleksi = (db.session.query(HasilSeleksi, Users, Participants).join(Users, HasilSeleksi.id_users == Users.id).outerjoin(Participants, Users.email == Participants.email).filter(HasilSeleksi.event_id == event_id).order_by(HasilSeleksi.ranking.asc()).all())
+        if not hasil_seleksi:
+            return jsonify({'success': False, 'message': t['report_no_data']}), 400
+
+        now = datetime.now()
+        bulan_list = t['month_list']
+        tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
+        upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'reports')
+        os.makedirs(upload_dir, exist_ok=True)
+        timestamp = now.strftime("%Y%m%d_%H%M%S")
+        filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.pdf"
+        pdf_path = os.path.join(upload_dir, filename)
+        html_path = os.path.join(upload_dir, 'laporan_temp.html')
+        css_path = f"file:///{os.path.join(app.root_path, 'static', 'css', 'laporan_pdf_template.css').replace('\\', '/')}"
+        html = render_template('laporan_pdf_template.html', event=event, hasil_seleksi=hasil_seleksi, tanggal_laporan_indo=tanggal_laporan_indo, css_path=css_path, current_lang=lang)
+
+        # Simpan HTML ke file
+        with open(html_path, 'w', encoding='utf-8') as f:
+            f.write(html)
+        config = pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
+        options = {"page-size": "A4", "margin-top": "2.54cm", "margin-right": "2.54cm", "margin-bottom": "2.54cm", "margin-left": "2.54cm", "encoding": "UTF-8", "print-media-type": "", "enable-local-file-access": "", "disable-smart-shrinking": ""}
+
+        # 🔥 INI KUNCI UTAMA
+        pdfkit.from_file(html_path, pdf_path, configuration=config, options=options)
+        arsip = ArsipSeleksi(event_id=event_id, nama_arsip=t['archive_report_title'].format(event=event.nama_kegiatan), deskripsi=t['archive_report_description'].format(event=event.nama_kegiatan), file_path=f"static/uploads/reports/{filename}", file_type='pdf', dibuat_oleh=current_user.id, status='aktif')
+        db.session.add(arsip)
+        db.session.commit()
+        return jsonify({'success': True, 'message': t['report_pdf_success']})
+    except Exception as e:
+        db.session.rollback()
+        print("PDF ERROR:", e)
+        return jsonify({'success': False, 'message': t['report_pdf_error']}), 500
+
 # API untuk generate laporan PDF (menggunakan HTML to PDF atau reportlab)
 @app.route('/admin/laporan/preview/<int:event_id>')
 @login_required
@@ -3100,120 +3141,64 @@ def export_laporan_word(event_id):
     response.headers["Content-Type"] = "application/msword"
     response.headers["Content-Disposition"] = f"attachment; filename=Laporan_Hasil_Seleksi_{event.nama_kegiatan.replace(' ', '_')}.doc"
     return response
-
-@app.route('/api/generate_laporan_pdf/<int:event_id>', methods=['POST'])
+    
+@app.route('/api/view_arsip/<int:arsip_id>')
 @login_required
 @admin_required
-@csrf.exempt
-def generate_laporan_pdf(event_id):
+def view_arsip(arsip_id):
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+    if not arsip.file_path:
+        flash(t.get('archive_file_not_found'), 'error')
+        return redirect(url_for('admin_manajemen_seleksi'))
 
-    try:
-        event = Event.query.get_or_404(event_id)
+    file_path = os.path.join(app.root_path, arsip.file_path)
+    if not os.path.exists(file_path):
+        flash(t.get('archive_file_missing_on_server'), 'error')
+        return redirect(url_for('admin_manajemen_seleksi'))
 
-        hasil_seleksi = (
-            db.session.query(HasilSeleksi, Users, Participants)
-            .join(Users, HasilSeleksi.id_users == Users.id)
-            .outerjoin(Participants, Users.email == Participants.email)
-            .filter(HasilSeleksi.event_id == event_id)
-            .order_by(HasilSeleksi.ranking.asc())
-            .all()
-        )
+    # 🔒 Pastikan file hanya dari folder arsip
+    BASE_DIR = os.path.join(app.root_path, 'static', 'uploads', 'reports')
+    real_path = os.path.realpath(file_path)
+    if not real_path.startswith(os.path.realpath(BASE_DIR)):
+        abort(403)
+    ext = os.path.splitext(real_path)[1].lower()
+    if ext != '.pdf':
+        return redirect(url_for('download_arsip', arsip_id=arsip_id))
 
-        if not hasil_seleksi:
-            return jsonify({'success': False, 'message': t['report_no_data']}), 400
+    # 🧾 Logging akses
+    logging.info(f"Admin {current_user.id} preview arsip {arsip_id}")
+    return send_file(real_path, as_attachment=False, mimetype='application/pdf')
 
-        now = datetime.now()
-        bulan_list = t['month_list']
-        tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
-
-        upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'reports')
-        os.makedirs(upload_dir, exist_ok=True)
-
-        timestamp = now.strftime("%Y%m%d_%H%M%S")
-        filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.pdf"
-
-        pdf_path = os.path.join(upload_dir, filename)
-        html_path = os.path.join(upload_dir, 'laporan_temp.html')
-
-        # ✅ PATH CSS ABSOLUT
-        css_path = f"file:///{os.path.join(app.root_path, 'static', 'css', 'laporan_pdf_template.css').replace('\\', '/')}"
-
-        html = render_template(
-            'laporan_pdf_template.html',
-            event=event,
-            hasil_seleksi=hasil_seleksi,
-            tanggal_laporan_indo=tanggal_laporan_indo,
-            css_path=css_path,
-            current_lang=lang
-        )
-
-        # Simpan HTML ke file
-        with open(html_path, 'w', encoding='utf-8') as f:
-            f.write(html)
-
-        config = pdfkit.configuration(
-            wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-        )
-
-        options = {
-            "page-size": "A4",
-            "margin-top": "2.54cm",
-            "margin-right": "2.54cm",
-            "margin-bottom": "2.54cm",
-            "margin-left": "2.54cm",
-            "encoding": "UTF-8",
-            "print-media-type": "",
-            "enable-local-file-access": "",
-            "disable-smart-shrinking": ""
-        }
-
-        # 🔥 INI KUNCI UTAMA
-        pdfkit.from_file(
-            html_path,
-            pdf_path,
-            configuration=config,
-            options=options
-        )
-
-        arsip = ArsipSeleksi(
-            event_id=event_id,
-            nama_arsip=t['archive_report_title'].format(event=event.nama_kegiatan),
-            deskripsi=t['archive_report_description'].format(event=event.nama_kegiatan),
-            file_path=f"static/uploads/reports/{filename}",
-            file_type='pdf',
-            dibuat_oleh=current_user.id,
-            status='aktif'
-        )
-        db.session.add(arsip)
-        db.session.commit()
-
-        return jsonify({'success': True, 'message': t['report_pdf_success']})
-    except Exception as e:
-        db.session.rollback()
-        print("PDF ERROR:", e)
-        return jsonify({'success': False, 'message': t['report_pdf_error']}), 500
-
-# API untuk download file arsip
+# API untuk download file arsip (PDF/Excel)
 @app.route('/api/download_arsip/<int:arsip_id>')
 @login_required
 @admin_required
 def download_arsip(arsip_id):
-    """Download file arsip"""
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
+
     try:
-        arsip = ArsipSeleksi.query.get_or_404(arsip_id) 
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
         if not arsip.file_path:
             flash(t.get('archive_file_not_found'), 'error')
             return redirect(url_for('admin_manajemen_seleksi'))
+
         file_path = os.path.join(app.root_path, arsip.file_path)
         if not os.path.exists(file_path):
             flash(t.get('archive_file_missing_on_server'), 'error')
             return redirect(url_for('admin_manajemen_seleksi'))
-        return send_file(file_path, as_attachment=True, download_name=arsip.nama_arsip)  
+
+        # Ambil ekstensi asli dari file fisik
+        ext = os.path.splitext(arsip.file_path)[1]
+        download_name = arsip.nama_arsip or "arsip"
+
+        # Pastikan ekstensi ada
+        if ext and not download_name.lower().endswith(ext.lower()):
+            download_name += ext
+        return send_file(file_path, as_attachment=True, download_name=download_name)
     except Exception as e:
         logging.error(f"Error downloading archive: {str(e)}")
         flash(t.get('archive_download_error'), 'error')
@@ -3223,7 +3208,6 @@ def download_arsip(arsip_id):
 @app.route('/api/hapus_arsip/<int:arsip_id>', methods=['DELETE', 'POST'])
 @login_required
 @admin_required
-@csrf.exempt
 def hapus_arsip(arsip_id):
     """Hapus arsip seleksi"""
     lang = session.get('lang', 'id')

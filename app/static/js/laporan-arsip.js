@@ -75,9 +75,9 @@ function laporanArsipData() {
     },
 
     viewArsip(arsip) {
-      if (arsip.file_path) {
-        window.open(`/${arsip.file_path}`, "_blank");
-      }
+      if (!arsip || !arsip.id) return;
+
+      window.open(`/api/view_arsip/${arsip.id}`, "_blank");
     },
 
     async downloadArsip(arsipId) {
@@ -85,12 +85,12 @@ function laporanArsipData() {
     },
 
     async deleteArsipConfirmed() {
-      if (!this.deleteTargetId) return;
+      if (!this.confirmDelete.id) return;
 
       this.isDeleting = true;
 
       try {
-        const res = await fetch(`/arsip/${this.deleteTargetId}`, {
+        const res = await fetch(`/api/hapus_arsip/${this.confirmDelete.id}`, {
           method: "DELETE",
           headers: {
             "X-CSRFToken": window.CSRF_TOKEN,
@@ -104,7 +104,7 @@ function laporanArsipData() {
         }
 
         this.arsipList = this.arsipList.filter(
-          (a) => a.id !== this.deleteTargetId
+          (a) => a.id !== this.confirmDelete.id
         );
         this.filterArsip();
 
@@ -124,8 +124,7 @@ function laporanArsipData() {
         );
       } finally {
         this.isDeleting = false;
-        this.showDeleteModal = false;
-        this.deleteTargetId = null;
+        this.closeDeleteModal();
       }
     },
 
