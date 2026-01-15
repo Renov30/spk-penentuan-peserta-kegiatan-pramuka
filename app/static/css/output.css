@@ -347,9 +347,6 @@
   .top-4 {
     top: calc(var(--spacing) * 4);
   }
-  .top-5 {
-    top: calc(var(--spacing) * 5);
-  }
   .top-20 {
     top: calc(var(--spacing) * 20);
   }
@@ -379,9 +376,6 @@
   }
   .right-4 {
     right: calc(var(--spacing) * 4);
-  }
-  .right-5 {
-    right: calc(var(--spacing) * 5);
   }
   .right-6 {
     right: calc(var(--spacing) * 6);
@@ -418,9 +412,6 @@
   }
   .z-50 {
     z-index: 50;
-  }
-  .z-51 {
-    z-index: 51;
   }
   .z-99 {
     z-index: 99;
@@ -493,9 +484,6 @@
   }
   .my-8 {
     margin-block: calc(var(--spacing) * 8);
-  }
-  .my-14 {
-    margin-block: calc(var(--spacing) * 14);
   }
   .my-auto {
     margin-block: auto;
@@ -1026,9 +1014,6 @@
   }
   .justify-end {
     justify-content: flex-end;
-  }
-  .justify-evenly {
-    justify-content: space-evenly;
   }
   .gap-1 {
     gap: calc(var(--spacing) * 1);
@@ -1729,9 +1714,6 @@
   .py-8 {
     padding-block: calc(var(--spacing) * 8);
   }
-  .py-10 {
-    padding-block: calc(var(--spacing) * 10);
-  }
   .py-12 {
     padding-block: calc(var(--spacing) * 12);
   }
@@ -1740,9 +1722,6 @@
   }
   .py-20 {
     padding-block: calc(var(--spacing) * 20);
-  }
-  .pt-0\.5 {
-    padding-top: calc(var(--spacing) * 0.5);
   }
   .pt-2 {
     padding-top: calc(var(--spacing) * 2);
@@ -2632,13 +2611,6 @@
       }
     }
   }
-  .hover\:text-gray-600 {
-    &:hover {
-      @media (hover: hover) {
-        color: var(--color-gray-600);
-      }
-    }
-  }
   .hover\:text-gray-700 {
     &:hover {
       @media (hover: hover) {
@@ -3306,11 +3278,6 @@
       background-color: var(--color-red-600);
     }
   }
-  .dark\:bg-red-700 {
-    @media (prefers-color-scheme: dark) {
-      background-color: var(--color-red-700);
-    }
-  }
   .dark\:bg-red-900 {
     @media (prefers-color-scheme: dark) {
       background-color: var(--color-red-900);
@@ -3467,15 +3434,6 @@
       }
     }
   }
-  .dark\:hover\:bg-gray-200 {
-    @media (prefers-color-scheme: dark) {
-      &:hover {
-        @media (hover: hover) {
-          background-color: var(--color-gray-200);
-        }
-      }
-    }
-  }
   .dark\:hover\:bg-gray-300 {
     @media (prefers-color-scheme: dark) {
       &:hover {
@@ -3571,15 +3529,6 @@
       &:hover {
         @media (hover: hover) {
           color: var(--color-blue-800);
-        }
-      }
-    }
-  }
-  .dark\:hover\:text-gray-200 {
-    @media (prefers-color-scheme: dark) {
-      &:hover {
-        @media (hover: hover) {
-          color: var(--color-gray-200);
         }
       }
     }

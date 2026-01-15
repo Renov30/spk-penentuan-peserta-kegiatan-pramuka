@@ -23,16 +23,17 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_, not_
 from slugify import slugify
 from urllib.parse import urlparse, urljoin
-import io
 from app.translations import TRANSLATIONS
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+import pdfkit
 import random, string
 import logging
 import secrets
 import time
 import os
 import re
+import io
 import pandas as pd
 from dotenv import load_dotenv
 load_dotenv()
@@ -3105,51 +3106,94 @@ def export_laporan_word(event_id):
 @admin_required
 @csrf.exempt
 def generate_laporan_pdf(event_id):
-    """Generate laporan PDF untuk hasil seleksi"""
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
+
     try:
         event = Event.query.get_or_404(event_id)
-        hasil_seleksi = db.session.query(
-            HasilSeleksi,
-            Users,
-            Participants
-        ).join(
-            Users, HasilSeleksi.id_users == Users.id
-        ).outerjoin(
-            Participants, Users.email == Participants.email
-        ).filter(
-            HasilSeleksi.event_id == event_id
-        ).order_by(
-            HasilSeleksi.ranking.asc()
-        ).all()
-        
+
+        hasil_seleksi = (
+            db.session.query(HasilSeleksi, Users, Participants)
+            .join(Users, HasilSeleksi.id_users == Users.id)
+            .outerjoin(Participants, Users.email == Participants.email)
+            .filter(HasilSeleksi.event_id == event_id)
+            .order_by(HasilSeleksi.ranking.asc())
+            .all()
+        )
+
         if not hasil_seleksi:
-            return jsonify({'success': False, 'message': t.get('report_no_data')}), 400
-        # Update: Menggunakan template baru
+            return jsonify({'success': False, 'message': t['report_no_data']}), 400
+
         now = datetime.now()
-        bulan_list = t.get('month_list')
+        bulan_list = t['month_list']
         tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
-        
-        html_content = render_template('laporan_pdf_template.html', event=event, hasil_seleksi=hasil_seleksi, tanggal_laporan=now.strftime('%d-%m-%Y'),
-            tanggal_laporan_indo=tanggal_laporan_indo)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.html" 
+
         upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'reports')
         os.makedirs(upload_dir, exist_ok=True)
-        file_path = os.path.join(upload_dir, filename)
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-        arsip = ArsipSeleksi(event_id=event_id, nama_arsip=t.get('archive_report_title').format(event=event.nama_kegiatan), deskripsi=t.get('archive_report_description').format(event=event.nama_kegiatan), file_path=f"static/uploads/reports/{filename}", file_type='pdf', dibuat_oleh=current_user.id, status='aktif')
+
+        timestamp = now.strftime("%Y%m%d_%H%M%S")
+        filename = f"laporan_seleksi_{event.nama_kegiatan.replace(' ', '_')}_{timestamp}.pdf"
+
+        pdf_path = os.path.join(upload_dir, filename)
+        html_path = os.path.join(upload_dir, 'laporan_temp.html')
+
+        # ✅ PATH CSS ABSOLUT
+        css_path = f"file:///{os.path.join(app.root_path, 'static', 'css', 'laporan_pdf_template.css').replace('\\', '/')}"
+
+        html = render_template(
+            'laporan_pdf_template.html',
+            event=event,
+            hasil_seleksi=hasil_seleksi,
+            tanggal_laporan_indo=tanggal_laporan_indo,
+            css_path=css_path,
+            current_lang=lang
+        )
+
+        # Simpan HTML ke file
+        with open(html_path, 'w', encoding='utf-8') as f:
+            f.write(html)
+
+        config = pdfkit.configuration(
+            wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+        )
+
+        options = {
+            "page-size": "A4",
+            "margin-top": "2.54cm",
+            "margin-right": "2.54cm",
+            "margin-bottom": "2.54cm",
+            "margin-left": "2.54cm",
+            "encoding": "UTF-8",
+            "print-media-type": "",
+            "enable-local-file-access": "",
+            "disable-smart-shrinking": ""
+        }
+
+        # 🔥 INI KUNCI UTAMA
+        pdfkit.from_file(
+            html_path,
+            pdf_path,
+            configuration=config,
+            options=options
+        )
+
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=t['archive_report_title'].format(event=event.nama_kegiatan),
+            deskripsi=t['archive_report_description'].format(event=event.nama_kegiatan),
+            file_path=f"static/uploads/reports/{filename}",
+            file_type='pdf',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
         db.session.add(arsip)
         db.session.commit()
-        return jsonify({'success': True, 'message': t.get('report_pdf_success'), 'file_path': f"/{file_path}",'arsip_id': arsip.id_arsip}) 
+
+        return jsonify({'success': True, 'message': t['report_pdf_success']})
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error generating PDF report: {str(e)}")
-        return jsonify({'success': False, 'message': t.get('report_pdf_error')}), 500
+        print("PDF ERROR:", e)
+        return jsonify({'success': False, 'message': t['report_pdf_error']}), 500
 
 # API untuk download file arsip
 @app.route('/api/download_arsip/<int:arsip_id>')

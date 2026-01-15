@@ -11,7 +11,7 @@
     <!-- Vanila css -->
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/laporan_template.css') }}"
+      href="{{ url_for('static', filename='css/laporan_pdf_template.css') }}"
     />
   </head>
   <body>
@@ -192,28 +192,6 @@
           </td>
         </tr>
       </table>
-    </div>
-
-    <!-- Print Control (Only visible on screen) -->
-    <div
-      class="no-print"
-      style="position: fixed; top: 20px; right: 20px; text-align: right"
-    >
-      <button
-        onclick="window.print()"
-        style="
-          padding: 10px 20px;
-          background: #4f81bd;
-          color: white;
-          border: none;
-          cursor: pointer;
-          border-radius: 5px;
-          font-weight: bold;
-        "
-      >
-        <i class="fa fa-print"></i>{{ 'CETAK / PDF' if current_lang == 'id' else
-        'PRINT / PDF' }}
-      </button>
     </div>
   </body>
 </html>
