@@ -2612,9 +2612,29 @@ def delete_config(event_id):
         # Hapus penilaian yang terkait dengan kriteria tersebut
         if criteria_ids:
             Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+            
+            # Hapus himpunan kriteria yang terkait dengan kriteria tersebut
+            HimpunanKriteria.query.filter(HimpunanKriteria.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
         
         # Hapus hasil seleksi yang terkait dengan kegiatan
         HasilSeleksi.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Hapus data dari tabel tb_participant_kegiatan (relasi peserta-kegiatan)
+        db.session.execute(
+            tb_participant_kegiatan.delete().where(tb_participant_kegiatan.c.kegiatan_id == event_id)
+        )
+        
+        # Hapus perbandingan AHP yang terkait
+        PairwiseComparison.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Hapus hasil AHP yang terkait
+        AHPResults.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Hapus arsip seleksi yang terkait
+        ArsipSeleksi.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Update participants yang memiliki kegiatan_id ini menjadi NULL
+        Participants.query.filter_by(kegiatan_id=event_id).update({'kegiatan_id': None}, synchronize_session=False)
         
         # Hapus penugasan penilai
         event.evaluators = []
@@ -2670,9 +2690,30 @@ def delete_config_bulk():
         # Hapus penilaian yang terkait dengan kriteria tersebut
         if criteria_ids:
             Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+            
+            # Hapus himpunan kriteria yang terkait dengan kriteria tersebut
+            HimpunanKriteria.query.filter(HimpunanKriteria.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
         
         # Hapus hasil seleksi yang terkait dengan kegiatan
         HasilSeleksi.query.filter(HasilSeleksi.event_id.in_(event_ids)).delete(synchronize_session=False)
+        
+        # Hapus data dari tabel tb_participant_kegiatan (relasi peserta-kegiatan)
+        for eid in event_ids:
+            db.session.execute(
+                tb_participant_kegiatan.delete().where(tb_participant_kegiatan.c.kegiatan_id == eid)
+            )
+        
+        # Hapus perbandingan AHP yang terkait
+        PairwiseComparison.query.filter(PairwiseComparison.event_id.in_(event_ids)).delete(synchronize_session=False)
+        
+        # Hapus hasil AHP yang terkait
+        AHPResults.query.filter(AHPResults.event_id.in_(event_ids)).delete(synchronize_session=False)
+        
+        # Hapus arsip seleksi yang terkait
+        ArsipSeleksi.query.filter(ArsipSeleksi.event_id.in_(event_ids)).delete(synchronize_session=False)
+        
+        # Update participants yang memiliki kegiatan_id ini menjadi NULL
+        Participants.query.filter(Participants.kegiatan_id.in_(event_ids)).update({'kegiatan_id': None}, synchronize_session=False)
         
         # Hapus semua event (cascade akan menghapus Kuota dan Criteria secara otomatis)
         for event in events:
