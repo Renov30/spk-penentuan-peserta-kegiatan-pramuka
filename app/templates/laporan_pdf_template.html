@@ -129,7 +129,9 @@
           <td>{{ user.nama_lengkap }}</td>
           <td>{{ participant.asal_gudep if participant else '-' }}</td>
           <td>{{ participant.jenis_kelamin }}</td>
-          <td class="center">{{ "%.4f"|format(hasil.skor_akhir) }}</td>
+          <td class="center">
+            {{ "%.2f"|format(hasil.skor_akhir)|replace(".", ",") }}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

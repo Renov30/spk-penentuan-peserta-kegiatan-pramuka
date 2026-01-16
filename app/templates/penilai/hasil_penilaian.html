@@ -212,7 +212,7 @@
                         <span
                           class="text-lg font-bold {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                         >
-                          {{ "%.4f"|format(item.hasil.skor_akhir) }}
+                          {{ "%.2f"|format(item.hasil.skor_akhir)|replace(".", ",") }}
                         </span>
                       </td>
                       <td class="p-4 text-center">

@@ -376,7 +376,7 @@
                         >
                           <td class="p-2">{{ item.criteria }}</td>
                           <td class="p-2 text-center font-mono">
-                            {{ "%.4f"|format(item.value) }}
+                            {{ "%.2f"|format(item.value)|replace(".", ",") }}
                           </td>
                         </tr>
                         {% endfor %}
@@ -393,7 +393,8 @@
                       <div
                         class="text-4xl font-bold {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                       >
-                        {{ "%.4f"|format(lambda_max) if lambda_max else '-' }}
+                        {{ "%.2f"|format(lambda_max)|replace(".", ",") if
+                        lambda_max else '-' }}
                       </div>
                       <div class="text-xs opacity-60 mt-2">λmax = Σλᵢ / n</div>
                     </div>
@@ -446,7 +447,7 @@
                     <div
                       class="text-2xl font-bold font-mono {{ 'text-yellow-400' if current_theme == 'dark' else 'text-yellow-600' }}"
                     >
-                      {{ "%.4f"|format(ci) if ci else '-' }}
+                      {{ "%.2f"|format(ci)|replace(".", ",") if ci else '-' }}
                     </div>
                     <div class="text-xs opacity-60 mt-1">
                       CI = (λmax - n) / (n - 1)
@@ -474,7 +475,7 @@
                     <div
                       class="text-2xl font-bold font-mono {{ 'text-green-400' if is_consistent else 'text-red-400' }}"
                     >
-                      {{ "%.4f"|format(cr) if cr else '-' }}
+                      {{ "%.2f"|format(cr)|replace(".", ",") if cr else '-' }}
                     </div>
                     <div class="text-xs mt-1">
                       {% if is_consistent %}
@@ -589,13 +590,13 @@
                       >
                         <td class="p-2">{{ item.criteria }}</td>
                         <td class="p-2 text-center font-mono">
-                          {{ "%.4f"|format(item.l) }}
+                          {{ "%.2f"|format(item.l)|replace(".", ",") }}
                         </td>
                         <td class="p-2 text-center font-mono">
-                          {{ "%.4f"|format(item.m) }}
+                          {{ "%.2f"|format(item.m)|replace(".", ",") }}
                         </td>
                         <td class="p-2 text-center font-mono">
-                          {{ "%.4f"|format(item.u) }}
+                          {{ "%.2f"|format(item.u)|replace(".", ",") }}
                         </td>
                       </tr>
                       {% endfor %}
@@ -604,13 +605,16 @@
                       >
                         <td class="p-2">Total</td>
                         <td class="p-2 text-center font-mono">
-                          {{ "%.4f"|format(total_fuzzy_sum.l) }}
+                          {{ "%.2f"|format(total_fuzzy_sum.l)|replace(".", ",")
+                          }}
                         </td>
                         <td class="p-2 text-center font-mono">
-                          {{ "%.4f"|format(total_fuzzy_sum.m) }}
+                          {{ "%.2f"|format(total_fuzzy_sum.m)|replace(".", ",")
+                          }}
                         </td>
                         <td class="p-2 text-center font-mono">
-                          {{ "%.4f"|format(total_fuzzy_sum.u) }}
+                          {{ "%.2f"|format(total_fuzzy_sum.u)|replace(".", ",")
+                          }}
                         </td>
                       </tr>
                     </tbody>
@@ -646,8 +650,9 @@
                         <td
                           class="p-2 text-center font-mono {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
                         >
-                          ({{ "%.4f"|format(item.l) }}, {{ "%.4f"|format(item.m)
-                          }}, {{ "%.4f"|format(item.u) }})
+                          ({{ "%.2f"|format(item.l)|replace(".", ",") }}, {{
+                          "%.2f"|format(item.m)|replace(".", ",") }}, {{
+                          "%.2f"|format(item.u)|replace(".", ",") }})
                         </td>
                       </tr>
                       {% endfor %}
@@ -843,7 +848,8 @@
                       >
                         <td class="p-2">Total</td>
                         <td class="p-2 text-center font-mono">
-                          {{ "%.4f"|format(total_weight.value) }}
+                          {{ "%.2f"|format(total_weight.value)|replace(".", ",")
+                          }}
                         </td>
                       </tr>
                     </tbody>
@@ -953,7 +959,8 @@
                       </td>
                       <td class="p-4 text-center">
                         <span class="font-mono"
-                          >{{ "%.4f"|format(detail.weight) }}</span
+                          >{{ "%.2f"|format(detail.weight)|replace(".", ",")
+                          }}</span
                         >
                       </td>
                       <td class="p-4 text-center">
@@ -974,9 +981,10 @@
                         <span
                           class="font-mono text-sm {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                         >
-                          ({{ "%.4f"|format(detail.weighted_l) }}, {{
-                          "%.4f"|format(detail.weighted_m) }}, {{
-                          "%.4f"|format(detail.weighted_u) }})
+                          ({{ "%.2f"|format(detail.weighted_l)|replace(".", ",")
+                          }}, {{ "%.2f"|format(detail.weighted_m)|replace(".",
+                          ",") }}, {{
+                          "%.2f"|format(detail.weighted_u)|replace(".", ",") }})
                         </span>
                       </td>
                     </tr>
@@ -994,9 +1002,9 @@
                         class="p-4 text-center {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                       >
                         <span class="font-mono">
-                          ({{ "%.4f"|format(fuzzy_total_l) }}, {{
-                          "%.4f"|format(fuzzy_total_m) }}, {{
-                          "%.4f"|format(fuzzy_total_u) }})
+                          ({{ "%.2f"|format(fuzzy_total_l)|replace(".", ",") }},
+                          {{ "%.2f"|format(fuzzy_total_m)|replace(".", ",") }},
+                          {{ "%.2f"|format(fuzzy_total_u)|replace(".", ",") }})
                         </span>
                       </td>
                     </tr>
@@ -1046,9 +1054,9 @@
                     <span
                       class="font-mono text-base {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
                     >
-                      ({{ "%.4f"|format(fuzzy_total_l) }} + {{
-                      "%.4f"|format(fuzzy_total_m) }} + {{
-                      "%.4f"|format(fuzzy_total_u) }}) / 3
+                      ({{ "%.2f"|format(fuzzy_total_l)|replace(".", ",") }} + {{
+                      "%.2f"|format(fuzzy_total_m)|replace(".", ",") }} + {{
+                      "%.2f"|format(fuzzy_total_u)|replace(".", ",") }}) / 3
                     </span>
                   </div>
                 </div>
@@ -1062,7 +1070,7 @@
                   <div
                     class="text-white text-8xl font-black mb-2 drop-shadow-lg"
                   >
-                    {{ "%.4f"|format(final_score) }}
+                    {{ "%.2f"|format(final_score)|replace(".", ",") }}
                   </div>
                   {% if hasil_seleksi %}
                   <div class="text-white text-sm opacity-80 mt-4">
@@ -1070,7 +1078,8 @@
                     {{ 'Nilai tersimpan:' if current_lang == 'id' else 'Stored
                     score:' }}
                     <span class="font-bold"
-                      >{{ "%.4f"|format(hasil_seleksi.skor_akhir) }}</span
+                      >{{ "%.2f"|format(hasil_seleksi.skor_akhir)|replace(".",
+                      ",") }}</span
                     >
                   </div>
                   {% endif %}
