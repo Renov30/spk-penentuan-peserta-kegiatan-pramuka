@@ -36,6 +36,10 @@ function laporanArsipData() {
       this.filteredArsip = data;
     },
 
+    loadArsip() {
+      this.filterArsip();
+    },
+
     async generateReport(type) {
       if (!this.generateEventId) {
         const message =

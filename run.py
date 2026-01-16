@@ -29,6 +29,7 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 import pdfkit
 import random, string
 import logging
+import os
 import secrets
 import time
 import os
@@ -2133,7 +2134,27 @@ def delete_config(event_id):
         # Hapus penilaian yang terkait dengan kriteria tersebut
         if criteria_ids:
             Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+            
+            # Hapus himpunan kriteria yang terkait dengan kriteria tersebut
+            HimpunanKriteria.query.filter(HimpunanKriteria.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
         HasilSeleksi.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Hapus data dari tabel tb_participant_kegiatan (relasi peserta-kegiatan)
+        db.session.execute(
+            tb_participant_kegiatan.delete().where(tb_participant_kegiatan.c.kegiatan_id == event_id)
+        )
+        
+        # Hapus perbandingan AHP yang terkait
+        PairwiseComparison.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Hapus hasil AHP yang terkait
+        AHPResults.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Hapus arsip seleksi yang terkait
+        ArsipSeleksi.query.filter_by(event_id=event_id).delete(synchronize_session=False)
+        
+        # Update participants yang memiliki kegiatan_id ini menjadi NULL
+        Participants.query.filter_by(kegiatan_id=event_id).update({'kegiatan_id': None}, synchronize_session=False)
         
         # Hapus penugasan penilai
         event.evaluators = []
@@ -2189,7 +2210,28 @@ def delete_config_bulk():
         # Hapus penilaian yang terkait dengan kriteria tersebut
         if criteria_ids:
             Penilaian.query.filter(Penilaian.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
+            
+            # Hapus himpunan kriteria yang terkait dengan kriteria tersebut
+            HimpunanKriteria.query.filter(HimpunanKriteria.id_kriteria.in_(criteria_ids)).delete(synchronize_session=False)
         HasilSeleksi.query.filter(HasilSeleksi.event_id.in_(event_ids)).delete(synchronize_session=False)
+        
+        # Hapus data dari tabel tb_participant_kegiatan (relasi peserta-kegiatan)
+        for eid in event_ids:
+            db.session.execute(
+                tb_participant_kegiatan.delete().where(tb_participant_kegiatan.c.kegiatan_id == eid)
+            )
+        
+        # Hapus perbandingan AHP yang terkait
+        PairwiseComparison.query.filter(PairwiseComparison.event_id.in_(event_ids)).delete(synchronize_session=False)
+        
+        # Hapus hasil AHP yang terkait
+        AHPResults.query.filter(AHPResults.event_id.in_(event_ids)).delete(synchronize_session=False)
+        
+        # Hapus arsip seleksi yang terkait
+        ArsipSeleksi.query.filter(ArsipSeleksi.event_id.in_(event_ids)).delete(synchronize_session=False)
+        
+        # Update participants yang memiliki kegiatan_id ini menjadi NULL
+        Participants.query.filter(Participants.kegiatan_id.in_(event_ids)).update({'kegiatan_id': None}, synchronize_session=False)
         
         # Hapus semua event (cascade akan menghapus Kuota dan Criteria secara otomatis)
         for event in events:
@@ -3087,8 +3129,27 @@ def generate_laporan_pdf(event_id):
 # API untuk generate laporan PDF (menggunakan HTML to PDF atau reportlab)
 @app.route('/admin/laporan/preview/<int:event_id>')
 @login_required
-@admin_required
 def preview_laporan_seleksi(event_id):
+    # Allow admin, penilai, and peserta to access
+    if current_user.level == 'penilai':
+        event = Event.query.get_or_404(event_id)
+        if current_user not in event.evaluators:
+            flash('Akses ditolak! Anda tidak memiliki akses ke kegiatan ini.', 'error')
+            return redirect(url_for('index'))
+    elif current_user.level == 'peserta':
+        # Peserta hanya bisa akses event yang dia ikuti
+        participant = Participants.query.filter_by(email=current_user.email).first()
+        if not participant:
+            flash('Akses ditolak! Data peserta tidak ditemukan.', 'error')
+            return redirect(url_for('index'))
+        hasil = HasilSeleksi.query.filter_by(id_users=current_user.id, event_id=event_id).first()
+        if not hasil:
+            flash('Akses ditolak! Anda tidak terdaftar di kegiatan ini.', 'error')
+            return redirect(url_for('index'))
+    elif current_user.level != 'admin':
+        flash('Akses ditolak!', 'error')
+        return redirect(url_for('index'))
+    
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
@@ -3113,10 +3174,29 @@ def preview_laporan_seleksi(event_id):
 
 @app.route('/admin/laporan/word/<int:event_id>')
 @login_required
-@admin_required
 def export_laporan_word(event_id):
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    # Allow admin, penilai, and peserta to access
+    if current_user.level == 'penilai':
+        event = Event.query.get_or_404(event_id)
+        if current_user not in event.evaluators:
+            flash('Akses ditolak! Anda tidak memiliki akses ke kegiatan ini.', 'error')
+            return redirect(url_for('index'))
+    elif current_user.level == 'peserta':
+        # Peserta hanya bisa akses event yang dia ikuti
+        participant = Participants.query.filter_by(email=current_user.email).first()
+        if not participant:
+            flash('Akses ditolak! Data peserta tidak ditemukan.', 'error')
+            return redirect(url_for('index'))
+        hasil = HasilSeleksi.query.filter_by(id_users=current_user.id, event_id=event_id).first()
+        if not hasil:
+            flash('Akses ditolak! Anda tidak terdaftar di kegiatan ini.', 'error')
+            return redirect(url_for('index'))
+    elif current_user.level != 'admin':
+        flash('Akses ditolak!', 'error')
+        return redirect(url_for('index'))
     
     event = Event.query.get_or_404(event_id)
     hasil_seleksi = db.session.query(
@@ -4059,61 +4139,6 @@ def admin_hasil_penilaian():
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template('admin/hasil_penilaian.html', assigned_events=all_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state, show_back_button=True)
 
-@app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
-@login_required
-@admin_required
-def admin_detail_nilai(user_id, event_id):
-    event = Event.query.get_or_404(event_id)
-    user = Users.query.get_or_404(user_id)
-    participant = Participants.query.filter_by(email=user.email).first()
-    
-    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user_id, event_id=event_id).first()
-    criterias = Criteria.query.filter_by(event_id=event_id).all()
-    total_bobot = sum(c.bobot for c in criterias)
-    
-    # Get all scores and calculate breakdown
-    calculation_details = []
-    fuzzy_total_l = 0
-    fuzzy_total_m = 0
-    fuzzy_total_u = 0
-    
-    for criteria in criterias:
-        weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
-        avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(id_users=user_id, id_kriteria=criteria.id_kriteria).scalar()
-        
-        if avg_score is not None:
-            score = float(avg_score)
-            if score <= 5: 
-                if score <= 1:
-                    l, m, u = 1, 1, 2
-                elif score <= 2:
-                    l, m, u = 1, 2, 3
-                elif score <= 3:
-                    l, m, u = 2, 3, 4
-                elif score <= 4:
-                    l, m, u = 3, 4, 5
-                else:
-                    l, m, u = 4, 5, 5
-            else:  
-                l = max(0, score - 5)
-                m = score
-                u = min(100, score + 5)
-            
-            # Weighted fuzzy values
-            weighted_l = l * weight
-            weighted_m = m * weight
-            weighted_u = u * weight
-            
-            # Accumulate totals
-            fuzzy_total_l += weighted_l
-            fuzzy_total_m += weighted_m
-            fuzzy_total_u += weighted_u
-            
-            calculation_details.append({'criteria': criteria, 'weight': weight, 'raw_score': score, 'fuzzy_l': l, 'fuzzy_m': m, 'fuzzy_u': u, 'weighted_l': weighted_l, 'weighted_m': weighted_m, 'weighted_u': weighted_u})
-    final_score = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3 if calculation_details else 0
-    sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template('admin/detail_nilai.html', user=user, participant=participant, event=event, hasil_seleksi=hasil_seleksi, calculation_details=calculation_details, fuzzy_total_l=fuzzy_total_l, fuzzy_total_m=fuzzy_total_m, fuzzy_total_u=fuzzy_total_u, final_score=final_score, sidebar_state=sidebar_state)
-
 @app.route('/admin/settings')
 @login_required
 @admin_required
@@ -4218,7 +4243,14 @@ def penilai_event_participants(event_id):
     for p in participants:
         user_peserta = Users.query.filter_by(email=p.email).first()
         if user_peserta:
-            existing_score = Penilaian.query.filter_by(id_users=user_peserta.id, evaluator_id=current_user.id).first()
+            # Cek apakah sudah ada nilai dari penilai ini untuk peserta ini di EVENT INI
+            existing_score = db.session.query(Penilaian).join(
+                Criteria, Penilaian.id_kriteria == Criteria.id_kriteria
+            ).filter(
+                Penilaian.id_users == user_peserta.id,
+                Penilaian.evaluator_id == current_user.id,
+                Criteria.event_id == event_id
+            ).first()
             p.is_graded = True if existing_score else False
             p.user_id_for_link = user_peserta.id 
         else:
@@ -4344,9 +4376,7 @@ def penilai_view_score(event_id, participant_id):
         
     # Ambil SEMUA nilai yang sudah ada untuk peserta ini (dari penilai manapun)
     existing_scores = {}
-    scores_query = Penilaian.query.filter_by(
-        id_users=participant_id
-    ).all()
+    scores_query = Penilaian.query.filter_by(id_users=participant_id).all()
     
     # Mapping nilai: Prioritaskan nilai dari current_user jika ada, jika tidak pakai nilai orang lain
     # (Dalam sistem ideal, mungkin kita ingin menampilkan siapa yang menilai, tapi untuk sekarang kita ambil nilai 'terbaru' atau 'milik sendiri')
@@ -4368,32 +4398,6 @@ def penilai_view_score(event_id, participant_id):
 
     sidebar_state = current_user.sidebar_state or 'expanded'
     return render_template('penilai/view_penilaian.html', event=event, participant=participant_biodata, participant_user=participant_user, criterias=all_criterias, assigned_criteria_ids=assigned_criteria_ids, existing_scores=existing_scores, sidebar_state=sidebar_state)
-
-# ON PROGRESS!!!
-# @app.route('/prnilai/laporan/preview/<int:event_id>')
-# @login_required
-# def preview_laporan_seleksi(event_id):
-#    lang = session.get('lang', 'id')
-#    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
-#    event = Event.query.get_or_404(event_id)
-#    hasil_seleksi = db.session.query(
-#        HasilSeleksi, Users, Participants
-#    ).join(
-#        Users, HasilSeleksi.id_users == Users.id
-#    ).outerjoin(
-#        Participants, Users.email == Participants.email
-#    ).filter(
-#        HasilSeleksi.event_id == event_id
-#    ).order_by(
-#        HasilSeleksi.ranking.asc()
-#    ).all()
-    
-    # Format tanggal indonesia
-#    now = datetime.now()
-#    bulan_list = t.get('month_list')
-#    tanggal_laporan_indo = f"{now.day} {bulan_list[now.month-1]} {now.year}"
-#    return render_template('laporan_template.html',event=event, hasil_seleksi=hasil_seleksi, tanggal_laporan=now.strftime('%d-%m-%Y'), tanggal_laporan_indo=tanggal_laporan_indo)
 
 @app.route('/penilai/biodata', methods=['GET', 'POST'])
 @login_required
@@ -4496,6 +4500,10 @@ def penilai_hasil_penilaian():
 @app.route('/penilai/detail-nilai/<int:user_id>/<int:event_id>')
 @login_required
 def penilai_detail_nilai(user_id, event_id):
+    from app.ahp_calculator import AHPCalculator, FuzzyAHPCalculator, TFN_SCALE, RI_TABLE, get_tfn_reciprocal
+    from app.fuzzy_ahp import get_pairwise_matrix_from_db
+    import numpy as np
+    
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
@@ -4512,11 +4520,170 @@ def penilai_detail_nilai(user_id, event_id):
     # Get participant info
     user = Users.query.get_or_404(user_id)
     participant = Participants.query.filter_by(email=user.email).first()
-    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user_id, event_id=event_id).first()
-    criterias = Criteria.query.filter_by(event_id=event_id).all()
     
-    # Calculate total weight
+    # Get final result
+    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user_id, event_id=event_id).first()
+    
+    # Get all criteria for this event (ordered)
+    criterias = Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
+    criteria_names = [c.nama_kriteria for c in criterias]
+    criteria_ids = [c.id_kriteria for c in criterias]
+    n = len(criterias)
+    
+    # ==========================================
+    # LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan
+    # ==========================================
+    tfn_scale_table = []
+    for intensity in range(1, 10):
+        tfn = TFN_SCALE.get(intensity, (1, 1, 1))
+        reciprocal = get_tfn_reciprocal(tfn)
+        tfn_scale_table.append({'intensity': intensity, 'tfn': tfn, 'reciprocal': reciprocal})
+    
+    # Get pairwise comparison matrix from database
+    pairwise_matrix = get_pairwise_matrix_from_db(event_id, criteria_ids)
+    pairwise_data = None
+    fuzzy_pairwise_data = None
+    use_generated_matrix = False
+    fuzzy_ahp_calc = None
+    ahp_calc = None
+    
+    # Jika tidak ada matriks di database tapi ada bobot kriteria, generate matriks dari bobot
+    if pairwise_matrix is None and n > 0:
+        total_bobot_check = sum(c.bobot for c in criterias)
+        if total_bobot_check > 0:
+            # Generate matriks perbandingan dari rasio bobot
+            pairwise_matrix = np.ones((n, n))
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        wi = criterias[i].bobot if criterias[i].bobot > 0 else 0.001
+                        wj = criterias[j].bobot if criterias[j].bobot > 0 else 0.001
+                        ratio = wi / wj
+                        if ratio >= 1:
+                            pairwise_matrix[i, j] = min(9, max(1, ratio))
+                        else:
+                            pairwise_matrix[i, j] = max(1/9, ratio)
+            use_generated_matrix = True
+    
+    if pairwise_matrix is not None and n > 0:
+        pairwise_data = pairwise_matrix.tolist()
+        
+        # Convert to fuzzy (TFN) matrix
+        fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
+        fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
+        fuzzy_pairwise_data = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                tfn = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
+                row.append(tfn)
+            fuzzy_pairwise_data.append(row)
+    
+    # ==========================================
+    # LANGKAH 2: Perhitungan Vector Eigen
+    # ==========================================
+    eigenvector_data = None
+    lambda_max = None
+    
+    if pairwise_matrix is not None and n > 0:
+        ahp_calc = AHPCalculator(criteria_names)
+        ahp_calc.set_pairwise_matrix(pairwise_matrix)
+        eigenvector = ahp_calc.calculate_eigenvector()
+        lambda_max = ahp_calc.calculate_lambda_max()
+        
+        eigenvector_data = []
+        for i, name in enumerate(criteria_names):
+            eigenvector_data.append({'criteria': name, 'value': float(eigenvector[i])})
+    
+    # ==========================================
+    # LANGKAH 3: Uji Konsistensi Matriks
+    # ==========================================
+    ci = None
+    cr = None
+    is_consistent = False
+    ri_value = RI_TABLE.get(n, 1.58) if n > 0 else 0
+    
+    if pairwise_matrix is not None and n > 1 and ahp_calc is not None:
+        ci, cr, is_consistent = ahp_calc.check_consistency()
+    
+    # ==========================================
+    # LANGKAH 4: Sintesis Fuzzy (Fuzzy Synthetic Extent)
+    # ==========================================
+    fuzzy_synthetic_extent = None
+    row_sums_data = None
+    total_fuzzy_sum = None
+    
+    if pairwise_matrix is not None and n > 0 and fuzzy_ahp_calc is not None:
+        synthetic_extents = fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
+        
+        # Get row sums for display
+        row_sums_data = []
+        total_l, total_m, total_u = 0, 0, 0
+        for i in range(n):
+            l_sum, m_sum, u_sum = 0, 0, 0
+            for j in range(n):
+                l, m, u = fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j]
+                l_sum += l
+                m_sum += m
+                u_sum += u
+            row_sums_data.append({'criteria': criteria_names[i], 'l': l_sum, 'm': m_sum, 'u': u_sum})
+            total_l += l_sum
+            total_m += m_sum
+            total_u += u_sum
+        
+        total_fuzzy_sum = {'l': total_l, 'm': total_m, 'u': total_u}
+        fuzzy_synthetic_extent = []
+        for i, name in enumerate(criteria_names):
+            si = synthetic_extents[i]
+            fuzzy_synthetic_extent.append({'criteria': name, 'l': si[0], 'm': si[1], 'u': si[2]})
+    
+    # ==========================================
+    # LANGKAH 5: Perbandingan Probabilitas V(M2 >= M1)
+    # ==========================================
+    probability_matrix = None
+    d_prime_values = None
+    
+    if pairwise_matrix is not None and n > 1 and fuzzy_ahp_calc is not None:
+        synthetic_extents = fuzzy_ahp_calc.fuzzy_synthetic_extent
+        
+        # Build probability comparison matrix
+        probability_matrix = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                if i == j:
+                    row.append('-')
+                else:
+                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(synthetic_extents[j], synthetic_extents[i])
+                    row.append(round(prob, 4))
+            probability_matrix.append(row)
+        
+        # Calculate d'(Ai) = min V(Si >= Sk) for all k != i
+        d_prime_values = []
+        for i in range(n):
+            min_prob = float('inf')
+            for j in range(n):
+                if i != j:
+                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(synthetic_extents[j], synthetic_extents[i])
+                    min_prob = min(min_prob, prob)
+            d_prime_values.append({'criteria': criteria_names[i], 'value': round(min_prob, 4) if min_prob != float('inf') else 0})
+    
+    # ==========================================
+    # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
+    # ==========================================
+    normalized_weights = None
+    
+    if pairwise_matrix is not None and n > 0 and fuzzy_ahp_calc is not None:
+        weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+        normalized_weights = []
+        for name in criteria_names:
+            normalized_weights.append({'criteria': name, 'weight': round(weights.get(name, 0), 4)})
+    
+    # ==========================================
+    # Calculate total weight and breakdown per participant
+    # ==========================================
     total_bobot = sum(c.bobot for c in criterias)
+    
     calculation_details = []
     fuzzy_total_l = 0
     fuzzy_total_m = 0
@@ -4561,7 +4728,295 @@ def penilai_detail_nilai(user_id, event_id):
             calculation_details.append({'criteria': criteria, 'weight': weight, 'raw_score': score, 'fuzzy_l': l, 'fuzzy_m': m, 'fuzzy_u': u, 'weighted_l': weighted_l, 'weighted_m': weighted_m, 'weighted_u': weighted_u})
     final_score = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3 if calculation_details else 0
     sidebar_state = current_user.sidebar_state or 'expanded'
-    return render_template('penilai/detail_nilai.html', user=user, participant=participant, event=event, hasil_seleksi=hasil_seleksi, calculation_details=calculation_details, fuzzy_total_l=fuzzy_total_l, fuzzy_total_m=fuzzy_total_m, fuzzy_total_u=fuzzy_total_u, final_score=final_score, sidebar_state=sidebar_state)
+    return render_template('penilai/detail_nilai.html', 
+        user=user, 
+        participant=participant, 
+        event=event, 
+        hasil_seleksi=hasil_seleksi, 
+        calculation_details=calculation_details, 
+        fuzzy_total_l=fuzzy_total_l, 
+        fuzzy_total_m=fuzzy_total_m, 
+        fuzzy_total_u=fuzzy_total_u, 
+        final_score=final_score, 
+        sidebar_state=sidebar_state,
+        # Fuzzy AHP Step Data
+        criteria_names=criteria_names,
+        tfn_scale_table=tfn_scale_table,
+        pairwise_data=pairwise_data,
+        fuzzy_pairwise_data=fuzzy_pairwise_data,
+        use_generated_matrix=use_generated_matrix,
+        eigenvector_data=eigenvector_data,
+        lambda_max=lambda_max,
+        ci=ci,
+        cr=cr,
+        is_consistent=is_consistent,
+        ri_value=ri_value,
+        ri_table=RI_TABLE,
+        row_sums_data=row_sums_data,
+        total_fuzzy_sum=total_fuzzy_sum,
+        fuzzy_synthetic_extent=fuzzy_synthetic_extent,
+        probability_matrix=probability_matrix,
+        d_prime_values=d_prime_values,
+        normalized_weights=normalized_weights
+    )
+
+@app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
+@login_required
+@admin_required
+def admin_detail_nilai(user_id, event_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    from app.ahp_calculator import AHPCalculator, FuzzyAHPCalculator, TFN_SCALE, RI_TABLE, get_tfn_reciprocal
+    from app.fuzzy_ahp import get_pairwise_matrix_from_db
+    import numpy as np
+    import json
+    
+    # Get event
+    event = Event.query.get_or_404(event_id)
+    
+    # Get participant info
+    user = Users.query.get_or_404(user_id)
+    participant = Participants.query.filter_by(email=user.email).first()
+    
+    # Get final result
+    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user_id, event_id=event_id).first()
+    
+    # Get all criteria for this event (ordered)
+    criterias = Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
+    criteria_names = [c.nama_kriteria for c in criterias]
+    criteria_ids = [c.id_kriteria for c in criterias]
+    n = len(criterias)
+    
+    # ==========================================
+    # LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan
+    # ==========================================
+    tfn_scale_table = []
+    for intensity in range(1, 10):
+        tfn = TFN_SCALE.get(intensity, (1, 1, 1))
+        reciprocal = get_tfn_reciprocal(tfn)
+        tfn_scale_table.append({'intensity': intensity, 'tfn': tfn, 'reciprocal': reciprocal})
+    
+    # Get pairwise comparison matrix from database
+    pairwise_matrix = get_pairwise_matrix_from_db(event_id, criteria_ids)
+    pairwise_data = None
+    fuzzy_pairwise_data = None
+    use_generated_matrix = False
+    
+    # Jika tidak ada matriks di database tapi ada bobot kriteria, generate matriks dari bobot
+    if pairwise_matrix is None and n > 0:
+        total_bobot_check = sum(c.bobot for c in criterias)
+        if total_bobot_check > 0:
+            # Generate matriks perbandingan dari rasio bobot
+            pairwise_matrix = np.ones((n, n))
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        # Rasio bobot sebagai nilai perbandingan
+                        wi = criterias[i].bobot if criterias[i].bobot > 0 else 0.001
+                        wj = criterias[j].bobot if criterias[j].bobot > 0 else 0.001
+                        ratio = wi / wj
+                        # Batasi ke skala 1-9
+                        if ratio >= 1:
+                            pairwise_matrix[i, j] = min(9, max(1, ratio))
+                        else:
+                            pairwise_matrix[i, j] = max(1/9, ratio)
+            use_generated_matrix = True
+    if pairwise_matrix is not None and n > 0:
+        pairwise_data = pairwise_matrix.tolist()
+        
+        # Convert to fuzzy (TFN) matrix
+        fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
+        fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
+        fuzzy_pairwise_data = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                tfn = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
+                row.append(tfn)
+            fuzzy_pairwise_data.append(row)
+    
+    # ==========================================
+    # LANGKAH 2: Perhitungan Vector Eigen
+    # ==========================================
+    eigenvector_data = None
+    lambda_max = None
+    if pairwise_matrix is not None and n > 0:
+        ahp_calc = AHPCalculator(criteria_names)
+        ahp_calc.set_pairwise_matrix(pairwise_matrix)
+        eigenvector = ahp_calc.calculate_eigenvector()
+        lambda_max = ahp_calc.calculate_lambda_max()
+        
+        eigenvector_data = []
+        for i, name in enumerate(criteria_names):
+            eigenvector_data.append({'criteria': name, 'value': float(eigenvector[i])})
+    
+    # ==========================================
+    # LANGKAH 3: Uji Konsistensi Matriks
+    # ==========================================
+    ci = None
+    cr = None
+    is_consistent = False
+    ri_value = RI_TABLE.get(n, 1.58) if n > 0 else 0
+    
+    if pairwise_matrix is not None and n > 1:
+        ci, cr, is_consistent = ahp_calc.check_consistency()
+    
+    # ==========================================
+    # LANGKAH 4: Sintesis Fuzzy (Fuzzy Synthetic Extent)
+    # ==========================================
+    fuzzy_synthetic_extent = None
+    row_sums_data = None
+    total_fuzzy_sum = None
+    
+    if pairwise_matrix is not None and n > 0:
+        synthetic_extents = fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
+        
+        # Get row sums for display
+        row_sums_data = []
+        total_l, total_m, total_u = 0, 0, 0
+        for i in range(n):
+            l_sum, m_sum, u_sum = 0, 0, 0
+            for j in range(n):
+                l, m, u = fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j]
+                l_sum += l
+                m_sum += m
+                u_sum += u
+            row_sums_data.append({'criteria': criteria_names[i], 'l': l_sum, 'm': m_sum, 'u': u_sum})
+            total_l += l_sum
+            total_m += m_sum
+            total_u += u_sum
+        
+        total_fuzzy_sum = {'l': total_l, 'm': total_m, 'u': total_u}
+        
+        fuzzy_synthetic_extent = []
+        for i, name in enumerate(criteria_names):
+            si = synthetic_extents[i]
+            fuzzy_synthetic_extent.append({'criteria': name, 'l': si[0], 'm': si[1], 'u': si[2]})
+    
+    # ==========================================
+    # LANGKAH 5: Perbandingan Probabilitas V(M2 >= M1)
+    # ==========================================
+    probability_matrix = None
+    d_prime_values = None
+    
+    if pairwise_matrix is not None and n > 1:
+        synthetic_extents = fuzzy_ahp_calc.fuzzy_synthetic_extent
+        
+        # Build probability comparison matrix
+        probability_matrix = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                if i == j:
+                    row.append('-')
+                else:
+                    # V(Si >= Sj)
+                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(synthetic_extents[j], synthetic_extents[i])
+                    row.append(round(prob, 4))
+            probability_matrix.append(row)
+        
+        # Calculate d'(Ai) = min V(Si >= Sk) for all k != i
+        d_prime_values = []
+        for i in range(n):
+            min_prob = float('inf')
+            for j in range(n):
+                if i != j:
+                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(synthetic_extents[j], synthetic_extents[i])
+                    min_prob = min(min_prob, prob)
+            d_prime_values.append({'criteria': criteria_names[i], 'value': round(min_prob, 4) if min_prob != float('inf') else 0})
+    
+    # ==========================================
+    # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
+    # ==========================================
+    normalized_weights = None
+    
+    if pairwise_matrix is not None and n > 0:
+        weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+        normalized_weights = []
+        for name in criteria_names:
+            normalized_weights.append({'criteria': name, 'weight': round(weights.get(name, 0), 4)})
+    
+    # ==========================================
+    # Calculate total weight and breakdown per participant
+    # ==========================================
+    total_bobot = sum(c.bobot for c in criterias)
+    calculation_details = []
+    fuzzy_total_l = 0
+    fuzzy_total_m = 0
+    fuzzy_total_u = 0
+    
+    for criteria in criterias:
+        weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
+        avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(id_users=user_id, id_kriteria=criteria.id_kriteria).scalar()
+        
+        if avg_score is not None:
+            score = float(avg_score)
+            
+            # Fuzzification logic (same as fuzzy_ahp.py)
+            if score <= 5:  
+                if score <= 1:
+                    l, m, u = 1, 1, 2
+                elif score <= 2:
+                    l, m, u = 1, 2, 3
+                elif score <= 3:
+                    l, m, u = 2, 3, 4
+                elif score <= 4:
+                    l, m, u = 3, 4, 5
+                else:
+                    l, m, u = 4, 5, 5
+            else:  
+                l = max(0, score - 5)
+                m = score
+                u = min(100, score + 5)
+            
+            # Weighted fuzzy values
+            weighted_l = l * weight
+            weighted_m = m * weight
+            weighted_u = u * weight
+            
+            # Accumulate totals
+            fuzzy_total_l += weighted_l
+            fuzzy_total_m += weighted_m
+            fuzzy_total_u += weighted_u
+            calculation_details.append({'criteria': criteria, 'weight': weight, 'raw_score': score, 'fuzzy_l': l, 'fuzzy_m': m, 'fuzzy_u': u, 'weighted_l': weighted_l, 'weighted_m': weighted_m, 'weighted_u': weighted_u})
+    
+    # Final defuzzified score
+    final_score = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3 if calculation_details else 0
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    
+    return render_template('admin/detail_nilai.html', 
+        user=user, 
+        participant=participant, 
+        event=event, 
+        hasil_seleksi=hasil_seleksi, 
+        calculation_details=calculation_details, 
+        fuzzy_total_l=fuzzy_total_l, 
+        fuzzy_total_m=fuzzy_total_m, 
+        fuzzy_total_u=fuzzy_total_u, 
+        final_score=final_score, 
+        sidebar_state=sidebar_state,
+        # Fuzzy AHP Step Data
+        criteria_names=criteria_names,
+        tfn_scale_table=tfn_scale_table,
+        pairwise_data=pairwise_data,
+        fuzzy_pairwise_data=fuzzy_pairwise_data,
+        use_generated_matrix=use_generated_matrix,
+        eigenvector_data=eigenvector_data,
+        lambda_max=lambda_max,
+        ci=ci,
+        cr=cr,
+        is_consistent=is_consistent,
+        ri_value=ri_value,
+        ri_table=RI_TABLE,
+        row_sums_data=row_sums_data,
+        total_fuzzy_sum=total_fuzzy_sum,
+        fuzzy_synthetic_extent=fuzzy_synthetic_extent,
+        probability_matrix=probability_matrix,
+        d_prime_values=d_prime_values,
+        normalized_weights=normalized_weights,
+        debug_theme=session.get("theme")
+    )
 
 @app.route('/penilai/hasil-seleksi')
 @login_required
@@ -5340,6 +5795,285 @@ def upload_logo():
         db.session.rollback()
         current_app.logger.exception('Error in /api/upload_logo:')
         return jsonify({'status': 'error', 'message': t.get('api_internal_error')}), 500
+
+# API Download Arsip Seleksi
+@app.route('/api/download_arsip/<int:arsip_id>')
+@login_required
+@admin_required
+def api_download_arsip(arsip_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    try:
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+        
+        if not arsip.file_path:
+            return jsonify({'success': False, 'message': 'File tidak ditemukan'}), 404
+        
+        # Path file
+        file_path = os.path.join(app.root_path, 'static', arsip.file_path)
+        
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'message': 'File tidak ditemukan di server'}), 404
+        
+        # Tentukan MIME type berdasarkan file_type
+        if arsip.file_type == 'excel':
+            mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        elif arsip.file_type == 'pdf':
+            mimetype = 'application/pdf'
+        else:
+            mimetype = 'application/octet-stream'
+        
+        # Nama file untuk download
+        filename = f"{arsip.nama_arsip}.{'xlsx' if arsip.file_type == 'excel' else 'pdf'}"
+        return send_file(file_path, mimetype=mimetype, as_attachment=True, download_name=filename)
+    except Exception as e:
+        current_app.logger.exception('Error in /api/download_arsip:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Hapus Arsip Seleksi
+@app.route('/api/hapus_arsip/<int:arsip_id>', methods=['DELETE'])
+@login_required
+@admin_required
+@csrf.exempt
+def api_hapus_arsip(arsip_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    try:
+        arsip = ArsipSeleksi.query.get_or_404(arsip_id)
+        nama_arsip = arsip.nama_arsip
+        
+        # Hapus file fisik jika ada
+        if arsip.file_path:
+            file_path = os.path.join(app.root_path, 'static', arsip.file_path)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    current_app.logger.warning(f'Gagal menghapus file arsip: {e}')
+        
+        # Hapus record dari database
+        db.session.delete(arsip)
+        db.session.commit()
+        log_activity(current_user.id, f'Menghapus arsip seleksi: {nama_arsip}')
+        return jsonify({'success': True, 'message': f'Arsip "{nama_arsip}" berhasil dihapus'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/hapus_arsip:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Generate Laporan Excel
+@app.route('/api/generate_laporan_excel/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def api_generate_laporan_excel(event_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    try:
+        event = Event.query.get_or_404(event_id)
+        hasil_list = HasilSeleksi.query.filter_by(event_id=event_id).order_by(HasilSeleksi.ranking.asc()).all()
+        
+        if not hasil_list:
+            return jsonify({'success': False, 'message': 'Belum ada hasil seleksi untuk kegiatan ini'}), 400
+        
+        # Buat file Excel
+        try:
+            import openpyxl
+            from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+        except ImportError:
+            return jsonify({'success': False, 'message': 'Library openpyxl tidak tersedia. Silakan install dengan: pip install openpyxl'}), 500
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Hasil Seleksi"
+        
+        # Header style
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        
+        # Judul
+        ws.merge_cells('A1:F1')
+        ws['A1'] = f"LAPORAN HASIL SELEKSI"
+        ws['A1'].font = Font(bold=True, size=14)
+        ws['A1'].alignment = Alignment(horizontal="center")
+        
+        ws.merge_cells('A2:F2')
+        ws['A2'] = f"{event.nama_kegiatan}"
+        ws['A2'].font = Font(bold=True, size=12)
+        ws['A2'].alignment = Alignment(horizontal="center")
+        
+        ws.merge_cells('A3:F3')
+        ws['A3'] = f"Tanggal: {datetime.now().strftime('%d %B %Y')}"
+        ws['A3'].alignment = Alignment(horizontal="center")
+        
+        # Header tabel
+        headers = ['Ranking', 'Nama Peserta', 'Email', 'Jenis Kelamin', 'Asal Gudep', 'Skor Akhir']
+        for col, header in enumerate(headers, start=1):
+            cell = ws.cell(row=5, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = thin_border
+        
+        # Data
+        for row_idx, hasil in enumerate(hasil_list, start=6):
+            user = Users.query.get(hasil.id_users)
+            participant = Participants.query.filter_by(email=user.email).first() if user else None
+            
+            data = [
+                hasil.ranking,
+                user.nama_lengkap if user else 'N/A',
+                user.email if user else 'N/A',
+                participant.jenis_kelamin if participant else (user.jenis_kelamin if user else 'N/A'),
+                participant.asal_gudep if participant else 'N/A',
+                round(hasil.skor_akhir, 4)
+            ]
+            
+            for col, value in enumerate(data, start=1):
+                cell = ws.cell(row=row_idx, column=col, value=value)
+                cell.border = thin_border
+                if col in [1, 6]:  # Ranking dan skor = center
+                    cell.alignment = Alignment(horizontal="center")
+        
+        # Atur lebar kolom
+        ws.column_dimensions['A'].width = 10
+        ws.column_dimensions['B'].width = 30
+        ws.column_dimensions['C'].width = 30
+        ws.column_dimensions['D'].width = 15
+        ws.column_dimensions['E'].width = 25
+        ws.column_dimensions['F'].width = 15
+        
+        # Simpan file
+        reports_dir = os.path.join(app.root_path, 'static', 'reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"laporan_{event.id_kegiatan}_{timestamp}.xlsx"
+        file_path = os.path.join(reports_dir, filename)
+        wb.save(file_path)
+        
+        # Simpan ke database arsip
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=f"Laporan {event.nama_kegiatan} - {datetime.now().strftime('%d %b %Y')}",
+            deskripsi=f"Laporan hasil seleksi kegiatan {event.nama_kegiatan}",
+            file_path=f"reports/{filename}",
+            file_type='excel',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        log_activity(current_user.id, f'Generate laporan Excel untuk kegiatan: {event.nama_kegiatan}')
+        
+        return jsonify({'success': True, 'message': f'Laporan Excel berhasil di-generate untuk kegiatan "{event.nama_kegiatan}"'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/generate_laporan_excel:')
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API Generate Laporan PDF
+@app.route('/api/generate_laporan_pdf/<int:event_id>', methods=['POST'])
+@login_required
+@admin_required
+@csrf.exempt
+def api_generate_laporan_pdf(event_id):
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    
+    try:
+        event = Event.query.get_or_404(event_id)
+        hasil_list = HasilSeleksi.query.filter_by(event_id=event_id).order_by(HasilSeleksi.ranking.asc()).all()
+        
+        if not hasil_list:
+            return jsonify({'success': False, 'message': 'Belum ada hasil seleksi untuk kegiatan ini'}), 400
+        
+        # Buat file PDF
+        try:
+            from reportlab.lib import colors
+            from reportlab.lib.pagesizes import A4, landscape
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+        except ImportError:
+            return jsonify({'success': False, 'message': 'Library reportlab tidak tersedia. Silakan install dengan: pip install reportlab'}), 500
+        
+        # Simpan file
+        reports_dir = os.path.join(app.root_path, 'static', 'reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"laporan_{event.id_kegiatan}_{timestamp}.pdf"
+        file_path = os.path.join(reports_dir, filename)
+        
+        # Buat dokumen PDF
+        doc = SimpleDocTemplate(file_path, pagesize=landscape(A4))
+        elements = []
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=16, alignment=1, spaceAfter=12)
+        subtitle_style = ParagraphStyle('CustomSubTitle', parent=styles['Heading2'], fontSize=12, alignment=1, spaceAfter=20)
+        
+        # Judul
+        elements.append(Paragraph("LAPORAN HASIL SELEKSI", title_style))
+        elements.append(Paragraph(f"{event.nama_kegiatan}", subtitle_style))
+        elements.append(Paragraph(f"Tanggal: {datetime.now().strftime('%d %B %Y')}", styles['Normal']))
+        elements.append(Spacer(1, 20))
+        
+        # Data tabel
+        table_data = [['Ranking', 'Nama Peserta', 'Email', 'Jenis Kelamin', 'Asal Gudep', 'Skor Akhir']]
+        
+        for hasil in hasil_list:
+            user = Users.query.get(hasil.id_users)
+            participant = Participants.query.filter_by(email=user.email).first() if user else None
+            table_data.append([str(hasil.ranking), user.nama_lengkap if user else 'N/A', user.email if user else 'N/A', participant.jenis_kelamin if participant else (user.jenis_kelamin if user else 'N/A'), participant.asal_gudep if participant else 'N/A', str(round(hasil.skor_akhir, 4))])
+        
+        # Buat tabel
+        table = Table(table_data, colWidths=[0.7*inch, 2*inch, 2.5*inch, 1.2*inch, 2*inch, 1*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+            ('ALIGN', (-1, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        elements.append(table)
+        doc.build(elements)
+        
+        # Simpan ke database arsip
+        arsip = ArsipSeleksi(
+            event_id=event_id,
+            nama_arsip=f"Laporan {event.nama_kegiatan} - {datetime.now().strftime('%d %b %Y')}",
+            deskripsi=f"Laporan hasil seleksi kegiatan {event.nama_kegiatan}",
+            file_path=f"reports/{filename}",
+            file_type='pdf',
+            dibuat_oleh=current_user.id,
+            status='aktif'
+        )
+        db.session.add(arsip)
+        db.session.commit()
+        log_activity(current_user.id, f'Generate laporan PDF untuk kegiatan: {event.nama_kegiatan}')
+        
+        return jsonify({'success': True, 'message': f'Laporan PDF berhasil di-generate untuk kegiatan "{event.nama_kegiatan}"'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception('Error in /api/generate_laporan_pdf:')
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # Logout
 @app.route('/logout/')
