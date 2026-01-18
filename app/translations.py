@@ -34,6 +34,10 @@ TRANSLATIONS = {
         'google_email_not_found': 'Email dari akun Google tidak ditemukan.',
         'google_only_gmail': 'Login hanya diizinkan dengan akun Gmail.',
         'google_not_registered': 'Akun Google Anda belum terdaftar. Lanjutkan registrasi?',
+        "internet_connection_error": "Koneksi internet tidak tersedia. Silakan periksa jaringan Anda.", 
+        "internet_connection_unstable": "Koneksi internet tidak stabil. Silakan coba kembali.", 
+        "google_service_unavailable": "Layanan Google tidak dapat diakses saat ini.", 
+        "google_email_not_verified": "Email Google Anda belum diverifikasi.",
         
         # === REGISTER MANUAL ===
         'all_fields_required': 'Semua kolom wajib diisi.',
@@ -56,11 +60,7 @@ TRANSLATIONS = {
         'email_already_used': 'Email sudah digunakan. Silakan login.',
         'username_already_used': 'Username sudah digunakan.',
         'register_success': 'Registrasi berhasil! Anda sudah login untuk pertama kali.',
-        'google_register_failed': 'Gagal melakukan registrasi dengan Google. Silakan coba lagi.',
-        'register_google_success': (
-            'Registrasi berhasil! Selamat datang pengguna baru. '
-            'Anda sekarang login untuk pertama kali.'
-        ),
+        "account_not_registered": "Akun Google ini belum terdaftar.",
         
         # === FIND ACCOUNT ===
         'username_required': 'Username wajib diisi.',
@@ -377,6 +377,11 @@ TRANSLATIONS = {
         'google_email_not_found': 'Email from Google account not found.',
         'google_only_gmail': 'Login is only allowed with Gmail accounts.',
         'google_not_registered': 'Your Google account is not registered yet. Continue registration?',
+        "internet_connection_error": "No internet connection is available. Please check your network.",
+        "internet_connection_unstable": "Your internet connection is unstable. Please try again.",
+        "google_service_unavailable": "Google services are currently unavailable.",
+        "google_email_not_verified": "Your Google email address has not been verified.",
+
         
         # === REGISTER MANUAL ===
         'all_fields_required': 'All fields are required.',
@@ -399,12 +404,8 @@ TRANSLATIONS = {
         'email_already_used': 'Email is already used. Please login.',
         'username_already_used': 'Username is already taken.',
         'register_success': 'Registration successful! You are now logged in for the first time.',
-        'google_register_failed': 'Failed to register with Google. Please try again.',
-        'register_google_success': (
-            'Registration successful! Welcome, new user. '
-            'You are now logged in for the first time.'
-        ),
-        
+        "account_not_registered": "This Google account is not registered.",
+
         # === FIND ACCOUNT ===
         'username_required': 'Username is required.',
         'invalid_email_format': 'Invalid email address format.',

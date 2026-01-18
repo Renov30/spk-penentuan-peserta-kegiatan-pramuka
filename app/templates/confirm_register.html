@@ -1,7 +1,9 @@
-<!DOCTYPE html>
-<html lang="id">
+<!doctype html>
+<html lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
       {{ 'Konfirmasi Registrasi' if current_lang == 'id' else 'Registration
       Confirmation' }}

@@ -8,6 +8,11 @@ from app.models import Users, Participants, Notification, Event, Kuota, Criteria
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
+from authlib.integrations.base_client.errors import OAuthError
+from authlib.oauth2.rfc6749.errors import InvalidGrantError
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from flask_jwt_extended import (JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity)
 from markupsafe import escape
 from datetime import datetime, timedelta, date
 from flask_wtf import CSRFProtect
@@ -16,6 +21,7 @@ from forms import LoginForm, RegisterForm
 from config import Config
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
 from flask_login import current_user, LoginManager, login_user, login_required
 from functools import wraps
 from app.utils.utils import log_activity
@@ -27,6 +33,7 @@ from app.translations import TRANSLATIONS
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 import pdfkit
+import requests
 import random, string
 import logging
 import os
@@ -45,6 +52,11 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 secret_key = os.getenv("APP_SECRET_KEY")
+if not secret_key:
+    raise RuntimeError("APP_SECRET_KEY is not set")
+app.config["JWT_SECRET_KEY"] = secret_key
+jwt = JWTManager(app)
+
 # Ensure secret_key is a string, not bytes
 if isinstance(secret_key, bytes):
     secret_key = secret_key.decode('utf-8')
@@ -314,20 +326,59 @@ def generate_username(email):
 
 # Google OAuth Config
 oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=os.getenv('GOOGLE_CLIENT_ID'),
-    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    access_token_url='https://oauth2.googleapis.com/token',
-    access_token_params=None,
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    authorize_params=None,
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
-    userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
-    client_kwargs={'scope': 'openid email profile'},
+
+GOOGLE_WEB_CLIENT = {
+    "client_id": os.getenv("GOOGLE_CLIENT_ID_WEB"),
+    "client_secret": os.getenv("GOOGLE_CLIENT_SECRET_WEB"),
+    "redirect_uri": "https://spk-pramuka.id/login/google/callback/",
+}
+
+GOOGLE_PUBLIC_CLIENT_IDS = {
+    "ios": os.getenv("GOOGLE_CLIENT_ID_IOS"),
+    "desktop": os.getenv("GOOGLE_CLIENT_ID_DESKTOP"),
+}
+
+oauth.register(
+    name="google_web",
+    client_id=GOOGLE_WEB_CLIENT["client_id"],
+    client_secret=GOOGLE_WEB_CLIENT["client_secret"],
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
 )
 
+# Helper: Verifikasi ID Token Google
+GOOGLE_ISSUERS = {"accounts.google.com", "https://accounts.google.com"}
+def verify_google_id_token_multi(id_token_str: str):
+    for client_type, client_id in GOOGLE_PUBLIC_CLIENT_IDS.items():
+        if not client_id:
+            continue
+        try:
+            claims = id_token.verify_oauth2_token(
+                id_token_str,
+                google_requests.Request(),
+                client_id,
+                clock_skew_in_seconds=10
+            )
+            if claims.get("iss") not in GOOGLE_ISSUERS:
+                raise ValueError("Invalid issuer")
+            return claims, client_type
+        except Exception:
+            continue
+
+    raise InvalidGrantError("Invalid Google ID Token")
+
+def cleanup_oauth_temp():
+    for k in ("oauth_next", "oauth_state"):
+        session.pop(k, None)
+
+def cleanup_all_oauth():
+    for k in ("oauth_next", "oauth_state", "oauth_client", "pending_user"):
+        session.pop(k, None)
+
+def cleanup_pending_oauth():
+    session.pop("pending_user", None)
+    session.pop("pending_oauth", None)
+        
 # Fungsi untuk mengecek keberadaan username, nomor hp, email dan password serta untuk menghasilkan kode verifikasi 6 digit
 def check_username_in_db(username):
     user = Users.query.filter_by(username=username).first()
@@ -377,10 +428,7 @@ def ratelimit_handler(e):
     lang = session.get('lang', 'id')
     messages = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
-    message = messages.get(
-        'too_many_login_attempts',
-        'Terlalu banyak percobaan login. Silakan coba lagi nanti.'
-    )
+    message = messages.get('too_many_login_attempts', 'Terlalu banyak percobaan login. Silakan coba lagi nanti.')
     return render_template("429.html", message=message), 429
 
 @app.context_processor
@@ -395,11 +443,7 @@ def inject_notifications():
     if user:
         unread_count = Notification.query.filter_by(user_id=user.id, is_read=False).count()
         # Get recent notifications (last 10) for the notification tray
-        notifications = Notification.query.filter_by(
-            user_id=user.id
-        ).order_by(
-            Notification.id.desc()
-        ).limit(10).all()
+        notifications = Notification.query.filter_by(user_id=user.id).order_by(Notification.id.desc()).limit(10).all()
     return dict(notification_count=unread_count, notifications=notifications)
 
 # --- Middleware untuk cek login dan role ---
@@ -447,6 +491,9 @@ def login():
         if not user:
             logging.warning(f"Login gagal: username '{username}' tidak ditemukan.")
             flash(t['username_invalid'], 'danger')
+        elif user.login_method == "google":
+            flash(t["use_google_login"], "warning")
+            return redirect(url_for("login"))
         elif not check_password_hash(user.password, password):
             logging.warning(f"Login gagal: password salah untuk user '{username}'.")
             flash(t['login_password_invalid'], 'danger')
@@ -470,148 +517,284 @@ def login():
             elif user.level == "peserta":
                 return redirect(url_for('peserta_dashboard'))
             else:
-                # Default jika role tidak dikenali
                 return redirect(url_for('login')) 
     return render_template('login.html', form=form)
 
-# Endpoint login with Google
-@app.route('/login/google/', methods=['GET', 'POST'])
+# Endpoint login with Google (Web Only)
+@app.route("/login/google/")
 @limiter.limit("20 per minute")
 def login_google():
-    next_url = request.args.get('next')
+    next_url = request.args.get("next")
+    mode = request.args.get("mode", "login")
+    session["oauth_mode"] = mode
 
     if next_url and is_safe_url(next_url):
-        session['oauth_next'] = next_url
-        
-    redirect_uri = url_for('login_google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
+        session["oauth_next"] = next_url
+    return oauth.google_web.authorize_redirect(url_for("login_google_callback", _external=True))
 
-# Endpoint Callback Login With Google
-@app.route('/login/google/callback/')
+# Endpoint Callback Login With Google (Web Only)
+@app.route("/login/google/callback/")
+@limiter.limit("60 per minute")
 def login_google_callback():
-    lang = session.get('lang', 'id')
-    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    next_url = session.pop('oauth_next', None)
+    next_url = session.pop("oauth_next", None)
+    mode = session.get("oauth_mode", "login")
+
+    lang = session.get("lang", "id")
+    t = TRANSLATIONS.get(lang, TRANSLATIONS["id"])
 
     try:
-        token = google.authorize_access_token()
-        resp = google.get('userinfo')
-        resp.raise_for_status()
-        user_info = resp.json()
-    except Exception as e:
-        logging.warning(f"Login Google gagal: {e}")
-        flash(t['google_login_failed'], "danger")
-        return redirect(url_for('login'))
+        # ================= GOOGLE OAUTH TOKEN =================
+        token = oauth.google_web.authorize_access_token()
 
-    email = user_info.get('email')
-    picture = user_info.get('picture') or "img/default-user.png"
+        # Authlib sudah memverifikasi token & signature
+        claims = token.get("userinfo") or token.get("id_token_claims")
+        if not claims:
+            raise OAuthError("Missing Google userinfo")
+
+    except requests.exceptions.ConnectionError:
+        cleanup_oauth_temp()
+        flash(t["internet_connection_error"], "danger")
+        return redirect(url_for("login"))
+
+    except requests.exceptions.Timeout:
+        cleanup_oauth_temp()
+        flash(t["internet_connection_unstable"], "warning")
+        return redirect(url_for("login"))
+
+    except OAuthError as e:
+        cleanup_oauth_temp()
+        logging.warning(f"Google OAuthError: {e}")
+        flash(t["google_service_unavailable"], "danger")
+        return redirect(url_for("login"))
+
+    except RateLimitExceeded:
+        cleanup_oauth_temp()
+        flash(t["too_many_requests"], "warning")
+        return redirect(url_for("login"))
+
+    except Exception:
+        cleanup_oauth_temp()
+        logging.exception("Unexpected Google OAuth callback error")
+        flash(t["google_login_failed"], "danger")
+        return redirect(url_for("login"))
+
+    # ================= CLAIM-BASED USER DATA =================
+    email = claims.get("email")
+    email_verified = claims.get("email_verified", False)
+    picture = claims.get("picture")
+    name = claims.get("name")
 
     if not email:
-        flash(t['google_email_not_found'], "danger")
-        return redirect(url_for('login'))
-    if not email.endswith('@gmail.com'):
-        flash(t['google_only_gmail'], "danger")
-        return redirect(url_for('login'))
-    user = Users.query.filter_by(email=email).first()
-    if not user:
-        session['pending_user'] = user_info
-        logging.warning(f"Percobaan login Google dari email '{email}' belum terdaftar.")
-        flash(f"{t['google_not_registered']}", "warning")
-        return redirect(url_for('confirm_register'))
-    if not user.foto or user.foto == "img/default-user.png":
-        user.foto = picture
-        db.session.commit()
+        cleanup_oauth_temp()
+        flash(t["google_email_not_found"], "danger")
+        return redirect(url_for("login"))
 
+    if email_verified is not True:
+        cleanup_oauth_temp()
+        flash(t["google_email_not_verified"], "danger")
+        return redirect(url_for("login"))
+
+    # Kebijakan domain (opsional)
+    if not email.endswith("@gmail.com"):
+        cleanup_oauth_temp()
+        flash(t["google_only_gmail"], "danger")
+        return redirect(url_for("login"))
+
+    # ================= DATABASE USER =================
+    user = Users.query.filter_by(email=email).first()
+
+    # ---------- USER BELUM TERDAFTAR ----------
+    if not user:
+        if mode != "register":
+            cleanup_oauth_temp()
+            flash(t["account_not_registered"], "google_not_registered")
+            return redirect(url_for("login"))
+
+        # MODE REGISTER
+        session["pending_user"] = {"email": email, "name": name, "picture": picture,}
+        session["pending_user_ts"] = time.time()
+        cleanup_oauth_temp()
+        logging.info(f"Google register initiated for {email[:3]}***")
+        return redirect(url_for("confirm_register"))
+
+    # ---------- USER ADA ----------
+    if user.login_method not in ("google", "hybrid"):
+        cleanup_all_oauth()
+        flash(t["login_method_mismatch"], "danger")
+        return redirect(url_for("login"))
+
+    # ================= DATA HARDENING =================
+    if not user.foto or user.foto == "img/default-user.png":
+        if isinstance(picture, str) and picture.startswith("https://"):
+            user.foto = picture
+            db.session.commit()
+
+    # ================= LOGIN USER =================
+    cleanup_all_oauth()
     login_user(user)
-    session['user'] = {'id': user.id, 'username': user.username, 'email': user.email, 'nama_lengkap': user.nama_lengkap, 'foto': user.foto, 'level': user.level}
-    session['first_time_login'] = True
+
+    session["first_time_login"] = True
     session.modified = True
 
-    logging.info(f"User '{user.username}' berhasil login via Google.")
+    logging.info(f"User '{user.username}' login via Google.")
     flash(f"{t['login_success']}, {escape(user.nama_lengkap)}.", "success")
 
+    # ================= REDIRECT =================
     if next_url and is_safe_url(next_url):
         return redirect(next_url)
-    user_level = (user.level or "").strip().lower()
-    role_redirect = {"admin": "admin_dashboard", "penilai": "penilai_dashboard", "peserta": "peserta_dashboard"}
-    endpoint = role_redirect.get(user_level)
-    if endpoint:
-        return redirect(url_for(endpoint))
-    return redirect(url_for("index"))
-    
+    role_redirect = {"admin": "admin_dashboard", "penilai": "penilai_dashboard", "peserta": "peserta_dashboard",}
+    endpoint = role_redirect.get((user.level or "").lower())
+    return redirect(url_for(endpoint)) if endpoint else redirect(url_for("index"))
+
+# API Login with Google (iOS / Dekstop)
+@app.route("/api/auth/google", methods=["POST"])
+@limiter.limit("30 per minute")
+def api_auth_google():
+    data = request.get_json(silent=True) or {}
+    id_token_str = data.get("id_token")
+
+    if not id_token_str:
+        return jsonify({"error": "invalid_request", "message": "Missing id_token"}), 400
+
+    try:
+        # ================= VERIFY ID TOKEN (MULTI CLIENT) =================
+        claims, client_type = verify_google_id_token_multi(id_token_str)
+    except InvalidGrantError as e:
+        logging.warning(f"Invalid Google ID token (API): {e}")
+        return jsonify({"error": "invalid_grant", "message": "Invalid Google ID Token"}), 401
+    except Exception:
+        logging.exception("Unexpected Google token verification error")
+        return jsonify({"error": "server_error", "message": "Google authentication failed"}), 500
+
+    # ================= CLAIM-BASED USER DATA =================
+    email = claims.get("email")
+    email_verified = claims.get("email_verified", False)
+    name = claims.get("name")
+    picture = claims.get("picture")
+
+    if not email:
+        return jsonify({"error": "invalid_claims", "message": "Email not found in Google account"}), 400
+    if email_verified is not True:
+        return jsonify({"error": "email_not_verified", "message": "Google email not verified"}), 403
+
+    # Kebijakan domain (opsional)
+    if not email.endswith("@gmail.com"):
+        return jsonify({"error": "forbidden_domain", "message": "Only Gmail accounts are allowed"}), 403
+
+    # ================= DATABASE USER =================
+    user = Users.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "not_registered", "message": "Account not registered", "data": {"email": email, "name": name, "picture": picture}}), 404
+
+    # ================= DATA HARDENING =================
+    if not user.foto or user.foto == "img/default-user.png":
+        if isinstance(picture, str) and picture.startswith("https://"):
+            user.foto = picture
+            db.session.commit()
+
+    # ================= ISSUE APPLICATION TOKEN =================
+    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=2), additional_claims={"role": user.level, "provider": "google", "client": client_type})
+    refresh_token = create_refresh_token(identity=user.id, expires_delta=timedelta(days=30))
+    logging.info(f"User '{user.username}' authenticated via Google API ({client_type}).")
+    return jsonify({"access_token": access_token, "refresh_token": refresh_token, "token_type": "Bearer", "user": {"id": user.id, "email": user.email, "name": user.nama_lengkap, "role": user.level, "foto": user.foto}}), 200
+
+# Endpoint Register With Google
+@app.route("/register/google/")
+def register_google():
+    return redirect(url_for("login_google", mode="register"))
+
 # Endpoint Fisrt Confirm Register With Google
-@app.route('/confirm-register/')
+@app.route("/confirm-register/")
 def confirm_register():
-    lang = session.get('lang', 'id')
-    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
-    user_info = session.get('pending_user')
-    if not user_info:
-        flash(f"{t['user_data_not_found']}", "danger")
-        return redirect(url_for('login'))
+    lang = session.get("lang", "id")
+    t = TRANSLATIONS.get(lang, TRANSLATIONS["id"])
+
+    pending = session.get("pending_user")
+    pending_ts = session.get("pending_user_ts")
+
+    if not pending or not pending_ts:
+        flash(t["user_data_not_found"], "danger")
+        return redirect(url_for("login"))
+
+    if time.time() - pending_ts > 600:
+        session.pop("pending_user", None)
+        session.pop("pending_user_ts", None)
+        flash(t["session_expired"], "warning")
+        return redirect(url_for("login"))
+
     form = RegisterForm()
-    return render_template("confirm_register.html", user=user_info, form=form)
+    return render_template("confirm_register.html", user=pending, form=form)
 
 # Endpoint Confirm Register With Google
-@app.route('/confirm-register', methods=['POST'])
+@app.route("/confirm-register", methods=["POST"])
 def do_register():
-    lang = session.get('lang', 'id')
-    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
-    user_info = session.get('pending_user')
-    if not user_info:
-        flash(f"{t['user_data_not_found']}", "danger")
-        return redirect(url_for('login'))
-    
+    lang = session.get("lang", "id")
+    t = TRANSLATIONS.get(lang, TRANSLATIONS["id"])
+
+    pending = session.get("pending_user")
+    pending_ts = session.get("pending_user_ts")
+    if not pending or not pending_ts:
+        flash(t["user_data_not_found"], "danger")
+        return redirect(url_for("login"))
+
+    if time.time() - pending_ts > 600:
+        session.pop("pending_user", None)
+        session.pop("pending_user_ts", None)
+        flash(t["session_expired"], "warning")
+        return redirect(url_for("login"))
+
     form = RegisterForm()
 
-    if form.validate_on_submit():
-        username = form.username.data
-        password = form.password.data
-        email = user_info['email']
-        
-    # Validasi apakah username atau email sudah digunakan
-        if Users.query.filter_by(email=email).first():
-            flash(f"{t['email_already_used']}", "warning")
-            return redirect(url_for('login'))
-        if Users.query.filter_by(username=username).first():
-            flash(f"{t['username_already_used']}", "warning")
-            return redirect(url_for('confirm_register'))
-    
-        # Simpan ke database
-        new_user = Users(
-                username=username,
-                password=generate_password_hash(secrets.token_urlsafe(12), method='pbkdf2:sha256'),
-                nama_lengkap=user_info['name'],
-                email=user_info['email'],
-                jenis_kelamin='laki-laki',
-                usia='0',
-                foto=user_info.get('picture', 'img/default-user.png'),
-                nomor_hp='',
-                level='peserta',
-                reset_token="",
-                login_method="google",
-                sidebar_state="expanded",
-                status='aktif'
-        )
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Gagal menyimpan user Google baru: {e}")
-            flash(f"{t['register_failed']}", "danger")
-            return redirect(url_for('confirm_register'))
+    if not form.validate_on_submit():
+        return render_template("confirm_register.html", user=pending, form=form)
 
-        # Set session
-        session['user'] = {'id': new_user.id, 'username': new_user.username, 'email': new_user.email, 'nama_lengkap': new_user.nama_lengkap, 'foto': new_user.foto, 'level': new_user.level}
-        print("Session setelah login Google:", dict(session))
-        logging.info(f"User baru '{username}' berhasil registrasi dan login via Google.")
-        flash(f"{t['register_success']}", "welcome")
-        session['username'] = new_user.username
-        session['first_time_login'] = True
-        return redirect(url_for('index'))
-    return render_template("confirm_register.html", user=user_info, form=form)
+    username = form.username.data.strip()
+    email = pending["email"]
+
+    if Users.query.filter_by(email=email).first():
+        flash(t["email_already_used"], "warning")
+        return redirect(url_for("login"))
+    if Users.query.filter_by(username=username).first():
+        flash(t["username_already_used"], "warning")
+        return redirect(url_for("confirm_register"))
+
+    new_user = Users(
+        username=username,
+        password=generate_password_hash(
+            secrets.token_urlsafe(32),
+            method="pbkdf2:sha256"
+        ),
+        nama_lengkap=pending["name"],
+        email=email,
+        jenis_kelamin="laki-laki",
+        usia="0",
+        foto=pending.get("picture", "img/default-user.png"),
+        nomor_hp="",
+        level="peserta",
+        reset_token="",
+        login_method="google",
+        sidebar_state="expanded",
+        status="aktif",
+    )
+
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Gagal menyimpan user Google baru: {e}")
+        flash(t["register_failed"], "danger")
+        return redirect(url_for("confirm_register"))
+
+    session.pop("pending_user", None)
+    login_user(new_user)
+
+    session["first_time_login"] = True
+    session.modified = True
+
+    logging.info(f"User baru '{username}' berhasil registrasi via Google.")
+    flash(t["register_success"], "welcome")
+    return redirect(url_for("peserta_dashboard"))
 
 # Endpoint register
 @app.route('/register/', methods=['GET', 'POST'])
@@ -672,47 +855,6 @@ def register():
             flash(f"{t['email_exists']}", "danger")
         return redirect(url_for('register'))
     return render_template('register.html')
-
-# Endpoint Register With Google
-@app.route('/register/google/', methods=['GET', 'POST'])
-def register_google():
-    redirect_uri = url_for('register_google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-# Endpoint Callback Register With Google
-@app.route('/register/google/callback/')
-def register_google_callback():
-    lang = session.get('lang', 'id')
-    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
-    try:
-        token = google.authorize_access_token()
-        resp = google.get('userinfo')
-        resp.raise_for_status() 
-        user_info = resp.json()
-    except Exception as e:
-        flash(f"{t['google_register_failed']}", "danger")
-        return redirect(url_for('register'))
-    
-    email = user_info['email']
-    username = generate_username(email)
-    
-    # Cek email sudah digunakan
-    if Users.query.filter_by(email=email).first():
-        flash(f"{t['email_already_used']}", "warning")
-        return redirect(url_for('login'))
-    
-    # Simpan ke database
-    new_user = Users(username=username, password=generate_password_hash(secrets.token_urlsafe(12), method='pbkdf2:sha256'), nama_lengkap=user_info['name'], email=user_info['email'], jenis_kelamin='laki-laki', usia='0', foto=user_info.get('picture', 'img/default-user.png'), nomor_hp='', level='peserta', reset_token="", login_method="google", sidebar_state="expanded", status='aktif')
-    db.session.add(new_user)
-    db.session.commit()
-    
-    # Login langsung setelah registrasi
-    login_user(new_user)
-    session['username'] = new_user.username
-    session['user'] = {'id': new_user.id, 'username': new_user.username, 'email': new_user.email, 'nama_lengkap': new_user.nama_lengkap, 'foto': new_user.foto, 'level': new_user.level}
-    flash(f"{t['register_google_success']}", "welcome")
-    return redirect(url_for('admin_dashboard'))
 
 # Endpoint Find Account
 @app.route('/find_account/', methods=['GET', 'POST'])
@@ -4366,8 +4508,6 @@ def penilai_view_score(event_id, participant_id):
     
     # Ambil SEMUA kriteria untuk event ini
     all_criterias = Criteria.query.filter_by(event_id=event_id).all()
-    
-    # Identifikasi kriteria yang ditugaskan ke user ini
     assigned_criteria_ids = [c.id_kriteria for c in current_user.assigned_criteria if c.event_id == event_id]
     
     # Ambil himpunan kriteria untuk dropdown
@@ -4757,7 +4897,8 @@ def penilai_detail_nilai(user_id, event_id):
         fuzzy_synthetic_extent=fuzzy_synthetic_extent,
         probability_matrix=probability_matrix,
         d_prime_values=d_prime_values,
-        normalized_weights=normalized_weights
+        normalized_weights=normalized_weights,
+        debug_theme=session.get("theme")
     )
 
 @app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
@@ -4772,17 +4913,10 @@ def admin_detail_nilai(user_id, event_id):
     import numpy as np
     import json
     
-    # Get event
     event = Event.query.get_or_404(event_id)
-    
-    # Get participant info
     user = Users.query.get_or_404(user_id)
-    participant = Participants.query.filter_by(email=user.email).first()
-    
-    # Get final result
-    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user_id, event_id=event_id).first()
-    
-    # Get all criteria for this event (ordered)
+    participant = Participants.query.filter_by(email=user.email).first_or_404()
+    hasil_seleksi = HasilSeleksi.query.filter_by(id_users=user_id, event_id=event_id).first_or_404()
     criterias = Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
     criteria_names = [c.nama_kriteria for c in criterias]
     criteria_ids = [c.id_kriteria for c in criterias]
@@ -4802,30 +4936,24 @@ def admin_detail_nilai(user_id, event_id):
     pairwise_data = None
     fuzzy_pairwise_data = None
     use_generated_matrix = False
-    
-    # Jika tidak ada matriks di database tapi ada bobot kriteria, generate matriks dari bobot
     if pairwise_matrix is None and n > 0:
         total_bobot_check = sum(c.bobot for c in criterias)
         if total_bobot_check > 0:
-            # Generate matriks perbandingan dari rasio bobot
             pairwise_matrix = np.ones((n, n))
             for i in range(n):
                 for j in range(n):
                     if i != j:
-                        # Rasio bobot sebagai nilai perbandingan
                         wi = criterias[i].bobot if criterias[i].bobot > 0 else 0.001
                         wj = criterias[j].bobot if criterias[j].bobot > 0 else 0.001
                         ratio = wi / wj
-                        # Batasi ke skala 1-9
                         if ratio >= 1:
                             pairwise_matrix[i, j] = min(9, max(1, ratio))
                         else:
                             pairwise_matrix[i, j] = max(1/9, ratio)
             use_generated_matrix = True
+        
     if pairwise_matrix is not None and n > 0:
         pairwise_data = pairwise_matrix.tolist()
-        
-        # Convert to fuzzy (TFN) matrix
         fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
         fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
         fuzzy_pairwise_data = []
@@ -4858,7 +4986,6 @@ def admin_detail_nilai(user_id, event_id):
     cr = None
     is_consistent = False
     ri_value = RI_TABLE.get(n, 1.58) if n > 0 else 0
-    
     if pairwise_matrix is not None and n > 1:
         ci, cr, is_consistent = ahp_calc.check_consistency()
     
@@ -4868,11 +4995,8 @@ def admin_detail_nilai(user_id, event_id):
     fuzzy_synthetic_extent = None
     row_sums_data = None
     total_fuzzy_sum = None
-    
     if pairwise_matrix is not None and n > 0:
         synthetic_extents = fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
-        
-        # Get row sums for display
         row_sums_data = []
         total_l, total_m, total_u = 0, 0, 0
         for i in range(n):
@@ -4886,9 +5010,7 @@ def admin_detail_nilai(user_id, event_id):
             total_l += l_sum
             total_m += m_sum
             total_u += u_sum
-        
         total_fuzzy_sum = {'l': total_l, 'm': total_m, 'u': total_u}
-        
         fuzzy_synthetic_extent = []
         for i, name in enumerate(criteria_names):
             si = synthetic_extents[i]
@@ -4898,12 +5020,9 @@ def admin_detail_nilai(user_id, event_id):
     # LANGKAH 5: Perbandingan Probabilitas V(M2 >= M1)
     # ==========================================
     probability_matrix = None
-    d_prime_values = None
-    
+    d_prime_values = None  
     if pairwise_matrix is not None and n > 1:
         synthetic_extents = fuzzy_ahp_calc.fuzzy_synthetic_extent
-        
-        # Build probability comparison matrix
         probability_matrix = []
         for i in range(n):
             row = []
@@ -4911,12 +5030,9 @@ def admin_detail_nilai(user_id, event_id):
                 if i == j:
                     row.append('-')
                 else:
-                    # V(Si >= Sj)
                     prob = fuzzy_ahp_calc.compare_fuzzy_probability(synthetic_extents[j], synthetic_extents[i])
                     row.append(round(prob, 4))
             probability_matrix.append(row)
-        
-        # Calculate d'(Ai) = min V(Si >= Sk) for all k != i
         d_prime_values = []
         for i in range(n):
             min_prob = float('inf')
@@ -4930,7 +5046,6 @@ def admin_detail_nilai(user_id, event_id):
     # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
     # ==========================================
     normalized_weights = None
-    
     if pairwise_matrix is not None and n > 0:
         weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
         normalized_weights = []
@@ -4945,15 +5060,11 @@ def admin_detail_nilai(user_id, event_id):
     fuzzy_total_l = 0
     fuzzy_total_m = 0
     fuzzy_total_u = 0
-    
     for criteria in criterias:
         weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
         avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(id_users=user_id, id_kriteria=criteria.id_kriteria).scalar()
-        
         if avg_score is not None:
             score = float(avg_score)
-            
-            # Fuzzification logic (same as fuzzy_ahp.py)
             if score <= 5:  
                 if score <= 1:
                     l, m, u = 1, 1, 2
@@ -4974,14 +5085,10 @@ def admin_detail_nilai(user_id, event_id):
             weighted_l = l * weight
             weighted_m = m * weight
             weighted_u = u * weight
-            
-            # Accumulate totals
             fuzzy_total_l += weighted_l
             fuzzy_total_m += weighted_m
             fuzzy_total_u += weighted_u
             calculation_details.append({'criteria': criteria, 'weight': weight, 'raw_score': score, 'fuzzy_l': l, 'fuzzy_m': m, 'fuzzy_u': u, 'weighted_l': weighted_l, 'weighted_m': weighted_m, 'weighted_u': weighted_u})
-    
-    # Final defuzzified score
     final_score = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3 if calculation_details else 0
     sidebar_state = current_user.sidebar_state or 'expanded'
     
@@ -4996,6 +5103,7 @@ def admin_detail_nilai(user_id, event_id):
         fuzzy_total_u=fuzzy_total_u, 
         final_score=final_score, 
         sidebar_state=sidebar_state,
+        
         # Fuzzy AHP Step Data
         criteria_names=criteria_names,
         tfn_scale_table=tfn_scale_table,
@@ -5037,9 +5145,7 @@ def penilai_hasil_seleksi():
         selected_event = Event.query.get(selected_event_id)
         if selected_event and selected_event in assigned_events:
             hasil_seleksi_query = db.session.query(
-                HasilSeleksi,
-                Users,
-                Participants
+                HasilSeleksi, Users, Participants
             ).join(
                 Users, HasilSeleksi.id_users == Users.id
             ).outerjoin(

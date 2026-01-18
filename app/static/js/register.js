@@ -1,3 +1,3 @@
 function redirectToRegisterWithGoogle() {
-  window.location.href = "/register/google/";
+  window.location.href = "/login/google?mode=register";
 }

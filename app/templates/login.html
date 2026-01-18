@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
@@ -36,10 +36,20 @@
         {{ 'Masuk ke Akun' if current_lang == 'id' else 'Login Account' }}
       </h1>
 
+      <!-- OFFLINE ALERT (HIDDEN DEFAULT) -->
+      <div
+        id="offline-alert"
+        class="hidden mb-4 p-4 rounded-md text-white bg-red-600 text-sm"
+      >
+        {{ 'Koneksi internet tidak tersedia. Silakan periksa jaringan Anda dan
+        coba kembali.' if current_lang == 'id' else 'No internet connection.
+        Please check your network and try again.' }}
+      </div>
+
       <!-- Social Account Login -->
       <div class="flex flex-row justify-between gap-2 mt-9">
         <button
-          class="w-full h-14 flex justify-center items-center gap-2 border border-gray-300 rounded-md px-2.5 text-base md:text-lg cursor-pointer bg-white transition-colors duration-300 hover:#f5f5f5"
+          class="w-full h-14 flex justify-center items-center gap-2 border border-gray-300 rounded-md px-2.5 text-base md:text-lg cursor-pointer bg-white transition-colors duration-300 hover:bg-gray-100"
           onclick="redirectToLoginWithGoogle()"
         >
           <img
@@ -63,13 +73,65 @@
 
       <!-- Flash message Start -->
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %} {% for category, message in messages %}
+      messages %} {% for category, message in messages %} {% if category ==
+      'google_not_registered' %}
+      <div
+        class="mb-6 p-4 rounded-lg border border-yellow-300 bg-yellow-50 text-yellow-900"
+      >
+        <div class="flex items-start gap-3">
+          <svg
+            class="w-5 h-5 mt-0.5 text-yellow-600"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+            />
+          </svg>
+
+          <div class="flex-1">
+            <p class="font-semibold">{{ message }}</p>
+            <p class="text-sm mt-1">
+              {{ 'Silakan registrasi terlebih dahulu untuk melanjutkan.' if
+              current_lang == 'id' else 'Please register first to continue.' }}
+            </p>
+
+            <button
+              type="button"
+              onclick="redirectToRegisterWithGoogle()"
+              class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-yellow-500 text-white font-semibold hover:bg-yellow-600 transition cursor-pointer"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              {{ 'Registrasi dengan Google' if current_lang == 'id' else
+              'Register with Google' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {% else %}
       <div
         class="mb-4 p-4 rounded-md text-white bg-{{ 'green' if category in ['success', 'welcome'] else 'red' }}-500"
       >
         {{ message | e }}
       </div>
-      {% endfor %} {% endif %} {% endwith %}
+      {% endif %} {% endfor %} {% endif %} {% endwith %}
       <!-- Flash message End -->
 
       <form id="loginForm" action="{{ url_for('login') }}" method="post">
@@ -147,5 +209,6 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/register.js') }}"></script>
   </body>
 </html>
