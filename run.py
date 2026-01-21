@@ -5965,6 +5965,7 @@ def admin_rekap_nilai_fuzzy(event_id):
     for hasil, user, participant in hasil_seleksi:
         row = {
             'nama': user.nama_lengkap,
+            'foto': user.foto if user.foto else 'img/default-user.png',
             'asal_gudep': participant.asal_gudep if participant else '-',
             'criteria_values': {},
             'total_score': hasil.skor_akhir,

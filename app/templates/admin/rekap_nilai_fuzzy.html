@@ -118,7 +118,7 @@
                         No
                       </th>
                       <th
-                        class="p-4 font-semibold border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                        class="p-4 font-semibold border-b min-w-[250px] {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                       >
                         Alternatif (Peserta)
                       </th>
@@ -165,13 +165,23 @@
                         {{ loop.index }}
                       </td>
                       <td class="p-4">
-                        <div
-                          class="font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                        >
-                          {{ row.nama }}
-                        </div>
-                        <div class="text-xs opacity-60">
-                          {{ row.asal_gudep }}
+                        <div class="flex items-center gap-3">
+                          <img
+                            src="{{ url_for('static', filename=row.foto) }}"
+                            alt="{{ row.nama }}"
+                            class="w-10 h-10 rounded-full object-cover border-2 {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-200' }}"
+                            style="width: 40px; height: 40px; min-width: 40px"
+                          />
+                          <div>
+                            <div
+                              class="font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                            >
+                              {{ row.nama }}
+                            </div>
+                            <div class="text-xs opacity-60">
+                              {{ row.asal_gudep }}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       {% for criteria in criteria_headers %}
