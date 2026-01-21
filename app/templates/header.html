@@ -94,7 +94,7 @@
       {% else %}
       <!-- Halaman PUBLIK → dengan next -->
       <a
-        href="{{ url_for('login', next=request.full_path) }}"
+        href="{{ url_for('login') }}"
         data-login-intent
         class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl relative pointer-events-auto z-101"
         title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"

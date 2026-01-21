@@ -700,7 +700,9 @@ document.addEventListener("click", function (e) {
   const link = e.target.closest("[data-login-intent]");
   if (!link) return;
   e.preventDefault();
+
   const next = window.location.pathname + window.location.search;
+
   fetch("/api/auth/intent", {
     method: "POST",
     headers: {
@@ -710,7 +712,8 @@ document.addEventListener("click", function (e) {
     credentials: "same-origin",
     body: JSON.stringify({ next }),
   }).then(() => {
-    window.location.href = link.href;
+    // 🔥 PROMOSIKAN intent → explicit query
+    window.location.href = `/login/?next=${encodeURIComponent(next)}`;
   });
 });
 

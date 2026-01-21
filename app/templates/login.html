@@ -135,7 +135,11 @@
       <!-- Flash message End -->
 
       <form id="loginForm" action="{{ url_for('login') }}" method="post">
-        <input type="hidden" name="next" value="{{ next_url or '' }}" />
+        <input
+          type="hidden"
+          name="next"
+          value="{{ request.args.get('next') or session.get('intent_url','') }}"
+        />
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <!-- Username -->
         <div class="mb-4">

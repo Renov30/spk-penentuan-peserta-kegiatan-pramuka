@@ -419,80 +419,87 @@ def is_safe_url(target):
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
-def resolve_redirect_target():
+def resolve_redirect_target():      
     candidates = [
-        request.form.get("next"),
-        session.get("intent_url"),
-        session.get("next_url"),
-        request.args.get("next"),
+        request.args.get("next"),       # explicit
+        request.form.get("next"),       # explicit
+        session.get("oauth_next"),      # Google flow
+        session.get("intent_url"),      # implicit header intent (LAST but alive)
     ]
 
     for url in candidates:
-        app.logger.warning(f"[RESOLVER] testing url = {url}")
-        if url and is_safe_url(url):
-            app.logger.warning(f"[RESOLVER] accepted url = {url}")
-            return url
-
-    ref = request.referrer
-    if ref:
-        parsed = urlparse(ref)
-        ref_path = parsed.path
-        if parsed.query:
-            ref_path += "?" + parsed.query
-        if is_safe_url(ref_path):
-            return ref_path
+        if not url:
+            continue
+        if not is_safe_url(url):
+            continue
+        if url.startswith("/login"):
+            continue
+        return url
     return None
 
+def redirect_dashboard_by_role(user):
+    role_redirect = {
+        "admin": "admin_dashboard",
+        "penilai": "penilai_dashboard",
+        "peserta": "peserta_dashboard",
+    }
+    endpoint = role_redirect.get((user.level or "").lower())
+    return redirect(url_for(endpoint)) if endpoint else redirect(url_for("index"))
+
+def final_redirect_after_login():
+    ts = session.get("intent_ts")
+    if ts and time.time() - ts > 300:
+        #session.pop("intent_url", None)
+        session.pop("intent_ts", None)
+        
+    current_app.logger.debug({
+        "args_next": request.args.get("next"),
+        "form_next": request.form.get("next"),
+        "intent_url": session.get("intent_url"),
+        "oauth_next": session.get("oauth_next"),
+        "intent_ts": session.get("intent_ts"),
+    })
+    
+    redirect_url = resolve_redirect_target()
+    session.pop("oauth_next", None)
+    if redirect_url:
+        #session.pop("intent_url", None)
+        session.pop("intent_source", None)
+        session.pop("oauth_next", None)
+        return redirect(redirect_url)
+    return redirect_dashboard_by_role(current_user)
+
+# API PERLU DIEVALUASI
 @app.route("/api/auth/intent", methods=["POST"])
+@csrf.exempt
 def capture_login_intent():
     data = request.get_json(silent=True) or {}
     next_url = data.get("next")
 
-    # ===== DEBUG: REQUEST =====
-    app.logger.warning("[INTENT] ===== NEW REQUEST =====")
-    app.logger.warning(f"[INTENT] Raw JSON: {data}")
-    app.logger.warning(f"[INTENT] Received next: {next_url}")
-    app.logger.warning(f"[INTENT] Session BEFORE: {dict(session)}")
-
     if next_url and is_safe_url(next_url):
         session["intent_url"] = next_url
+        session["intent_source"] = "news_header"
+        session["intent_ts"] = time.time()
         session.modified = True
-
-        # ===== DEBUG: AFTER SET =====
-        app.logger.warning(f"[INTENT] Session AFTER set: {dict(session)}")
-        app.logger.warning(f"[INTENT] intent_url stored: {session.get('intent_url')}")
-
         return {"success": True}
-    app.logger.warning("[INTENT] Invalid or missing next")
     return {"success": False}, 400
 
 # Endpoint login
 @app.route('/login/', methods=['GET', 'POST'])
-@limiter.limit("20 per minute")
+@limiter.limit("5 per minute", methods=["POST"], key_func=lambda: request.form.get("username") or get_remote_address())
 def login():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
     form = LoginForm()
-
-    # ================= GET =================
-    if request.method == "GET":
-        # ===== DEBUG =====
-        app.logger.debug(f"[LOGIN GET] intent={session.get('intent_url')} next={session.get('next_url')}")
     
-        next_url = request.args.get('next')
-        if next_url and is_safe_url(next_url):
-            session['next_url'] = next_url
+    if request.method == "GET":
+        if "intent_url" in session and not request.args.get("next"):
+            # Promosikan intent → query
+            return redirect(url_for("login", next=session["intent_url"]))
 
     # ================= ALREADY AUTH =================
     if current_user.is_authenticated:
-        redirect_url = resolve_redirect_target()
-        session.pop("intent_url", None)
-        session.pop("next_url", None)
-
-        if redirect_url:
-            return redirect(redirect_url)
-        return redirect(url_for("index"))
+        return final_redirect_after_login()
 
     # ================= POST LOGIN =================
     if form.validate_on_submit():
@@ -507,49 +514,29 @@ def login():
             flash(t['login_password_invalid'], 'danger')
         else:
             login_user(user)
-
-            redirect_url = resolve_redirect_target()
-            app.logger.debug(f"[LOGIN POST] session intent_url = {session.get('intent_url')}")
-            app.logger.debug(f"[LOGIN POST] session next_url   = {session.get('next_url')}")
-            app.logger.debug(f"[LOGIN POST] redirect_url      = {redirect_url}")
-            
-            session.pop("intent_url", None)
-            session.pop("next_url", None)
-            app.logger.debug(f"[LOGIN POST] after pop, intent_url = {session.get('intent_url')}")
-            flash(f"{t['login_success']}, {escape(user.username)}.", 'success')
-
-            if redirect_url:
-                return redirect(redirect_url)
-
-            # fallback role
-            if user.level == "admin":
-                return redirect(url_for('admin_dashboard'))
-            elif user.level == "penilai":
-                return redirect(url_for('penilai_dashboard'))
-            elif user.level == "peserta":
-                return redirect(url_for('peserta_dashboard'))
-            return redirect(url_for('index'))
-    return render_template("login.html", form=form, next_url=session.get("next_url"))
+            return final_redirect_after_login()
+    return render_template("login.html", form=form)
 
 # Endpoint login with Google (Web Only)
 @app.route("/login/google/")
 @limiter.limit("20 per minute")
 def login_google():
-    next_url = request.args.get("next")
-    mode = request.args.get("mode", "login")
-    session["oauth_mode"] = mode
+    next_url = (
+        request.args.get("next")
+        or request.form.get("next")
+        or session.get("intent_url")
+    )
+    
+    session["oauth_mode"] = request.args.get("mode", "login")
 
     if next_url and is_safe_url(next_url):
-        session["next_next"] = next_url
+        session["oauth_next"] = next_url
     return oauth.google_web.authorize_redirect(url_for("login_google_callback", _external=True))
 
 # Endpoint Callback Login With Google (Web Only)
 @app.route("/login/google/callback/")
 @limiter.limit("60 per minute")
 def login_google_callback():
-    next_url = session.pop("oauth_next", None)
-    mode = session.get("oauth_mode", "login")
-
     lang = session.get("lang", "id")
     t = TRANSLATIONS.get(lang, TRANSLATIONS["id"])
 
@@ -557,7 +544,7 @@ def login_google_callback():
         # ================= GOOGLE OAUTH TOKEN =================
         token = oauth.google_web.authorize_access_token()
 
-        # Authlib sudah memverifikasi token & signature
+        # Authlib sudah memverifikasi signature & issuer
         claims = token.get("userinfo") or token.get("id_token_claims")
         if not claims:
             raise OAuthError("Missing Google userinfo")
@@ -574,7 +561,7 @@ def login_google_callback():
 
     except OAuthError as e:
         cleanup_oauth_temp()
-        logging.warning(f"Google OAuthError: {e}")
+        current_app.logger.warning(f"Google OAuthError: {e}")
         flash(t["google_service_unavailable"], "danger")
         return redirect(url_for("login"))
 
@@ -585,15 +572,15 @@ def login_google_callback():
 
     except Exception:
         cleanup_oauth_temp()
-        logging.exception("Unexpected Google OAuth callback error")
+        current_app.logger.exception("Unexpected Google OAuth callback error")
         flash(t["google_login_failed"], "danger")
         return redirect(url_for("login"))
 
     # ================= CLAIM-BASED USER DATA =================
     email = claims.get("email")
     email_verified = claims.get("email_verified", False)
-    picture = claims.get("picture")
     name = claims.get("name")
+    picture = claims.get("picture")
 
     if not email:
         cleanup_oauth_temp()
@@ -615,6 +602,7 @@ def login_google_callback():
     user = Users.query.filter_by(email=email).first()
 
     # ---------- USER BELUM TERDAFTAR ----------
+    mode = session.get("oauth_mode", "login")
     if not user:
         if mode != "register":
             cleanup_oauth_temp()
@@ -622,10 +610,15 @@ def login_google_callback():
             return redirect(url_for("login"))
 
         # MODE REGISTER
-        session["pending_user"] = {"email": email, "name": name, "picture": picture,}
+        session["pending_user"] = {
+            "email": email,
+            "name": name,
+            "picture": picture,
+        }
         session["pending_user_ts"] = time.time()
         cleanup_oauth_temp()
-        logging.info(f"Google register initiated for {email[:3]}***")
+
+        current_app.logger.info(f"Google register initiated for {email[:3]}***")
         return redirect(url_for("confirm_register"))
 
     # ---------- USER ADA ----------
@@ -635,27 +628,18 @@ def login_google_callback():
         return redirect(url_for("login"))
 
     # ================= DATA HARDENING =================
-    if not user.foto or user.foto == "img/default-user.png":
-        if isinstance(picture, str) and picture.startswith("https://"):
-            user.foto = picture
-            db.session.commit()
+    if (
+        not user.foto
+        or user.foto == "img/default-user.png"
+    ) and isinstance(picture, str) and picture.startswith("https://"):
+        user.foto = picture
+        db.session.commit()
 
     # ================= LOGIN USER =================
-    cleanup_all_oauth()
     login_user(user)
 
-    session["first_time_login"] = True
-    session.modified = True
-
-    logging.info(f"User '{user.username}' login via Google.")
-    flash(f"{t['login_success']}, {escape(user.nama_lengkap)}.", "success")
-
-    # ================= REDIRECT =================
-    if next_url and is_safe_url(next_url):
-        return redirect(next_url)
-    role_redirect = {"admin": "admin_dashboard", "penilai": "penilai_dashboard", "peserta": "peserta_dashboard",}
-    endpoint = role_redirect.get((user.level or "").lower())
-    return redirect(url_for(endpoint)) if endpoint else redirect(url_for("index"))
+    # ================= FINAL REDIRECT =================
+    return final_redirect_after_login()
 
 # API Login with Google (iOS / Dekstop)
 @app.route("/api/auth/google", methods=["POST"])

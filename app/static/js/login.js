@@ -1,24 +1,31 @@
 function redirectToLoginWithGoogle() {
   const offlineAlert = document.getElementById("offline-alert");
 
-  // Jika user sedang offline
   if (!navigator.onLine) {
     if (offlineAlert) {
       offlineAlert.classList.remove("hidden");
     }
     return;
   }
-  let next = window.location.pathname + window.location.search;
+
+  // 🔥 AMBIL next DARI HIDDEN INPUT (login.html)
+  const nextInput = document.querySelector('input[name="next"]');
+  let next = nextInput ? nextInput.value : "";
+
+  // fallback terakhir
+  if (!next) {
+    next = window.location.pathname + window.location.search;
+  }
 
   // Hindari redirect loop ke halaman login
   if (next === "/login" || next === "/login/") {
     next = "";
   }
 
-  // Bangun URL login Google
   const url = next
     ? `/login/google/?next=${encodeURIComponent(next)}`
     : `/login/google/`;
+
   window.location.href = url;
 }
 
