@@ -1,5 +1,6 @@
 <!doctype html>
 <html
+  style="font-size: 80%"
   class="transition duration-300 ease-in-out"
   lang="{{ current_lang }}"
   x-data
@@ -18,8 +19,6 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
-
-    <!-- Vanila CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
@@ -69,10 +68,7 @@
           class="dashboard-main flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
           :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
-          <div class="container mx-auto p-6">
-            <!-- Notification Box -->
-            {% include 'notification_box.html' %}
-
+          <div class="container mx-auto p-6 max-w-7xl">
             <div class="flex justify-between items-center mb-8">
               <div>
                 <h1
@@ -93,7 +89,7 @@
 
             <!-- Event Selector -->
             <div
-              class="mb-6 p-6 rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              class="mb-6 rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }} p-6"
             >
               <label
                 class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
@@ -197,21 +193,12 @@
                       class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-50 text-gray-600' }} text-sm uppercase tracking-wider"
                     >
                       <th class="p-4 font-semibold text-center w-16">Rank</th>
-                      <th class="p-4 font-semibold">
-                        {{ 'Peserta' if current_lang == 'id' else 'Participant'
-                        }}
-                      </th>
-                      <th class="p-4 font-semibold">
-                        {{ 'Asal Gudep' if current_lang == 'id' else 'Scout
-                        Group' }}
-                      </th>
+                      <th class="p-4 font-semibold">Peserta</th>
+                      <th class="p-4 font-semibold">Asal Gudep</th>
                       <th class="p-4 font-semibold text-center">
-                        {{ 'Skor Akhir (Fuzzy)' if current_lang == 'id' else
-                        'Final Score (Fuzzy)' }}
+                        Skor Akhir (Fuzzy)
                       </th>
-                      <th class="p-4 font-semibold text-center">
-                        {{ 'Aksi' if current_lang == 'id' else 'Action' }}
-                      </th>
+                      <th class="p-4 font-semibold text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody
@@ -285,8 +272,7 @@
                           class="inline-block px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition"
                         >
                           <i class="fa-solid fa-eye mr-1"></i>
-                          {{ 'Lihat Nilai' if current_lang == 'id' else 'View
-                          Details' }}
+                          Lihat Nilai
                         </a>
                       </td>
                     </tr>
@@ -339,9 +325,5 @@
         </main>
       </div>
     </div>
-
-    <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} {% include 'script_notification.html'
-    %}
   </body>
 </html>

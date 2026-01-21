@@ -4906,7 +4906,145 @@ def penilai_detail_nilai(user_id, event_id):
 def admin_detail_nilai(user_id, event_id):
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    # Get all events
+    all_events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
     
+    # Get selected event from query parameter
+    selected_event_id = request.args.get('event_id', type=int)
+    selected_event = None
+    results = []
+    
+    if selected_event_id:
+        selected_event = Event.query.get(selected_event_id)
+        if selected_event:
+            from app.fuzzy_ahp import calculate_spk
+            
+            # Calculate SPK for this event
+            success, msg = calculate_spk(selected_event_id)
+            if not success:
+                logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            else:
+                # Buat notifikasi untuk admin saat hasil seleksi selesai
+                create_notification_to_all_admins(
+                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
+                )
+            
+            # Fetch results for this event only
+            hasil_seleksi = db.session.query(
+                HasilSeleksi,
+                Users,
+                Participants
+            ).join(
+                Users, HasilSeleksi.id_users == Users.id
+            ).outerjoin(
+                Participants, Users.email == Participants.email
+            ).filter(
+                HasilSeleksi.event_id == selected_event_id
+            ).order_by(
+                HasilSeleksi.ranking.asc()
+            ).all()
+            
+            # Build results list
+            for hasil, user, participant in hasil_seleksi:
+                results.append({
+                    'hasil': hasil,
+                    'user': user,
+                    'participant': participant
+                })
+        else:
+            flash(f"{t['event_not_found']}", "error")
+            selected_event = None
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template('admin/hasil_penilaian.html', assigned_events=all_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state, show_back_button=True)  # Tampilkan tombol kembali karena dibuka dari manajemen seleksi)
+
+@app.route('/admin/hasil-penilaian/rekap/<int:event_id>')
+@login_required
+@admin_required
+def admin_rekap_nilai_fuzzy(event_id):
+    from app.fuzzy_ahp import fuzzify_score
+    
+    # Get Event
+    event = Event.query.get_or_404(event_id)
+    
+    # Get Criteria
+    criterias = Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
+    # Normalize weights
+    total_bobot = sum(c.bobot for c in criterias)
+    criteria_weights = {c.id_kriteria: (c.bobot / total_bobot if total_bobot > 0 else 0) for c in criterias}
+    
+    # Get Quota
+    kuota = Kuota.query.filter_by(event_id=event_id).first()
+    total_kuota = (kuota.putra + kuota.putri) if kuota else 0
+    if total_kuota == 0:
+        total_kuota = 9999 # Default all if no quota set
+    
+    # Get Results (Users)
+    hasil_seleksi = db.session.query(
+        HasilSeleksi, Users, Participants
+    ).join(
+        Users, HasilSeleksi.id_users == Users.id
+    ).outerjoin(
+        Participants, Users.email == Participants.email
+    ).filter(
+        HasilSeleksi.event_id == event_id
+    ).order_by(
+        HasilSeleksi.ranking.asc()
+    ).all()
+    
+    rekap_data = []
+    
+    for hasil, user, participant in hasil_seleksi:
+        row = {
+            'nama': user.nama_lengkap,
+            'foto': user.foto if user.foto else 'img/default-user.png',
+            'asal_gudep': participant.asal_gudep if participant else '-',
+            'criteria_values': {},
+            'total_score': hasil.skor_akhir,
+            'rank': hasil.ranking,
+            'cluster': 1 if hasil.ranking <= total_kuota else 2,
+            'status': 'Berhak' if hasil.ranking <= total_kuota else 'Tidak Berhak'
+        }
+        
+        # Calculate per-criteria weighted score
+        for c in criterias:
+             # Get raw score
+            penilaian = Penilaian.query.filter_by(
+                id_users=user.id,
+                id_kriteria=c.id_kriteria
+            ).first()
+            
+            val = 0.0
+            if penilaian:
+                score = float(penilaian.nilai)
+                # Fuzzify
+                l, m, u = fuzzify_score(score)
+                # Weighting 
+                weight = criteria_weights.get(c.id_kriteria, 0)
+                
+                # Calculate contribution: Defuzzified(FuzzyScore * Weight)
+                # = (l*w + m*w + u*w) / 3
+                # = w * (l+m+u)/3
+                # = w * defuzzified_raw_score
+                
+                val = weight * ((l + m + u) / 3.0)
+            
+            row['criteria_values'][c.id_kriteria] = val
+            
+        rekap_data.append(row)
+        
+    sidebar_state = current_user.sidebar_state or 'expanded'
+    return render_template(
+        'admin/rekap_nilai_fuzzy.html',
+        event=event,
+        criteria_headers=criterias,
+        rekap_data=rekap_data,
+        sidebar_state=sidebar_state
+    )
+
+@app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
+@login_required
+@admin_required
+def admin_detail_nilai(user_id, event_id):
     from app.ahp_calculator import AHPCalculator, FuzzyAHPCalculator, TFN_SCALE, RI_TABLE, get_tfn_reciprocal
     from app.fuzzy_ahp import get_pairwise_matrix_from_db
     import numpy as np
