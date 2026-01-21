@@ -8,8 +8,6 @@ function redirectToLoginWithGoogle() {
     }
     return;
   }
-
-  // Ambil next URL (path + query)
   let next = window.location.pathname + window.location.search;
 
   // Hindari redirect loop ke halaman login
@@ -21,8 +19,6 @@ function redirectToLoginWithGoogle() {
   const url = next
     ? `/login/google/?next=${encodeURIComponent(next)}`
     : `/login/google/`;
-
-  // Redirect ke endpoint login Google
   window.location.href = url;
 }
 

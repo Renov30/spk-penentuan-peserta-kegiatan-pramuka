@@ -1,8 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="{{ news.excerpt or news.title }}" />
+    <meta name="author" content="{{ news.author.nama_lengkap }}" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
 
     <title>
@@ -13,6 +15,12 @@
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
+    />
+
+    <!-- Vanila CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/news_detail.css') }}"
     />
 
     <!-- Animate.css -->
@@ -35,18 +43,11 @@
 
     <!-- Script Theme -->
     {% include 'script_theme.html' %}
-
-    <style>
-      @media (max-width: 768px) {
-        .floating-share {
-          display: none;
-        }
-      }
-    </style>
   </head>
 
   <body
     data-slug="{{ news.slug }}"
+    data-login-url="/login/"
     data-auth="{{ '1' if current_user.is_authenticated else '0' }}"
     data-lang="{{ current_lang }}"
     x-data="{ ready: false }"
@@ -74,9 +75,11 @@
           class="flex justify-center gap-6 text-sm text-gray-600 dark:text-gray-400"
         >
           <span
-            ><i class="fa-regular fa-calendar mr-1"></i>{{
-            news.published_at.strftime('%d %B %Y') }}</span
-          >
+            ><i class="fa-regular fa-calendar mr-1"></i>
+            <time datetime="{{ news.published_at.isoformat() }}">
+              {{ news.published_at.strftime('%d %B %Y') }}
+            </time>
+          </span>
           <span
             ><i class="fa-regular fa-user mr-1"></i>{{ news.author.nama_lengkap
             }}</span
@@ -89,10 +92,11 @@
     <main class="pb-24">
       <div class="max-w-5xl mx-auto px-6">
         <article
-          class="rounded-2xl shadow-xl overflow-hidden {{ 'bg-white dark:bg-gray-800' if current_theme == 'dark' else 'bg-white dark:bg-gray-300' }}"
+          class="relative rounded-2xl shadow-xl overflow-hidden {{ 'bg-white dark:bg-gray-800' if current_theme == 'dark' else 'bg-white dark:bg-gray-300' }}"
         >
           <!-- Thumbnail -->
           <img
+            loading="lazy"
             src="{{ url_for('static', filename=news.thumbnail) }}"
             class="w-full max-h-[450px] object-cover"
             alt="{{ news.title }}"
@@ -103,6 +107,7 @@
             <button
               class="reaction-btn hover:scale-110 transition cursor-pointer"
               data-emoji="❤️"
+              aria-label="React with heart"
             >
               <i class="fa-regular fa-heart"></i>
             </button>
@@ -127,11 +132,12 @@
           </div>
 
           <!-- Read Time Badge -->
-          <div
-            class="absolute top-4 right-4 bg-yellow-500 text-black px-3 py-1 rounded-lg text-sm text-justify font-semibold shadow-md"
+          <aside
+            aria-label="Estimated reading time"
+            class="absolute pointer-events-none top-4 right-4 bg-yellow-500 text-black px-3 py-1 rounded-lg text-sm text-justify font-semibold shadow-md"
           >
             {{ news.content | striptags | length // 200 }} min read
-          </div>
+          </aside>
 
           <!-- Content -->
           <div
@@ -153,32 +159,50 @@
             </a>
 
             <!-- Floating Share Buttons -->
-            <div class="fixed right-6 top-1/3 flex flex-col gap-3 z-50">
+            <nav
+              id="shareNav"
+              aria-label="Share article"
+              class="fixed right-6 top-1/3 flex flex-col gap-3 z-50"
+            >
               <a
                 href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}"
                 target="_blank"
-                class="bg-blue-600 p-3 rounded-full text-white hover:bg-blue-700 transition"
+                rel="noopener"
+                class="share-btn bg-blue-600"
                 aria-label="Share on Facebook"
+                tabindex="0"
+                data-label="Facebook"
               >
                 <i class="fa-brands fa-facebook"></i>
+                <span class="share-tooltip">Facebook</span>
               </a>
+
               <a
                 href="https://twitter.com/intent/tweet?url={{ request.url }}"
                 target="_blank"
-                class="bg-sky-400 p-3 rounded-full text-white hover:bg-sky-500 transition"
+                rel="noopener"
+                class="share-btn bg-sky-400"
                 aria-label="Share on Twitter"
+                tabindex="0"
+                data-label="Twitter"
               >
                 <i class="fa-brands fa-twitter"></i>
+                <span class="share-tooltip">Twitter</span>
               </a>
+
               <a
                 href="https://api.whatsapp.com/send?text={{ request.url }}"
                 target="_blank"
-                class="bg-green-500 p-3 rounded-full text-white hover:bg-green-600 transition"
+                rel="noopener"
+                class="share-btn bg-green-500"
                 aria-label="Share on WhatsApp"
+                tabindex="0"
+                data-label="WhatsApp"
               >
                 <i class="fa-brands fa-whatsapp"></i>
+                <span class="share-tooltip">WhatsApp</span>
               </a>
-            </div>
+            </nav>
 
             <!-- Author Card -->
             <div
@@ -189,7 +213,7 @@
                 alt="{{ news.author.nama_lengkap }}"
                 class="w-16 h-16 rounded-full object-cover"
               />
-              <div>
+              <address>
                 <p class="font-semibold">{{ news.author.nama_lengkap }}</p>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{ news.author.bio or ('Author info not available' if
@@ -202,7 +226,7 @@
                   {{ 'Lihat semua artikel' if current_lang == 'id' else 'View
                   all articles' }}
                 </a>
-              </div>
+              </address>
             </div>
           </div>
         </article>
@@ -332,6 +356,9 @@
 
     <div
       id="loginModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-title"
       class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm"
     >
       <div
@@ -340,7 +367,7 @@
         <div class="text-center">
           <i class="fa-solid fa-lock text-yellow-500 text-4xl mb-3 mt-3.5"></i>
 
-          <h3 class="text-lg font-bold mb-2">
+          <h3 id="login-title" class="text-lg font-bold mb-2">
             {{ 'Login Diperlukan' if current_lang == 'id' else 'Login Required'
             }}
           </h3>
@@ -408,19 +435,6 @@
       {% endfor %}
     </div>
     {% endif %} {% endwith %}
-
-    <!-- JS: Simple inline reactions -->
-    <script>
-      document.querySelectorAll(".reaction-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const emoji = btn.dataset.emoji;
-          btn.textContent = emoji; // bisa update jumlah / reaction realtime nanti
-          btn.classList.add("animate-bounce");
-          setTimeout(() => btn.classList.remove("animate-bounce"), 600);
-          alert(`You reacted with ${emoji}!`); // contoh feedback sederhana
-        });
-      });
-    </script>
 
     <script src="{{ url_for('static', filename='js/news_detail.js') }}"></script>
   </body>

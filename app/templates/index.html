@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
@@ -161,7 +161,6 @@
             <i class="fas fa-user-plus"></i>
           </a>
 
-          <!-- Notifikasi -->
           <!-- Notifikasi (Removed) -->
 
           <!-- Hamburger Icon (Mobile Only) -->
@@ -191,6 +190,12 @@
               class="hover:text-yellow-400 text-lg {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
             >
               {{ 'Berita' if current_lang == 'id' else 'News' }}
+            </a>
+            <a
+              href="#event"
+              class="hover:text-yellow-400 text-lg {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+            >
+              {{ 'Kegiatan' if current_lang == 'id' else 'Event' }}
             </a>
             <a
               href="#about"
@@ -373,6 +378,14 @@
         >
           <i class="fas fa-newspaper"></i>
           {{ 'Berita' if current_lang == 'id' else 'News' }}
+        </a>
+        <a
+          href="#event"
+          @click="open = false"
+          class="hover:text-yellow-400 text-base flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+        >
+          <i class="fas fa-newspaper"></i>
+          {{ 'Kegiatan' if current_lang == 'id' else 'Event' }}
         </a>
         <a
           href="#about"
@@ -561,10 +574,87 @@
       </div>
     </section>
 
+    <!-- Event Section -->
+    <section
+      id="event"
+      class="py-12 md:py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      <div class="container mx-auto px-6 mt-12">
+        <div class="text-center mb-12">
+          <h2
+            class="text-2xl font-semibold mb-4 {{ 'text-yellow-400' if current_theme == 'dark' else 'text-yellow-500' }}"
+          >
+            {{ 'Kegiatan Terbaru' if current_lang == 'id' else 'Latest News' }}
+          </h2>
+          <p
+            class="text-sm {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+          >
+            {{ 'Ikuti perkembangan terbaru dan informasi terkini dari kami.' if
+            current_lang == 'id' else 'Stay updated with our latest news and
+            information.' }}
+          </p>
+        </div>
+
+        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+          {% for news in latest_news %}
+          <div
+            class="rounded-xl shadow-lg overflow-hidden hover:shadow-yellow-400/30 transition cursor-pointer flex flex-col {{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+          >
+            <!-- Thumbnail -->
+            <img
+              src="{{ url_for('static', filename=news.thumbnail) }}"
+              alt="{{ news.title }}"
+              class="w-full h-48 object-cover"
+            />
+
+            <div class="flex-grow p-3.5">
+              <!-- Title -->
+              <h3
+                class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
+                {{ news.title }}
+              </h3>
+
+              <!-- Date -->
+              <p
+                class="text-sm mb-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+              >
+                {{ news.published_at.strftime('%d %B %Y') }}
+              </p>
+
+              <!-- Excerpt -->
+              <p
+                class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+              >
+                {{ news.content | striptags | truncate(150) }}
+              </p>
+            </div>
+
+            <!-- Read More -->
+            <a
+              href="{{ url_for('news_detail', slug=news.slug) }}"
+              class="text-yellow-400 text-[0.9rem] hover:underline font-semibold mt-6 self-start p-3.5"
+            >
+              {{ 'Selengkapnya →' if current_lang == 'id' else 'Learn More →' }}
+            </a>
+          </div>
+          {% endfor %} {% if latest_news|length == 0 %}
+          <div class="text-center text-gray-400 py-12">
+            <i class="fa-regular fa-newspaper text-4xl mb-4"></i>
+            <p class="text-lg font-semibold">
+              {{ 'Belum ada berita' if current_lang == 'id' else 'No news
+              available' }}
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
     <!-- About Section -->
     <section
       id="about"
-      class="py-12 md:py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+      class="py-12 md:py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
     >
       <div class="container mx-auto px-6 mt-7">
         <div class="text-center mb-12">

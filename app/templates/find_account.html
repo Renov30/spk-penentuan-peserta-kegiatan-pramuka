@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
@@ -11,16 +11,21 @@
       href="{{ url_for('static', filename='css/output.css') }}"
     />
   </head>
-  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <body
+    class="min-h-screen flex items-center justify-center {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
+  >
     <div
-      class="bg-white mt-10 p-10 md:px-16 rounded-[12px] shadow-lg w-full max-w-[35rem]"
+      class="mt-10 p-10 md:px-16 rounded-[12px] shadow-lg w-full max-w-[35rem] {{ 'bg-gray-900 transition hover:shadow-amber-500' if current_theme == 'dark' else 'bg-white hover:shadow-gray-700' }}"
     >
       <h1
-        class="text-center text-gray-800 text-2xl md:text-3xl font-bold mb-10"
+        class="text-center text-2xl md:text-3xl font-bold mb-10 {{ 'text-white' if current_theme == 'dark' else 'text-gray-800' }}"
       >
         {{ 'Cari Akun Anda' if current_lang == 'id' else 'Find Your Account' }}
       </h1>
-      <p id="description" class="text-sm text-gray-500 mb-8 text-center">
+      <p
+        id="description"
+        class="text-sm mb-8 text-center {{ 'text-white' if current_theme == 'dark' else 'text-gray-500' }}"
+      >
         {{ 'Masukkan username dan email Anda untuk mencari akun Anda.' if
         current_lang == 'id' else 'Please enter your username and email address
         to search for your account' }}
@@ -48,7 +53,7 @@
           <label
             for="username"
             autocomplete="off"
-            class="block text-xl font-medium text-gray-700 mb-2"
+            class="block text-xl font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
             >Username</label
           >
           <input
@@ -58,7 +63,7 @@
             placeholder="{{ 'Masukkan username' if current_lang == 'id' else 'Enter your username' }}"
             required
             autocomplete="off"
-            class="w-full p-3 text-xl border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            class="w-full p-3 text-xl border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
           />
         </div>
 
@@ -67,7 +72,7 @@
             id="label-email-or-hp"
             for="email"
             autocomplete="off"
-            class="block text-xl font-medium text-gray-700 mb-2"
+            class="block text-xl font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
             >Email</label
           >
           <input
@@ -77,7 +82,7 @@
             placeholder="{{ 'Masukkan email' if current_lang == 'id' else 'Enter your email' }}"
             required
             autocomplete="off"
-            class="w-full p-3 text-xl border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            class="w-full p-3 text-xl border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
           />
         </div>
 
@@ -85,14 +90,14 @@
           <button
             type="button"
             onclick="history.back()"
-            class="w-full bg-green-600 hover:bg-green-700 text-white text-1xl font-semibold py-3 px-5 rounded-lg transition"
+            class="w-full bg-green-600 hover:bg-green-700 text-white text-1xl font-semibold py-3 px-5 rounded-lg transition cursor-pointer"
           >
             {{ 'Kembali' if current_lang == 'id' else 'Bakc' }}
           </button>
           <button
             type="submit"
             name="send"
-            class="w-full bg-green-600 hover:bg-green-700 text-white text-1xl font-semibold py-3 px-5 rounded-lg transition"
+            class="w-full bg-green-600 hover:bg-green-700 text-white text-1xl font-semibold py-3 px-5 rounded-lg transition cursor-pointer"
           >
             {{ 'Cari' if current_lang == 'id' else 'Search' }}
           </button>
@@ -102,7 +107,7 @@
           <button
             id="toggleButton"
             type="button"
-            class="w-full bg-blue-800 hover:bg-blue-900 text-white text-1xl font-semibold py-3 px-5 rounded-lg transition"
+            class="w-full bg-blue-800 hover:bg-blue-900 text-white text-1xl font-semibold py-3 px-5 rounded-lg transition cursor-pointer"
           >
             {{ 'Cari Menggunakan Nomor HP' if current_lang == 'id' else 'Search
             Using Phone Number' }}

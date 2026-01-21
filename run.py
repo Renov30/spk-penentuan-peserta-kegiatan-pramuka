@@ -36,6 +36,7 @@ import pdfkit
 import requests
 import random, string
 import logging
+logging.basicConfig(level=logging.DEBUG)
 import os
 import secrets
 import time
@@ -65,7 +66,6 @@ app.secret_key = secret_key or secrets.token_hex(32)
 # Custom Session Interface to fix bytes/string issue
 class FixedFileSystemSessionInterface(FileSystemSessionInterface):
     def generate_sid(self):
-        """Generate session ID and ensure it's always a string"""
         sid = super().generate_sid()
         if isinstance(sid, bytes):
             try:
@@ -76,7 +76,6 @@ class FixedFileSystemSessionInterface(FileSystemSessionInterface):
         return sid
     
     def save_session(self, app, session, response):
-        """Override save_session to ensure session_id is always a string"""
         original_set_cookie = response.set_cookie
         
         def patched_set_cookie(key, value='', *args, **kwargs):
@@ -101,21 +100,10 @@ existing_interface.__class__ = FixedFileSystemSessionInterface
 csrf = CSRFProtect(app)
 app.config.from_object(Config)
 limiter = Limiter(get_remote_address, app=app)
-logging.basicConfig(filename='login.log', level=logging.INFO,
-                    format='%(asctime)s %(levelname)s:%(message)s')
+logging.basicConfig(filename='login.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 # Helper function untuk membuat notifikasi
 def create_notification(user_id, message):
-    """
-    Membuat notifikasi untuk user tertentu
-    
-    Args:
-        user_id: ID user yang akan menerima notifikasi
-        message: Pesan notifikasi (maks 255 karakter)
-    
-    Returns:
-        Notification object atau None jika gagal
-    """
     try:
         # Validasi user_id
         if not user_id:
@@ -131,11 +119,7 @@ def create_notification(user_id, message):
         if len(message) > 255:
             message = message[:252] + "..."
         
-        notification = Notification(
-            user_id=user_id,
-            message=message.strip(),
-            is_read=False
-        )
+        notification = Notification(user_id=user_id, message=message.strip(), is_read=False)
         db.session.add(notification)
         db.session.flush()  
         db.session.commit()
@@ -150,12 +134,6 @@ def create_notification(user_id, message):
 
 # Helper function untuk membuat notifikasi ke semua admin
 def create_notification_to_all_admins(message):
-    """
-    Membuat notifikasi untuk semua admin
-    
-    Args:
-        message: Pesan notifikasi
-    """
     try:
         if not message or not message.strip():
             logging.error("create_notification_to_all_admins: message is None or empty")
@@ -203,7 +181,6 @@ ALLOWED_EXTENSIONS_IMAGE = {'png', 'jpg', 'jpeg', 'gif'}
 ALLOWED_EXTENSIONS_DOC = {'csv', 'xls', 'xlsx'}
 
 def allowed_file(filename, file_type='image'):
-    """Validasi extension file"""
     if file_type == 'image':
         allowed = ALLOWED_EXTENSIONS_IMAGE
     else:
@@ -212,7 +189,6 @@ def allowed_file(filename, file_type='image'):
 
 # Helper function untuk mendapatkan pengaturan dari database
 def get_setting(key, default=None):
-    """Mendapatkan pengaturan dari database, fallback ke default jika tidak ada"""
     try:
         setting = Settings.query.filter_by(key=key).first()
         if setting and setting.value:
@@ -222,19 +198,17 @@ def get_setting(key, default=None):
     return default
 
 def get_email_settings():
-    """Mendapatkan pengaturan email dari database atau env/config"""
     return {
         'mail_server': get_setting('mail_server') or os.getenv("MAIL_SERVER", "smtp.gmail.com"),
-        'mail_port': int(get_setting('mail_port') or os.getenv("MAIL_PORT", "465")),
-        'mail_use_tls': get_setting('mail_use_tls', 'false') == 'true',
-        'mail_use_ssl': get_setting('mail_use_ssl', 'true') == 'true',
+        'mail_port': int(get_setting('mail_port') or os.getenv("MAIL_PORT", "587")), 
+        'mail_use_tls': get_setting('mail_use_tls', 'true') == 'true',
+        'mail_use_ssl': get_setting('mail_use_ssl', 'false') == 'true',
         'mail_username': get_setting('mail_username') or os.getenv("MAIL_USERNAME", ""),
         'mail_password': get_setting('mail_password') or os.getenv("MAIL_PASSWORD", ""),
         'mail_enabled': get_setting('mail_enabled', 'true') == 'true'
     }
 
 def get_sms_settings():
-    """Mendapatkan pengaturan SMS/WhatsApp dari database atau env/config"""
     return {
         'twilio_account_sid': get_setting('twilio_account_sid') or os.getenv("TWILIO_ACCOUNT_SID", ""),
         'twilio_auth_token': get_setting('twilio_auth_token') or os.getenv("TWILIO_AUTH_TOKEN", ""),
@@ -244,16 +218,17 @@ def get_sms_settings():
 
 # Configure Flask-Mail OTP - akan diupdate dari database saat runtime
 email_config = get_email_settings()
-app.config['MAIL_SERVER'] = email_config['mail_server']
-app.config['MAIL_PORT'] = email_config['mail_port']
-app.config['MAIL_USE_TLS'] = email_config['mail_use_tls']
-app.config['MAIL_USE_SSL'] = email_config['mail_use_ssl']
-app.config['MAIL_USERNAME'] = email_config['mail_username']
-app.config['MAIL_PASSWORD'] = email_config['mail_password']
+app.config.update(
+    MAIL_SERVER=email_config['mail_server'],
+    MAIL_PORT=email_config['mail_port'],
+    MAIL_USE_TLS=email_config['mail_use_tls'],
+    MAIL_USE_SSL=email_config['mail_use_ssl'],
+    MAIL_USERNAME=email_config['mail_username'],
+    MAIL_PASSWORD=email_config['mail_password']
+)
 mail = Mail(app)
 
 def send_whatsapp_code(phone, code):
-    """Mengirim kode verifikasi via WhatsApp menggunakan pengaturan dari database"""
     sms_config = get_sms_settings()
     
     if not sms_config['sms_enabled']:
@@ -270,42 +245,33 @@ def send_whatsapp_code(phone, code):
         client.messages.create(body=message_body, from_=sms_config['twilio_whatsapp_from'], to=f'whatsapp:{phone}')
         return True
     except Exception as e:
+        current_app.logger.error(f"Failed to send email/WhatsApp: {e}")
         return False
 
 def send_email_message(subject, recipients, html_body, sender=None):
-    """Mengirim email menggunakan pengaturan dari database"""
-    email_config = get_email_settings()  
+    email_config = get_email_settings()
+    
     if not email_config['mail_enabled']:
+        current_app.logger.warning("Mail disabled in config")
         return False
     if not email_config['mail_username'] or not email_config['mail_password']:
+        current_app.logger.warning("Mail username/password belum di-set")
         return False
+
     try:
-        # Update config sementara
-        original_config = {'MAIL_SERVER': app.config.get('MAIL_SERVER'), 'MAIL_PORT': app.config.get('MAIL_PORT'), 'MAIL_USE_SSL': app.config.get('MAIL_USE_SSL'), 'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'), 'MAIL_USERNAME': app.config.get('MAIL_USERNAME'), 'MAIL_PASSWORD': app.config.get('MAIL_PASSWORD')}
-        app.config['MAIL_SERVER'] = email_config['mail_server']
-        app.config['MAIL_PORT'] = email_config['mail_port']
-        app.config['MAIL_USE_SSL'] = email_config['mail_use_ssl']
-        app.config['MAIL_USE_TLS'] = email_config['mail_use_tls']
-        app.config['MAIL_USERNAME'] = email_config['mail_username']
-        app.config['MAIL_PASSWORD'] = email_config['mail_password']
-        
-        # Reinitialize mail dengan config baru
-        mail.init_app(app)
-        msg = Message(subject=subject, recipients=recipients if isinstance(recipients, list) else [recipients], html=html_body, sender=sender or email_config['mail_username'])
+        msg = Message(
+            subject=subject,
+            recipients=recipients if isinstance(recipients, list) else [recipients],
+            html=html_body,
+            sender=sender or email_config['mail_username']
+        )
         mail.send(msg)
-        
-        # Restore original config
-        for key, value in original_config.items():
-            app.config[key] = value
-        mail.init_app(app)
+        current_app.logger.info(f"Email berhasil dikirim ke {recipients}")
         return True
     except Exception as e:
-        try:
-            for key, value in original_config.items():
-                app.config[key] = value
-            mail.init_app(app)
-        except:
-            pass
+        import traceback
+        current_app.logger.error(f"Gagal mengirim email ke {recipients}: {e}")
+        current_app.logger.error(traceback.format_exc())
         return False
 
 def normalize_phone_number(phone):
@@ -326,7 +292,6 @@ def generate_username(email):
 
 # Google OAuth Config
 oauth = OAuth(app)
-
 GOOGLE_WEB_CLIENT = {
     "client_id": os.getenv("GOOGLE_CLIENT_ID_WEB"),
     "client_secret": os.getenv("GOOGLE_CLIENT_SECRET_WEB"),
@@ -335,6 +300,7 @@ GOOGLE_WEB_CLIENT = {
 
 GOOGLE_PUBLIC_CLIENT_IDS = {
     "ios": os.getenv("GOOGLE_CLIENT_ID_IOS"),
+    #"android": os.getenv("GOOGLE_CLIENT_ID_ANDROID"),
     "desktop": os.getenv("GOOGLE_CLIENT_ID_DESKTOP"),
 }
 
@@ -364,7 +330,6 @@ def verify_google_id_token_multi(id_token_str: str):
             return claims, client_type
         except Exception:
             continue
-
     raise InvalidGrantError("Invalid Google ID Token")
 
 def cleanup_oauth_temp():
@@ -381,16 +346,13 @@ def cleanup_pending_oauth():
         
 # Fungsi untuk mengecek keberadaan username, nomor hp, email dan password serta untuk menghasilkan kode verifikasi 6 digit
 def check_username_in_db(username):
-    user = Users.query.filter_by(username=username).first()
-    return user is not None
-
-def check_phone_in_db(phone):
-    user = Users.query.filter_by(nomor_hp=phone).first()
-    return user is not None
+    return Users.query.filter_by(username=username).first() is not None
 
 def check_email_in_db(email):
-    user = Users.query.filter_by(email=email).first()
-    return user is not None
+    return Users.query.filter_by(email=email).first() is not None
+
+def check_phone_in_db(phone):
+    return Users.query.filter_by(nomor_hp=phone).first() is not None
 
 def check_password_in_db(username, password):
     user = Users.query.filter_by(username=username).first()
@@ -442,7 +404,6 @@ def inject_notifications():
         user = Users.query.filter_by(username=session['user'].get('username')).first()
     if user:
         unread_count = Notification.query.filter_by(user_id=user.id, is_read=False).count()
-        # Get recent notifications (last 10) for the notification tray
         notifications = Notification.query.filter_by(user_id=user.id).order_by(Notification.id.desc()).limit(10).all()
     return dict(notification_count=unread_count, notifications=notifications)
 
@@ -458,6 +419,53 @@ def is_safe_url(target):
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
+def resolve_redirect_target():
+    candidates = [
+        request.form.get("next"),
+        session.get("intent_url"),
+        session.get("next_url"),
+        request.args.get("next"),
+    ]
+
+    for url in candidates:
+        app.logger.warning(f"[RESOLVER] testing url = {url}")
+        if url and is_safe_url(url):
+            app.logger.warning(f"[RESOLVER] accepted url = {url}")
+            return url
+
+    ref = request.referrer
+    if ref:
+        parsed = urlparse(ref)
+        ref_path = parsed.path
+        if parsed.query:
+            ref_path += "?" + parsed.query
+        if is_safe_url(ref_path):
+            return ref_path
+    return None
+
+@app.route("/api/auth/intent", methods=["POST"])
+def capture_login_intent():
+    data = request.get_json(silent=True) or {}
+    next_url = data.get("next")
+
+    # ===== DEBUG: REQUEST =====
+    app.logger.warning("[INTENT] ===== NEW REQUEST =====")
+    app.logger.warning(f"[INTENT] Raw JSON: {data}")
+    app.logger.warning(f"[INTENT] Received next: {next_url}")
+    app.logger.warning(f"[INTENT] Session BEFORE: {dict(session)}")
+
+    if next_url and is_safe_url(next_url):
+        session["intent_url"] = next_url
+        session.modified = True
+
+        # ===== DEBUG: AFTER SET =====
+        app.logger.warning(f"[INTENT] Session AFTER set: {dict(session)}")
+        app.logger.warning(f"[INTENT] intent_url stored: {session.get('intent_url')}")
+
+        return {"success": True}
+    app.logger.warning("[INTENT] Invalid or missing next")
+    return {"success": False}, 400
+
 # Endpoint login
 @app.route('/login/', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")
@@ -465,60 +473,63 @@ def login():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
     
-    next_url = request.form.get('next') or request.args.get('next')
     form = LoginForm()
-    if current_user.is_authenticated:
-        if next_url and is_safe_url(next_url):
-            logging.info(f"Redirect after login to: {next_url}")
-            return redirect(next_url)
-        # Redirect ke dashboard sesuai role, bukan ke landing page
-        if current_user.level == "admin":
-            return redirect(url_for('admin_dashboard'))
-        elif current_user.level == "penilai":
-            return redirect(url_for('penilai_dashboard'))
-        elif current_user.level == "peserta":
-            return redirect(url_for('peserta_dashboard'))
-        else:
-            return redirect(url_for('index'))
 
+    # ================= GET =================
+    if request.method == "GET":
+        # ===== DEBUG =====
+        app.logger.debug(f"[LOGIN GET] intent={session.get('intent_url')} next={session.get('next_url')}")
+    
+        next_url = request.args.get('next')
+        if next_url and is_safe_url(next_url):
+            session['next_url'] = next_url
+
+    # ================= ALREADY AUTH =================
+    if current_user.is_authenticated:
+        redirect_url = resolve_redirect_target()
+        session.pop("intent_url", None)
+        session.pop("next_url", None)
+
+        if redirect_url:
+            return redirect(redirect_url)
+        return redirect(url_for("index"))
+
+    # ================= POST LOGIN =================
     if form.validate_on_submit():
-        username = form.username.data
-        password = form.password.data
-        
-        # Query user dari database
-        user = Users.query.filter_by(username=username).first()
+        user = Users.query.filter_by(username=form.username.data).first()
 
         if not user:
-            logging.warning(f"Login gagal: username '{username}' tidak ditemukan.")
             flash(t['username_invalid'], 'danger')
         elif user.login_method == "google":
             flash(t["use_google_login"], "warning")
             return redirect(url_for("login"))
-        elif not check_password_hash(user.password, password):
-            logging.warning(f"Login gagal: password salah untuk user '{username}'.")
+        elif not check_password_hash(user.password, form.password.data):
             flash(t['login_password_invalid'], 'danger')
         else:
             login_user(user)
-            session['username'] = username  
-            session['role'] = user.level
-            safe_username = escape(username)
-            logging.info(f"User '{username}' berhasil login sebagai {user.level}.")
-            flash(f"{t['login_success']}, {safe_username}.", 'success')
-            session['first_time_login'] = True
+
+            redirect_url = resolve_redirect_target()
+            app.logger.debug(f"[LOGIN POST] session intent_url = {session.get('intent_url')}")
+            app.logger.debug(f"[LOGIN POST] session next_url   = {session.get('next_url')}")
+            app.logger.debug(f"[LOGIN POST] redirect_url      = {redirect_url}")
             
-            if next_url and is_safe_url(next_url):
-                return redirect(next_url)
-            
-            # Redirect sesuai role
+            session.pop("intent_url", None)
+            session.pop("next_url", None)
+            app.logger.debug(f"[LOGIN POST] after pop, intent_url = {session.get('intent_url')}")
+            flash(f"{t['login_success']}, {escape(user.username)}.", 'success')
+
+            if redirect_url:
+                return redirect(redirect_url)
+
+            # fallback role
             if user.level == "admin":
                 return redirect(url_for('admin_dashboard'))
             elif user.level == "penilai":
                 return redirect(url_for('penilai_dashboard'))
             elif user.level == "peserta":
                 return redirect(url_for('peserta_dashboard'))
-            else:
-                return redirect(url_for('login')) 
-    return render_template('login.html', form=form)
+            return redirect(url_for('index'))
+    return render_template("login.html", form=form, next_url=session.get("next_url"))
 
 # Endpoint login with Google (Web Only)
 @app.route("/login/google/")
@@ -529,7 +540,7 @@ def login_google():
     session["oauth_mode"] = mode
 
     if next_url and is_safe_url(next_url):
-        session["oauth_next"] = next_url
+        session["next_next"] = next_url
     return oauth.google_web.authorize_redirect(url_for("login_google_callback", _external=True))
 
 # Endpoint Callback Login With Google (Web Only)
@@ -760,10 +771,7 @@ def do_register():
 
     new_user = Users(
         username=username,
-        password=generate_password_hash(
-            secrets.token_urlsafe(32),
-            method="pbkdf2:sha256"
-        ),
+        password=generate_password_hash(secrets.token_urlsafe(32), method="pbkdf2:sha256"),
         nama_lengkap=pending["name"],
         email=email,
         jenis_kelamin="laki-laki",
@@ -788,10 +796,8 @@ def do_register():
 
     session.pop("pending_user", None)
     login_user(new_user)
-
     session["first_time_login"] = True
     session.modified = True
-
     logging.info(f"User baru '{username}' berhasil registrasi via Google.")
     flash(t["register_success"], "welcome")
     return redirect(url_for("peserta_dashboard"))
@@ -856,28 +862,28 @@ def register():
         return redirect(url_for('register'))
     return render_template('register.html')
 
-# Endpoint Find Account
+# ======= ENDPOINT FIND ACCOUNT =======
 @app.route('/find_account/', methods=['GET', 'POST'])
 def find_account():
     lang = session.get('lang', 'id')
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
+
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
         phone = request.form.get('no-hp')
-        # Pastikan username diisi
+
         if not username:
             flash(f"{t['username_required']}", 'danger')
             return redirect(url_for('find_account'))
 
         # ===== Kondisi 1: Username + Email =====
         if email and not phone:
-            # Validasi format email
             email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
             if not re.match(email_pattern, email):
                 flash(f"{t['invalid_email_format']}", 'danger')
                 return redirect(url_for('find_account'))
+
             user_exists = check_username_in_db(username)
             email_exists = check_email_in_db(email)
 
@@ -886,7 +892,7 @@ def find_account():
                 session['verification_code'] = verification_code
                 session['verification_code_expiry'] = time.time() + 180
                 session['username'] = username
-                
+
                 safe_code = escape(verification_code)
                 verify_url = url_for('verify_code', _external=True)
                 email_subject = t.get('email_verify_subject', 'Verifikasi Akun Anda')
@@ -900,16 +906,20 @@ def find_account():
                     </a>
                 </p>
                 """
-                send_email_message(email_subject, email, html_body)
-                flash(f"{t['email_sent_code']} {escape(email)}", 'success')
+                sent = send_email_message(email_subject, email, html_body)
+                if sent:
+                    flash(f"{t['email_sent_code']} {escape(email)}", 'success')
+                else:
+                    flash("Gagal mengirim email. Periksa konfigurasi server email.", 'danger')
                 return redirect(url_for('verify_code'))
+
             elif not user_exists and not email_exists:
                 flash(f"{t['username_email_not_found']}", 'danger')
             elif not user_exists:
                 flash(f"{t['username_not_found']}", 'danger')
             elif not email_exists:
                 flash(f"{t['email_not_found']}", 'danger')
-    
+
         # ===== Kondisi 2: Username + Nomor HP =====
         elif phone and not email:
             normalized_phone = normalize_phone_number(phone)
@@ -917,21 +927,19 @@ def find_account():
             if not re.match(phone_pattern, normalized_phone):
                 flash(f"{t['invalid_phone_format']}", 'danger')
                 return redirect(url_for('find_account'))
-            
-            # Cek keberadaan username dan nomor HP di database
+
             user_exists = check_username_in_db(username)
             hp_exists = check_phone_in_db(normalized_phone)
             if user_exists and hp_exists:
                 verification_code = generate_verification_code()
                 session['verification_code'] = verification_code
-                session['verification_code_expiry'] = time.time() + 180 
+                session['verification_code_expiry'] = time.time() + 180
                 session['username'] = username
                 session['phone'] = normalized_phone
                 send_whatsapp_code(normalized_phone, verification_code)
                 flash(f"{t['whatsapp_sent_code']} {normalized_phone}", 'success')
                 return redirect(url_for('verify_code'))
-            
-            # Penanganan error spesifik
+
             if not user_exists and not hp_exists:
                 flash(f"{t['username_phone_not_found']}", 'danger')
             elif not user_exists:
@@ -941,35 +949,48 @@ def find_account():
             return redirect(url_for('find_account'))
         else:
             flash(f"{t['email_or_phone_required']}", 'danger')
+
         return redirect(url_for('find_account'))
+
     return render_template('find_account.html')
 
-# Endpoint untuk verify_code
+# ======= ENDPOINT VERIFY CODE =======
 @app.route('/verify_code/', methods=['GET', 'POST'])
 def verify_code():
     lang = session.get('lang', 'id')
     messages = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
-    
+
     if request.method == 'GET':
         expiry_time = session.get('verification_code_expiry', 0)
         return render_template('verify_code.html', expiry_time=int(expiry_time))
+
+    # POST
     expiry_time = session.get('verification_code_expiry', 0)
     data = request.get_json()
     if not data or 'verification_code' not in data:
         return jsonify({'message': messages.get('verification_code_required', 'Kode verifikasi wajib diisi.')}), 400
+
+    # Validasi tipe data
+    try:
+        code = int(data['verification_code'])
+    except ValueError:
+        return jsonify({'message': 'Kode verifikasi harus berupa angka.'}), 400
+
     if time.time() > expiry_time:
         return jsonify({'message': messages.get('verification_code_expired', 'Kode verifikasi telah kedaluwarsa.')}), 400
-    code = data['verification_code']
-    if 'verification_code' in session and session['verification_code'] == int(code):
-        # Generate reset token dan set waktu kedaluwarsa
+
+    if 'verification_code' in session and session['verification_code'] == code:
+        # Generate reset token
         reset_token = secrets.token_hex(16)
+        hashed_token = generate_password_hash(reset_token)
         expiry_time = datetime.now() + timedelta(minutes=10)
         username = session.get('username')
         user = Users.query.filter_by(username=username).first()
         if not user:
             return jsonify({'message': messages.get('user_not_found', 'Pengguna tidak ditemukan.')}), 404
-        # Simpan token dan waktu kedaluwarsa di database lalu sertakan URL reset password dengan token
-        user.reset_token = reset_token
+
+        # Simpan token hash dan expiry
+        user.reset_token = hashed_token
         user.token_exp = expiry_time
         db.session.commit()
         reset_password_url = escape(url_for('reset_password', token=reset_token, _external=True))
@@ -3875,12 +3896,7 @@ def post_comment_admin(news_id):
     if not content:
         return jsonify({'error': 'Komentar tidak boleh kosong'}), 400
 
-    comment = Comment(
-        news_id=news_id,
-        user_id=current_user.id,
-        parent_id=parent_id,
-        content=content
-    )
+    comment = Comment(news_id=news_id, user_id=current_user.id, parent_id=parent_id, content=content)
     db.session.add(comment)
     db.session.commit()
     return jsonify({'message': 'Komentar berhasil ditambahkan'}), 201
@@ -3951,7 +3967,6 @@ def post_comment_user(slug):
 @login_required
 def like_comment(id):
     comment = Comment.query.get_or_404(id)
-
     existing_like = CommentLike.query.filter_by(comment_id=comment.id, user_id=current_user.id).first()
 
     if existing_like:

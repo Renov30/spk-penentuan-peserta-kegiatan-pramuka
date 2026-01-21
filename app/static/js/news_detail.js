@@ -1,4 +1,5 @@
 // ================= MODAL LOGIN =================
+console.log("[DEBUG] news_detail.js loaded");
 const lang = document.body.dataset.lang || "id";
 const messages = {
   id: {
@@ -50,7 +51,7 @@ function escapeHTML(str) {
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#39;",
-      }[m])
+      })[m],
   );
 }
 
@@ -62,19 +63,16 @@ function renderComment(comment) {
   const userName = comment.user.nama_lengkap || "User";
   const foto = comment.user.foto;
   const defaultFoto = "/static/images/profil-default.jpg";
-
   let avatar = "";
 
   // ===== AVATAR LOGIC (MENIRU JINJA) =====
   if (foto && typeof foto === "string") {
     let fotoUrl = null;
-
     if (foto.startsWith("http://") || foto.startsWith("https://")) {
       fotoUrl = foto;
     } else if (foto.startsWith("uploads/") || foto.startsWith("img/")) {
       fotoUrl = `/static/${foto}`;
     }
-
     if (fotoUrl) {
       avatar = `
         <img
@@ -99,23 +97,23 @@ function renderComment(comment) {
 
   return `
     <div id="comment-${comment.id}" class="mb-6 ${
-    isReply ? "ml-6 border-l pl-4" : ""
-  }">
+      isReply ? "ml-6 border-l pl-4" : ""
+    }">
       <div class="flex items-start gap-3">
         ${avatar}
         <div class="w-full">
           <p class="font-semibold">${escapeHTML(userName)}</p>
           <p class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}">${escapeHTML(
-            comment.content
+            comment.content,
           )}</p>
           <div class="flex gap-4 text-xs mt-1">
             <button id="reply-btn-${comment.id}" onclick="openReplyForm(${
-    comment.id
-  }, '${escapeHTML(
-    userName
-  )}')" class="text-blue-600 hover:text-blue-700 cursor-pointer">${
-    t.reply
-  }</button>
+              comment.id
+            }, '${escapeHTML(
+              userName,
+            )}')" class="text-blue-600 hover:text-blue-700 cursor-pointer">${
+              t.reply
+            }</button>
             ${
               comment.is_owner
                 ? `
@@ -138,8 +136,8 @@ function renderComment(comment) {
             <button onclick="likeComment(${
               comment.id
             }, this)" class="like-btn text-xs flex items-center gap-1 ${
-    comment.is_liked ? "text-red-500" : "text-gray-500"
-  } hover:text-red-500 transition cursor-pointer">
+              comment.is_liked ? "text-red-500" : "text-gray-500"
+            } hover:text-red-500 transition cursor-pointer">
               <span class="heart">❤️</span>
               <span class="like-count">${comment.likes}</span>
             </button>
@@ -148,7 +146,7 @@ function renderComment(comment) {
                 ? `<button data-state="hidden" onclick="toggleReplies(${
                     comment.id
                   }, this)" class="text-yellow-500 hover:text-yellow-600 cursor-pointer">${t.seeReplies(
-                    comment.reply_count
+                    comment.reply_count,
                   )}</button>`
                 : ""
             }
@@ -254,7 +252,6 @@ function enableCommentsScroll(slug) {
 
   container.style.maxHeight = "400px";
   container.style.overflowY = "auto";
-
   let debounceTimer;
   container.addEventListener("scroll", () => {
     clearTimeout(debounceTimer);
@@ -304,7 +301,6 @@ function loadComments(slug, reset = false) {
   if (loadingComments || !hasNextComments) return;
   loadingComments = true;
   showLoader();
-
   fetch(`/news/${slug}/comments?page=${commentPage}`)
     .then((res) => res.json())
     .then((data) => {
@@ -348,6 +344,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const slug = document.body.dataset.slug;
   if (slug) loadComments(slug, true);
   initCommentForm();
+  initInlineReactions();
+  initShareButtons();
 });
 
 // ================= LOAD BALASAN (ON DEMAND) =================
@@ -370,6 +368,43 @@ function loadReplies(commentId, button) {
       button.remove();
     })
     .catch((err) => console.error("Load replies error:", err));
+}
+
+// ================= SHARE BUTTON INTERACTIONS =================
+function initShareButtons() {
+  const buttons = document.querySelectorAll("#shareNav .share-btn");
+  if (!buttons.length) return;
+
+  buttons.forEach((btn) => {
+    // === MOUSE EVENTS ===
+    btn.addEventListener("mouseenter", () => {
+      btn.classList.add("ring-2", "ring-white/70");
+    });
+
+    btn.addEventListener("mouseleave", () => {
+      btn.classList.remove("ring-2", "ring-white/70");
+    });
+
+    // === KEYBOARD EVENTS ===
+    btn.addEventListener("keydown", (e) => {
+      // Enter / Space → trigger click
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        btn.click();
+      }
+
+      // Escape → blur (keluar fokus)
+      if (e.key === "Escape") {
+        btn.blur();
+      }
+    });
+
+    // === CLICK FEEDBACK ===
+    btn.addEventListener("click", () => {
+      btn.classList.add("scale-90");
+      setTimeout(() => btn.classList.remove("scale-90"), 150);
+    });
+  });
 }
 
 // ================= SUBMIT KOMENTAR =================
@@ -514,7 +549,7 @@ function deleteComment(id) {
             commentEl.classList.add(
               "opacity-0",
               "transition-all",
-              "duration-300"
+              "duration-300",
             );
             setTimeout(() => commentEl.remove(), 300);
           }
@@ -524,7 +559,7 @@ function deleteComment(id) {
             repliesEl.classList.add(
               "opacity-0",
               "transition-all",
-              "duration-300"
+              "duration-300",
             );
             setTimeout(() => repliesEl.remove(), 300);
           }
@@ -576,14 +611,12 @@ function editComment(id) {
 
   const textarea = contentEl.querySelector("textarea");
   textarea.focus();
-
   const cancelEdit = () => {
     contentEl.textContent = originalContent;
     if (editBtn) editBtn.style.display = "inline-block";
   };
 
   contentEl.querySelector(".cancel-btn").onclick = cancelEdit;
-
   contentEl.querySelector(".save-btn").onclick = () => {
     const newContent = textarea.value.trim();
     if (!newContent) {
@@ -592,7 +625,6 @@ function editComment(id) {
     }
 
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
-
     fetch(`/comment/${id}/edit`, {
       method: "POST",
       headers: {
@@ -605,12 +637,10 @@ function editComment(id) {
       .then((data) => {
         if (data.success) {
           contentEl.textContent = data.comment.content;
-
-          // Highlight perubahan
           commentEl.classList.add("bg-gray-700", "animate-pulse");
           setTimeout(
             () => commentEl.classList.remove("bg-gray-700", "animate-pulse"),
-            2000
+            2000,
           );
           if (editBtn) editBtn.style.display = "inline-block";
         } else {
@@ -664,3 +694,44 @@ document.addEventListener("DOMContentLoaded", () => {
   if (slug) loadComments(slug);
   initCommentForm();
 });
+
+// ================= LOGIN REDIRECT (HEADER ICON) =================
+document.addEventListener("click", function (e) {
+  const link = e.target.closest("[data-login-intent]");
+  if (!link) return;
+  e.preventDefault();
+  const next = window.location.pathname + window.location.search;
+  fetch("/api/auth/intent", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ next }),
+  }).then(() => {
+    window.location.href = link.href;
+  });
+});
+
+// ================= SIMPLE INLINE REACTIONS =================
+function initInlineReactions() {
+  const buttons = document.querySelectorAll(".reaction-btn");
+  if (!buttons.length) return;
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const emoji = btn.dataset.emoji;
+      if (!emoji) return;
+
+      btn.textContent = emoji;
+      btn.classList.add("animate-bounce");
+
+      setTimeout(() => {
+        btn.classList.remove("animate-bounce");
+      }, 600);
+
+      alert(`You reacted with ${emoji}!`);
+    });
+  });
+}

@@ -135,12 +135,8 @@
       <!-- Flash message End -->
 
       <form id="loginForm" action="{{ url_for('login') }}" method="post">
+        <input type="hidden" name="next" value="{{ next_url or '' }}" />
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <input
-          type="hidden"
-          name="next"
-          value="{{ request.args.get('next', '') }}"
-        />
         <!-- Username -->
         <div class="mb-4">
           <label

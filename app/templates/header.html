@@ -1,11 +1,8 @@
 <!-- Header -->
 <header
   id="main-header"
-  x-data="{
-    isPublic: {{ is_public_page | default(false) | lower }}
-  }"
-  class="fixed top-0 bg-opacity-100 backdrop-blur transition-all duration-300 shadow z-40
-         {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-gray-100' }}"
+  x-data="{isPublic: {{ is_public_page | default(false) | lower }}}"
+  class="fixed top-0 bg-opacity-100 backdrop-blur transition-all duration-300 shadow z-100 isolate {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-gray-100' }}"
   :class="{
     'left-0 w-full': isPublic,
     'dashboard-header': !isPublic,
@@ -97,8 +94,9 @@
       {% else %}
       <!-- Halaman PUBLIK → dengan next -->
       <a
-        href="{{ url_for('login', next=request.path) }}"
-        class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl relative z-50"
+        href="{{ url_for('login', next=request.full_path) }}"
+        data-login-intent
+        class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl relative pointer-events-auto z-101"
         title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
       >
         <i class="fas fa-user-plus"></i>
