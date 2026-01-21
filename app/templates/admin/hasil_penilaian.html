@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
-      {{ 'Hasil Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading
-      Results | Scout DSS' }}
+      {{ 'Hasil Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading Results | Scout DSS' }}
     </title>
     <link
       rel="stylesheet"
@@ -65,15 +64,12 @@
                 <h1
                   class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                 >
-                  {{ 'Hasil Penilaian & Ranking' if current_lang == 'id' else
-                  'Grading Results & Ranking' }}
+                  {{ 'Hasil Penilaian & Ranking' if current_lang == 'id' else 'Grading Results & Ranking' }}
                 </h1>
                 <p
                   class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
                 >
-                  {{ 'Daftar peringkat peserta berdasarkan metode Fuzzy AHP' if
-                  current_lang == 'id' else 'List of participant rankings based
-                  on Fuzzy AHP method' }}
+                  {{ 'Daftar peringkat peserta berdasarkan metode Fuzzy AHP' if current_lang == 'id' else 'List of participant rankings based on Fuzzy AHP method' }}
                 </p>
               </div>
               {% if show_back_button|default(True) %}
@@ -122,6 +118,13 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        <!-- Tombol Lihat Detail -->
+                        <a href="{{ '#' }}" 
+                           class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info"></i>
+                            {{ 'Lihat Detail' }}
+                        </a>
+
                         <!-- Tombol Export PDF -->
                         <a href="{{ url_for('preview_laporan_seleksi', event_id=selected_event.id_kegiatan) }}" 
                            target="_blank"
@@ -209,15 +212,13 @@
                               {{ item.user.nama_lengkap }}
                             </div>
                             <div class="text-xs opacity-60">
-                              {{ item.participant.golongan|title if
-                              item.participant else '-' }}
+                              {{ item.participant.golongan|title if item.participant else '-' }}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td class="p-4 text-sm opacity-80">
-                        {{ item.participant.asal_gudep if item.participant else
-                        '-' }}
+                        {{ item.participant.asal_gudep if item.participant else '-' }}
                       </td>
                       <td class="p-4 text-center">
                         <span
