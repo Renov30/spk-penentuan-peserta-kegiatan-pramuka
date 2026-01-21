@@ -10,7 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>
-      {{ 'Hasil Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading Results | Scout DSS' }}
+      {{ 'Hasil Penilaian | SPK Pramuka' if current_lang == 'id' else 'Grading
+      Results | Scout DSS' }}
     </title>
 
     <!-- Tailwind CSS -->
@@ -73,12 +74,15 @@
                 <h1
                   class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
                 >
-                  {{ 'Hasil Penilaian & Ranking' if current_lang == 'id' else 'Grading Results & Ranking' }}
+                  {{ 'Hasil Penilaian & Ranking' if current_lang == 'id' else
+                  'Grading Results & Ranking' }}
                 </h1>
                 <p
                   class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
                 >
-                  {{ 'Daftar peringkat peserta berdasarkan metode Fuzzy AHP' if current_lang == 'id' else 'List of participant rankings based on Fuzzy AHP method' }}
+                  {{ 'Daftar peringkat peserta berdasarkan metode Fuzzy AHP' if
+                  current_lang == 'id' else 'List of participant rankings based
+                  on Fuzzy AHP method' }}
                 </p>
               </div>
             </div>
@@ -90,19 +94,32 @@
               <label
                 class="block text-sm font-medium mb-2 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
               >
-                {{ 'Pilih Kegiatan:' if current_lang == 'id' else 'Select Event:' }}
+                {{ 'Pilih Kegiatan:' if current_lang == 'id' else 'Select
+                Event:' }}
               </label>
               <select
                 onchange="window.location.href='{{ url_for('penilai_hasil_penilaian') }}?event_id=' + this.value"
                 class="w-full px-4 py-3 rounded-lg border {{ 'bg-gray-800 border-gray-700 text-white' if current_theme == 'dark' else 'bg-white border-gray-300 text-gray-900' }} focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">
-                  -- {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select Event' }} --
+                  -- {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select
+                  Event' }} --
                 </option>
                 {% for event in assigned_events %}
-                <option value="{{ event.id_kegiatan }}" 
-                        {% if selected_event and selected_event.id_kegiatan == event.id_kegiatan %}selected{% endif %}>
-                  {{ event.nama_kegiatan }} ({{ event.waktu_pelaksanaan_dimulai.strftime('%d %b %Y') }})
+                <option
+                  value="{{ event.id_kegiatan }}"
+                  {%
+                  if
+                  selected_event
+                  and
+                  selected_event.id_kegiatan=""
+                  ="event.id_kegiatan"
+                  %}selected{%
+                  endif
+                  %}
+                >
+                  {{ event.nama_kegiatan }} ({{
+                  event.waktu_pelaksanaan_dimulai.strftime('%d %b %Y') }})
                 </option>
                 {% endfor %}
               </select>
@@ -125,7 +142,8 @@
                     </h2>
                     <p class="text-sm mt-1 opacity-70">
                       <i class="fa-regular fa-calendar mr-2"></i>
-                      {{ selected_event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') }}
+                      {{ selected_event.waktu_pelaksanaan_dimulai.strftime('%d
+                      %B %Y') }}
                     </p>
                   </div>
 
@@ -161,7 +179,8 @@
                     <span
                       class="px-3 py-1 rounded-full text-xs font-medium {{ 'bg-blue-900 text-blue-200' if current_theme == 'dark' else 'bg-blue-100 text-blue-800' }}"
                     >
-                      {{ results|length }} {{ 'Peserta' if current_lang == 'id' else 'Participants' }}
+                      {{ results|length }} {{ 'Peserta' if current_lang == 'id'
+                      else 'Participants' }}
                     </span>
                   </div>
                 </div>
@@ -229,19 +248,22 @@
                               {{ item.user.nama_lengkap }}
                             </div>
                             <div class="text-xs opacity-60">
-                              {{ item.participant.golongan|title if item.participant else '-' }}
+                              {{ item.participant.golongan|title if
+                              item.participant else '-' }}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td class="p-4 text-sm opacity-80">
-                        {{ item.participant.asal_gudep if item.participant else '-' }}
+                        {{ item.participant.asal_gudep if item.participant else
+                        '-' }}
                       </td>
                       <td class="p-4 text-center">
                         <span
                           class="text-lg font-bold {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                         >
-                          {{ "%.2f"|format(item.hasil.skor_akhir)|replace(".", ",") }}
+                          {{ "%.2f"|format(item.hasil.skor_akhir)|replace(".",
+                          ",") }}
                         </span>
                       </td>
                       <td class="p-4 text-center">
@@ -262,7 +284,9 @@
                             class="fa-regular fa-folder-open text-3xl mb-2"
                           ></i>
                           <p>
-                            {{ 'Belum ada hasil penilaian untuk kegiatan ini.' if current_lang == 'id' else 'No grading results for this event yet.' }}
+                            {{ 'Belum ada hasil penilaian untuk kegiatan ini.'
+                            if current_lang == 'id' else 'No grading results for
+                            this event yet.' }}
                           </p>
                         </div>
                       </td>
@@ -285,12 +309,15 @@
               <h3
                 class="text-lg font-medium mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
               >
-                {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select an Event' }}
+                {{ 'Pilih Kegiatan' if current_lang == 'id' else 'Select an
+                Event' }}
               </h3>
               <p
                 class="max-w-md mx-auto {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
               >
-                {{ 'Silakan pilih kegiatan dari dropdown di atas untuk melihat hasil penilaian.' if current_lang == 'id' else 'Please select an event from the dropdown above to view grading results.' }}
+                {{ 'Silakan pilih kegiatan dari dropdown di atas untuk melihat
+                hasil penilaian.' if current_lang == 'id' else 'Please select an
+                event from the dropdown above to view grading results.' }}
               </p>
             </div>
             {% endif %}
