@@ -177,14 +177,14 @@
                       {% for criteria in criteria_headers %}
                       <td class="p-4 text-center text-sm">
                         {{
-                        "%.4f"|format(row.criteria_values.get(criteria.id_kriteria,
+                        "%.2f"|format(row.criteria_values.get(criteria.id_kriteria,
                         0.0))|replace('.', ',') }}
                       </td>
                       {% endfor %}
                       <td
                         class="p-4 text-center font-bold text-base {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                       >
-                        {{ "%.5f"|format(row.total_score)|replace('.', ',') }}
+                        {{ "%.2f"|format(row.total_score)|replace('.', ',') }}
                       </td>
                       <td class="p-4 text-center">
                         <span
