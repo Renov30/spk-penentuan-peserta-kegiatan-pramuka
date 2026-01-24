@@ -1,17 +1,10 @@
 <!doctype html>
-<html
-  class="transition duration-300 ease-in-out"
-  lang="{{ current_lang }}"
-  x-data
->
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>
-      {{ 'Rekapitulasi Nilai Lengkap | SPK Pramuka' if current_lang == 'id' else
-      'Complete Score Recap | Scout DSS' }}
-    </title>
+    <title>Rekapitulasi Hasil Fuzzy AHP</title>
+
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
@@ -33,7 +26,41 @@
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
     {% include "script_sidebar.html" %} {% include 'script_theme.html' %}
+
+    <style>
+      .step-card {
+        transition: all 0.3s ease;
+      }
+      .step-card:hover {
+        transform: translateY(-2px);
+      }
+      table th,
+      table td {
+        padding: 10px;
+        font-size: 0.85rem;
+        text-align: center;
+      }
+      .step-badge {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+      }
+      .metric-card {
+        padding: 16px;
+        border-radius: 12px;
+        background: #f9fafb;
+        text-align: center;
+        font-size: 0.85rem;
+      }
+    </style>
   </head>
+
   <body
     x-data="{ ready: false }"
     x-init="ready = true"
@@ -45,196 +72,442 @@
       class="flex h-screen {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
     >
       {% include 'sidebar.html' %}
-      <div class="flex flex-col flex-1 overflow-hidden h-full">
+      <div class="flex flex-col flex-1 overflow-hidden h-full m-3.5">
         {% include 'header.html' %}
         <main
           class="dashboard-main flex-1 overflow-y-auto pt-28 h-full transition-all duration-300"
           :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
-          <section
-            class="wow animate__animated animate__slideInLeft animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
-          >
-            <div class="container mx-auto p-6">
-              <div class="flex items-center justify-between mb-6">
-                <div>
-                  <h1
-                    class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                  >
-                    {{ 'Rekapitulasi Nilai Lengkap' if current_lang == 'id' else
-                    'Complete Score Recap' }}
-                  </h1>
-                  <p
-                    class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                  >
-                    {{ 'Detail perhitungan nilai fuzzy per kriteria untuk semua
-                    peserta' if current_lang == 'id' else 'Detailed fuzzy score
-                    calculation per criteria for all participants' }}
-                  </p>
-                </div>
-                <a
-                  href="{{ url_for('admin_hasil_penilaian') }}?event_id={{ event.id_kegiatan }}"
-                  class="px-4 py-2 rounded-lg {{ 'bg-gray-700 hover:bg-gray-600' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-300' }} transition"
-                >
-                  <i class="fa-solid fa-arrow-left mr-2"></i>{{ 'Kembali' if
-                  current_lang == 'id' else 'Back' }}
-                </a>
-              </div>
-
-              <!-- Event Info -->
+          <!-- ===================================================== -->
+          <!-- HEADER -->
+          <!-- ===================================================== -->
+          <section class="mb-8 bg-white rounded-2xl p-6 shadow-sm border">
+            <div class="flex items-start gap-4">
               <div
-                class="mb-6 rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }} p-6"
+                class="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-100 text-indigo-600"
               >
-                <h2
-                  class="text-xl font-bold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
-                >
-                  {{ event.nama_kegiatan }}
-                </h2>
-                <p class="text-sm mt-1 opacity-70">
-                  <i class="fa-regular fa-calendar mr-2"></i>{{
-                  event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') }}
+                <i class="fa-solid fa-layer-group text-xl"></i>
+              </div>
+              <div>
+                <h1 class="text-2xl font-bold">
+                  Rekapitulasi Hasil Metode Fuzzy AHP
+                </h1>
+                <p class="text-sm text-gray-600 mt-1">
+                  Tampilan kolektif tahapan perhitungan dan bobot kriteria
+                  global
                 </p>
-              </div>
-
-              <!-- Info Table -->
-              <div
-                class="overflow-x-auto rounded-xl shadow-lg {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <div
-                  class="p-4 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                >
-                  <h3 class="font-semibold text-lg">
-                    Tabel Nilai Bobot Global dan Cluster
-                  </h3>
-                </div>
-                <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr
-                      class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-50 text-gray-600' }} text-xs uppercase tracking-wider"
-                    >
-                      <th
-                        class="p-4 font-semibold border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                      >
-                        No
-                      </th>
-                      <th
-                        class="p-4 font-semibold border-b min-w-[250px] {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                      >
-                        Alternatif (Peserta)
-                      </th>
-                      {% for criteria in criteria_headers %}
-                      <th
-                        class="p-4 font-semibold text-center border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                      >
-                        {{ criteria.nama_kriteria }}
-                        <div class="text-[10px] opacity-70 normal-case">
-                          ({{ "%.3f"|format(criteria.bobot) }})
-                        </div>
-                      </th>
-                      {% endfor %}
-                      <th
-                        class="p-4 font-semibold text-center border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                      >
-                        Bobot Global
-                      </th>
-                      <th
-                        class="p-4 font-semibold text-center border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                      >
-                        Ranking
-                      </th>
-                      <th
-                        class="p-4 font-semibold text-center border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                      >
-                        Cluster
-                      </th>
-                      <th
-                        class="p-4 font-semibold text-center border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                      >
-                        Keterangan
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody
-                    class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}"
-                  >
-                    {% for row in rekap_data %}
-                    <tr
-                      class="transition-colors hover:bg-opacity-50 {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}"
-                    >
-                      <td class="p-4 text-center text-sm opacity-70">
-                        {{ loop.index }}
-                      </td>
-                      <td class="p-4">
-                        <div class="flex items-center gap-3">
-                          <img
-                            src="{{ url_for('static', filename=row.foto) }}"
-                            alt="{{ row.nama }}"
-                            class="w-10 h-10 rounded-full object-cover border-2 {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-200' }}"
-                            style="width: 40px; height: 40px; min-width: 40px"
-                          />
-                          <div>
-                            <div
-                              class="font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                            >
-                              {{ row.nama }}
-                            </div>
-                            <div class="text-xs opacity-60">
-                              {{ row.asal_gudep }}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      {% for criteria in criteria_headers %}
-                      <td class="p-4 text-center text-sm">
-                        {{
-                        "%.2f"|format(row.criteria_values.get(criteria.id_kriteria,
-                        0.0))|replace('.', ',') }}
-                      </td>
-                      {% endfor %}
-                      <td
-                        class="p-4 text-center font-bold text-base {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
-                      >
-                        {{ "%.2f"|format(row.total_score)|replace('.', ',') }}
-                      </td>
-                      <td class="p-4 text-center">
-                        <span
-                          class="inline-flex items-center justify-center w-8 h-8 rounded-full {{ 'bg-yellow-400 text-yellow-900' if row.rank == 1 else ('bg-gray-300 text-gray-800' if row.rank == 2 else ('bg-amber-600 text-white' if row.rank == 3 else 'bg-gray-100 dark:bg-gray-700 opacity-70')) }} font-bold text-sm"
-                        >
-                          {{ row.rank }}
-                        </span>
-                      </td>
-                      <td class="p-4 text-center">{{ row.cluster }}</td>
-                      <td class="p-4 text-center">
-                        {% if row.status == 'Berhak' %}
-                        <span
-                          class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
-                          >Berhak</span
-                        >
-                        {% else %}
-                        <span
-                          class="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800"
-                          >Tidak Berhak</span
-                        >
-                        {% endif %}
-                      </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                      <td
-                        colspan="{{ 6 + criteria_headers|length }}"
-                        class="p-8 text-center opacity-60"
-                      >
-                        Belum ada data penilaian.
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                <p class="text-xs text-gray-500 mt-2 italic">
+                  Berlaku untuk seluruh peserta seleksi
+                </p>
               </div>
             </div>
           </section>
+
+          <!-- ===================================================== -->
+          <!-- STEP 1 -->
+          <!-- ===================================================== -->
+          <section
+            x-data="{open:true}"
+            class="mb-5 bg-white rounded-2xl shadow-sm border step-card"
+          >
+            <header
+              @click="open=!open"
+              class="flex justify-between items-center p-4 cursor-pointer"
+            >
+              <div class="flex items-center gap-3">
+                <span class="step-badge bg-blue-600">1</span>
+                <h2 class="font-semibold">
+                  Fuzzifikasi Matriks Perbandingan Berpasangan
+                </h2>
+              </div>
+              <i
+                class="fa-solid"
+                :class="open?'fa-chevron-up':'fa-chevron-down'"
+              ></i>
+            </header>
+
+            <div x-show="open" x-collapse class="p-4 overflow-x-auto">
+              <table class="w-full border-collapse">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="text-left">Kriteria</th>
+                    <th>K1</th>
+                    <th>K2</th>
+                    <th>K3</th>
+                    <th>K4</th>
+                    <th>K5</th>
+                    <th>K6</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-t">
+                    <td class="text-left font-medium">
+                      Status Keaktifan di Gugus Depan
+                    </td>
+                    <td>(1,1,1)</td>
+                    <td>(3,4,5)</td>
+                    <td>(5,6,7)</td>
+                    <td>(3,4,5)</td>
+                    <td>(5,6,7)</td>
+                    <td>(3,4,5)</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left font-medium">Pencapaian SKU</td>
+                    <td>(1/5,1/4,1/3)</td>
+                    <td>(1,1,1)</td>
+                    <td>(3,4,5)</td>
+                    <td>(3,4,5)</td>
+                    <td>(3,4,5)</td>
+                    <td>(3,4,5)</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left font-medium">Pencapaian SPG</td>
+                    <td>(1/7,1/6,1/5)</td>
+                    <td>(1/5,1/4,1/3)</td>
+                    <td>(1,1,1)</td>
+                    <td>(3,4,5)</td>
+                    <td>(3,4,5)</td>
+                    <td>(3,4,5)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ===================================================== -->
+          <!-- STEP 2 -->
+          <!-- ===================================================== -->
+          <section
+            x-data="{open:false}"
+            class="mb-5 bg-white rounded-2xl shadow-sm border step-card"
+          >
+            <header
+              @click="open=!open"
+              class="flex justify-between items-center p-4 cursor-pointer"
+            >
+              <div class="flex items-center gap-3">
+                <span class="step-badge bg-green-600">2</span>
+                <h2 class="font-semibold">Perhitungan Vector Eigen</h2>
+              </div>
+              <i
+                class="fa-solid"
+                :class="open?'fa-chevron-up':'fa-chevron-down'"
+              ></i>
+            </header>
+
+            <div x-show="open" x-collapse class="p-4">
+              <table class="w-full">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="text-left">Kriteria</th>
+                    <th>Eigenvector (Bobot Awal)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-t">
+                    <td class="text-left">Status Keaktifan di Gugus Depan</td>
+                    <td>0.28</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Pencapaian SKU</td>
+                    <td>0.21</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Pencapaian SPG</td>
+                    <td>0.17</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Kesehatan Jasmani dan Rohani</td>
+                    <td>0.14</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Hasil Wawancara</td>
+                    <td>0.12</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Hasil Tes Tertulis</td>
+                    <td>0.08</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ===================================================== -->
+          <!-- STEP 3 -->
+          <!-- ===================================================== -->
+          <section
+            x-data="{open:false}"
+            class="mb-5 bg-white rounded-2xl shadow-sm border step-card"
+          >
+            <header
+              @click="open=!open"
+              class="flex justify-between items-center p-4 cursor-pointer"
+            >
+              <div class="flex items-center gap-3">
+                <span class="step-badge bg-yellow-500">3</span>
+                <h2 class="font-semibold">Uji Konsistensi Matriks</h2>
+              </div>
+              <i
+                class="fa-solid"
+                :class="open?'fa-chevron-up':'fa-chevron-down'"
+              ></i>
+            </header>
+
+            <div
+              x-show="open"
+              x-collapse
+              class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4"
+            >
+              <div class="metric-card">
+                Consistency Index (CI)<br /><strong>0.04</strong>
+              </div>
+              <div class="metric-card">
+                Random Index (RI)<br /><strong>1.24</strong>
+              </div>
+              <div class="metric-card bg-green-50 text-green-700">
+                Consistency Ratio (CR)<br /><strong>0.05</strong><br />
+                <span class="text-xs italic">Konsisten (CR ≤ 0.1)</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ===================================================== -->
+          <!-- STEP 4 -->
+          <!-- ===================================================== -->
+          <section
+            x-data="{open:false}"
+            class="mb-5 bg-white rounded-2xl shadow-sm border step-card"
+          >
+            <header
+              @click="open=!open"
+              class="flex justify-between items-center p-4 cursor-pointer"
+            >
+              <div class="flex items-center gap-3">
+                <span class="step-badge bg-purple-600">4</span>
+                <h2 class="font-semibold">
+                  Perhitungan Bobot Kriteria & Sintesis Fuzzy
+                </h2>
+              </div>
+              <i
+                class="fa-solid"
+                :class="open?'fa-chevron-up':'fa-chevron-down'"
+              ></i>
+            </header>
+
+            <div x-show="open" x-collapse class="p-4">
+              <table class="w-full">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="text-left">Kriteria</th>
+                    <th>Fuzzy Synthetic Extent (Si)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-t">
+                    <td class="text-left">Status Keaktifan di Gugus Depan</td>
+                    <td>(0.30, 0.42, 0.55)</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Pencapaian SKU</td>
+                    <td>(0.22, 0.33, 0.46)</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Pencapaian SPG</td>
+                    <td>(0.18, 0.27, 0.38)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ===================================================== -->
+          <!-- STEP 5 -->
+          <!-- ===================================================== -->
+          <section
+            x-data="{open:false}"
+            class="mb-5 bg-white rounded-2xl shadow-sm border step-card"
+          >
+            <header
+              @click="open=!open"
+              class="flex justify-between items-center p-4 cursor-pointer"
+            >
+              <div class="flex items-center gap-3">
+                <span class="step-badge bg-amber-600">5</span>
+                <h2 class="font-semibold">
+                  Perbandingan Probabilitas & Fuzzy Synthetic Extent
+                </h2>
+              </div>
+              <i
+                class="fa-solid"
+                :class="open?'fa-chevron-up':'fa-chevron-down'"
+              ></i>
+            </header>
+
+            <div x-show="open" x-collapse class="p-4">
+              <table class="w-full">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="text-left">Kriteria</th>
+                    <th>d′(Ai)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-t">
+                    <td class="text-left">Status Keaktifan di Gugus Depan</td>
+                    <td>1.00</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Pencapaian SKU</td>
+                    <td>0.82</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Pencapaian SPG</td>
+                    <td>0.67</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ===================================================== -->
+          <!-- STEP 6 -->
+          <!-- ===================================================== -->
+          <section
+            x-data="{open:true}"
+            class="mb-8 bg-white rounded-2xl shadow-sm border step-card"
+          >
+            <header
+              @click="open=!open"
+              class="flex justify-between items-center p-4 cursor-pointer"
+            >
+              <div class="flex items-center gap-3">
+                <span class="step-badge bg-teal-600">6</span>
+                <h2 class="font-semibold">Normalisasi & Bobot Global</h2>
+              </div>
+              <i
+                class="fa-solid"
+                :class="open?'fa-chevron-up':'fa-chevron-down'"
+              ></i>
+            </header>
+
+            <div x-show="open" x-collapse class="p-4">
+              <table class="w-full">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="text-left">Kriteria</th>
+                    <th>Bobot Global</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-t">
+                    <td class="text-left">Status Keaktifan di Gugus Depan</td>
+                    <td class="font-bold text-teal-600">0.28</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Pencapaian SKU</td>
+                    <td class="font-bold text-teal-600">0.21</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Pencapaian SPG</td>
+                    <td class="font-bold text-teal-600">0.17</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Kesehatan Jasmani dan Rohani</td>
+                    <td class="font-bold text-teal-600">0.14</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Hasil Wawancara</td>
+                    <td class="font-bold text-teal-600">0.12</td>
+                  </tr>
+                  <tr class="border-t">
+                    <td class="text-left">Hasil Tes Tertulis</td>
+                    <td class="font-bold text-teal-600">0.08</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ===================================================== -->
+<!-- STEP 7 -->
+<!-- ===================================================== -->
+<section
+  x-data="{open:true}"
+  class="mb-8 bg-white rounded-2xl shadow-sm border step-card"
+>
+  <header
+    @click="open=!open"
+    class="flex justify-between items-center p-4 cursor-pointer"
+  >
+    <div class="flex items-center gap-3">
+      <span class="step-badge bg-red-600">7</span>
+      <h2 class="font-semibold">
+        Hasil Nilai Akhir & Peringkat Peserta
+      </h2>
+    </div>
+    <i
+      class="fa-solid"
+      :class="open?'fa-chevron-up':'fa-chevron-down'"
+    ></i>
+  </header>
+
+  <div x-show="open" x-collapse class="p-4 overflow-x-auto">
+    <table class="w-full border-collapse">
+      <thead class="bg-gray-100">
+        <tr>
+          <th>No</th>
+          <th class="text-left">Nama Peserta</th>
+          <th>Nilai Akhir</th>
+          <th>Peringkat</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for peserta in hasil_akhir %}
+        <tr class="border-t">
+          <td>{{ loop.index }}</td>
+          <td class="text-left font-medium">
+            {{ peserta.nama }}
+          </td>
+          <td class="font-bold text-indigo-600">
+            {{ "%.3f"|format(peserta.nilai) }}
+          </td>
+          <td>
+            <span
+              class="px-3 py-1 rounded-full text-xs font-semibold
+              {% if peserta.peringkat == 1 %}
+                bg-green-100 text-green-700
+              {% elif peserta.peringkat <= kuota_lulus %}
+                bg-blue-100 text-blue-700
+              {% else %}
+                bg-gray-100 text-gray-600
+              {% endif %}"
+            >
+              {{ peserta.peringkat }}
+            </span>
+          </td>
+          <td>
+            {% if peserta.peringkat <= kuota_lulus %}
+              <span class="text-green-600 font-semibold">Lulus</span>
+            {% else %}
+              <span class="text-red-500 font-semibold">Tidak Lulus</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+          <p class="text-xs text-center text-gray-500 italic">
+            Bobot kriteria digunakan secara global dalam proses penilaian
+            seluruh peserta
+          </p>
         </main>
       </div>
     </div>
-    {% include 'script_animation.html' %}
   </body>
 </html>
