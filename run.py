@@ -5958,14 +5958,36 @@ def admin_rekap_nilai_fuzzy(event_id):
     # ==========================================
     # LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan
     # ==========================================
+    
+    # Helper function to format TFN values as fractions
+    def format_tfn_val(v):
+        if abs(v - round(v)) < 0.01:  # It's essentially an integer
+            return f"{int(round(v))}"
+        # Check for common reciprocals 1/2 to 1/9
+        for x in range(2, 10):
+            if abs(v - 1/x) < 0.02:
+                return f"1/{x}"
+        # Check for values like 3/2, 5/2, 7/2, 9/2
+        for num in [3, 5, 7, 9]:
+            if abs(v - num/2) < 0.02:
+                return f"{num}/2"
+        # Check for 2/3
+        if abs(v - 2/3) < 0.02:
+            return f"2/3"
+        return f"{v:.2f}"
+
+    def format_tfn_tuple(tfn_tuple):
+        l, m, u = tfn_tuple
+        return f"({format_tfn_val(l)}, {format_tfn_val(m)}, {format_tfn_val(u)})"
+
     tfn_scale_table = []
     for intensity in range(1, 10):
         tfn = TFN_SCALE.get(intensity, (1, 1, 1))
         reciprocal = get_tfn_reciprocal(tfn)
         tfn_scale_table.append({
             'intensity': intensity,
-            'tfn': tfn,
-            'reciprocal': reciprocal
+            'tfn': format_tfn_tuple(tfn),
+            'reciprocal': format_tfn_tuple(reciprocal)
         })
 
     # Get pairwise comparison matrix from database
@@ -5997,15 +6019,16 @@ def admin_rekap_nilai_fuzzy(event_id):
     if pairwise_matrix is not None and n > 0:
         pairwise_data = pairwise_matrix.tolist()
         
-        # Convert to fuzzy (TFN) matrix
+        # Convert to fuzzy (TFN) matrix with formatted strings
         fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
         fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
         fuzzy_pairwise_data = []
+
         for i in range(n):
             row = []
             for j in range(n):
-                tfn = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
-                row.append(tfn)
+                tfn_tuple = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
+                row.append(format_tfn_tuple(tfn_tuple))
             fuzzy_pairwise_data.append(row)
 
     # ==========================================

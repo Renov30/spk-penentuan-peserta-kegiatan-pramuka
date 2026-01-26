@@ -169,16 +169,8 @@
                           class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
                         >
                           <td class="p-2 font-bold">{{ item.intensity }}</td>
-                          <td class="p-2 tfn-value">
-                            ({{ "%.2f"|format(item.tfn[0]) }}, {{
-                            "%.2f"|format(item.tfn[1]) }}, {{
-                            "%.2f"|format(item.tfn[2]) }})
-                          </td>
-                          <td class="p-2 tfn-value">
-                            ({{ "%.2f"|format(item.reciprocal[0]) }}, {{
-                            "%.2f"|format(item.reciprocal[1]) }}, {{
-                            "%.2f"|format(item.reciprocal[2]) }})
-                          </td>
+                          <td class="p-2 tfn-value">{{ item.tfn }}</td>
+                          <td class="p-2 tfn-value">{{ item.reciprocal }}</td>
                         </tr>
                         {% endfor %}
                       </tbody>
@@ -275,9 +267,7 @@
                           <td
                             class="p-2 tfn-value {{ 'bg-blue-900/20' if i == j else '' }}"
                           >
-                            ({{ "%.1f"|format(fuzzy_pairwise_data[i][j][0]) }},
-                            {{ "%.1f"|format(fuzzy_pairwise_data[i][j][1]) }},
-                            {{ "%.1f"|format(fuzzy_pairwise_data[i][j][2]) }})
+                            {{ fuzzy_pairwise_data[i][j] }}
                           </td>
                           {% endfor %}
                         </tr>
