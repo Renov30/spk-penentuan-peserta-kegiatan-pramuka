@@ -5930,7 +5930,10 @@ def admin_hasil_penilaian():
 @login_required
 @admin_required
 def admin_rekap_nilai_fuzzy(event_id):
-    from app.fuzzy_ahp import fuzzify_score
+    from app.ahp_calculator import AHPCalculator, FuzzyAHPCalculator, TFN_SCALE, RI_TABLE, get_tfn_reciprocal
+    from app.fuzzy_ahp import get_pairwise_matrix_from_db, fuzzify_score
+    import numpy as np
+
     
     # Get Event
     event = Event.query.get_or_404(event_id)
@@ -5946,6 +5949,185 @@ def admin_rekap_nilai_fuzzy(event_id):
     total_kuota = (kuota.putra + kuota.putri) if kuota else 0
     if total_kuota == 0:
         total_kuota = 9999 # Default all if no quota set
+
+    # Get Criteria Names and IDs for Fuzzy Calculation
+    criteria_names = [c.nama_kriteria for c in criterias]
+    criteria_ids = [c.id_kriteria for c in criterias]
+    n = len(criterias)
+
+    # ==========================================
+    # LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan
+    # ==========================================
+    tfn_scale_table = []
+    for intensity in range(1, 10):
+        tfn = TFN_SCALE.get(intensity, (1, 1, 1))
+        reciprocal = get_tfn_reciprocal(tfn)
+        tfn_scale_table.append({
+            'intensity': intensity,
+            'tfn': tfn,
+            'reciprocal': reciprocal
+        })
+
+    # Get pairwise comparison matrix from database
+    pairwise_matrix = get_pairwise_matrix_from_db(event_id, criteria_ids)
+    pairwise_data = None
+    fuzzy_pairwise_data = None
+    use_generated_matrix = False
+
+    # Jika tidak ada matriks di database tapi ada bobot kriteria, generate matriks dari bobot
+    if pairwise_matrix is None and n > 0:
+        total_bobot_check = sum(c.bobot for c in criterias)
+        if total_bobot_check > 0:
+            # Generate matriks perbandingan dari rasio bobot
+            pairwise_matrix = np.ones((n, n))
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        # Rasio bobot sebagai nilai perbandingan
+                        wi = criterias[i].bobot if criterias[i].bobot > 0 else 0.001
+                        wj = criterias[j].bobot if criterias[j].bobot > 0 else 0.001
+                        ratio = wi / wj
+                        # Batasi ke skala 1-9
+                        if ratio >= 1:
+                            pairwise_matrix[i, j] = min(9, max(1, ratio))
+                        else:
+                            pairwise_matrix[i, j] = max(1/9, ratio)
+            use_generated_matrix = True
+
+    if pairwise_matrix is not None and n > 0:
+        pairwise_data = pairwise_matrix.tolist()
+        
+        # Convert to fuzzy (TFN) matrix
+        fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
+        fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
+        fuzzy_pairwise_data = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                tfn = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
+                row.append(tfn)
+            fuzzy_pairwise_data.append(row)
+
+    # ==========================================
+    # LANGKAH 2: Perhitungan Vector Eigen
+    # ==========================================
+    eigenvector_data = None
+    lambda_max = None
+
+    if pairwise_matrix is not None and n > 0:
+        ahp_calc = AHPCalculator(criteria_names)
+        ahp_calc.set_pairwise_matrix(pairwise_matrix)
+        eigenvector = ahp_calc.calculate_eigenvector()
+        lambda_max = ahp_calc.calculate_lambda_max()
+        
+        eigenvector_data = []
+        for i, name in enumerate(criteria_names):
+            eigenvector_data.append({
+                'criteria': name,
+                'value': float(eigenvector[i])
+            })
+
+    # ==========================================
+    # LANGKAH 3: Uji Konsistensi Matriks
+    # ==========================================
+    ci = None
+    cr = None
+    is_consistent = False
+    ri_value = RI_TABLE.get(n, 1.58) if n > 0 else 0
+
+    if pairwise_matrix is not None and n > 1:
+        ci, cr, is_consistent = ahp_calc.check_consistency()
+
+    # ==========================================
+    # LANGKAH 4: Sintesis Fuzzy (Fuzzy Synthetic Extent)
+    # ==========================================
+    fuzzy_synthetic_extent = None
+    row_sums_data = None
+    total_fuzzy_sum = None
+
+    if pairwise_matrix is not None and n > 0:
+        synthetic_extents = fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
+        
+        # Get row sums for display
+        row_sums_data = []
+        total_l, total_m, total_u = 0, 0, 0
+        for i in range(n):
+            l_sum, m_sum, u_sum = 0, 0, 0
+            for j in range(n):
+                l, m, u = fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j]
+                l_sum += l
+                m_sum += m
+                u_sum += u
+            row_sums_data.append({
+                'criteria': criteria_names[i],
+                'l': l_sum,
+                'm': m_sum,
+                'u': u_sum
+            })
+            total_l += l_sum
+            total_m += m_sum
+            total_u += u_sum
+        
+        total_fuzzy_sum = {'l': total_l, 'm': total_m, 'u': total_u}
+        
+        fuzzy_synthetic_extent = []
+        for i, name in enumerate(criteria_names):
+            si = synthetic_extents[i]
+            fuzzy_synthetic_extent.append({
+                'criteria': name,
+                'l': si[0],
+                'm': si[1],
+                'u': si[2]
+            })
+
+    # ==========================================
+    # LANGKAH 5: Perbandingan Probabilitas V(M2 >= M1)
+    # ==========================================
+    probability_matrix = None
+    d_prime_values = None
+
+    if pairwise_matrix is not None and n > 1:
+        synthetic_extents = fuzzy_ahp_calc.fuzzy_synthetic_extent
+        
+        # Build probability comparison matrix
+        probability_matrix = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                if i == j:
+                    row.append('-')
+                else:
+                    # V(Si >= Sj)
+                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(synthetic_extents[j], synthetic_extents[i])
+                    row.append(round(prob, 4))
+            probability_matrix.append(row)
+        
+        # Calculate d'(Ai) = min V(Si >= Sk) for all k != i
+        d_prime_values = []
+        for i in range(n):
+            min_prob = float('inf')
+            for j in range(n):
+                if i != j:
+                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(synthetic_extents[j], synthetic_extents[i])
+                    min_prob = min(min_prob, prob)
+            d_prime_values.append({
+                'criteria': criteria_names[i],
+                'value': round(min_prob, 4) if min_prob != float('inf') else 0
+            })
+
+    # ==========================================
+    # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
+    # ==========================================
+    normalized_weights = None
+
+    if pairwise_matrix is not None and n > 0:
+        weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+        normalized_weights = []
+        for name in criteria_names:
+            normalized_weights.append({
+                'criteria': name,
+                'weight': round(weights.get(name, 0), 4)
+            })
     
     # Get Results (Users)
     hasil_seleksi = db.session.query(
@@ -6007,7 +6189,26 @@ def admin_rekap_nilai_fuzzy(event_id):
         event=event,
         criteria_headers=criterias,
         rekap_data=rekap_data,
-        sidebar_state=sidebar_state
+        sidebar_state=sidebar_state,
+        # Fuzzy AHP Step Data
+        criteria_names=criteria_names,
+        tfn_scale_table=tfn_scale_table,
+        pairwise_data=pairwise_data,
+        fuzzy_pairwise_data=fuzzy_pairwise_data,
+        use_generated_matrix=use_generated_matrix,
+        eigenvector_data=eigenvector_data,
+        lambda_max=lambda_max,
+        ci=ci,
+        cr=cr,
+        is_consistent=is_consistent,
+        ri_value=ri_value,
+        ri_table=RI_TABLE,
+        row_sums_data=row_sums_data,
+        total_fuzzy_sum=total_fuzzy_sum,
+        fuzzy_synthetic_extent=fuzzy_synthetic_extent,
+        probability_matrix=probability_matrix,
+        d_prime_values=d_prime_values,
+        normalized_weights=normalized_weights
     )
 
 @app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
