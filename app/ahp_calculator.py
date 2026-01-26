@@ -119,7 +119,7 @@ class AHPCalculator:
     
     def check_consistency(self) -> Tuple[float, float, bool]:
         """
-        Uji konsistensi matriks perbandingan
+        Uji konsistensi matriks
         
         Returns:
             Tuple (CI, CR, is_consistent)
