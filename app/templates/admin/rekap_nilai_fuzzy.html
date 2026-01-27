@@ -1,8 +1,13 @@
 <!doctype html>
-<html lang="id">
+<html 
+  class="transition duration-300 ease-in-out"
+  lang="{{ current_lang }}"
+  x-data
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>Rekapitulasi Hasil Fuzzy AHP</title>
 
     <link
@@ -122,642 +127,183 @@
             </div>
           </section>
 
-          <!-- ===================================================== -->
-          <!-- STEP 1 -->
-          <!-- ===================================================== -->
-          <section
-            class="wow animate__animated animate__slideInLeft animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
-          >
-            <div class="container mx-auto p-6 max-w-7xl">
-              <div class="flex items-center justify-between mb-6">
-                <div>
-                  <h1
-                    class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                  >
-                    {{ 'Rekapitulasi Nilai Lengkap' if current_lang == 'id' else
-                    'Complete Score Recap' }}
-                  </h1>
-                  <p
-                    class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                  >
-                    {{ 'Detail perhitungan nilai fuzzy per kriteria dan hasil
-                    akhir' if current_lang == 'id' else 'Detailed fuzzy score
-                    calculation and final results' }}
-                  </p>
-                </div>
-                <a
-                  href="{{ url_for('admin_hasil_penilaian') }}?event_id={{ event.id_kegiatan }}"
-                  class="px-4 py-2 rounded-lg {{ 'bg-gray-700 hover:bg-gray-600' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-300' }} transition"
-                >
-                  <i class="fa-solid fa-arrow-left mr-2"></i>{{ 'Kembali' if
-                  current_lang == 'id' else 'Back' }}
-                </a>
-              </div>
-              <i
-                class="fa-solid"
-                :class="open?'fa-chevron-up':'fa-chevron-down'"
-              ></i>
-            </header>
+          <!-- ================= STEP 1 ================= -->
+      <section x-data="{open:true}" class="mb-4 bg-white rounded-xl shadow step-card">
+        <header @click="open=!open" class="p-4 flex justify-between cursor-pointer bg-blue-50">
+          <div class="flex items-center gap-3">
+            <span class="step-badge bg-blue-600">1</span>
+            <h2 class="font-semibold">Matriks Perbandingan Berpasangan (Crisp)</h2>
+          </div>
+          <i class="fa-solid" :class="open?'fa-chevron-up':'fa-chevron-down'"></i>
+        </header>
+        <div x-show="open" x-collapse class="p-4 overflow-x-auto">
+          {% if pairwise_data %}
+          <table class="w-full border">
+            <thead class="bg-gray-100">
+              <tr>
+                <th>Kriteria</th>
+                {% for name in criteria_names %}
+                <th>{{ name }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for i in range(pairwise_data|length) %}
+              <tr class="border-t">
+                <td class="font-medium">{{ criteria_names[i] }}</td>
+                {% for val in pairwise_data[i] %}
+                <td>{{ "%.2f"|format(val) }}</td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-gray-500 italic">Data matriks tidak tersedia.</p>
+          {% endif %}
+        </div>
+      </section>
 
-            <div
-              x-show="open"
-              x-collapse
-              class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4"
-            >
-              <div class="metric-card">
-                Consistency Index (CI)<br /><strong>0.04</strong>
-              </div>
-              <div class="metric-card">
-                Random Index (RI)<br /><strong>1.24</strong>
-              </div>
-              <div class="metric-card bg-green-50 text-green-700">
-                Consistency Ratio (CR)<br /><strong>0.05</strong><br />
-                <span class="text-xs italic">Konsisten (CR ≤ 0.1)</span>
-              </div>
-            </div>
-          </section>
+      <!-- ================= STEP 2 ================= -->
+      <section x-data="{open:false}" class="mb-4 bg-white rounded-xl shadow step-card">
+        <header @click="open=!open" class="p-4 flex justify-between cursor-pointer bg-green-50">
+          <div class="flex items-center gap-3">
+            <span class="step-badge bg-green-600">2</span>
+            <h2 class="font-semibold">Perhitungan Vector Eigen</h2>
+          </div>
+          <i class="fa-solid" :class="open?'fa-chevron-up':'fa-chevron-down'"></i>
+        </header>
+        <div x-show="open" x-collapse class="p-4">
+          {% if eigenvector_data %}
+          <table class="w-full border">
+            <thead class="bg-gray-100">
+              <tr><th>Kriteria</th><th>Eigenvector</th></tr>
+            </thead>
+            <tbody>
+              {% for e in eigenvector_data %}
+              <tr class="border-t">
+                <td>{{ e.criteria }}</td>
+                <td class="font-mono">{{ "%.2f"|format(e.value)|replace(".", ",") }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="italic text-gray-500">Data eigenvector tidak tersedia.</p>
+          {% endif %}
+        </div>
+      </section>
 
-          <!-- ===================================================== -->
-          <!-- STEP 4 -->
-          <!-- ===================================================== -->
-          <section
-            x-data="{open:false}"
-            class="mb-5 bg-white rounded-2xl shadow-sm border step-card"
-          >
-            <header
-              @click="open=!open"
-              class="flex justify-between items-center p-4 cursor-pointer"
-            >
-              <div class="flex items-center gap-3">
-                <span class="step-badge bg-purple-600">4</span>
-                <h2 class="font-semibold">
-                  Perhitungan Bobot Kriteria & Sintesis Fuzzy
-                </h2>
-              </div>
+      <!-- ================= STEP 3 ================= -->
+      <section x-data="{open:false}" class="mb-4 bg-white rounded-xl shadow step-card">
+        <header @click="open=!open" class="p-4 flex justify-between cursor-pointer bg-yellow-50">
+          <div class="flex items-center gap-3">
+            <span class="step-badge bg-yellow-600">3</span>
+            <h2 class="font-semibold">Uji Konsistensi Matriks</h2>
+          </div>
+          <i class="fa-solid" :class="open?'fa-chevron-up':'fa-chevron-down'"></i>
+        </header>
+        <div x-show="open" x-collapse class="grid grid-cols-3 gap-4 p-4 text-center">
+          <div class="bg-gray-100 p-4 rounded">CI<br><strong>{{ ci }}</strong></div>
+          <div class="bg-gray-100 p-4 rounded">RI<br><strong>{{ ri_value }}</strong></div>
+          <div class="bg-green-100 p-4 rounded text-green-700">
+            CR<br><strong>{{ cr }}</strong>
+          </div>
+        </div>
+      </section>
 
-              <!-- LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan -->
-              <div
-                x-data="{ open: false }"
-                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <button
-                  @click="open = !open"
-                  class="w-full p-4 flex items-center justify-between {{ 'bg-blue-900/30 hover:bg-blue-900/50' if current_theme == 'dark' else 'bg-blue-50 hover:bg-blue-100' }} transition"
-                >
-                  <div class="flex items-center gap-3">
-                    <span
-                      class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold"
-                      >1</span
-                    >
-                    <span
-                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Fuzzifikasi Matriks Perbandingan Berpasangan</span
-                    >
-                  </div>
-                  <i
-                    class="fa-solid"
-                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
-                  ></i>
-                </button>
-                <div
-                  x-show="open"
-                  x-collapse
-                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                >
-                  <!-- TFN Scale Table -->
-                  <h4
-                    class="font-semibold mb-3 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
-                  >
-                    Tabel Skala Triangular Fuzzy Number (TFN)
-                  </h4>
-                  <div class="overflow-x-auto mb-6">
-                    <table
-                      class="w-full text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2">Intensitas</th>
-                          <th class="p-2">TFN (l, m, u)</th>
-                          <th class="p-2">Kebalikan</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in tfn_scale_table %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2 font-bold">{{ item.intensity }}</td>
-                          <td class="p-2 tfn-value">
-                            ({{ "%.2f"|format(item.tfn[0]) }}, {{
-                            "%.2f"|format(item.tfn[1]) }}, {{
-                            "%.2f"|format(item.tfn[2]) }})
-                          </td>
-                          <td class="p-2 tfn-value">
-                            ({{ "%.2f"|format(item.reciprocal[0]) }}, {{
-                            "%.2f"|format(item.reciprocal[1]) }}, {{
-                            "%.2f"|format(item.reciprocal[2]) }})
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
+      <!-- ================= STEP 4 ================= -->
+      <section x-data="{open:false}" class="mb-4 bg-white rounded-xl shadow step-card">
+        <header @click="open=!open" class="p-4 flex justify-between cursor-pointer bg-purple-50">
+          <div class="flex items-center gap-3">
+            <span class="step-badge bg-purple-600">4</span>
+            <h2 class="font-semibold">Sintesis Fuzzy</h2>
+          </div>
+          <i class="fa-solid" :class="open?'fa-chevron-up':'fa-chevron-down'"></i>
+        </header>
+        <div x-show="open" x-collapse class="p-4">
+          {% if fuzzy_synthetic_extent %}
+          <table class="w-full border">
+            <thead class="bg-gray-100">
+              <tr><th>Kriteria</th><th>Si (l,m,u)</th></tr>
+            </thead>
+            <tbody>
+              {% for f in fuzzy_synthetic_extent %}
+              <tr class="border-t">
+                <td>{{ f.criteria }}</td>
+                <td class="font-mono">
+                  ({{ "%.2f"|format(f.l) }}, {{ "%.2f"|format(f.m) }}, {{ "%.2f"|format(f.u) }})
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="italic text-gray-500">Data sintesis fuzzy tidak tersedia.</p>
+          {% endif %}
+        </div>
+      </section>
 
-                  {% if pairwise_data %} {% if use_generated_matrix %}
-                  <div
-                    class="mb-4 p-3 rounded-lg {{ 'bg-amber-900/30 border border-amber-600' if current_theme == 'dark' else 'bg-amber-50 border border-amber-300' }}"
-                  >
-                    <div class="flex items-center gap-2 text-sm">
-                      <i
-                        class="fa-solid fa-info-circle {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
-                      ></i>
-                      <span
-                        class="{{ 'text-amber-300' if current_theme == 'dark' else 'text-amber-700' }}"
-                      >
-                        Matriks ini di-generate otomatis berdasarkan rasio bobot
-                        kriteria.
-                      </span>
-                    </div>
-                  </div>
-                  {% endif %}
-                  <!-- Crisp Pairwise Matrix -->
-                  <h4
-                    class="font-semibold mb-3 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
-                  >
-                    Matriks Perbandingan Berpasangan (Crisp)
-                  </h4>
-                  <div class="overflow-x-auto mb-6">
-                    <table
-                      class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2">Kriteria</th>
-                          {% for name in criteria_names %}
-                          <th class="p-2">{{ name[:10] }}...</th>
-                          {% endfor %}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for i in range(pairwise_data|length) %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2 font-bold text-left">
-                            {{ criteria_names[i][:15] }}...
-                          </td>
-                          {% for j in range(pairwise_data[i]|length) %}
-                          <td
-                            class="p-2 {{ 'bg-blue-900/20' if i == j else '' }}"
-                          >
-                            {{ "%.2f"|format(pairwise_data[i][j]) }}
-                          </td>
-                          {% endfor %}
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
+      <!-- ================= STEP 5 ================= -->
+      <section x-data="{open:false}" class="mb-4 bg-white rounded-xl shadow step-card">
+        <header @click="open=!open" class="p-4 flex justify-between cursor-pointer bg-amber-50">
+          <div class="flex items-center gap-3">
+            <span class="step-badge bg-amber-600">5</span>
+            <h2 class="font-semibold">Perbandingan Probabilitas</h2>
+          </div>
+          <i class="fa-solid" :class="open?'fa-chevron-up':'fa-chevron-down'"></i>
+        </header>
+        <div x-show="open" x-collapse class="p-4">
+          {% if d_prime_values %}
+          <table class="w-full border">
+            <thead class="bg-gray-100">
+              <tr><th>Kriteria</th><th>d′(Ai)</th></tr>
+            </thead>
+            <tbody>
+              {% for d in d_prime_values %}
+              <tr class="border-t">
+                <td>{{ d.criteria }}</td>
+                <td class="font-bold">{{ d.value }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="italic text-gray-500">Data probabilitas tidak tersedia.</p>
+          {% endif %}
+        </div>
+      </section>
 
-                  <!-- Fuzzy Pairwise Matrix -->
-                  <h4
-                    class="font-semibold mb-3 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
-                  >
-                    Matriks Fuzzy (TFN)
-                  </h4>
-                  <div class="overflow-x-auto">
-                    <table
-                      class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2">Kriteria</th>
-                          {% for name in criteria_names %}
-                          <th class="p-2">{{ name[:8] }}</th>
-                          {% endfor %}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for i in range(fuzzy_pairwise_data|length) %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2 font-bold text-left">
-                            {{ criteria_names[i][:12] }}
-                          </td>
-                          {% for j in range(fuzzy_pairwise_data[i]|length) %}
-                          <td
-                            class="p-2 tfn-value {{ 'bg-blue-900/20' if i == j else '' }}"
-                          >
-                            ({{ "%.1f"|format(fuzzy_pairwise_data[i][j][0]) }},
-                            {{ "%.1f"|format(fuzzy_pairwise_data[i][j][1]) }},
-                            {{ "%.1f"|format(fuzzy_pairwise_data[i][j][2]) }})
-                          </td>
-                          {% endfor %}
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                  {% else %}
-                  <p class="text-gray-500 italic">
-                    Matriks perbandingan berpasangan belum tersedia.
-                  </p>
-                  {% endif %}
-                </div>
-              </div>
-
-              <!-- LANGKAH 2: Perhitungan Vector Eigen -->
-              <div
-                x-data="{ open: false }"
-                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <button
-                  @click="open = !open"
-                  class="w-full p-4 flex items-center justify-between {{ 'bg-green-900/30 hover:bg-green-900/50' if current_theme == 'dark' else 'bg-green-50 hover:bg-green-100' }} transition"
-                >
-                  <div class="flex items-center gap-3">
-                    <span
-                      class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold"
-                      >2</span
-                    >
-                    <span
-                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Perhitungan Vector Eigen</span
-                    >
-                  </div>
-                  <i
-                    class="fa-solid"
-                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
-                  ></i>
-                </button>
-                <div
-                  x-show="open"
-                  x-collapse
-                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                >
-                  {% if eigenvector_data %}
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4
-                        class="font-semibold mb-3 {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
-                      >
-                        Eigenvector (Bobot Awal)
-                      </h4>
-                      <table
-                        class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                      >
-                        <thead>
-                          <tr
-                            class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                          >
-                            <th class="p-2 text-left">Kriteria</th>
-                            <th class="p-2 text-center">Eigenvector</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {% for item in eigenvector_data %}
-                          <tr
-                            class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                          >
-                            <td class="p-2">{{ item.criteria }}</td>
-                            <td class="p-2 text-center font-mono">
-                              {{ "%.2f"|format(item.value)|replace(".", ",") }}
-                            </td>
-                          </tr>
-                          {% endfor %}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div class="flex items-center justify-center">
-                      <div
-                        class="text-center p-6 rounded-xl {{ 'bg-green-900/30' if current_theme == 'dark' else 'bg-green-100' }}"
-                      >
-                        <div class="text-sm opacity-70 mb-2">
-                          Lambda Max (λmax)
-                        </div>
-                        <div
-                          class="text-4xl font-bold {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
-                        >
-                          {{ "%.2f"|format(lambda_max)|replace(".", ",") if
-                          lambda_max else '-' }}
-                        </div>
-                        <div class="text-xs opacity-60 mt-2">
-                          λmax = Σλᵢ / n
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  {% else %}
-                  <p class="text-gray-500 italic">
-                    Data eigenvector tidak tersedia.
-                  </p>
-                  {% endif %}
-                </div>
-              </div>
-
-              <!-- LANGKAH 3: Uji Konsistensi Matriks -->
-              <div
-                x-data="{ open: false }"
-                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <button
-                  @click="open = !open"
-                  class="w-full p-4 flex items-center justify-between {{ 'bg-yellow-900/30 hover:bg-yellow-900/50' if current_theme == 'dark' else 'bg-yellow-50 hover:bg-yellow-100' }} transition"
-                >
-                  <div class="flex items-center gap-3">
-                    <span
-                      class="w-8 h-8 rounded-full bg-yellow-600 text-white flex items-center justify-center font-bold"
-                      >3</span
-                    >
-                    <span
-                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Uji Konsistensi Matriks</span
-                    >
-                  </div>
-                  <i
-                    class="fa-solid"
-                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
-                  ></i>
-                </button>
-                <div
-                  x-show="open"
-                  x-collapse
-                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                >
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div
-                      class="text-center p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
-                    >
-                      <div class="text-xs opacity-70 mb-1">
-                        Consistency Index (CI)
-                      </div>
-                      <div
-                        class="text-2xl font-bold font-mono {{ 'text-yellow-400' if current_theme == 'dark' else 'text-yellow-600' }}"
-                      >
-                        {{ "%.2f"|format(ci)|replace(".", ",") if ci else '-' }}
-                      </div>
-                      <div class="text-xs opacity-60 mt-1">
-                        CI = (λmax - n) / (n - 1)
-                      </div>
-                    </div>
-                    <div
-                      class="text-center p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
-                    >
-                      <div class="text-xs opacity-70 mb-1">
-                        Random Index (RI)
-                      </div>
-                      <div
-                        class="text-2xl font-bold font-mono {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
-                      >
-                        {{ "%.2f"|format(ri_value) }}
-                      </div>
-                      <div class="text-xs opacity-60 mt-1">
-                        n = {{ criteria_names|length }}
-                      </div>
-                    </div>
-                    <div
-                      class="text-center p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
-                    >
-                      <div class="text-xs opacity-70 mb-1">
-                        Consistency Ratio (CR)
-                      </div>
-                      <div
-                        class="text-2xl font-bold font-mono {{ 'text-green-400' if is_consistent else 'text-red-400' }}"
-                      >
-                        {{ "%.2f"|format(cr)|replace(".", ",") if cr else '-' }}
-                      </div>
-                      <div class="text-xs mt-1">
-                        {% if is_consistent %}
-                        <span class="text-green-500"
-                          ><i class="fa-solid fa-check-circle"></i> Konsisten
-                          (CR < 0.1)</span
-                        >
-                        {% else %}
-                        <span class="text-red-500"
-                          ><i class="fa-solid fa-times-circle"></i> Tidak
-                          Konsisten</span
-                        >
-                        {% endif %}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- LANGKAH 4: Sintesis Fuzzy -->
-              <div
-                x-data="{ open: false }"
-                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <button
-                  @click="open = !open"
-                  class="w-full p-4 flex items-center justify-between {{ 'bg-purple-900/30 hover:bg-purple-900/50' if current_theme == 'dark' else 'bg-purple-50 hover:bg-purple-100' }} transition"
-                >
-                  <div class="flex items-center gap-3">
-                    <span
-                      class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold"
-                      >4</span
-                    >
-                    <span
-                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Perhitungan Bobot Kriteria & Sintesis Fuzzy</span
-                    >
-                  </div>
-                  <i
-                    class="fa-solid"
-                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
-                  ></i>
-                </button>
-                <div
-                  x-show="open"
-                  x-collapse
-                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                >
-                  {% if fuzzy_synthetic_extent %}
-                  <div class="overflow-x-auto">
-                    <table
-                      class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2 text-left">Kriteria</th>
-                          <th class="p-2 text-center">
-                            Fuzzy Synthetic Extent (Si)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in fuzzy_synthetic_extent %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2">{{ item.criteria }}</td>
-                          <td
-                            class="p-2 text-center font-mono {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
-                          >
-                            ({{ "%.2f"|format(item.l)|replace(".", ",") }}, {{
-                            "%.2f"|format(item.m)|replace(".", ",") }}, {{
-                            "%.2f"|format(item.u)|replace(".", ",") }})
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                  {% else %}
-                  <p class="text-gray-500 italic">
-                    Data sintesis fuzzy tidak tersedia.
-                  </p>
-                  {% endif %}
-                </div>
-              </div>
-
-              <!-- LANGKAH 5: Perbandingan Probabilitas -->
-              <div
-                x-data="{ open: false }"
-                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <button
-                  @click="open = !open"
-                  class="w-full p-4 flex items-center justify-between {{ 'bg-amber-900/30 hover:bg-amber-900/50' if current_theme == 'dark' else 'bg-amber-50 hover:bg-amber-100' }} transition"
-                >
-                  <div class="flex items-center gap-3">
-                    <span
-                      class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold"
-                      >5</span
-                    >
-                    <span
-                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Perbandingan Probabilitas & Fuzzy Synthetic Extent</span
-                    >
-                  </div>
-                  <i
-                    class="fa-solid"
-                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
-                  ></i>
-                </button>
-                <div
-                  x-show="open"
-                  x-collapse
-                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                >
-                  {% if d_prime_values %}
-                  <h4
-                    class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
-                  >
-                    Nilai Ordinat d'(Ai) = min V(Si ≥ Sk)
-                  </h4>
-                  <div class="overflow-x-auto">
-                    <table
-                      class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2 text-left">Kriteria</th>
-                          <th class="p-2 text-center">d'(Ai)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in d_prime_values %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2">{{ item.criteria }}</td>
-                          <td
-                            class="p-2 text-center font-mono font-bold {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
-                          >
-                            {{ item.value }}
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                  {% else %}
-                  <p class="text-gray-500 italic">
-                    Data perbandingan probabilitas tidak tersedia.
-                  </p>
-                  {% endif %}
-                </div>
-              </div>
-
-              <!-- LANGKAH 6: Normalisasi & Bobot Global -->
-              <div
-                x-data="{ open: false }"
-                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <button
-                  @click="open = !open"
-                  class="w-full p-4 flex items-center justify-between {{ 'bg-teal-900/30 hover:bg-teal-900/50' if current_theme == 'dark' else 'bg-teal-50 hover:bg-teal-100' }} transition"
-                >
-                  <div class="flex items-center gap-3">
-                    <span
-                      class="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold"
-                      >6</span
-                    >
-                    <span
-                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Normalisasi & Bobot Global</span
-                    >
-                  </div>
-                  <i
-                    class="fa-solid"
-                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
-                  ></i>
-                </button>
-                <div
-                  x-show="open"
-                  x-collapse
-                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                >
-                  {% if normalized_weights %}
-                  <div class="overflow-x-auto">
-                    <table
-                      class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2 text-left">Kriteria</th>
-                          <th class="p-2 text-center">Bobot Global</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in normalized_weights %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2">{{ item.criteria }}</td>
-                          <td
-                            class="p-2 text-center font-mono font-bold {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
-                          >
-                            {{ "%.2f"|format(item.weight)|replace(".", ",") }}
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                  {% else %}
-                  <p class="text-gray-500 italic">
-                    Data bobot global tidak tersedia.
-                  </p>
-                  {% endif %}
-                </div>
-              </div>
-
+      <!-- ================= STEP 6 ================= -->
+      <section x-data="{open:true}" class="mb-6 bg-white rounded-xl shadow step-card">
+        <header @click="open=!open" class="p-4 flex justify-between cursor-pointer bg-teal-50">
+          <div class="flex items-center gap-3">
+            <span class="step-badge bg-teal-600">6</span>
+            <h2 class="font-semibold">Bobot Global</h2>
+          </div>
+          <i class="fa-solid" :class="open?'fa-chevron-up':'fa-chevron-down'"></i>
+        </header>
+        <div x-show="open" x-collapse class="p-4">
+          {% if normalized_weights %}
+          <table class="w-full border">
+            <thead class="bg-gray-100">
+              <tr><th>Kriteria</th><th>Bobot</th></tr>
+            </thead>
+            <tbody>
+              {% for w in normalized_weights %}
+              <tr class="border-t">
+                <td>{{ w.criteria }}</td>
+                <td class="font-bold text-teal-600">{{ "%.2f"|format(w.weight) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="italic text-gray-500">Bobot global belum tersedia.</p>
+          {% endif %}
+        </div>
+      </section>
+      <section>
               <!-- LANGKAH 7: Hasil Nilai Akhir & Peringkat Peserta -->
               <div
                 x-data="{ open: true }"
@@ -879,6 +425,7 @@
                   </div>
                 </div>
               </div>
+              </section>
             </div>
           </section>
         </main>

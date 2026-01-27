@@ -23,6 +23,7 @@ from app.ahp_calculator import (
     AHPCalculator,
     FuzzyAHPCalculator,
     TFN_SCALE,
+    TFN_RECIPROCAL,
     get_tfn_reciprocal,
 )
 import pandas as pd
@@ -209,14 +210,13 @@ def save_pairwise_matrix(
 
                     # Konversi ke TFN
                     if value >= 1:
-                        tfn = TFN_SCALE.get(max(1, min(9, round(value))), (1, 1, 1))
+                        rounded_val = max(1, min(9, round(value)))
+                        tfn = TFN_SCALE.get(rounded_val, (1, 1, 1))
                     else:
+                        # Gunakan tabel kebalikan langsung
                         reciprocal_value = 1.0 / value
-                        tfn = get_tfn_reciprocal(
-                            TFN_SCALE.get(
-                                max(1, min(9, round(reciprocal_value))), (1, 1, 1)
-                            )
-                        )
+                        rounded_val = max(1, min(9, round(reciprocal_value)))
+                        tfn = TFN_RECIPROCAL.get(rounded_val, (1, 1, 1))
 
                     comp = PairwiseComparison(
                         event_id=event_id,
