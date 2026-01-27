@@ -430,7 +430,8 @@
                     <div
                       class="text-2xl font-bold font-mono {{ 'text-yellow-400' if current_theme == 'dark' else 'text-yellow-600' }}"
                     >
-                      {{ "%.2f"|format(ci)|replace(".", ",") if ci else '-' }}
+                      {{ "%.2f"|format(ci)|replace(".", ",") if ci is not none
+                      else '-' }}
                     </div>
                     <div class="text-xs opacity-60 mt-1">
                       CI = (λmax - n) / (n - 1)
@@ -458,7 +459,8 @@
                     <div
                       class="text-2xl font-bold font-mono {{ 'text-green-400' if is_consistent else 'text-red-400' }}"
                     >
-                      {{ "%.2f"|format(cr)|replace(".", ",") if cr else '-' }}
+                      {{ "%.2f"|format(cr)|replace(".", ",") if cr is not none
+                      else '-' }}
                     </div>
                     <div class="text-xs mt-1">
                       {% if is_consistent %}
