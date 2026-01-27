@@ -100,6 +100,12 @@ class AHPCalculator:
         return self.lambda_max
 
     def check_consistency(self) -> Tuple[float, float, bool]:
+        """
+        Uji konsistensi matriks
+
+        Returns:
+            Tuple (CI, CR, is_consistent)
+        """
         if self.lambda_max is None:
             self.calculate_lambda_max()
 
