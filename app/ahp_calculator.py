@@ -10,23 +10,38 @@ from decimal import Decimal, getcontext
 getcontext().prec = 28
 
 # Tabel RI (Random Index) untuk uji konsistensi
+# Berdasarkan Tabel 2.3 Nilai RI dalam skripsi
 RI_TABLE = {
     1: 0.00, 2: 0.00, 3: 0.58, 4: 0.90, 5: 1.12,
     6: 1.24, 7: 1.32, 8: 1.41, 9: 1.46, 10: 1.49,
     11: 1.51, 12: 1.58
 }
 
-# Skala Triangular Fuzzy Number (TFN) sesuai Skripsi
+# Skala Triangular Fuzzy Number (TFN) sesuai Tabel 2.1 Skripsi
+# Berdasarkan Tabel 2.1 Skala Nilai Fuzzy
 TFN_SCALE = {
     1: (1, 1, 1),           # Perbandingan elemen yang sama
     2: (1/2, 1, 3/2),       # Pertengahan
     3: (1, 3/2, 2),         # Elemen satu cukup dari yang lainnya
     4: (3/2, 2, 5/2),       # Mendekati lebih penting dari
     5: (2, 5/2, 3),         # Lebih penting dari
-    6: (1/2, 3, 7/2),       # Mendekati sangat penting dari (diperbaiki: l=1/2)
+    6: (5/2, 3, 7/2),       # Mendekati sangat penting dari
     7: (3, 7/2, 4),         # Sangat penting dari
     8: (7/2, 4, 9/2),       # Mendekati mutlak dari
-    9: (4, 9/2, 9/2)        # Mutlak sangat penting dari (diperbaiki: u=9/2)
+    9: (4, 9/2, 9/2)        # Mutlak sangat penting dari
+}
+
+# Tabel Kebalikan TFN sesuai Tabel 2.1 Skripsi
+TFN_RECIPROCAL = {
+    1: (1, 1, 1),           # Kebalikan 1
+    2: (2/3, 1, 2),         # Kebalikan 2
+    3: (1/2, 2/3, 1),       # Kebalikan 3
+    4: (2/5, 1/2, 2/3),     # Kebalikan 4
+    5: (1/3, 2/5, 1/2),     # Kebalikan 5
+    6: (2/7, 1/3, 2/5),     # Kebalikan 6
+    7: (1/4, 2/7, 1/3),     # Kebalikan 7
+    8: (2/9, 1/4, 2/7),     # Kebalikan 8
+    9: (2/9, 2/9, 1/4)      # Kebalikan 9
 }
 
 def get_tfn_reciprocal(tfn: Tuple[float, float, float]) -> Tuple[float, float, float]:
@@ -230,10 +245,10 @@ class FuzzyAHPCalculator:
                 elif matrix[i, j] >= 1:
                     fuzzy_matrix[i, j] = self.crisp_to_tfn(matrix[i, j])
                 else:
-                    # Jika < 1, gunakan kebalikan
+                    # Jika < 1, gunakan tabel kebalikan TFN langsung
                     reciprocal_value = 1.0 / matrix[i, j]
-                    tfn = self.crisp_to_tfn(reciprocal_value)
-                    fuzzy_matrix[i, j] = get_tfn_reciprocal(tfn)
+                    rounded = max(1, min(9, round(reciprocal_value)))
+                    fuzzy_matrix[i, j] = TFN_RECIPROCAL.get(rounded, (1, 1, 1))
         
         self.fuzzy_pairwise_matrix = fuzzy_matrix
     

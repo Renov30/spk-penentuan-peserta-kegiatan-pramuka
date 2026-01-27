@@ -9,7 +9,7 @@ Implementasi lengkap dengan:
 """
 from app import db
 from app.models import Penilaian, Criteria, HasilSeleksi, Users, Participants, Event, PairwiseComparison, AHPResults
-from app.ahp_calculator import AHPCalculator, FuzzyAHPCalculator, TFN_SCALE, get_tfn_reciprocal
+from app.ahp_calculator import AHPCalculator, FuzzyAHPCalculator, TFN_SCALE, TFN_RECIPROCAL, get_tfn_reciprocal
 import pandas as pd
 import numpy as np
 import json
@@ -216,12 +216,15 @@ def save_pairwise_matrix(event_id: int, criteria_ids: List[int], matrix: np.ndar
                 if i != j:  # Skip diagonal (selalu 1)
                     value = matrix[i, j]
                     
-                    # Konversi ke TFN
+                    # Konversi ke TFN berdasarkan Tabel 2.1 Skripsi
                     if value >= 1:
-                        tfn = TFN_SCALE.get(max(1, min(9, round(value))), (1, 1, 1))
+                        rounded_val = max(1, min(9, round(value)))
+                        tfn = TFN_SCALE.get(rounded_val, (1, 1, 1))
                     else:
+                        # Gunakan tabel kebalikan langsung
                         reciprocal_value = 1.0 / value
-                        tfn = get_tfn_reciprocal(TFN_SCALE.get(max(1, min(9, round(reciprocal_value))), (1, 1, 1)))
+                        rounded_val = max(1, min(9, round(reciprocal_value)))
+                        tfn = TFN_RECIPROCAL.get(rounded_val, (1, 1, 1))
                     
                     comp = PairwiseComparison(
                         event_id=event_id,
