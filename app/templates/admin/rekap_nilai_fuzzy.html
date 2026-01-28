@@ -86,9 +86,9 @@
                   <p
                     class="{{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
                   >
-                    {{ 'Detail perhitungan nilai fuzzy per kriteria dan hasil
-                    akhir' if current_lang == 'id' else 'Detailed fuzzy score
-                    calculation and final results' }}
+                    {{ 'Detail perhitungan metode Fuzzy AHP dan hasil akhir' if
+                    current_lang == 'id' else 'Fuzzy AHP method calculation
+                    details and final results' }}
                   </p>
                 </div>
                 <a
@@ -115,7 +115,17 @@
                 </p>
               </div>
 
-              <!-- LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan -->
+              <!-- Section Header -->
+              <div class="mb-6">
+                <h2
+                  class="text-2xl font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                >
+                  <i class="fa-solid fa-calculator mr-2 text-blue-500"></i>
+                  Langkah-Langkah Perhitungan Metode Fuzzy AHP
+                </h2>
+              </div>
+
+              <!-- LANGKAH 1: Penyusunan Matriks Perbandingan Berpasangan (Crisp) -->
               <div
                 x-data="{ open: false }"
                 class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
@@ -131,7 +141,7 @@
                     >
                     <span
                       class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Fuzzifikasi Matriks Perbandingan Berpasangan</span
+                      >Penyusunan Matriks Perbandingan Berpasangan (Crisp)</span
                     >
                   </div>
                   <i
@@ -144,38 +154,11 @@
                   x-collapse
                   class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                 >
-                  <!-- TFN Scale Table -->
-                  <h4
-                    class="font-semibold mb-3 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
-                  >
-                    Tabel Skala Triangular Fuzzy Number (TFN)
-                  </h4>
-                  <div class="overflow-x-auto mb-6">
-                    <table
-                      class="w-full text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2">Intensitas</th>
-                          <th class="p-2">TFN (l, m, u)</th>
-                          <th class="p-2">Kebalikan</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in tfn_scale_table %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2 font-bold">{{ item.intensity }}</td>
-                          <td class="p-2 tfn-value">{{ item.tfn }}</td>
-                          <td class="p-2 tfn-value">{{ item.reciprocal }}</td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
+                  <p class="text-sm opacity-80 mb-4">
+                    Matriks perbandingan berpasangan antar kriteria menggunakan
+                    skala Saaty (1-9). Matriks bersifat resiprokal dengan aᵢᵢ =
+                    1 dan aᵢⱼ = 1/aⱼᵢ.
+                  </p>
 
                   {% if pairwise_data %} {% if use_generated_matrix %}
                   <div
@@ -234,47 +217,6 @@
                       </tbody>
                     </table>
                   </div>
-
-                  <!-- Fuzzy Pairwise Matrix -->
-                  <h4
-                    class="font-semibold mb-3 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
-                  >
-                    Matriks Fuzzy (TFN)
-                  </h4>
-                  <div class="overflow-x-auto">
-                    <table
-                      class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2">Kriteria</th>
-                          {% for name in criteria_names %}
-                          <th class="p-2">{{ name[:8] }}</th>
-                          {% endfor %}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for i in range(fuzzy_pairwise_data|length) %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2 font-bold text-left">
-                            {{ criteria_names[i][:12] }}
-                          </td>
-                          {% for j in range(fuzzy_pairwise_data[i]|length) %}
-                          <td
-                            class="p-2 tfn-value {{ 'bg-blue-900/20' if i == j else '' }}"
-                          >
-                            {{ fuzzy_pairwise_data[i][j] }}
-                          </td>
-                          {% endfor %}
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
                   {% else %}
                   <p class="text-gray-500 italic">
                     Matriks perbandingan berpasangan belum tersedia.
@@ -283,7 +225,7 @@
                 </div>
               </div>
 
-              <!-- LANGKAH 2: Perhitungan Vector Eigen -->
+              <!-- LANGKAH 2: Perhitungan Vector Eigen (Geometric Mean Method) -->
               <div
                 x-data="{ open: false }"
                 class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
@@ -299,7 +241,7 @@
                     >
                     <span
                       class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Perhitungan Vector Eigen</span
+                      >Perhitungan Vector Eigen (Geometric Mean Method)</span
                     >
                   </div>
                   <i
@@ -312,34 +254,67 @@
                   x-collapse
                   class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                 >
+                  <p class="text-sm opacity-80 mb-4">
+                    Perhitungan vector eigen menggunakan metode rata-rata
+                    geometrik untuk memperoleh bobot awal kriteria.
+                  </p>
+                  <div
+                    class="mb-4 p-3 rounded-lg {{ 'bg-green-900/20' if current_theme == 'dark' else 'bg-green-50' }}"
+                  >
+                    <p class="text-sm font-mono">GMᵢ = (∏ aᵢⱼ)^(1/n)</p>
+                    <p class="text-sm font-mono mt-1">wᵢ = GMᵢ / Σ GMᵢ</p>
+                  </div>
                   {% if eigenvector_data %}
-                  <div>
-                    <table
-                      class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4
+                        class="font-semibold mb-3 {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
+                      >
+                        Vector Eigen (Bobot Lokal)
+                      </h4>
+                      <table
+                        class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                      >
+                        <thead>
+                          <tr
+                            class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+                          >
+                            <th class="p-2 text-left">Kriteria</th>
+                            <th class="p-2 text-center">Eigenvector (wᵢ)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for item in eigenvector_data %}
+                          <tr
+                            class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
+                          >
+                            <td class="p-2">{{ item.criteria }}</td>
+                            <td class="p-2 text-center font-mono">
+                              {{ "%.2f"|format(item.value)|replace(".", ",") }}
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="flex items-center justify-center">
+                      <div
+                        class="text-center p-6 rounded-xl {{ 'bg-green-900/30' if current_theme == 'dark' else 'bg-green-100' }}"
+                      >
+                        <div class="text-sm opacity-70 mb-2">
+                          Lambda Max (λmax)
+                        </div>
+                        <div
+                          class="text-4xl font-bold {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                         >
-                          <th class="p-2 text-center">Kriteria</th>
-                          <th class="p-2 text-center">
-                            Eigenvector (Bobot Awal)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in eigenvector_data %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2 text-center">{{ item.criteria }}</td>
-                          <td class="p-2 text-center font-mono">
-                            {{ "%.2f"|format(item.value)|replace(".", ",") }}
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
+                          {{ "%.2f"|format(lambda_max)|replace(".", ",") if
+                          lambda_max else '-' }}
+                        </div>
+                        <div class="text-xs opacity-60 mt-2">
+                          λmax = (1/n) Σ (A·w)ᵢ/wᵢ
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   {% else %}
                   <p class="text-gray-500 italic">
@@ -349,7 +324,7 @@
                 </div>
               </div>
 
-              <!-- LANGKAH 3: Uji Konsistensi Matriks -->
+              <!-- LANGKAH 3: Uji Konsistensi Matriks Perbandingan -->
               <div
                 x-data="{ open: false }"
                 class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
@@ -365,7 +340,7 @@
                     >
                     <span
                       class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Uji Konsistensi Matriks</span
+                      >Uji Konsistensi Matriks Perbandingan</span
                     >
                   </div>
                   <i
@@ -378,6 +353,11 @@
                   x-collapse
                   class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                 >
+                  <p class="text-sm opacity-80 mb-4">
+                    Uji konsistensi dilakukan untuk memastikan penilaian
+                    bersifat rasional dan tidak saling bertentangan. Matriks
+                    dinyatakan konsisten jika CR ≤ 0,1.
+                  </p>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div
                       class="text-center p-4 rounded-lg {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
@@ -426,7 +406,7 @@
                         {% if is_consistent %}
                         <span class="text-green-500"
                           ><i class="fa-solid fa-check-circle"></i> Konsisten
-                          (CR < 0.1)</span
+                          (CR ≤ 0,1)</span
                         >
                         {% else %}
                         <span class="text-red-500"
@@ -437,10 +417,49 @@
                       </div>
                     </div>
                   </div>
+
+                  <!-- RI Table Reference -->
+                  <h4
+                    class="font-semibold mb-3 {{ 'text-yellow-400' if current_theme == 'dark' else 'text-yellow-600' }}"
+                  >
+                    Tabel Random Index (RI)
+                  </h4>
+                  <div class="overflow-x-auto">
+                    <table
+                      class="text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    >
+                      <thead>
+                        <tr
+                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+                        >
+                          <th class="p-2">n</th>
+                          {% for n in range(1, 13) %}
+                          <th
+                            class="p-2 {{ 'bg-yellow-600/30' if n == criteria_names|length else '' }}"
+                          >
+                            {{ n }}
+                          </th>
+                          {% endfor %}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td class="p-2 font-bold">RI</td>
+                          {% for n in range(1, 13) %}
+                          <td
+                            class="p-2 font-mono {{ 'bg-yellow-600/30 font-bold' if n == criteria_names|length else '' }}"
+                          >
+                            {{ "%.2f"|format(ri_table.get(n, 0)) }}
+                          </td>
+                          {% endfor %}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
-              <!-- LANGKAH 4: Sintesis Fuzzy -->
+              <!-- LANGKAH 4: Fuzzifikasi Matriks Perbandingan Berpasangan -->
               <div
                 x-data="{ open: false }"
                 class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
@@ -456,7 +475,7 @@
                     >
                     <span
                       class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Perhitungan Bobot Kriteria & Sintesis Fuzzy</span
+                      >Fuzzifikasi Matriks Perbandingan Berpasangan</span
                     >
                   </div>
                   <i
@@ -469,7 +488,195 @@
                   x-collapse
                   class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                 >
-                  {% if fuzzy_synthetic_extent %}
+                  <p class="text-sm opacity-80 mb-4">
+                    Setelah matriks dinyatakan konsisten, nilai crisp dikonversi
+                    ke Triangular Fuzzy Number (TFN) = (l, m, u).
+                  </p>
+
+                  <!-- TFN Scale Table -->
+                  <h4
+                    class="font-semibold mb-3 {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
+                  >
+                    Tabel Skala Nilai Fuzzy (TFN)
+                  </h4>
+                  <div class="overflow-x-auto mb-6">
+                    <table
+                      class="w-full text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    >
+                      <thead>
+                        <tr
+                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+                        >
+                          <th class="p-2">Intensitas</th>
+                          <th class="p-2">TFN (l, m, u)</th>
+                          <th class="p-2">Kebalikan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for item in tfn_scale_table %}
+                        <tr
+                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
+                        >
+                          <td class="p-2 font-bold">{{ item.intensity }}</td>
+                          <td class="p-2 tfn-value">{{ item.tfn }}</td>
+                          <td class="p-2 tfn-value">{{ item.reciprocal }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {% if fuzzy_pairwise_data %}
+                  <!-- Fuzzy Pairwise Matrix -->
+                  <h4
+                    class="font-semibold mb-3 {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
+                  >
+                    Matriks Fuzzy (TFN)
+                  </h4>
+                  <div class="overflow-x-auto">
+                    <table
+                      class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    >
+                      <thead>
+                        <tr
+                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+                        >
+                          <th class="p-2">Kriteria</th>
+                          {% for name in criteria_names %}
+                          <th class="p-2">{{ name[:8] }}</th>
+                          {% endfor %}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for i in range(fuzzy_pairwise_data|length) %}
+                        <tr
+                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
+                        >
+                          <td class="p-2 font-bold text-left">
+                            {{ criteria_names[i][:12] }}
+                          </td>
+                          {% for j in range(fuzzy_pairwise_data[i]|length) %}
+                          <td
+                            class="p-2 tfn-value {{ 'bg-purple-900/20' if i == j else '' }}"
+                          >
+                            {{ fuzzy_pairwise_data[i][j] }}
+                          </td>
+                          {% endfor %}
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  {% else %}
+                  <p class="text-gray-500 italic">
+                    Data matriks fuzzy tidak tersedia.
+                  </p>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- LANGKAH 5: Perhitungan Fuzzy Synthetic Extent -->
+              <div
+                x-data="{ open: false }"
+                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              >
+                <button
+                  @click="open = !open"
+                  class="w-full p-4 flex items-center justify-between {{ 'bg-amber-900/30 hover:bg-amber-900/50' if current_theme == 'dark' else 'bg-amber-50 hover:bg-amber-100' }} transition"
+                >
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold"
+                      >5</span
+                    >
+                    <span
+                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                      >Perhitungan Fuzzy Synthetic Extent</span
+                    >
+                  </div>
+                  <i
+                    class="fa-solid"
+                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
+                  ></i>
+                </button>
+                <div
+                  x-show="open"
+                  x-collapse
+                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                >
+                  <p class="text-sm opacity-80 mb-4">
+                    Perhitungan Fuzzy Synthetic Extent menggunakan teori Chang
+                    dengan menjumlahkan nilai TFN pada setiap baris.
+                  </p>
+                  <div
+                    class="mb-4 p-3 rounded-lg {{ 'bg-amber-900/20' if current_theme == 'dark' else 'bg-amber-50' }}"
+                  >
+                    <p class="text-sm font-mono">Sᵢ = (Σ Mᵢⱼ) ⊗ (ΣΣ Mᵢⱼ)⁻¹</p>
+                  </div>
+
+                  {% if row_sums_data %}
+                  <h4
+                    class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
+                  >
+                    Penjumlahan Baris Matriks Fuzzy
+                  </h4>
+                  <div class="overflow-x-auto mb-6">
+                    <table
+                      class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    >
+                      <thead>
+                        <tr
+                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+                        >
+                          <th class="p-2 text-left">Kriteria</th>
+                          <th class="p-2 text-center">Σl</th>
+                          <th class="p-2 text-center">Σm</th>
+                          <th class="p-2 text-center">Σu</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for item in row_sums_data %}
+                        <tr
+                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
+                        >
+                          <td class="p-2">{{ item.criteria }}</td>
+                          <td class="p-2 text-center font-mono">
+                            {{ "%.2f"|format(item.l)|replace(".", ",") }}
+                          </td>
+                          <td class="p-2 text-center font-mono">
+                            {{ "%.2f"|format(item.m)|replace(".", ",") }}
+                          </td>
+                          <td class="p-2 text-center font-mono">
+                            {{ "%.2f"|format(item.u)|replace(".", ",") }}
+                          </td>
+                        </tr>
+                        {% endfor %}
+                        <tr
+                          class="{{ 'bg-amber-900/30' if current_theme == 'dark' else 'bg-amber-100' }} font-bold"
+                        >
+                          <td class="p-2">Total</td>
+                          <td class="p-2 text-center font-mono">
+                            {{ "%.2f"|format(total_fuzzy_sum.l)|replace(".",
+                            ",") }}
+                          </td>
+                          <td class="p-2 text-center font-mono">
+                            {{ "%.2f"|format(total_fuzzy_sum.m)|replace(".",
+                            ",") }}
+                          </td>
+                          <td class="p-2 text-center font-mono">
+                            {{ "%.2f"|format(total_fuzzy_sum.u)|replace(".",
+                            ",") }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <h4
+                    class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
+                  >
+                    Fuzzy Synthetic Extent (Sᵢ)
+                  </h4>
                   <div class="overflow-x-auto">
                     <table
                       class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
@@ -479,9 +686,7 @@
                           class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                         >
                           <th class="p-2 text-left">Kriteria</th>
-                          <th class="p-2 text-center">
-                            Fuzzy Synthetic Extent (Si)
-                          </th>
+                          <th class="p-2 text-center">Sᵢ (l, m, u)</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -491,7 +696,7 @@
                         >
                           <td class="p-2">{{ item.criteria }}</td>
                           <td
-                            class="p-2 text-center font-mono {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
+                            class="p-2 text-center font-mono {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
                           >
                             ({{ "%.2f"|format(item.l)|replace(".", ",") }}, {{
                             "%.2f"|format(item.m)|replace(".", ",") }}, {{
@@ -510,78 +715,7 @@
                 </div>
               </div>
 
-              <!-- LANGKAH 5: Perbandingan Probabilitas -->
-              <div
-                x-data="{ open: false }"
-                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-              >
-                <button
-                  @click="open = !open"
-                  class="w-full p-4 flex items-center justify-between {{ 'bg-amber-900/30 hover:bg-amber-900/50' if current_theme == 'dark' else 'bg-amber-50 hover:bg-amber-100' }} transition"
-                >
-                  <div class="flex items-center gap-3">
-                    <span
-                      class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold"
-                      >5</span
-                    >
-                    <span
-                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Perbandingan Probabilitas & Fuzzy Synthetic Extent</span
-                    >
-                  </div>
-                  <i
-                    class="fa-solid"
-                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
-                  ></i>
-                </button>
-                <div
-                  x-show="open"
-                  x-collapse
-                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-                >
-                  {% if d_prime_values %}
-                  <h4
-                    class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
-                  >
-                    Nilai Ordinat d'(Ai) = min V(Si ≥ Sk)
-                  </h4>
-                  <div class="overflow-x-auto">
-                    <table
-                      class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                    >
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                        >
-                          <th class="p-2 text-left">Kriteria</th>
-                          <th class="p-2 text-center">d'(Ai)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in d_prime_values %}
-                        <tr
-                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                        >
-                          <td class="p-2">{{ item.criteria }}</td>
-                          <td
-                            class="p-2 text-center font-mono font-bold {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
-                          >
-                            {{ item.value }}
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                  {% else %}
-                  <p class="text-gray-500 italic">
-                    Data perbandingan probabilitas tidak tersedia.
-                  </p>
-                  {% endif %}
-                </div>
-              </div>
-
-              <!-- LANGKAH 6: Normalisasi & Bobot Global -->
+              <!-- LANGKAH 6: Perbandingan Probabilitas, Normalisasi & Bobot Global -->
               <div
                 x-data="{ open: false }"
                 class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
@@ -597,7 +731,8 @@
                     >
                     <span
                       class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                      >Normalisasi & Bobot Global</span
+                      >Perbandingan Probabilitas, Normalisasi & Bobot
+                      Global</span
                     >
                   </div>
                   <i
@@ -610,7 +745,93 @@
                   x-collapse
                   class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                 >
-                  {% if normalized_weights %}
+                  <p class="text-sm opacity-80 mb-4">
+                    Perbandingan tingkat probabilitas antar nilai Fuzzy
+                    Synthetic Extent untuk menentukan dominasi kriteria.
+                  </p>
+
+                  {% if probability_matrix %}
+                  <h4
+                    class="font-semibold mb-3 {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
+                  >
+                    Matriks V(Sᵢ ≥ Sₖ)
+                  </h4>
+                  <div class="overflow-x-auto mb-6">
+                    <table
+                      class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    >
+                      <thead>
+                        <tr
+                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+                        >
+                          <th class="p-2">V(Sᵢ≥Sₖ)</th>
+                          {% for name in criteria_names %}
+                          <th class="p-2">{{ name[:8] }}</th>
+                          {% endfor %}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for i in range(probability_matrix|length) %}
+                        <tr
+                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
+                        >
+                          <td class="p-2 font-bold text-left">
+                            {{ criteria_names[i][:12] }}
+                          </td>
+                          {% for j in range(probability_matrix[i]|length) %}
+                          <td
+                            class="p-2 font-mono {{ 'bg-teal-900/20' if i == j else '' }}"
+                          >
+                            {% if probability_matrix[i][j] == '-' %} - {% else
+                            %} {{ probability_matrix[i][j] }} {% endif %}
+                          </td>
+                          {% endfor %}
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <h4
+                    class="font-semibold mb-3 {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
+                  >
+                    Nilai Ordinat d'(Aᵢ) = min V(Sᵢ ≥ Sₖ)
+                  </h4>
+                  <div class="overflow-x-auto mb-6">
+                    <table
+                      class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    >
+                      <thead>
+                        <tr
+                          class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+                        >
+                          <th class="p-2 text-left">Kriteria</th>
+                          <th class="p-2 text-center">d'(Aᵢ)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for item in d_prime_values %}
+                        <tr
+                          class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
+                        >
+                          <td class="p-2">{{ item.criteria }}</td>
+                          <td
+                            class="p-2 text-center font-mono font-bold {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
+                          >
+                            {{ item.value }}
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  {% endif %} {% if normalized_weights %}
+                  <h4
+                    class="font-semibold mb-3 {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
+                  >
+                    Bobot Global Ternormalisasi (wᵢ)
+                  </h4>
+                  <p class="text-sm opacity-70 mb-3">wᵢ = d'(Aᵢ) / Σ d'(Aᵢ)</p>
                   <div class="overflow-x-auto">
                     <table
                       class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
@@ -620,11 +841,13 @@
                           class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                         >
                           <th class="p-2 text-left">Kriteria</th>
-                          <th class="p-2 text-center">Bobot Global</th>
+                          <th class="p-2 text-center">Bobot Global (wᵢ)</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {% for item in normalized_weights %}
+                        {% set total_weight = namespace(value=0) %} {% for item
+                        in normalized_weights %} {% set total_weight.value =
+                        total_weight.value + item.weight %}
                         <tr
                           class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
                         >
@@ -632,16 +855,25 @@
                           <td
                             class="p-2 text-center font-mono font-bold {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
                           >
-                            {{ "%.2f"|format(item.weight)|replace(".", ",") }}
+                            {{ item.weight }}
                           </td>
                         </tr>
                         {% endfor %}
+                        <tr
+                          class="{{ 'bg-teal-900/30' if current_theme == 'dark' else 'bg-teal-100' }} font-bold"
+                        >
+                          <td class="p-2">Total</td>
+                          <td class="p-2 text-center font-mono">
+                            {{ "%.2f"|format(total_weight.value)|replace(".",
+                            ",") }}
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
                   {% else %}
                   <p class="text-gray-500 italic">
-                    Data bobot global tidak tersedia.
+                    Data bobot normalisasi tidak tersedia.
                   </p>
                   {% endif %}
                 </div>
@@ -676,6 +908,13 @@
                   x-collapse
                   class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
                 >
+                  <p class="text-sm opacity-80 mb-4">
+                    Hasil akhir perhitungan nilai masing-masing peserta
+                    menggunakan metode Fuzzy AHP dengan formula defuzzifikasi:
+                    <span class="font-mono"
+                      >Skor = (ΣL×w + ΣM×w + ΣU×w) / 3</span
+                    >
+                  </p>
                   <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                       <thead>
