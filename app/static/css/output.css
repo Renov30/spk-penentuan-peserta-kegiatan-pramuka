@@ -2398,6 +2398,9 @@
     --tw-outline-style: none;
     outline-style: none;
   }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
   .group-hover\:scale-105 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
