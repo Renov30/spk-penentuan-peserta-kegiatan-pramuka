@@ -1,13 +1,3 @@
-"""
-Modul untuk perhitungan SPK menggunakan metode Fuzzy AHP lengkap sesuai PDF.
-Implementasi lengkap dengan:
-1. Matriks perbandingan berpasangan AHP
-2. Fuzzifikasi matriks menggunakan TFN
-3. Sintesis Fuzzy (Fuzzy Synthetic Extent)
-4. Perbandingan probabilitas V(M2 >= M1)
-5. Defuzzifikasi ordinat d'(Ai)
-"""
-
 from app import db
 from app.models import (
     Penilaian,
@@ -158,16 +148,6 @@ def calculate_fuzzy_ahp_weights(
 def get_pairwise_matrix_from_db(
     event_id: int, criteria_ids: List[int]
 ) -> Optional[np.ndarray]:
-    """
-    Ambil matriks perbandingan berpasangan dari database
-
-    Args:
-        event_id: ID kegiatan
-        criteria_ids: List ID kriteria (dalam urutan)
-
-    Returns:
-        Matriks numpy atau None jika tidak ada
-    """
     comparisons = PairwiseComparison.query.filter_by(event_id=event_id).all()
     if not comparisons:
         return None

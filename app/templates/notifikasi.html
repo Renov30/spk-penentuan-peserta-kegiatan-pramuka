@@ -14,12 +14,18 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+
+    <!-- Vanilla CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/notifications.css') }}"
+    />
 
-    <!-- Icons -->
+    <!-- Fontawesome -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
@@ -40,79 +46,6 @@
 
     <!-- Script Theme -->
     {% include 'script_theme.html' %}
-
-    <style>
-      @keyframes slideInRight {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-
-      @keyframes slideOutRight {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      @keyframes fadeOut {
-        from {
-          opacity: 1;
-        }
-        to {
-          opacity: 0;
-        }
-      }
-
-      @keyframes scaleIn {
-        from {
-          transform: scale(0.9);
-          opacity: 0;
-        }
-        to {
-          transform: scale(1);
-          opacity: 1;
-        }
-      }
-
-      .toast {
-        animation: slideInRight 0.3s ease-out;
-      }
-
-      .toast.hide {
-        animation: slideOutRight 0.3s ease-in;
-      }
-
-      #confirm-dialog {
-        animation: fadeIn 0.2s ease-out;
-      }
-
-      #confirm-dialog.hide {
-        animation: fadeOut 0.2s ease-in;
-      }
-
-      #confirm-dialog > div {
-        animation: scaleIn 0.2s ease-out;
-      }
-    </style>
   </head>
   <body
     x-data="{ ready: false }"
@@ -288,10 +221,6 @@
       </div>
     </div>
 
-    <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} {% include 'script_notification.html'
-    %}
-
     <!-- Toast Notification Container -->
     <div
       id="toast-container"
@@ -343,6 +272,11 @@
         </div>
       </div>
     </div>
+    
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
+
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
   </body>
 </html>

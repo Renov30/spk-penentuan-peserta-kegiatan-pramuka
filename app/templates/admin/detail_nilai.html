@@ -12,42 +12,37 @@
       {{ 'Detail Nilai | SPK Pramuka' if current_lang == 'id' else 'Score Detail
       | Scout DSS' }}
     </title>
+
+    <!-- Tailwind CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+
+    <!-- Vanilla CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
     <link
       rel="stylesheet"
+      href="{{ url_for('static', filename='css/detail_nilai.css') }}"
+    />
+
+    <!-- Fontawesome -->
+    <link
+      rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+
+    <!-- Alpine.js -->
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
+
+    <!-- Include Sidebar & Theme Script -->
     {% include "script_sidebar.html" %} {% include 'script_theme.html' %}
-    <style>
-      .step-card {
-        transition: all 0.3s ease;
-      }
-      .step-card:hover {
-        transform: translateY(-2px);
-      }
-      .matrix-table td,
-      .matrix-table th {
-        min-width: 80px;
-        text-align: center;
-        padding: 8px;
-        font-size: 0.85rem;
-      }
-      .tfn-value {
-        font-family: monospace;
-        font-size: 0.8rem;
-      }
-    </style>
   </head>
   <body
     x-data="{ current_lang: '{{ current_lang }}}"
@@ -167,7 +162,7 @@
                   >
                   <span
                     class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                    >Penyusunan Matriks Perbandingan Berpasangan (Crisp)</span
+                    >{{ 'Penyusunan Matriks Perbandingan Berpasangan (Crisp)' if current_lang == 'id' else 'Construction of the Pairwise Comparison Matrix (Crisp)' }}</span
                   >
                 </div>
                 <i
@@ -181,16 +176,14 @@
                 class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
               >
                 <p class="text-sm opacity-80 mb-4">
-                  Matriks perbandingan berpasangan antar kriteria menggunakan
-                  skala Saaty (1-9). Matriks bersifat resiprokal dengan aᵢᵢ = 1
-                  dan aᵢⱼ = 1/aⱼᵢ.
+                  {{ 'Matriks perbandingan berpasangan antar kriteria menggunakan skala Saaty (1-9). Matriks bersifat resiprokal dengan aᵢᵢ = 1 dan aᵢⱼ = 1/aⱼᵢ.' if current_lang == 'id' else 'The pairwise comparison matrix among criteria uses the Saaty scale (1–9). The matrix is reciprocal, where aᵢᵢ = 1 and aᵢⱼ = 1 / aⱼᵢ.' }}
                 </p>
 
                 <!-- Tabel Skala Perbandingan Tingkat Kepentingan -->
                 <h4
                   class="font-semibold mb-3 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
                 >
-                  Tabel Skala Perbandingan Tingkat Kepentingan (Saaty)
+                  {{ 'Tabel Skala Perbandingan Tingkat Kepentingan (Saaty)' if current_lang == 'id' else 'Scale Table of Importance Levels (Saaty)' }}
                 </h4>
                 <div class="overflow-x-auto mb-6">
                   <table
@@ -200,8 +193,8 @@
                       <tr
                         class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                       >
-                        <th class="p-2">Intensitas</th>
-                        <th class="p-2">Definisi</th>
+                        <th class="p-2">{{ 'Intensitas' if current_lang == 'id' else 'Intensity' }}</th>
+                        <th class="p-2">{{ 'Definisi' if current_lang == 'id' else 'Definition' }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -209,51 +202,48 @@
                         class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
                       >
                         <td class="p-2 font-bold text-center">1</td>
-                        <td class="p-2">
-                          Kedua elemen sama penting (Equal Importance)
+                        <td class="p-2 text-center">
+                          {{ 'Kedua elemen sama penting (Equal Importance)' if current_lang == 'id' else 'Both elements are equally important (Equal Importance)' }}
                         </td>
                       </tr>
                       <tr
                         class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
                       >
                         <td class="p-2 font-bold text-center">3</td>
-                        <td class="p-2">
-                          Elemen satu sedikit lebih penting (Slightly More
-                          Importance)
+                        <td class="p-2 text-center">
+                          {{ 'Elemen satu sedikit lebih penting (Slightly More Importance)' if current_lang == 'id' else 'One element is slightly more important than the other (Slightly More Important)' }}
                         </td>
                       </tr>
                       <tr
                         class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
                       >
                         <td class="p-2 font-bold text-center">5</td>
-                        <td class="p-2">
-                          Elemen satu lebih penting (Materially More Importance)
+                        <td class="p-2 text-center">
+                          {{ 'Elemen satu lebih penting (Materially More Importance)' if current_lang == 'id' else 'One element is more important than the other (Materially More Important)' }}
                         </td>
                       </tr>
                       <tr
                         class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
                       >
                         <td class="p-2 font-bold text-center">7</td>
-                        <td class="p-2">
-                          Satu elemen jelas lebih penting (Significantly More
-                          Importance)
+                        <td class="p-2 text-center">
+                          {{ 'Satu elemen jelas lebih penting (Significantly More Importance)' if current_lang == 'id' else 'One element is clearly more important than the other (Significantly More Important)' }}
                         </td>
                       </tr>
                       <tr
                         class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
                       >
                         <td class="p-2 font-bold text-center">9</td>
-                        <td class="p-2">
-                          Satu elemen mutlak lebih penting (Absolutely More
-                          Importance)
+                        <td class="p-2 text-center">
+                          {{ 'Satu elemen mutlak lebih penting (Absolutely More Importance)' if current_lang == 'id' else 'One element is absolutely more important than the other (Absolutely More Important)' }}
                         </td>
                       </tr>
                       <tr
                         class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
                       >
                         <td class="p-2 font-bold text-center">2,4,6,8</td>
-                        <td class="p-2">
-                          Nilai-nilai diantara dua pertimbangan yang berdekatan
+                        <td class="p-2 text-center">
+                          {{ 'Nilai-nilai diantara dua pertimbangan yang berdekatan' if current_lang == 'id' else 'Intermediate values between two adjacent judgments' }}
                         </td>
                       </tr>
                     </tbody>
@@ -271,8 +261,7 @@
                     <span
                       class="{{ 'text-amber-300' if current_theme == 'dark' else 'text-amber-700' }}"
                     >
-                      Matriks ini di-generate otomatis berdasarkan rasio bobot
-                      kriteria.
+                      {{ 'Matriks ini di-generate otomatis berdasarkan rasio bobot kriteria.' if current_lang == 'id' else 'This matrix is automatically generated based on the ratio of criteria weights.' }}
                     </span>
                   </div>
                 </div>
@@ -281,12 +270,11 @@
                 <h4
                   class="font-semibold mb-3 {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
                 >
-                  {{ 'Matriks Perbandingan Berpasangan (Crisp)' if current_lang
-                  == 'id' else 'Crisp Pairwise Comparison Matrix' }}
+                  {{ 'Matriks Perbandingan Berpasangan (Crisp)' if current_lang == 'id' else 'Crisp Pairwise Comparison Matrix' }}
                 </h4>
                 <div class="overflow-x-auto mb-6">
                   <table
-                    class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    class="text-sm matrix-table w-full {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
                   >
                     <thead>
                       <tr
@@ -347,7 +335,7 @@
                   >
                   <span
                     class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                    >Perhitungan Vector Eigen (Geometric Mean Method)</span
+                    >{{ 'Perhitungan Vector Eigen (Geometric Mean Method)' if current_lang == 'id' else 'Eigenvector Calculation (Geometric Mean Method)' }}</span
                   >
                 </div>
                 <i
@@ -361,8 +349,7 @@
                 class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
               >
                 <p class="text-sm opacity-80 mb-4">
-                  Perhitungan vector eigen menggunakan metode rata-rata
-                  geometrik untuk memperoleh bobot awal kriteria.
+                  {{ 'Perhitungan vector eigen menggunakan metode rata-rata geometrik untuk memperoleh bobot awal kriteria.' if current_lang == 'id' else 'The eigenvector is calculated using the geometric mean method to obtain the initial weights of the criteria.' }}
                 </p>
                 <div
                   class="mb-4 p-3 rounded-lg {{ 'bg-green-900/20' if current_theme == 'dark' else 'bg-green-50' }}"
@@ -372,11 +359,11 @@
                 </div>
                 {% if eigenvector_data %}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div class="w-full">
                     <h4
                       class="font-semibold mb-3 {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                     >
-                      Vector Eigen (Bobot Lokal)
+                      {{ 'Vector Eigen (Bobot Lokal)' if current_lang == 'id' else 'Eigenvector (Local Weights)' }}
                     </h4>
                     <table
                       class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
@@ -385,8 +372,8 @@
                         <tr
                           class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                         >
-                          <th class="p-2 text-left">Kriteria</th>
-                          <th class="p-2 text-center">Eigenvector (wᵢ)</th>
+                          <th class="p-2 text-left">{{ 'Kriteria' if current_lang == 'id' else 'Criteria' }}</th>
+                          <th class="p-2 text-center">{{ 'Bobot Vektor Eigen (wᵢ)' if current_lang == 'id' else 'Eigenvector (wᵢ)' }}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -425,8 +412,7 @@
                 </div>
                 {% else %}
                 <p class="text-gray-500 italic">
-                  {{ 'Data eigenvector tidak tersedia.' if current_lang == 'id'
-                  else 'Eigenvector data is not available.' }}
+                  {{ 'Data eigenvector tidak tersedia.' if current_lang == 'id' else 'Eigenvector data is not available.' }}
                 </p>
                 {% endif %}
               </div>
@@ -448,7 +434,7 @@
                   >
                   <span
                     class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                    >Uji Konsistensi Matriks Perbandingan</span
+                    >{{ 'Uji Konsistensi Matriks Perbandingan' if current_lang == 'id' else 'Consistency Test of the Pairwise Comparison Matrix' }}</span
                   >
                 </div>
                 <i
@@ -462,9 +448,7 @@
                 class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
               >
                 <p class="text-sm opacity-80 mb-4">
-                  Uji konsistensi dilakukan untuk memastikan penilaian bersifat
-                  rasional dan tidak saling bertentangan. Matriks dinyatakan
-                  konsisten jika CR ≤ 0,1.
+                  {{ 'Uji konsistensi dilakukan untuk memastikan penilaian bersifat rasional dan tidak saling bertentangan. Matriks dinyatakan konsisten jika CR ≤ 0,1.' if current_lang == 'id' else 'The consistency test is conducted to ensure that the judgments are rational and not contradictory. The matrix is considered consistent if CR ≤ 0.1.' }}
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div
@@ -511,8 +495,9 @@
                     <div class="text-xs mt-1">
                       {% if is_consistent %}
                       <span class="text-green-500"
-                        ><i class="fa-solid fa-check-circle"></i> Konsisten (CR
-                        ≤ 0,1)</span
+                        ><i class="fa-solid fa-check-circle"></i>
+                        {{ 'Konsisten (CR ≤ 0,1)' if current_lang == 'id' else 'Consistent (CR ≤ 0.1)' }}
+                      </span
                       >
                       {% else %}
                       <span class="text-red-500"
@@ -534,7 +519,7 @@
                 </h4>
                 <div class="overflow-x-auto">
                   <table
-                    class="text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    class="text-sm w-full {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
                   >
                     <thead>
                       <tr
@@ -543,7 +528,7 @@
                         <th class="p-2">n</th>
                         {% for n in range(1, 13) %}
                         <th
-                          class="p-2 {{ 'bg-yellow-600/30' if n == criteria_names|length else '' }}"
+                          class="p-2 text-center {{ 'bg-yellow-600/30' if n == criteria_names|length else '' }}"
                         >
                           {{ n }}
                         </th>
@@ -555,7 +540,7 @@
                         <td class="p-2 font-bold">RI</td>
                         {% for n in range(1, 13) %}
                         <td
-                          class="p-2 font-mono {{ 'bg-yellow-600/30 font-bold' if n == criteria_names|length else '' }}"
+                          class="p-2 font-mono text-center {{ 'bg-yellow-600/30 font-bold' if n == criteria_names|length else '' }}"
                         >
                           {{ "%.2f"|format(ri_table.get(n, 0)) }}
                         </td>
@@ -583,7 +568,7 @@
                   >
                   <span
                     class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                    >Fuzzifikasi Matriks Perbandingan Berpasangan</span
+                    >{{ 'Fuzzifikasi Matriks Perbandingan Berpasangan' if current_lang == 'id' else 'Fuzzification of the Pairwise Comparison Matrix' }}</span
                   >
                 </div>
                 <i
@@ -597,15 +582,14 @@
                 class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
               >
                 <p class="text-sm opacity-80 mb-4">
-                  Setelah matriks dinyatakan konsisten, nilai crisp dikonversi
-                  ke Triangular Fuzzy Number (TFN) = (l, m, u).
+                  {{ 'Setelah matriks dinyatakan konsisten, nilai crisp dikonversi ke Triangular Fuzzy Number (TFN) = (l, m, u).' if current_lang == 'id' else 'After the matrix is declared consistent, the crisp values are converted into Triangular Fuzzy Numbers (TFN) = (l, m, u).' }}
                 </p>
 
                 <!-- TFN Scale Table -->
                 <h4
                   class="font-semibold mb-3 {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
                 >
-                  Tabel Skala Nilai Fuzzy (TFN)
+                  {{ 'Tabel Skala Nilai Fuzzy (TFN)' if current_lang == 'id' else 'Fuzzy Scale Table (TFN)' }}
                 </h4>
                 <div class="overflow-x-auto mb-6">
                   <table
@@ -615,9 +599,9 @@
                       <tr
                         class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                       >
-                        <th class="p-2">Intensitas</th>
+                        <th class="p-2">{{ 'Intensitas' if current_lang == 'id' else 'Intensity' }}</th>
                         <th class="p-2">TFN (l, m, u)</th>
-                        <th class="p-2">Kebalikan</th>
+                        <th class="p-2">{{ 'Kebalikan' if current_lang == 'id' else 'Reciprocal' }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -639,17 +623,17 @@
                 <h4
                   class="font-semibold mb-3 {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
                 >
-                  Matriks Fuzzy (TFN)
+                  {{ 'Matriks Fuzzy (TFN)' if current_lang == 'id' else 'Fuzzy Matrix (TFN)' }}
                 </h4>
                 <div class="overflow-x-auto">
                   <table
-                    class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    class="text-sm matrix-table w-full {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
                   >
                     <thead>
                       <tr
                         class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                       >
-                        <th class="p-2">Kriteria</th>
+                        <th class="p-2">{{ 'Kriteria' if current_lang == 'id' else 'Criteria' }}</th>
                         {% for name in criteria_names %}
                         <th class="p-2">{{ name[:8] }}</th>
                         {% endfor %}
@@ -677,7 +661,7 @@
                 </div>
                 {% else %}
                 <p class="text-gray-500 italic">
-                  Data matriks fuzzy tidak tersedia.
+                  {{ 'Data matriks fuzzy tidak tersedia.' if current_lang == 'id' else 'Fuzzy matrix data is not available.' }}
                 </p>
                 {% endif %}
               </div>
@@ -699,7 +683,7 @@
                   >
                   <span
                     class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                    >Perhitungan Fuzzy Synthetic Extent</span
+                    >{{ 'Perhitungan Fuzzy Synthetic Extent' if current_lang == 'id' else 'Fuzzy Synthetic Extent Calculation' }}</span
                   >
                 </div>
                 <i
@@ -713,8 +697,7 @@
                 class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
               >
                 <p class="text-sm opacity-80 mb-4">
-                  Perhitungan Fuzzy Synthetic Extent menggunakan teori Chang
-                  dengan menjumlahkan nilai TFN pada setiap baris.
+                  {{ 'Perhitungan Fuzzy Synthetic Extent menggunakan teori Chang dengan menjumlahkan nilai TFN pada setiap baris.' if current_lang == 'id' else 'The Fuzzy Synthetic Extent is calculated using Chang’s theory by summing the TFN values in each row.' }}
                 </p>
                 <div
                   class="mb-4 p-3 rounded-lg {{ 'bg-amber-900/20' if current_theme == 'dark' else 'bg-amber-50' }}"
@@ -726,7 +709,7 @@
                 <h4
                   class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
                 >
-                  Tabel Skala Nilai Fuzzy (TFN)
+                  {{ 'Tabel Skala Nilai Fuzzy (TFN)' if current_lang == 'id' else 'Fuzzy Scale Table (TFN)' }}
                 </h4>
                 <div class="overflow-x-auto mb-6">
                   <table
@@ -736,9 +719,9 @@
                       <tr
                         class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                       >
-                        <th class="p-2">Intensitas</th>
+                        <th class="p-2">{{ 'Intensitas' if current_lang == 'id' else 'Intensity' }}</th>
                         <th class="p-2">TFN (l, m, u)</th>
-                        <th class="p-2">Kebalikan</th>
+                        <th class="p-2">{{ 'Kebalikan' if current_lang == 'id' else 'Reciprocal' }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -760,17 +743,17 @@
                 <h4
                   class="font-semibold mb-3 {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
                 >
-                  Matriks Fuzzy (TFN)
+                  {{ 'Matriks Fuzzy (TFN)' if current_lang == 'id' else 'Fuzzy Matrix (TFN)' }}
                 </h4>
                 <div class="overflow-x-auto">
                   <table
-                    class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    class="text-sm matrix-table w-full {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
                   >
                     <thead>
                       <tr
                         class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                       >
-                        <th class="p-2">Kriteria</th>
+                        <th class="p-2">{{ 'Kriteria' if current_lang == 'id' else 'Criteria' }}</th>
                         {% for name in criteria_names %}
                         <th class="p-2">{{ name[:8] }}</th>
                         {% endfor %}
@@ -798,154 +781,9 @@
                 </div>
                 {% else %}
                 <p class="text-gray-500 italic">
-                  Data matriks fuzzy tidak tersedia.
+                  {{ 'Data matriks fuzzy tidak tersedia.' if current_lang == 'id' else 'Fuzzy matrix data is not available.' }}
                 </p>
                 {% endif %}
-                {% endif %}
-              </div>
-            </div>
-
-            <!-- LANGKAH 5: Perhitungan Fuzzy Synthetic Extent -->
-            <div
-              x-data="{ open: false }"
-              class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
-            >
-              <button
-                @click="open = !open"
-                class="w-full p-4 flex items-center justify-between {{ 'bg-amber-900/30 hover:bg-amber-900/50' if current_theme == 'dark' else 'bg-amber-50 hover:bg-amber-100' }} transition"
-              >
-                <div class="flex items-center gap-3">
-                  <span
-                    class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold"
-                    >5</span
-                  >
-                  <span
-                    class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                    >Perhitungan Fuzzy Synthetic Extent</span
-                  >
-                </div>
-                <i
-                  class="fa-solid"
-                  :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
-                ></i>
-              </button>
-              <div
-                x-show="open"
-                x-collapse
-                class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
-              >
-                <p class="text-sm opacity-80 mb-4">
-                  Perhitungan Fuzzy Synthetic Extent menggunakan teori Chang
-                  dengan menjumlahkan nilai TFN pada setiap baris.
-                </p>
-                <div
-                  class="mb-4 p-3 rounded-lg {{ 'bg-amber-900/20' if current_theme == 'dark' else 'bg-amber-50' }}"
-                >
-                  <p class="text-sm font-mono">Sᵢ = (Σ Mᵢⱼ) ⊗ (ΣΣ Mᵢⱼ)⁻¹</p>
-                </div>
-
-                {% if row_sums_data %}
-                <h4
-                  class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
-                >
-                  {{ 'Penjumlahan Baris Matriks Fuzzy' if current_lang == 'id'
-                  else 'Summation of Fuzzy Matrix Rows' }}
-                </h4>
-                <div class="overflow-x-auto mb-6">
-                  <table
-                    class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                  >
-                    <thead>
-                      <tr
-                        class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                      >
-                        <th class="p-2 text-left">
-                          {{ 'Kriteria' if current_lang == 'id' else 'Criteria'
-                          }}
-                        </th>
-                        <th class="p-2 text-center">Σl</th>
-                        <th class="p-2 text-center">Σm</th>
-                        <th class="p-2 text-center">Σu</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for item in row_sums_data %}
-                      <tr
-                        class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                      >
-                        <td class="p-2">{{ item.criteria }}</td>
-                        <td class="p-2 text-center font-mono">
-                          {{ "%.2f"|format(item.l)|replace(".", ",") }}
-                        </td>
-                        <td class="p-2 text-center font-mono">
-                          {{ "%.2f"|format(item.m)|replace(".", ",") }}
-                        </td>
-                        <td class="p-2 text-center font-mono">
-                          {{ "%.2f"|format(item.u)|replace(".", ",") }}
-                        </td>
-                      </tr>
-                      {% endfor %}
-                      <tr
-                        class="{{ 'bg-amber-900/30' if current_theme == 'dark' else 'bg-amber-100' }} font-bold"
-                      >
-                        <td class="p-2">Total</td>
-                        <td class="p-2 text-center font-mono">
-                          {{ "%.2f"|format(total_fuzzy_sum.l)|replace(".", ",")
-                          }}
-                        </td>
-                        <td class="p-2 text-center font-mono">
-                          {{ "%.2f"|format(total_fuzzy_sum.m)|replace(".", ",")
-                          }}
-                        </td>
-                        <td class="p-2 text-center font-mono">
-                          {{ "%.2f"|format(total_fuzzy_sum.u)|replace(".", ",")
-                          }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <h4
-                  class="font-semibold mb-3 {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
-                >
-                  Fuzzy Synthetic Extent (Sᵢ)
-                </h4>
-                <div class="overflow-x-auto">
-                  <table
-                    class="w-full text-sm {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
-                  >
-                    <thead>
-                      <tr
-                        class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
-                      >
-                        <th class="p-2 text-left">Kriteria</th>
-                        <th class="p-2 text-center">Sᵢ (l, m, u)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for item in fuzzy_synthetic_extent %}
-                      <tr
-                        class="{{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }} border-t"
-                      >
-                        <td class="p-2">{{ item.criteria }}</td>
-                        <td
-                          class="p-2 text-center font-mono {{ 'text-amber-400' if current_theme == 'dark' else 'text-amber-600' }}"
-                        >
-                          ({{ "%.2f"|format(item.l)|replace(".", ",") }}, {{
-                          "%.2f"|format(item.m)|replace(".", ",") }}, {{
-                          "%.2f"|format(item.u)|replace(".", ",") }})
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-                {% else %}
-                <p class="text-gray-500 italic">
-                  {{ 'Data sintesis fuzzy tidak tersedia.' if current_lang ==
-                  'id' else 'Fuzzy synthesis data is not available.' }}
-                </p>
                 {% endif %}
               </div>
             </div>
@@ -966,7 +804,7 @@
                   >
                   <span
                     class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                    >Perbandingan Probabilitas, Normalisasi & Bobot Global</span
+                    >{{ 'Perbandingan Probabilitas, Normalisasi & Bobot Global' if current_lang == 'id' else 'Probability Comparison, Normalization, and Global Weights' }}</span
                   >
                 </div>
                 <i
@@ -980,27 +818,25 @@
                 class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
               >
                 <p class="text-sm opacity-80 mb-4">
-                  Perbandingan tingkat probabilitas antar nilai Fuzzy Synthetic
-                  Extent untuk menentukan dominasi kriteria.
+                  {{ 'Perbandingan tingkat probabilitas antar nilai Fuzzy Synthetic Extent untuk menentukan dominasi kriteria.' if current_lang == 'id' else 'Comparison of probability levels among Fuzzy Synthetic Extent values to determine criteria dominance.' }}
                 </p>
 
                 {% if probability_matrix %}
                 <h4
                   class="font-semibold mb-3 {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
                 >
-                  Matriks V(Sᵢ ≥ Sₖ)
+                  {{ 'Matriks V(Sᵢ ≥ Sₖ)' if current_lang == 'id' else 'Matrix V(Sᵢ ≥ Sₖ)' }}
                 </h4>
                 <div
                   class="mb-4 p-3 rounded-lg {{ 'bg-teal-900/20' if current_theme == 'dark' else 'bg-teal-50' }}"
                 >
                   <p class="text-xs font-mono">
-                    V(Sᵢ ≥ Sₖ) = 1 jika mᵢ ≥ mₖ | 0 jika lₖ ≥ uᵢ |
-                    (lᵢ-uₖ)/((mₖ-uₖ)-(mᵢ-lᵢ)) untuk kondisi lainnya
+                    {{ 'V(Sᵢ ≥ Sₖ) = 1 jika mᵢ ≥ mₖ | 0 jika lₖ ≥ uᵢ | (lᵢ-uₖ)/((mₖ-uₖ)-(mᵢ-lᵢ)) untuk kondisi lainnya' if current_lang == 'id' else 'V(Sᵢ ≥ Sₖ) = 1 if mᵢ ≥ mₖ | 0 if lₖ ≥ uᵢ | (lᵢ − uₖ) / ((mₖ − uₖ) − (mᵢ − lᵢ)) for other conditions' }}
                   </p>
                 </div>
                 <div class="overflow-x-auto mb-6">
                   <table
-                    class="text-sm matrix-table {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
+                    class="text-sm matrix-table w-full {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-50' }} rounded-lg"
                   >
                     <thead>
                       <tr
@@ -1022,7 +858,7 @@
                         </td>
                         {% for j in range(probability_matrix[i]|length) %}
                         <td
-                          class="p-2 font-mono {{ 'bg-teal-900/20' if i == j else '' }}"
+                          class="p-2 font-mono text-center {{ 'bg-teal-900/20' if i == j else '' }}"
                         >
                           {% if probability_matrix[i][j] == '-' %} - {% else %}
                           {{ probability_matrix[i][j] }} {% endif %}
@@ -1037,7 +873,7 @@
                 <h4
                   class="font-semibold mb-3 {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
                 >
-                  Nilai Ordinat d'(Aᵢ) = min V(Sᵢ ≥ Sₖ)
+                  {{ "Nilai Ordinat d'(Aᵢ) = min V(Sᵢ ≥ Sₖ)" if current_lang == 'id' else "Ordinal Value d′(Aᵢ) = min V(Sᵢ ≥ Sₖ)" }}
                 </h4>
                 <div class="overflow-x-auto mb-6">
                   <table
@@ -1047,7 +883,7 @@
                       <tr
                         class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                       >
-                        <th class="p-2 text-left">Kriteria</th>
+                        <th class="p-2 text-left">{{ 'Kriteria' if current_lang == 'id' else 'Criteria' }}</th>
                         <th class="p-2 text-center">d'(Aᵢ)</th>
                       </tr>
                     </thead>
@@ -1071,7 +907,7 @@
                 <h4
                   class="font-semibold mb-3 {{ 'text-teal-400' if current_theme == 'dark' else 'text-teal-600' }}"
                 >
-                  Bobot Global Ternormalisasi (wᵢ)
+                  {{ 'Bobot Global Ternormalisasi (wᵢ)' if current_lang == 'id' else 'Normalized Global Weight (wᵢ)' }}
                 </h4>
                 <p class="text-sm opacity-70 mb-3">wᵢ = d'(Aᵢ) / Σ d'(Aᵢ)</p>
                 <div class="overflow-x-auto">
@@ -1082,8 +918,8 @@
                       <tr
                         class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
                       >
-                        <th class="p-2 text-left">Kriteria</th>
-                        <th class="p-2 text-center">Bobot Global (wᵢ)</th>
+                        <th class="p-2 text-left">{{ 'Kriteria' if current_lang == 'id' else 'Criteria' }}</th>
+                        <th class="p-2 text-center">{{ 'Bobot Global (wᵢ)' if current_lang == 'id' else 'Global Weight (wᵢ)' }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1156,21 +992,21 @@
                     class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2"
                   >
                     <i class="fa-solid fa-file-pdf"></i>
-                    Export PDF
+                    {{ 'Ekspor PDF' if current_lang == 'id' else 'Export PDF' }}
                   </a>
                   <a
                     href="{{ url_for('export_laporan_word', event_id=event.id_kegiatan) }}"
                     class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2"
                   >
                     <i class="fa-solid fa-file-word"></i>
-                    Export Word
+                    {{ 'Ekspor Word' if current_lang == 'id' else 'Export Word' }}
                   </a>
                   <button
                     onclick="window.open('{{ url_for('preview_laporan_seleksi', event_id=event.id_kegiatan) }}', '_blank');"
                     class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2"
                   >
                     <i class="fa-solid fa-print"></i>
-                    Print Laporan
+                    {{ 'Print Laporan' if current_lang == 'id' else 'Print Report' }}
                   </button>
                 </div>
               </div>
@@ -1255,7 +1091,7 @@
                     class="{{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
                   >
                     <tr class="font-bold">
-                      <td colspan="4" class="p-4 text-right">Total Fuzzy:</td>
+                      <td colspan="4" class="p-4 text-right">{{ 'Total Fuzzy:' if current_lang == 'id' else 'Total Fuzzy Value:' }}</td>
                       <td
                         class="p-4 text-center {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
                       >
@@ -1279,14 +1115,14 @@
                 <div
                   class="inline-block px-4 py-2 rounded-full {{ 'bg-blue-900 text-blue-200' if current_theme == 'dark' else 'bg-blue-100 text-blue-800' }} text-sm font-semibold mb-4"
                 >
-                  Nilai Akhir (Defuzzifikasi)
+                  {{ 'Nilai Akhir (Defuzzifikasi)' if current_lang == 'id' else 'Final Score (Defuzzification)' }}
                 </div>
 
                 <div class="mb-6">
                   <div
                     class="text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }} mb-2"
                   >
-                    Formula Defuzzifikasi (Center of Area):
+                    {{ 'Formula Defuzzifikasi (Center of Area):' if current_lang == 'id' else 'Defuzzification Formula (Center of Area):' }}
                   </div>
                   <div
                     class="inline-block px-6 py-3 rounded-lg {{ 'bg-gray-800 border border-gray-700' if current_theme == 'dark' else 'bg-gray-50 border border-gray-300' }}"
@@ -1334,7 +1170,7 @@
                   {% if hasil_seleksi %}
                   <div class="text-white text-sm opacity-80 mt-4">
                     <i class="fa-solid fa-database mr-2"></i>
-                    Nilai tersimpan:
+                      {{ 'Nilai tersimpan:' if current_lang == 'id' else 'Stored Value:' }}
                     <span class="font-bold"
                       >{{ "%.2f"|format(hasil_seleksi.skor_akhir)|replace(".",
                       ",") }}</span
@@ -1347,8 +1183,7 @@
                   class="text-xs {{ 'text-gray-500' if current_theme == 'dark' else 'text-gray-500' }} italic"
                 >
                   <i class="fa-solid fa-info-circle mr-1"></i>
-                  Nilai dihitung menggunakan metode Fuzzy Analytical Hierarchy
-                  Process (Fuzzy AHP)
+                    {{ 'Nilai dihitung menggunakan metode Fuzzy Analytical Hierarchy Process (Fuzzy AHP)' if current_lang == 'id' else 'The value is calculated using the Fuzzy Analytical Hierarchy Process (Fuzzy AHP) method' }}
                 </div>
               </div>
             </div>

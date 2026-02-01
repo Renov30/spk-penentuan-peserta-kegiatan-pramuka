@@ -82,7 +82,7 @@
                   </p>
                 </div>
                 <a
-                  href="{{ url_for('admin_hasil_penilaian') }}?event_id={{ event.id_kegiatan }}"
+                  href="{{ url_for('penilai_hasil_penilaian') }}?event_id={{ event.id_kegiatan }}"
                   class="px-4 py-2 rounded-lg {{ 'bg-gray-700 hover:bg-gray-600' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-300' }} transition"
                 >
                   <i class="fa-solid fa-arrow-left mr-2"></i>{{ 'Kembali' if current_lang == 'id' else 'Back' }}

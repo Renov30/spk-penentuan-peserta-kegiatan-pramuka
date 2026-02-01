@@ -1,8 +1,3 @@
-"""
-Modul untuk perhitungan AHP (Analytical Hierarchy Process) lengkap
-sesuai dengan teori Fuzzy AHP dari PDF.
-"""
-
 import numpy as np
 from typing import List, Tuple, Dict
 from decimal import Decimal, getcontext

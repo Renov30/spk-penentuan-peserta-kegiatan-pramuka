@@ -1,0 +1,17 @@
+.step-card {
+  transition: all 0.3s ease;
+}
+.step-card:hover {
+  transform: translateY(-2px);
+}
+.matrix-table td,
+.matrix-table th {
+  min-width: 80px;
+  text-align: center;
+  padding: 8px;
+  font-size: 0.85rem;
+}
+.tfn-value {
+  font-family: monospace;
+  font-size: 0.8rem;
+}

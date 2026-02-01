@@ -6912,30 +6912,14 @@ def penilai_detail_nilai(user_id, event_id):
     )
     from app.fuzzy_ahp import get_pairwise_matrix_from_db
     import numpy as np
+    import json
 
-    lang = session.get("lang", "id")
-    t = TRANSLATIONS.get(lang, TRANSLATIONS["id"])
-
-    if current_user.level != "penilai":
-        flash(f"{t['evaluator_access_denied']}", "error")
-        return redirect(url_for("index"))
-
-    # Verify event is assigned to this evaluator
     event = Event.query.get_or_404(event_id)
-    if current_user not in event.evaluators:
-        flash(f"{t['event_access_denied']}", "error")
-        return redirect(url_for("penilai_hasil_penilaian"))
-
-    # Get participant info
     user = Users.query.get_or_404(user_id)
-    participant = Participants.query.filter_by(email=user.email).first()
-
-    # Get final result
+    participant = Participants.query.filter_by(email=user.email).first_or_404()
     hasil_seleksi = HasilSeleksi.query.filter_by(
         id_users=user_id, event_id=event_id
-    ).first()
-
-    # Get all criteria for this event (ordered)
+    ).first_or_404()
     criterias = (
         Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
     )
@@ -6946,12 +6930,38 @@ def penilai_detail_nilai(user_id, event_id):
     # ==========================================
     # LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan
     # ==========================================
+
+    # Helper function to format TFN values as fractions
+    def format_tfn_val(v):
+        if abs(v - round(v)) < 0.01:
+            return f"{int(round(v))}"
+        # Check for common reciprocals 1/2 to 1/9
+        for x in range(2, 10):
+            if abs(v - 1 / x) < 0.02:
+                return f"1/{x}"
+        # Check for values like 3/2, 5/2, 7/2, 9/2
+        for num in [3, 5, 7, 9]:
+            if abs(v - num / 2) < 0.02:
+                return f"{num}/2"
+        # Check for 2/3
+        if abs(v - 2 / 3) < 0.02:
+            return f"2/3"
+        return f"{v:.2f}"
+
+    def format_tfn_tuple(tfn_tuple):
+        l, m, u = tfn_tuple
+        return f"({format_tfn_val(l)}, {format_tfn_val(m)}, {format_tfn_val(u)})"
+
     tfn_scale_table = []
     for intensity in range(1, 10):
         tfn = TFN_SCALE.get(intensity, (1, 1, 1))
         reciprocal = get_tfn_reciprocal(tfn)
         tfn_scale_table.append(
-            {"intensity": intensity, "tfn": tfn, "reciprocal": reciprocal}
+            {
+                "intensity": intensity,
+                "tfn": format_tfn_tuple(tfn),
+                "reciprocal": format_tfn_tuple(reciprocal),
+            }
         )
 
     # Get pairwise comparison matrix from database
@@ -6959,14 +6969,9 @@ def penilai_detail_nilai(user_id, event_id):
     pairwise_data = None
     fuzzy_pairwise_data = None
     use_generated_matrix = False
-    fuzzy_ahp_calc = None
-    ahp_calc = None
-
-    # Jika tidak ada matriks di database tapi ada bobot kriteria, generate matriks dari bobot
     if pairwise_matrix is None and n > 0:
         total_bobot_check = sum(c.bobot for c in criterias)
         if total_bobot_check > 0:
-            # Generate matriks perbandingan dari rasio bobot
             pairwise_matrix = np.ones((n, n))
             for i in range(n):
                 for j in range(n):
@@ -6983,15 +6988,15 @@ def penilai_detail_nilai(user_id, event_id):
     if pairwise_matrix is not None and n > 0:
         pairwise_data = pairwise_matrix.tolist()
 
-        # Convert to fuzzy (TFN) matrix
+        # Convert to fuzzy (TFN) matrix with formatted strings
         fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
         fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
         fuzzy_pairwise_data = []
         for i in range(n):
             row = []
             for j in range(n):
-                tfn = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
-                row.append(tfn)
+                tfn_tuple = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
+                row.append(format_tfn_tuple(tfn_tuple))
             fuzzy_pairwise_data.append(row)
 
     # ==========================================
@@ -6999,7 +7004,6 @@ def penilai_detail_nilai(user_id, event_id):
     # ==========================================
     eigenvector_data = None
     lambda_max = None
-
     if pairwise_matrix is not None and n > 0:
         ahp_calc = AHPCalculator(criteria_names)
         ahp_calc.set_pairwise_matrix(pairwise_matrix)
@@ -7017,8 +7021,7 @@ def penilai_detail_nilai(user_id, event_id):
     cr = None
     is_consistent = False
     ri_value = RI_TABLE.get(n, 1.58) if n > 0 else 0
-
-    if pairwise_matrix is not None and n > 1 and ahp_calc is not None:
+    if pairwise_matrix is not None and n > 1:
         ci, cr, is_consistent = ahp_calc.check_consistency()
 
     # ==========================================
@@ -7027,11 +7030,8 @@ def penilai_detail_nilai(user_id, event_id):
     fuzzy_synthetic_extent = None
     row_sums_data = None
     total_fuzzy_sum = None
-
-    if pairwise_matrix is not None and n > 0 and fuzzy_ahp_calc is not None:
+    if pairwise_matrix is not None and n > 0:
         synthetic_extents = fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
-
-        # Get row sums for display
         row_sums_data = []
         total_l, total_m, total_u = 0, 0, 0
         for i in range(n):
@@ -7047,7 +7047,6 @@ def penilai_detail_nilai(user_id, event_id):
             total_l += l_sum
             total_m += m_sum
             total_u += u_sum
-
         total_fuzzy_sum = {"l": total_l, "m": total_m, "u": total_u}
         fuzzy_synthetic_extent = []
         for i, name in enumerate(criteria_names):
@@ -7061,11 +7060,8 @@ def penilai_detail_nilai(user_id, event_id):
     # ==========================================
     probability_matrix = None
     d_prime_values = None
-
-    if pairwise_matrix is not None and n > 1 and fuzzy_ahp_calc is not None:
+    if pairwise_matrix is not None and n > 1:
         synthetic_extents = fuzzy_ahp_calc.fuzzy_synthetic_extent
-
-        # Build probability comparison matrix
         probability_matrix = []
         for i in range(n):
             row = []
@@ -7078,8 +7074,6 @@ def penilai_detail_nilai(user_id, event_id):
                     )
                     row.append(round(prob, 4))
             probability_matrix.append(row)
-
-        # Calculate d'(Ai) = min V(Si >= Sk) for all k != i
         d_prime_values = []
         for i in range(n):
             min_prob = float("inf")
@@ -7100,8 +7094,7 @@ def penilai_detail_nilai(user_id, event_id):
     # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
     # ==========================================
     normalized_weights = None
-
-    if pairwise_matrix is not None and n > 0 and fuzzy_ahp_calc is not None:
+    if pairwise_matrix is not None and n > 0:
         weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
         normalized_weights = []
         for name in criteria_names:
@@ -7113,26 +7106,19 @@ def penilai_detail_nilai(user_id, event_id):
     # Calculate total weight and breakdown per participant
     # ==========================================
     total_bobot = sum(c.bobot for c in criterias)
-
     calculation_details = []
     fuzzy_total_l = 0
     fuzzy_total_m = 0
     fuzzy_total_u = 0
-
     for criteria in criterias:
         weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
-
-        # Get average score from all evaluators
         avg_score = (
             db.session.query(db.func.avg(Penilaian.nilai))
             .filter_by(id_users=user_id, id_kriteria=criteria.id_kriteria)
             .scalar()
         )
-
         if avg_score is not None:
             score = float(avg_score)
-
-            # Fuzzification logic (same as fuzzy_ahp.py)
             if score <= 5:
                 if score <= 1:
                     l, m, u = 1, 1, 2
@@ -7144,7 +7130,7 @@ def penilai_detail_nilai(user_id, event_id):
                     l, m, u = 3, 4, 5
                 else:
                     l, m, u = 4, 5, 5
-            else:  # 0-100 scale
+            else:
                 l = max(0, score - 5)
                 m = score
                 u = min(100, score + 5)
@@ -7153,12 +7139,9 @@ def penilai_detail_nilai(user_id, event_id):
             weighted_l = l * weight
             weighted_m = m * weight
             weighted_u = u * weight
-
-            # Accumulate totals
             fuzzy_total_l += weighted_l
             fuzzy_total_m += weighted_m
             fuzzy_total_u += weighted_u
-
             calculation_details.append(
                 {
                     "criteria": criteria,
@@ -7178,6 +7161,7 @@ def penilai_detail_nilai(user_id, event_id):
         else 0
     )
     sidebar_state = current_user.sidebar_state or "expanded"
+
     return render_template(
         "penilai/detail_nilai.html",
         user=user,
@@ -7210,6 +7194,315 @@ def penilai_detail_nilai(user_id, event_id):
         d_prime_values=d_prime_values,
         normalized_weights=normalized_weights,
         debug_theme=session.get("theme"),
+    )
+
+
+@app.route("/penilai/hasil-penilaian/rekap/<int:event_id>")
+@login_required
+def penilai_rekap_nilai_fuzzy(event_id):
+    from app.ahp_calculator import (
+        AHPCalculator,
+        FuzzyAHPCalculator,
+        TFN_SCALE,
+        RI_TABLE,
+        get_tfn_reciprocal,
+    )
+    from app.fuzzy_ahp import get_pairwise_matrix_from_db, fuzzify_score
+    import numpy as np
+
+    # Get Event
+    event = Event.query.get_or_404(event_id)
+
+    # Get Criteria
+    criterias = (
+        Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
+    )
+    # Normalize weights
+    total_bobot = sum(c.bobot for c in criterias)
+    criteria_weights = {
+        c.id_kriteria: (c.bobot / total_bobot if total_bobot > 0 else 0)
+        for c in criterias
+    }
+
+    # Get Quota
+    kuota = Kuota.query.filter_by(event_id=event_id).first()
+    total_kuota = (kuota.putra + kuota.putri) if kuota else 0
+    if total_kuota == 0:
+        total_kuota = 9999  # Default all if no quota set
+
+    # Get Criteria Names and IDs for Fuzzy Calculation
+    criteria_names = [c.nama_kriteria for c in criterias]
+    criteria_ids = [c.id_kriteria for c in criterias]
+    n = len(criterias)
+
+    # ==========================================
+    # LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan
+    # ==========================================
+
+    # Helper function to format TFN values as fractions
+    def format_tfn_val(v):
+        if abs(v - round(v)) < 0.01:  # It's essentially an integer
+            return f"{int(round(v))}"
+        # Check for common reciprocals 1/2 to 1/9
+        for x in range(2, 10):
+            if abs(v - 1 / x) < 0.02:
+                return f"1/{x}"
+        # Check for values like 3/2, 5/2, 7/2, 9/2
+        for num in [3, 5, 7, 9]:
+            if abs(v - num / 2) < 0.02:
+                return f"{num}/2"
+        # Check for 2/3
+        if abs(v - 2 / 3) < 0.02:
+            return f"2/3"
+        return f"{v:.2f}"
+
+    def format_tfn_tuple(tfn_tuple):
+        l, m, u = tfn_tuple
+        return f"({format_tfn_val(l)}, {format_tfn_val(m)}, {format_tfn_val(u)})"
+
+    tfn_scale_table = []
+    for intensity in range(1, 10):
+        tfn = TFN_SCALE.get(intensity, (1, 1, 1))
+        reciprocal = get_tfn_reciprocal(tfn)
+        tfn_scale_table.append(
+            {
+                "intensity": intensity,
+                "tfn": format_tfn_tuple(tfn),
+                "reciprocal": format_tfn_tuple(reciprocal),
+            }
+        )
+
+    # Get pairwise comparison matrix from database
+    pairwise_matrix = get_pairwise_matrix_from_db(event_id, criteria_ids)
+    pairwise_data = None
+    fuzzy_pairwise_data = None
+    use_generated_matrix = False
+
+    # Jika tidak ada matriks di database tapi ada bobot kriteria, generate matriks dari bobot
+    if pairwise_matrix is None and n > 0:
+        total_bobot_check = sum(c.bobot for c in criterias)
+        if total_bobot_check > 0:
+            # Generate matriks perbandingan dari rasio bobot
+            pairwise_matrix = np.ones((n, n))
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        # Rasio bobot sebagai nilai perbandingan
+                        wi = criterias[i].bobot if criterias[i].bobot > 0 else 0.001
+                        wj = criterias[j].bobot if criterias[j].bobot > 0 else 0.001
+                        ratio = wi / wj
+                        # Batasi ke skala 1-9
+                        if ratio >= 1:
+                            pairwise_matrix[i, j] = min(9, max(1, ratio))
+                        else:
+                            pairwise_matrix[i, j] = max(1 / 9, ratio)
+            use_generated_matrix = True
+
+    if pairwise_matrix is not None and n > 0:
+        pairwise_data = pairwise_matrix.tolist()
+
+        # Convert to fuzzy (TFN) matrix with formatted strings
+        fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
+        fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
+        fuzzy_pairwise_data = []
+
+        for i in range(n):
+            row = []
+            for j in range(n):
+                tfn_tuple = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
+                row.append(format_tfn_tuple(tfn_tuple))
+            fuzzy_pairwise_data.append(row)
+
+    # ==========================================
+    # LANGKAH 2: Perhitungan Vector Eigen
+    # ==========================================
+    eigenvector_data = None
+    lambda_max = None
+
+    if pairwise_matrix is not None and n > 0:
+        ahp_calc = AHPCalculator(criteria_names)
+        ahp_calc.set_pairwise_matrix(pairwise_matrix)
+        eigenvector = ahp_calc.calculate_eigenvector()
+        lambda_max = ahp_calc.calculate_lambda_max()
+
+        eigenvector_data = []
+        for i, name in enumerate(criteria_names):
+            eigenvector_data.append({"criteria": name, "value": float(eigenvector[i])})
+
+    # ==========================================
+    # LANGKAH 3: Uji Konsistensi Matriks
+    # ==========================================
+    ci = None
+    cr = None
+    is_consistent = False
+    ri_value = RI_TABLE.get(n, 1.58) if n > 0 else 0
+
+    if pairwise_matrix is not None and n > 1:
+        ci, cr, is_consistent = ahp_calc.check_consistency()
+
+    # ==========================================
+    # LANGKAH 4: Sintesis Fuzzy (Fuzzy Synthetic Extent)
+    # ==========================================
+    fuzzy_synthetic_extent = None
+    row_sums_data = None
+    total_fuzzy_sum = None
+
+    if pairwise_matrix is not None and n > 0:
+        synthetic_extents = fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
+
+        # Get row sums for display
+        row_sums_data = []
+        total_l, total_m, total_u = 0, 0, 0
+        for i in range(n):
+            l_sum, m_sum, u_sum = 0, 0, 0
+            for j in range(n):
+                l, m, u = fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j]
+                l_sum += l
+                m_sum += m
+                u_sum += u
+            row_sums_data.append(
+                {"criteria": criteria_names[i], "l": l_sum, "m": m_sum, "u": u_sum}
+            )
+            total_l += l_sum
+            total_m += m_sum
+            total_u += u_sum
+
+        total_fuzzy_sum = {"l": total_l, "m": total_m, "u": total_u}
+
+        fuzzy_synthetic_extent = []
+        for i, name in enumerate(criteria_names):
+            si = synthetic_extents[i]
+            fuzzy_synthetic_extent.append(
+                {"criteria": name, "l": si[0], "m": si[1], "u": si[2]}
+            )
+
+    # ==========================================
+    # LANGKAH 5: Perbandingan Probabilitas V(M2 >= M1)
+    # ==========================================
+    probability_matrix = None
+    d_prime_values = None
+
+    if pairwise_matrix is not None and n > 1:
+        synthetic_extents = fuzzy_ahp_calc.fuzzy_synthetic_extent
+
+        # Build probability comparison matrix
+        probability_matrix = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                if i == j:
+                    row.append("-")
+                else:
+                    # V(Si >= Sj)
+                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(
+                        synthetic_extents[j], synthetic_extents[i]
+                    )
+                    row.append(round(prob, 4))
+            probability_matrix.append(row)
+
+        # Calculate d'(Ai) = min V(Si >= Sk) for all k != i
+        d_prime_values = []
+        for i in range(n):
+            min_prob = float("inf")
+            for j in range(n):
+                if i != j:
+                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(
+                        synthetic_extents[j], synthetic_extents[i]
+                    )
+                    min_prob = min(min_prob, prob)
+            d_prime_values.append(
+                {
+                    "criteria": criteria_names[i],
+                    "value": round(min_prob, 4) if min_prob != float("inf") else 0,
+                }
+            )
+
+    # ==========================================
+    # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
+    # ==========================================
+    normalized_weights = None
+
+    if pairwise_matrix is not None and n > 0:
+        weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+        normalized_weights = []
+        for name in criteria_names:
+            normalized_weights.append(
+                {"criteria": name, "weight": round(weights.get(name, 0), 4)}
+            )
+
+    # Get Results (Users)
+    hasil_seleksi = (
+        db.session.query(HasilSeleksi, Users, Participants)
+        .join(Users, HasilSeleksi.id_users == Users.id)
+        .outerjoin(Participants, Users.email == Participants.email)
+        .filter(HasilSeleksi.event_id == event_id)
+        .order_by(HasilSeleksi.ranking.asc())
+        .all()
+    )
+
+    rekap_data = []
+
+    for hasil, user, participant in hasil_seleksi:
+        row = {
+            "nama": user.nama_lengkap,
+            "foto": user.foto if user.foto else "img/default-user.png",
+            "asal_gudep": participant.asal_gudep if participant else "-",
+            "criteria_values": {},
+            "total_score": hasil.skor_akhir,
+            "rank": hasil.ranking,
+            "cluster": 1 if hasil.ranking <= total_kuota else 2,
+            "status": "Berhak" if hasil.ranking <= total_kuota else "Tidak Berhak",
+        }
+
+        # Calculate per-criteria weighted score
+        for c in criterias:
+            # Get raw score
+            penilaian = Penilaian.query.filter_by(
+                id_users=user.id, id_kriteria=c.id_kriteria
+            ).first()
+
+            val = 0.0
+            if penilaian:
+                score = float(penilaian.nilai)
+                # Fuzzify
+                l, m, u = fuzzify_score(score)
+                # Weighting
+                weight = criteria_weights.get(c.id_kriteria, 0)
+
+                # Calculate contribution: Defuzzified(FuzzyScore * Weight)
+                # = (l*w + m*w + u*w) / 3
+                # = w * (l+m+u)/3
+                # = w * defuzzified_raw_score
+
+                val = weight * ((l + m + u) / 3.0)
+            row["criteria_values"][c.id_kriteria] = val
+        rekap_data.append(row)
+    sidebar_state = current_user.sidebar_state or "expanded"
+    return render_template(
+        "penilai/rekap_nilai_fuzzy.html",
+        event=event,
+        criteria_headers=criterias,
+        rekap_data=rekap_data,
+        sidebar_state=sidebar_state,
+        # Fuzzy AHP Step Data
+        criteria_names=criteria_names,
+        tfn_scale_table=tfn_scale_table,
+        pairwise_data=pairwise_data,
+        fuzzy_pairwise_data=fuzzy_pairwise_data,
+        use_generated_matrix=use_generated_matrix,
+        eigenvector_data=eigenvector_data,
+        lambda_max=lambda_max,
+        ci=ci,
+        cr=cr,
+        is_consistent=is_consistent,
+        ri_value=ri_value,
+        ri_table=RI_TABLE,
+        row_sums_data=row_sums_data,
+        total_fuzzy_sum=total_fuzzy_sum,
+        fuzzy_synthetic_extent=fuzzy_synthetic_extent,
+        probability_matrix=probability_matrix,
+        d_prime_values=d_prime_values,
+        normalized_weights=normalized_weights,
     )
 
 
@@ -7557,7 +7850,7 @@ def admin_detail_nilai(user_id, event_id):
 
     # Helper function to format TFN values as fractions
     def format_tfn_val(v):
-        if abs(v - round(v)) < 0.01:  # It's essentially an integer
+        if abs(v - round(v)) < 0.01:
             return f"{int(round(v))}"
         # Check for common reciprocals 1/2 to 1/9
         for x in range(2, 10):
@@ -7831,15 +8124,30 @@ def penilai_hasil_seleksi():
         flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for("index"))
 
-    assigned_events = Event.query.filter(Event.evaluators.any(id=current_user.id)).all()
+    all_events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
     selected_event_id = request.args.get("event_id", type=int)
     selected_event = None
     results = []
 
     if selected_event_id:
         selected_event = Event.query.get(selected_event_id)
-        if selected_event and selected_event in assigned_events:
-            hasil_seleksi_query = (
+        if selected_event:
+            from app.fuzzy_ahp import calculate_spk
+
+            success, msg = calculate_spk(selected_event_id)
+            if not success:
+                logging.warning(
+                    t.get("spk_failed_log").format(event_id=selected_event_id, msg=msg)
+                )
+            else:
+                create_notification_to_all_admins(
+                    t.get("spk_notification").format(
+                        event_name=selected_event.nama_kegiatan
+                    )
+                )
+
+            # Fetch results for this event only
+            hasil_seleksi = (
                 db.session.query(HasilSeleksi, Users, Participants)
                 .join(Users, HasilSeleksi.id_users == Users.id)
                 .outerjoin(Participants, Users.email == Participants.email)
@@ -7847,22 +8155,21 @@ def penilai_hasil_seleksi():
                 .order_by(HasilSeleksi.ranking.asc())
                 .all()
             )
-
-            kuota = Kuota.query.filter_by(event_id=selected_event_id).first()
-            for hasil, user, participant in hasil_seleksi_query:
+            for hasil, user, participant in hasil_seleksi:
                 results.append(
                     {"hasil": hasil, "user": user, "participant": participant}
                 )
         else:
-            flash(f"{t['event_not_found_or_no_access']}", "error")
+            flash(t.get("event_not_found"), "error")
             selected_event = None
     sidebar_state = current_user.sidebar_state or "expanded"
     return render_template(
-        "penilai/hasil_seleksi.html",
-        assigned_events=assigned_events,
+        "penilai/hasil_penilaian.html",
+        assigned_events=all_events,
         selected_event=selected_event,
         results=results,
         sidebar_state=sidebar_state,
+        show_back_button=False,
     )
 
 

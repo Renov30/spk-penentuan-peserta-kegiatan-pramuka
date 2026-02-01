@@ -104,8 +104,7 @@
       {% endif %}
 
       <!-- Notifikasi -->
-      {% if not (is_public_page|string|lower == 'true') and
-      (session.get('username') or session.get('user')) %}
+      {% if not is_public_page and current_user.is_authenticated %}
       <button
         title="{{ 'Notifikasi' if current_lang == 'id' else 'Notification' }}"
         class="relative flex items-center justify-center text-yellow-400 hover:text-yellow-300 transition text-2xl cursor-pointer my-3"
@@ -206,8 +205,7 @@
         </button>
 
         <!-- Notifikasi -->
-        {% if not (is_public_page|string|lower == 'true') and
-        (session.get('username') or session.get('user')) %}
+        {% if not is_public_page and current_user.is_authenticated %}
         <button
           id="notification-toggle"
           title="{{ 'Notifikasi' if current_lang == 'id' else 'Notification' }}"
