@@ -1572,6 +1572,7 @@ def admin_dashboard():
         user=user,
         total_events=total_events,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -1717,6 +1718,7 @@ def admin_view_penugasan_penilai():
         assignment_data=assignment_data,
         user=user,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -1903,6 +1905,7 @@ def admin_penilaian_detail_view(user_id, kegiatan_id):
             event=event,
             detail_scores=detail_scores,
             sidebar_state=sidebar_state,
+            is_public_page=False,
         )
     except Exception as e:
         current_app.logger.exception("Error in admin_penilaian_detail_view:")
@@ -2028,6 +2031,7 @@ def admin_users():
         sidebar_state=sidebar_state,
         users=users_data,
         time=time,
+        is_public_page=False,
     )
 
 
@@ -2116,6 +2120,7 @@ def admin_add_user():
         sidebar_state=sidebar_state,
         users=Users.query.all(),
         time=time,
+        is_public_page=False,
     )
 
 
@@ -2160,7 +2165,16 @@ def admin_import_users():
             .str.replace(" ", "_")
             .str.replace("-", "_")
         )
-        required_cols = ["nama_lengkap", "username", "email", "level"]
+        required_cols = [
+            "nama_lengkap",
+            "username",
+            "nomor_hp",
+            "email",
+            "jenis_kelamin",
+            "level",
+            "usia",
+            "status",
+        ]
         missing = [c for c in required_cols if c not in df.columns]
         if missing:
             flash(f"{t['missing_columns']}: {', '.join(missing)}", "danger")
@@ -2606,6 +2620,7 @@ def admin_manajemen_seleksi():
         kegiatan_data=kegiatan_data,
         arsip_list=arsip_data,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -2640,6 +2655,7 @@ def admin_penugasan_penilai():
         assignments=assignments,
         events_criteria=events_criteria,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -3268,6 +3284,7 @@ def view_config():
         events=events,
         sidebar_state=sidebar_state,
         user=current_user,
+        is_public_page=False,
     )
 
 
@@ -4543,7 +4560,9 @@ def edit_kegiatan(id):
         flash(f"{t['event_updated']}", "success")
         return redirect(url_for("admin_manajemen_seleksi"))
     evaluators = Users.query.filter_by(level="penilai").all()
-    return render_template("edit_kegiatan.html", event=event, evaluators=evaluators)
+    return render_template(
+        "edit_kegiatan.html", event=event, evaluators=evaluators, is_public_page=False
+    )
 
 
 # Hapus Kegiatan
@@ -4574,7 +4593,7 @@ def hapus_kegiatan(id):
 @admin_required
 def detail_kegiatan(id):
     event = Event.query.get_or_404(id)
-    return render_template("detail_kegiatan.html", event=event)
+    return render_template("detail_kegiatan.html", event=event, is_public_page=False)
 
 
 @app.route("/admin/pembobotan_kriteria")
@@ -4620,6 +4639,7 @@ def admin_pembobotan_kriteria():
             pairwise_matrix.tolist() if pairwise_matrix is not None else None
         ),
         ahp_results=ahp_results,
+        is_public_page=False,
     )
 
 
@@ -4788,6 +4808,7 @@ def admin_laporan_arsip_seleksi():
         kegiatan_data=[],
         arsip_list=arsip_data,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -5041,6 +5062,7 @@ def preview_laporan_seleksi(event_id):
         hasil_seleksi=hasil_seleksi,
         tanggal_laporan=now.strftime("%d-%m-%Y"),
         tanggal_laporan_indo=tanggal_laporan_indo,
+        is_public_page=False,
     )
 
 
@@ -5213,6 +5235,7 @@ def admin_peserta():
         peserta_nonaktif=peserta_nonaktif,
         events=events,
         time=time,
+        is_public_page=False,
     )
 
 
@@ -5254,6 +5277,7 @@ def detail_peserta(user_id):
             biodata=biodata,
             registered_activities=registered_activities,
             sidebar_state=sidebar_state,
+            is_public_page=False,
         )
     except Exception as e:
         logging.error(f"Error in detail_peserta: {e}")
@@ -5299,6 +5323,7 @@ def cetak_kartu_peserta(user_id):
             user=user,
             biodata=biodata,
             registered_activities=registered_activities,
+            is_public_page=False,
         )
     except Exception as e:
         logging.error(f"Error in cetak_kartu_peserta: {e}")
@@ -5323,6 +5348,7 @@ def tambah_peserta_kegiatan():
         events=events,
         users_peserta=users_peserta,
         participants=participants,
+        is_public_page=False,
     )
 
 
@@ -5608,6 +5634,7 @@ def admin_hasil_seleksi():
         results=results,
         sidebar_state=sidebar_state,
         show_back_button=False,
+        is_public_page=False,
     )
 
 
@@ -5669,6 +5696,7 @@ def admin_manajemen_berita():
         search=search,
         status=status,
         time=time,
+        is_public_page=False,
     )
 
 
@@ -5728,7 +5756,10 @@ def admin_add_news_page():
 
     sidebar_state = current_user.sidebar_state or "expanded"
     return render_template(
-        "admin_add_news.html", sidebar_state=sidebar_state, user=current_user
+        "admin_add_news.html",
+        sidebar_state=sidebar_state,
+        user=current_user,
+        is_public_page=False,
     )
 
 
@@ -6060,6 +6091,7 @@ def admin_notifikasi():
         notifications=notifications,
         unread_count=unread_count,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -6184,6 +6216,7 @@ def admin_log_aktivitas():
         role_filter=role_filter,
         date_filter=date_filter,
         current_page=page,
+        is_public_page=False,
     )
 
 
@@ -6434,6 +6467,7 @@ def admin_hasil_penilaian():
         results=results,
         sidebar_state=sidebar_state,
         show_back_button=True,
+        is_public_page=False,
     )
 
 
@@ -6502,6 +6536,7 @@ def admin_settings():
         email_settings=email_settings,
         sms_settings=sms_settings,
         app_settings=app_settings,
+        is_public_page=False,
     )
 
 
@@ -6527,6 +6562,7 @@ def penilai_dashboard():
         events=events,
         total_peserta=total_peserta,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -6550,7 +6586,10 @@ def penilai_penilaian():
 
     sidebar_state = current_user.sidebar_state or "expanded"
     return render_template(
-        "penilai/penilaian.html", events=events, sidebar_state=sidebar_state
+        "penilai/penilaian.html",
+        events=events,
+        sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -6599,6 +6638,7 @@ def penilai_event_participants(event_id):
         event=event,
         participants=participants,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -6707,6 +6747,7 @@ def penilai_input_score(event_id, participant_id):
         criterias=criterias,
         existing_scores=existing_scores,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -6788,6 +6829,7 @@ def penilai_view_score(event_id, participant_id):
         assigned_criteria_ids=assigned_criteria_ids,
         existing_scores=existing_scores,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -6835,7 +6877,10 @@ def penilai_biodata():
             flash(f"{t['profile_update_error']}", "danger")
     sidebar_state = current_user.sidebar_state or "expanded"
     return render_template(
-        "penilai/biodata.html", sidebar_state=sidebar_state, user=current_user
+        "penilai/biodata.html",
+        sidebar_state=sidebar_state,
+        user=current_user,
+        is_public_page=False,
     )
 
 
@@ -6897,6 +6942,7 @@ def penilai_hasil_penilaian():
         selected_event=selected_event,
         results=results,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -7194,6 +7240,7 @@ def penilai_detail_nilai(user_id, event_id):
         d_prime_values=d_prime_values,
         normalized_weights=normalized_weights,
         debug_theme=session.get("theme"),
+        is_public_page=False,
     )
 
 
@@ -7503,6 +7550,7 @@ def penilai_rekap_nilai_fuzzy(event_id):
         probability_matrix=probability_matrix,
         d_prime_values=d_prime_values,
         normalized_weights=normalized_weights,
+        is_public_page=False,
     )
 
 
@@ -7813,6 +7861,7 @@ def admin_rekap_nilai_fuzzy(event_id):
         probability_matrix=probability_matrix,
         d_prime_values=d_prime_values,
         normalized_weights=normalized_weights,
+        is_public_page=False,
     )
 
 
@@ -8111,6 +8160,7 @@ def admin_detail_nilai(user_id, event_id):
         d_prime_values=d_prime_values,
         normalized_weights=normalized_weights,
         debug_theme=session.get("theme"),
+        is_public_page=False,
     )
 
 
@@ -8170,6 +8220,7 @@ def penilai_hasil_seleksi():
         results=results,
         sidebar_state=sidebar_state,
         show_back_button=False,
+        is_public_page=False,
     )
 
 
@@ -8194,6 +8245,7 @@ def penilai_notifikasi():
         "penilai/notifikasi.html",
         notifications=notifications,
         sidebar_state=sidebar_state,
+        is_public_page=False,
     )
 
 
@@ -8207,7 +8259,9 @@ def penilai_settings():
     if current_user.level != "penilai":
         flash(f"{t['evaluator_access_denied']}", "error")
         return redirect(url_for("index"))
-    return render_template("settings.html", sidebar_state=sidebar_state, time=time)
+    return render_template(
+        "settings.html", sidebar_state=sidebar_state, time=time, is_public_page=False
+    )
 
 
 @app.route("/peserta/dashboard")
@@ -8302,6 +8356,7 @@ def peserta_dashboard():
         user=current_user,
         sidebar_state=sidebar_state,
         today=date.today(),
+        is_public_page=False,
     )
 
 
@@ -8326,6 +8381,7 @@ def peserta_notifikasi():
         notifications=notifications,
         sidebar_state=sidebar_state,
         user=current_user,
+        is_public_page=False,
     )
 
 
@@ -8339,7 +8395,9 @@ def peserta_settings():
     if current_user.level != "peserta":
         flash(f"{t['participant_access_denied']}", "error")
         return redirect(url_for("index"))
-    return render_template("settings.html", sidebar_state=sidebar_state, time=time)
+    return render_template(
+        "settings.html", sidebar_state=sidebar_state, time=time, is_public_page=False
+    )
 
 
 @app.route("/peserta/hasil_seleksi")
@@ -8408,6 +8466,7 @@ def peserta_hasil_seleksi():
         biodata=biodata,
         sidebar_state=sidebar_state,
         user=current_user,
+        is_public_page=False,
     )
 
 
@@ -8458,6 +8517,7 @@ def peserta_detail_nilai(event_id):
         sidebar_state=sidebar_state,
         user=current_user,
         biodata=biodata,
+        is_public_page=False,
     )
 
 
@@ -8594,6 +8654,7 @@ def peserta_data():
         sidebar_state=sidebar_state,
         is_complete=is_complete,
         missing_fields=missing_fields,
+        is_public_page=False,
     )
 
 

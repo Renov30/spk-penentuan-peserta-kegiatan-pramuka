@@ -431,6 +431,9 @@
   .z-101 {
     z-index: 101;
   }
+  .z-999999999999 {
+    z-index: 999999999999;
+  }
   .z-\[60\] {
     z-index: 60;
   }
@@ -745,9 +748,6 @@
   .max-h-\[450px\] {
     max-height: 450px;
   }
-  .max-h-\[500px\] {
-    max-height: 500px;
-  }
   .max-h-full {
     max-height: 100%;
   }
@@ -816,12 +816,6 @@
   }
   .w-96 {
     width: calc(var(--spacing) * 96);
-  }
-  .w-\[30\%\] {
-    width: 30%;
-  }
-  .w-\[70\%\] {
-    width: 70%;
   }
   .w-\[80px\] {
     width: 80px;
