@@ -1,5 +1,5 @@
 """
-Script untuk membuat Model Tabel Excel Perhitungan Fuzzy AHP
+Script untuk membuat Model Tabel Excel Perhitungan Fuzzy AHP (Single Sheet)
 Data: David Kulian - Raimuna Daerah (25 January 2026)
 """
 
@@ -10,11 +10,14 @@ import math
 
 # Create workbook
 wb = openpyxl.Workbook()
+ws = wb.active
+ws.title = "Fuzzy AHP Calculation"
 
 # Styles
-header_font = Font(bold=True, size=12, color="FFFFFF")
-title_font = Font(bold=True, size=14)
-subtitle_font = Font(bold=True, size=11)
+header_font = Font(bold=True, size=11, color="FFFFFF")
+title_font = Font(bold=True, size=14, color="1F4E79")
+subtitle_font = Font(bold=True, size=11, color="1F4E79")
+section_font = Font(bold=True, size=12, color="FFFFFF")
 normal_font = Font(size=10)
 center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
 left_align = Alignment(horizontal='left', vertical='center')
@@ -25,10 +28,13 @@ thin_border = Border(
     bottom=Side(style='thin')
 )
 header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+section_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
 green_fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
 yellow_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
+orange_fill = PatternFill(start_color="ED7D31", end_color="ED7D31", fill_type="solid")
 light_blue_fill = PatternFill(start_color="D6DCE4", end_color="D6DCE4", fill_type="solid")
 light_green_fill = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
+light_yellow_fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
 
 # Kriteria (dari screenshot)
 kriteria = [
@@ -54,26 +60,26 @@ crisp_matrix = [
 # Tabel konversi TFN (Triangular Fuzzy Number)
 tfn_scale = {
     1: (1, 1, 1),
-    2: (1/2, 1, 3/2),
-    3: (1, 3/2, 2),
-    4: (3/2, 2, 5/2),
-    5: (2, 5/2, 3),
-    6: (5/2, 3, 7/2),
-    7: (3, 7/2, 4),
-    8: (7/2, 4, 9/2),
-    9: (4, 9/2, 9/2)
+    2: (0.5, 1, 1.5),
+    3: (1, 1.5, 2),
+    4: (1.5, 2, 2.5),
+    5: (2, 2.5, 3),
+    6: (2.5, 3, 3.5),
+    7: (3, 3.5, 4),
+    8: (3.5, 4, 4.5),
+    9: (4, 4.5, 4.5)
 }
 
 tfn_reciprocal = {
     1: (1, 1, 1),
     2: (2/3, 1, 2),
-    3: (1/2, 2/3, 1),
-    4: (0.40, 1/2, 2/3),
-    5: (1/3, 0.40, 1/2),
+    3: (0.5, 2/3, 1),
+    4: (0.40, 0.5, 2/3),
+    5: (1/3, 0.40, 0.5),
     6: (0.29, 1/3, 0.40),
-    7: (1/4, 0.29, 1/3),
-    8: (0.22, 1/4, 0.29),
-    9: (0.22, 0.22, 1/4)
+    7: (0.25, 0.29, 1/3),
+    8: (0.22, 0.25, 0.29),
+    9: (0.22, 0.22, 0.25)
 }
 
 # Random Index values
@@ -88,42 +94,56 @@ def apply_header_style(cell, fill=header_fill):
     cell.border = thin_border
     cell.fill = fill
 
-def apply_cell_style(cell, is_header=False):
+def apply_cell_style(cell):
     cell.font = normal_font
     cell.alignment = center_align
     cell.border = thin_border
 
+def apply_section_header(ws, row, text, col_start=1, col_end=8):
+    cell = ws.cell(row=row, column=col_start)
+    cell.value = text
+    cell.font = section_font
+    cell.fill = section_fill
+    cell.alignment = center_align
+    ws.merge_cells(start_row=row, start_column=col_start, end_row=row, end_column=col_end)
+    for c in range(col_start, col_end + 1):
+        ws.cell(row=row, column=c).border = thin_border
+
+current_row = 1
+
 # ============================================
-# SHEET 1: Data Peserta & Skala Perbandingan
+# HEADER - Info Peserta
 # ============================================
-ws1 = wb.active
-ws1.title = "1. Data & Skala"
+ws['A1'] = "MODEL PERHITUNGAN FUZZY AHP"
+ws['A1'].font = Font(bold=True, size=16, color="1F4E79")
+ws.merge_cells('A1:H1')
 
-# Header info
-ws1['A1'] = "MODEL PERHITUNGAN FUZZY AHP"
-ws1['A1'].font = Font(bold=True, size=16)
-ws1.merge_cells('A1:G1')
+ws['A3'] = "Nama Peserta:"
+ws['B3'] = "David Kulian"
+ws['B3'].font = Font(bold=True)
+ws['D3'] = "Kegiatan:"
+ws['E3'] = "Raimuna Daerah"
+ws['G3'] = "Peringkat:"
+ws['H3'] = "#1"
+ws['H3'].font = Font(bold=True, size=14, color="ED7D31")
 
-ws1['A3'] = "Nama Peserta:"
-ws1['B3'] = "David Kulian"
-ws1['A4'] = "Kegiatan:"
-ws1['B4'] = "Raimuna Daerah"
-ws1['A5'] = "Tanggal:"
-ws1['B5'] = "25 January 2026"
-ws1['A6'] = "Peringkat:"
-ws1['B6'] = "#1"
-ws1['B6'].font = Font(bold=True, size=14, color="FF6B00")
+ws['A4'] = "Tanggal:"
+ws['B4'] = "25 January 2026"
 
-# Tabel Skala Saaty
-ws1['A9'] = "Tabel Skala Perbandingan Tingkat Kepentingan (Saaty)"
-ws1['A9'].font = subtitle_font
-ws1.merge_cells('A9:D9')
+current_row = 6
 
-ws1['A10'] = "Intensitas"
-ws1['B10'] = "Definisi"
-apply_header_style(ws1['A10'])
-apply_header_style(ws1['B10'])
-ws1.merge_cells('B10:D10')
+# ============================================
+# SECTION 1: Tabel Skala Saaty
+# ============================================
+apply_section_header(ws, current_row, "TABEL SKALA PERBANDINGAN TINGKAT KEPENTINGAN (SAATY)", 1, 4)
+current_row += 1
+
+ws.cell(row=current_row, column=1).value = "Intensitas"
+ws.cell(row=current_row, column=2).value = "Definisi"
+apply_header_style(ws.cell(row=current_row, column=1))
+apply_header_style(ws.cell(row=current_row, column=2))
+ws.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=4)
+current_row += 1
 
 saaty_scale = [
     (1, "Kedua elemen sama penting (Equal Importance)"),
@@ -134,98 +154,90 @@ saaty_scale = [
     ("2,4,6,8", "Nilai-nilai diantara dua pertimbangan yang berdekatan")
 ]
 
-for i, (intensitas, definisi) in enumerate(saaty_scale, start=11):
-    ws1[f'A{i}'] = intensitas
-    ws1[f'B{i}'] = definisi
-    apply_cell_style(ws1[f'A{i}'])
-    apply_cell_style(ws1[f'B{i}'])
-    ws1.merge_cells(f'B{i}:D{i}')
+for intensitas, definisi in saaty_scale:
+    ws.cell(row=current_row, column=1).value = intensitas
+    ws.cell(row=current_row, column=2).value = definisi
+    apply_cell_style(ws.cell(row=current_row, column=1))
+    apply_cell_style(ws.cell(row=current_row, column=2))
+    ws.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=4)
+    current_row += 1
 
-# Tabel Skala Fuzzy (TFN)
-ws1['A19'] = "Tabel Skala Nilai Fuzzy (TFN)"
-ws1['A19'].font = subtitle_font
-ws1.merge_cells('A19:E19')
+current_row += 1
 
-ws1['A20'] = "Intensitas"
-ws1['B20'] = "TFN (l, m, u)"
-ws1['C20'] = "Kebalikan"
-apply_header_style(ws1['A20'])
-apply_header_style(ws1['B20'])
-apply_header_style(ws1['C20'])
-ws1.merge_cells('B20:C20')
-ws1.merge_cells('C20:E20')
+# ============================================
+# SECTION 2: Tabel Skala Fuzzy (TFN)
+# ============================================
+apply_section_header(ws, current_row, "TABEL SKALA NILAI FUZZY (TFN)", 1, 4)
+current_row += 1
 
-# Insert TFN values
-row = 21
+ws.cell(row=current_row, column=1).value = "Intensitas"
+ws.cell(row=current_row, column=2).value = "TFN (l, m, u)"
+ws.cell(row=current_row, column=3).value = "Kebalikan"
+apply_header_style(ws.cell(row=current_row, column=1))
+apply_header_style(ws.cell(row=current_row, column=2))
+apply_header_style(ws.cell(row=current_row, column=3))
+ws.merge_cells(start_row=current_row, start_column=3, end_row=current_row, end_column=4)
+current_row += 1
+
 for i in range(1, 10):
     l, m, u = tfn_scale[i]
     rl, rm, ru = tfn_reciprocal[i]
-    ws1[f'A{row}'] = i
-    ws1[f'B{row}'] = f"({l:.2f}, {m:.2f}, {u:.2f})" if l != 1 else f"({int(l)}, {int(m)}, {int(u)})"
-    ws1[f'D{row}'] = f"({rl:.2f}, {rm:.2f}, {ru:.2f})" if rl != 1 else f"({int(rl)}, {int(rm)}, {int(ru)})"
-    apply_cell_style(ws1[f'A{row}'])
-    apply_cell_style(ws1[f'B{row}'])
-    apply_cell_style(ws1[f'D{row}'])
-    ws1.merge_cells(f'B{row}:C{row}')
-    ws1.merge_cells(f'D{row}:E{row}')
-    row += 1
+    ws.cell(row=current_row, column=1).value = i
+    ws.cell(row=current_row, column=2).value = f"({l}, {m}, {u})"
+    ws.cell(row=current_row, column=3).value = f"({rl:.2f}, {rm:.2f}, {ru:.2f})" if i > 1 else "(1, 1, 1)"
+    apply_cell_style(ws.cell(row=current_row, column=1))
+    apply_cell_style(ws.cell(row=current_row, column=2))
+    apply_cell_style(ws.cell(row=current_row, column=3))
+    ws.merge_cells(start_row=current_row, start_column=3, end_row=current_row, end_column=4)
+    current_row += 1
 
-# Set column widths
-ws1.column_dimensions['A'].width = 15
-ws1.column_dimensions['B'].width = 25
-ws1.column_dimensions['C'].width = 20
-ws1.column_dimensions['D'].width = 20
-ws1.column_dimensions['E'].width = 15
+current_row += 1
 
 # ============================================
-# SHEET 2: Matriks Perbandingan Berpasangan (Crisp)
+# SECTION 3: Matriks Perbandingan Berpasangan (Crisp)
 # ============================================
-ws2 = wb.create_sheet("2. Matriks Crisp")
+apply_section_header(ws, current_row, "LANGKAH 1: MATRIKS PERBANDINGAN BERPASANGAN (CRISP)", 1, 8)
+current_row += 1
 
-ws2['A1'] = "LANGKAH 1: Matriks Perbandingan Berpasangan (Crisp)"
-ws2['A1'].font = title_font
-ws2.merge_cells('A1:H1')
-
-ws2['A3'] = "Matriks ini bersifat resiprokal dengan aij = 1 dan aji = 1/aij"
-ws2.merge_cells('A3:H3')
+ws.cell(row=current_row, column=1).value = "Matriks bersifat resiprokal: aij = 1 dan aji = 1/aij"
+ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=8)
+current_row += 1
 
 # Header row
-ws2['A5'] = "Kriteria"
-apply_header_style(ws2['A5'])
+ws.cell(row=current_row, column=1).value = "Kriteria"
+apply_header_style(ws.cell(row=current_row, column=1))
 for j, krit in enumerate(kriteria, start=2):
-    col = get_column_letter(j)
-    ws2[f'{col}5'] = krit[:15] + "..." if len(krit) > 15 else krit
-    apply_header_style(ws2[f'{col}5'])
+    cell = ws.cell(row=current_row, column=j)
+    cell.value = krit[:12] + ".." if len(krit) > 12 else krit
+    apply_header_style(cell)
+current_row += 1
 
 # Data rows
 for i, krit in enumerate(kriteria):
-    row = i + 6
-    ws2[f'A{row}'] = krit[:20] + "..." if len(krit) > 20 else krit
-    ws2[f'A{row}'].font = Font(bold=True, size=10)
-    ws2[f'A{row}'].border = thin_border
-    ws2[f'A{row}'].fill = light_blue_fill
+    cell = ws.cell(row=current_row, column=1)
+    cell.value = krit[:18] + ".." if len(krit) > 18 else krit
+    cell.font = Font(bold=True, size=10)
+    cell.border = thin_border
+    cell.fill = light_blue_fill
+    cell.alignment = left_align
     
     for j in range(n):
-        col = get_column_letter(j + 2)
-        ws2[f'{col}{row}'] = crisp_matrix[i][j]
-        apply_cell_style(ws2[f'{col}{row}'])
+        cell = ws.cell(row=current_row, column=j + 2)
+        cell.value = crisp_matrix[i][j]
+        apply_cell_style(cell)
+    current_row += 1
 
-# Set column widths
-ws2.column_dimensions['A'].width = 25
-for j in range(2, 8):
-    ws2.column_dimensions[get_column_letter(j)].width = 12
+current_row += 1
 
 # ============================================
-# SHEET 3: Perhitungan Vector Eigen
+# SECTION 4: Perhitungan Vector Eigen
 # ============================================
-ws3 = wb.create_sheet("3. Vector Eigen")
+apply_section_header(ws, current_row, "LANGKAH 2: PERHITUNGAN VECTOR EIGEN (GEOMETRIC MEAN METHOD)", 1, 8)
+current_row += 1
 
-ws3['A1'] = "LANGKAH 2: Perhitungan Vector Eigen (Geometric Mean Method)"
-ws3['A1'].font = title_font
-ws3.merge_cells('A1:J1')
-
-ws3['A3'] = "Rumus: GMi = (∏ aij)^(1/n)"
-ws3['A4'] = "wi = GMi / Σ GMi"
+ws.cell(row=current_row, column=1).value = "Rumus: GMi = (∏ aij)^(1/n)"
+ws.cell(row=current_row, column=4).value = "wi = GMi / Σ GMi"
+current_row += 1
 
 # Calculate Geometric Mean
 gm_values = []
@@ -240,63 +252,55 @@ sum_gm = sum(gm_values)
 eigenvector = [gm / sum_gm for gm in gm_values]
 
 # Header
-ws3['A7'] = "Kriteria"
-ws3['B7'] = "Geometric Mean (GMi)"
-ws3['C7'] = "Eigenvector (wi)"
-apply_header_style(ws3['A7'])
-apply_header_style(ws3['B7'])
-apply_header_style(ws3['C7'])
+ws.cell(row=current_row, column=1).value = "Kriteria"
+ws.cell(row=current_row, column=2).value = "Geometric Mean (GMi)"
+ws.cell(row=current_row, column=3).value = "Eigenvector (wi)"
+apply_header_style(ws.cell(row=current_row, column=1))
+apply_header_style(ws.cell(row=current_row, column=2))
+apply_header_style(ws.cell(row=current_row, column=3))
+current_row += 1
 
 # Data
 for i, krit in enumerate(kriteria):
-    row = i + 8
-    ws3[f'A{row}'] = krit[:25] + "..." if len(krit) > 25 else krit
-    ws3[f'B{row}'] = round(gm_values[i], 4)
-    ws3[f'C{row}'] = round(eigenvector[i], 4)
-    apply_cell_style(ws3[f'A{row}'])
-    apply_cell_style(ws3[f'B{row}'])
-    apply_cell_style(ws3[f'C{row}'])
+    ws.cell(row=current_row, column=1).value = krit[:25] + ".." if len(krit) > 25 else krit
+    ws.cell(row=current_row, column=2).value = round(gm_values[i], 4)
+    ws.cell(row=current_row, column=3).value = round(eigenvector[i], 4)
+    apply_cell_style(ws.cell(row=current_row, column=1))
+    apply_cell_style(ws.cell(row=current_row, column=2))
+    apply_cell_style(ws.cell(row=current_row, column=3))
+    current_row += 1
 
 # Sum row
-ws3[f'A{n+8}'] = "TOTAL"
-ws3[f'B{n+8}'] = round(sum_gm, 4)
-ws3[f'C{n+8}'] = round(sum(eigenvector), 4)
-ws3[f'A{n+8}'].font = Font(bold=True)
-ws3[f'B{n+8}'].font = Font(bold=True)
-ws3[f'C{n+8}'].font = Font(bold=True)
-apply_cell_style(ws3[f'A{n+8}'])
-apply_cell_style(ws3[f'B{n+8}'])
-apply_cell_style(ws3[f'C{n+8}'])
+ws.cell(row=current_row, column=1).value = "TOTAL"
+ws.cell(row=current_row, column=2).value = round(sum_gm, 4)
+ws.cell(row=current_row, column=3).value = round(sum(eigenvector), 4)
+ws.cell(row=current_row, column=1).font = Font(bold=True)
+ws.cell(row=current_row, column=2).font = Font(bold=True)
+ws.cell(row=current_row, column=3).font = Font(bold=True)
+apply_cell_style(ws.cell(row=current_row, column=1))
+apply_cell_style(ws.cell(row=current_row, column=2))
+apply_cell_style(ws.cell(row=current_row, column=3))
 
-# Lambda Max calculation
-# λmax = (1/n) × Σ (Amxw)i
-lambda_max = 6.00  # From screenshot
+# Lambda Max
+lambda_max = 6.00
+ws.cell(row=current_row-3, column=5).value = "Lambda Max (λmax)"
+ws.cell(row=current_row-3, column=5).font = subtitle_font
+ws.cell(row=current_row-2, column=5).value = lambda_max
+ws.cell(row=current_row-2, column=5).font = Font(bold=True, size=18, color="ED7D31")
+ws.cell(row=current_row-1, column=5).value = "λmax = (1/n) × Σ (Aw)i"
+ws.merge_cells(start_row=current_row-1, start_column=5, end_row=current_row-1, end_column=7)
 
-ws3['E7'] = "Lambda Max (λmax)"
-ws3['E7'].font = subtitle_font
-ws3['E8'] = lambda_max
-ws3['E8'].font = Font(bold=True, size=16, color="FF6B00")
-ws3['E9'] = "λmax = (1/n) × Σ (Aw)i"
-
-# Set column widths
-ws3.column_dimensions['A'].width = 30
-ws3.column_dimensions['B'].width = 22
-ws3.column_dimensions['C'].width = 18
-ws3.column_dimensions['E'].width = 20
+current_row += 2
 
 # ============================================
-# SHEET 4: Uji Konsistensi
+# SECTION 5: Uji Konsistensi
 # ============================================
-ws4 = wb.create_sheet("4. Uji Konsistensi")
+apply_section_header(ws, current_row, "LANGKAH 3: UJI KONSISTENSI MATRIKS PERBANDINGAN", 1, 8)
+current_row += 1
 
-ws4['A1'] = "LANGKAH 3: Uji Konsistensi Matriks Perbandingan"
-ws4['A1'].font = title_font
-ws4.merge_cells('A1:G1')
-
-ws4['A3'] = "Uji konsistensi dilakukan untuk memastikan penilaian bersifat rasional dan tidak saling bertentangan."
-ws4.merge_cells('A3:G3')
-ws4['A4'] = "Matriks dinyatakan konsisten jika CR ≤ 0.1"
-ws4.merge_cells('A4:G4')
+ws.cell(row=current_row, column=1).value = "Matriks dinyatakan KONSISTEN jika CR ≤ 0.1"
+ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=8)
+current_row += 1
 
 # CI calculation
 ci = (lambda_max - n) / (n - 1)
@@ -304,195 +308,201 @@ ri = ri_table[n]
 cr = ci / ri if ri != 0 else 0
 
 # CI Box
-ws4['A7'] = "Consistency Index (CI)"
-ws4['A7'].font = subtitle_font
-ws4['A8'] = round(ci, 4)
-ws4['A8'].font = Font(bold=True, size=16, color="008000")
-ws4['A9'] = "CI = (λmax - n) / (n - 1)"
+ws.cell(row=current_row, column=1).value = "Consistency Index (CI)"
+ws.cell(row=current_row, column=1).font = subtitle_font
+ws.cell(row=current_row+1, column=1).value = round(ci, 4)
+ws.cell(row=current_row+1, column=1).font = Font(bold=True, size=16, color="008000")
+ws.cell(row=current_row+2, column=1).value = "CI = (λmax - n) / (n - 1)"
 
 # RI Box
-ws4['C7'] = "Random Index (RI)"
-ws4['C7'].font = subtitle_font
-ws4['C8'] = ri
-ws4['C8'].font = Font(bold=True, size=16)
-ws4['C9'] = f"n = {n}"
+ws.cell(row=current_row, column=3).value = "Random Index (RI)"
+ws.cell(row=current_row, column=3).font = subtitle_font
+ws.cell(row=current_row+1, column=3).value = ri
+ws.cell(row=current_row+1, column=3).font = Font(bold=True, size=16)
+ws.cell(row=current_row+2, column=3).value = f"n = {n}"
 
 # CR Box
-ws4['E7'] = "Consistency Ratio (CR)"
-ws4['E7'].font = subtitle_font
-ws4['E8'] = round(cr, 4)
-ws4['E8'].font = Font(bold=True, size=16, color="008000")
+ws.cell(row=current_row, column=5).value = "Consistency Ratio (CR)"
+ws.cell(row=current_row, column=5).font = subtitle_font
+ws.cell(row=current_row+1, column=5).value = round(cr, 4)
+ws.cell(row=current_row+1, column=5).font = Font(bold=True, size=16, color="008000")
 if cr <= 0.1:
-    ws4['E9'] = "✓ Konsisten (CR ≤ 0.1)"
-    ws4['E9'].font = Font(color="008000")
+    ws.cell(row=current_row+2, column=5).value = "✓ KONSISTEN (CR ≤ 0.1)"
+    ws.cell(row=current_row+2, column=5).font = Font(bold=True, color="008000")
+    ws.cell(row=current_row+2, column=5).fill = light_green_fill
 else:
-    ws4['E9'] = "✗ Tidak Konsisten (CR > 0.1)"
-    ws4['E9'].font = Font(color="FF0000")
+    ws.cell(row=current_row+2, column=5).value = "✗ TIDAK KONSISTEN (CR > 0.1)"
+    ws.cell(row=current_row+2, column=5).font = Font(bold=True, color="FF0000")
+
+current_row += 4
 
 # Tabel Random Index
-ws4['A12'] = "Tabel Random Index (RI)"
-ws4['A12'].font = subtitle_font
+ws.cell(row=current_row, column=1).value = "Tabel Random Index (RI):"
+ws.cell(row=current_row, column=1).font = Font(bold=True, size=10)
+current_row += 1
 
-ws4['A13'] = "n"
+ws.cell(row=current_row, column=1).value = "n"
+apply_header_style(ws.cell(row=current_row, column=1))
 for i in range(1, 13):
-    col = get_column_letter(i + 1)
-    ws4[f'{col}13'] = i
-    apply_header_style(ws4[f'{col}13'])
-apply_header_style(ws4['A13'])
+    cell = ws.cell(row=current_row, column=i + 1)
+    cell.value = i
+    apply_header_style(cell)
+current_row += 1
 
-ws4['A14'] = "RI"
+ws.cell(row=current_row, column=1).value = "RI"
+apply_cell_style(ws.cell(row=current_row, column=1))
+ws.cell(row=current_row, column=1).font = Font(bold=True)
 for i in range(1, 13):
-    col = get_column_letter(i + 1)
-    ws4[f'{col}14'] = ri_table[i]
-    apply_cell_style(ws4[f'{col}14'])
-apply_cell_style(ws4['A14'])
+    cell = ws.cell(row=current_row, column=i + 1)
+    cell.value = ri_table[i]
+    apply_cell_style(cell)
 
-ws4.column_dimensions['A'].width = 22
-ws4.column_dimensions['C'].width = 18
-ws4.column_dimensions['E'].width = 22
+current_row += 2
 
 # ============================================
-# SHEET 5: Matriks Fuzzy (TFN)
+# SECTION 6: Matriks Fuzzy (TFN)
 # ============================================
-ws5 = wb.create_sheet("5. Matriks Fuzzy TFN")
+apply_section_header(ws, current_row, "LANGKAH 4: FUZZIFIKASI MATRIKS PERBANDINGAN BERPASANGAN (TFN)", 1, 19)
+current_row += 1
 
-ws5['A1'] = "LANGKAH 4: Fuzzifikasi Matriks Perbandingan Berpasangan"
-ws5['A1'].font = title_font
-ws5.merge_cells('A1:T1')
-
-ws5['A3'] = "Setelah matriks dinyatakan konsisten, nilai crisp dikonversi ke Triangular Fuzzy Number (TFN) = (l, m, u)"
-ws5.merge_cells('A3:T3')
+ws.cell(row=current_row, column=1).value = "Nilai crisp dikonversi ke Triangular Fuzzy Number (TFN) = (l, m, u)"
+ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=19)
+current_row += 1
 
 # Header row - 3 columns per criterion (l, m, u)
-ws5['A5'] = "Kriteria"
-apply_header_style(ws5['A5'])
+ws.cell(row=current_row, column=1).value = "Kriteria"
+apply_header_style(ws.cell(row=current_row, column=1))
 
 col_idx = 2
 for krit in kriteria:
-    short_name = krit[:10] + "..." if len(krit) > 10 else krit
-    ws5.merge_cells(start_row=5, start_column=col_idx, end_row=5, end_column=col_idx+2)
-    cell = ws5.cell(row=5, column=col_idx)
+    short_name = krit[:8] + ".." if len(krit) > 8 else krit
+    ws.merge_cells(start_row=current_row, start_column=col_idx, end_row=current_row, end_column=col_idx+2)
+    cell = ws.cell(row=current_row, column=col_idx)
     cell.value = short_name
     apply_header_style(cell)
-    
-    # Sub-headers for l, m, u
-    ws5.cell(row=6, column=col_idx).value = "l"
-    ws5.cell(row=6, column=col_idx+1).value = "m"
-    ws5.cell(row=6, column=col_idx+2).value = "u"
-    for c in range(col_idx, col_idx+3):
-        apply_header_style(ws5.cell(row=6, column=c), fill=yellow_fill)
-    
     col_idx += 3
+current_row += 1
 
-ws5.merge_cells('A5:A6')
+# Sub-headers for l, m, u
+ws.cell(row=current_row, column=1).value = ""
+apply_header_style(ws.cell(row=current_row, column=1), fill=yellow_fill)
+col_idx = 2
+for _ in kriteria:
+    ws.cell(row=current_row, column=col_idx).value = "l"
+    ws.cell(row=current_row, column=col_idx+1).value = "m"
+    ws.cell(row=current_row, column=col_idx+2).value = "u"
+    for c in range(col_idx, col_idx+3):
+        apply_header_style(ws.cell(row=current_row, column=c), fill=yellow_fill)
+    col_idx += 3
+current_row += 1
 
 # Data rows
 for i, krit in enumerate(kriteria):
-    row = i + 7
-    ws5[f'A{row}'] = krit[:15] + "..." if len(krit) > 15 else krit
-    ws5[f'A{row}'].font = Font(bold=True, size=10)
-    ws5[f'A{row}'].border = thin_border
-    ws5[f'A{row}'].fill = light_blue_fill
+    cell = ws.cell(row=current_row, column=1)
+    cell.value = krit[:12] + ".." if len(krit) > 12 else krit
+    cell.font = Font(bold=True, size=9)
+    cell.border = thin_border
+    cell.fill = light_blue_fill
+    cell.alignment = left_align
     
     col_idx = 2
     for j in range(n):
         crisp_val = crisp_matrix[i][j]
         l, m, u = tfn_scale.get(crisp_val, (1, 1, 1))
         
-        ws5.cell(row=row, column=col_idx).value = round(l, 2)
-        ws5.cell(row=row, column=col_idx+1).value = round(m, 2)
-        ws5.cell(row=row, column=col_idx+2).value = round(u, 2)
+        ws.cell(row=current_row, column=col_idx).value = round(l, 2)
+        ws.cell(row=current_row, column=col_idx+1).value = round(m, 2)
+        ws.cell(row=current_row, column=col_idx+2).value = round(u, 2)
         
         for c in range(col_idx, col_idx+3):
-            apply_cell_style(ws5.cell(row=row, column=c))
+            apply_cell_style(ws.cell(row=current_row, column=c))
         
         col_idx += 3
+    current_row += 1
 
-# Set column widths
-ws5.column_dimensions['A'].width = 18
-for j in range(2, 21):
-    ws5.column_dimensions[get_column_letter(j)].width = 6
+current_row += 1
 
 # ============================================
-# SHEET 6: Ringkasan Hasil
+# SECTION 7: Ringkasan Hasil
 # ============================================
-ws6 = wb.create_sheet("6. Ringkasan Hasil")
+apply_section_header(ws, current_row, "RINGKASAN HASIL PERHITUNGAN FUZZY AHP", 1, 8)
+current_row += 1
 
-ws6['A1'] = "RINGKASAN PERHITUNGAN FUZZY AHP"
-ws6['A1'].font = title_font
-ws6.merge_cells('A1:E1')
-
-ws6['A3'] = "Nama Peserta:"
-ws6['B3'] = "David Kulian"
-ws6['B3'].font = Font(bold=True)
-ws6['A4'] = "Kegiatan:"
-ws6['B4'] = "Raimuna Daerah"
-ws6['A5'] = "Tanggal Penilaian:"
-ws6['B5'] = "25 January 2026"
-
-# Bobot Kriteria
-ws6['A8'] = "BOBOT KRITERIA HASIL FUZZY AHP"
-ws6['A8'].font = subtitle_font
-ws6.merge_cells('A8:C8')
-
-ws6['A9'] = "No"
-ws6['B9'] = "Kriteria"
-ws6['C9'] = "Bobot (wi)"
-apply_header_style(ws6['A9'])
-apply_header_style(ws6['B9'])
-apply_header_style(ws6['C9'])
+# Bobot Kriteria table
+ws.cell(row=current_row, column=1).value = "No"
+ws.cell(row=current_row, column=2).value = "Kriteria"
+ws.cell(row=current_row, column=3).value = "Bobot (wi)"
+apply_header_style(ws.cell(row=current_row, column=1), fill=green_fill)
+apply_header_style(ws.cell(row=current_row, column=2), fill=green_fill)
+apply_header_style(ws.cell(row=current_row, column=3), fill=green_fill)
+current_row += 1
 
 for i, krit in enumerate(kriteria):
-    row = i + 10
-    ws6[f'A{row}'] = i + 1
-    ws6[f'B{row}'] = krit
-    ws6[f'C{row}'] = round(eigenvector[i], 4)
-    apply_cell_style(ws6[f'A{row}'])
-    apply_cell_style(ws6[f'B{row}'])
-    apply_cell_style(ws6[f'C{row}'])
+    ws.cell(row=current_row, column=1).value = i + 1
+    ws.cell(row=current_row, column=2).value = krit
+    ws.cell(row=current_row, column=3).value = round(eigenvector[i], 4)
+    apply_cell_style(ws.cell(row=current_row, column=1))
+    apply_cell_style(ws.cell(row=current_row, column=2))
+    apply_cell_style(ws.cell(row=current_row, column=3))
+    ws.cell(row=current_row, column=3).fill = light_green_fill
+    current_row += 1
 
-# Status Konsistensi
-row = n + 12
-ws6[f'A{row}'] = "STATUS KONSISTENSI"
-ws6[f'A{row}'].font = subtitle_font
-ws6.merge_cells(f'A{row}:C{row}')
+current_row += 1
 
-ws6[f'A{row+1}'] = "Consistency Index (CI)"
-ws6[f'B{row+1}'] = round(ci, 4)
-ws6[f'A{row+2}'] = "Random Index (RI)"
-ws6[f'B{row+2}'] = ri
-ws6[f'A{row+3}'] = "Consistency Ratio (CR)"
-ws6[f'B{row+3}'] = round(cr, 4)
-ws6[f'A{row+4}'] = "Status"
+# Status boxes
+ws.cell(row=current_row, column=1).value = "STATUS KONSISTENSI"
+ws.cell(row=current_row, column=1).font = subtitle_font
+ws.cell(row=current_row, column=5).value = "PERINGKAT AKHIR"
+ws.cell(row=current_row, column=5).font = subtitle_font
+current_row += 1
+
+ws.cell(row=current_row, column=1).value = "CI ="
+ws.cell(row=current_row, column=2).value = round(ci, 4)
+ws.cell(row=current_row, column=5).value = "#1"
+ws.cell(row=current_row, column=5).font = Font(bold=True, size=24, color="ED7D31")
+ws.merge_cells(start_row=current_row, start_column=5, end_row=current_row+2, end_column=6)
+current_row += 1
+
+ws.cell(row=current_row, column=1).value = "RI ="
+ws.cell(row=current_row, column=2).value = ri
+current_row += 1
+
+ws.cell(row=current_row, column=1).value = "CR ="
+ws.cell(row=current_row, column=2).value = round(cr, 4)
+current_row += 1
+
+ws.cell(row=current_row, column=1).value = "Status:"
 if cr <= 0.1:
-    ws6[f'B{row+4}'] = "KONSISTEN ✓"
-    ws6[f'B{row+4}'].font = Font(bold=True, color="008000")
+    ws.cell(row=current_row, column=2).value = "✓ KONSISTEN"
+    ws.cell(row=current_row, column=2).font = Font(bold=True, size=12, color="008000")
+    ws.cell(row=current_row, column=2).fill = light_green_fill
 else:
-    ws6[f'B{row+4}'] = "TIDAK KONSISTEN ✗"
-    ws6[f'B{row+4}'].font = Font(bold=True, color="FF0000")
+    ws.cell(row=current_row, column=2).value = "✗ TIDAK KONSISTEN"
+    ws.cell(row=current_row, column=2).font = Font(bold=True, size=12, color="FF0000")
 
-# Ranking
-row = n + 18
-ws6[f'A{row}'] = "PERINGKAT AKHIR"
-ws6[f'A{row}'].font = subtitle_font
-ws6.merge_cells(f'A{row}:C{row}')
-
-ws6[f'A{row+1}'] = "Peringkat"
-ws6[f'B{row+1}'] = "#1"
-ws6[f'B{row+1}'].font = Font(bold=True, size=20, color="FF6B00")
-
-ws6.column_dimensions['A'].width = 25
-ws6.column_dimensions['B'].width = 35
-ws6.column_dimensions['C'].width = 15
+# ============================================
+# Set column widths
+# ============================================
+ws.column_dimensions['A'].width = 30
+ws.column_dimensions['B'].width = 20
+ws.column_dimensions['C'].width = 18
+ws.column_dimensions['D'].width = 15
+ws.column_dimensions['E'].width = 22
+ws.column_dimensions['F'].width = 12
+ws.column_dimensions['G'].width = 12
+ws.column_dimensions['H'].width = 12
+for j in range(9, 21):
+    ws.column_dimensions[get_column_letter(j)].width = 6
 
 # Save workbook
-output_file = "d:/laragon/www/appSaringPramuka/Fuzzy_AHP_David_Kulian.xlsx"
+output_file = "d:/laragon/www/appSaringPramuka/Fuzzy_AHP_David_Kulian_SingleSheet.xlsx"
 wb.save(output_file)
-print(f"File Excel berhasil dibuat: {output_file}")
-print("\nFile berisi 6 sheet:")
-print("1. Data & Skala - Informasi peserta dan tabel skala")
-print("2. Matriks Crisp - Matriks perbandingan berpasangan")
-print("3. Vector Eigen - Perhitungan Geometric Mean & Eigenvector")
-print("4. Uji Konsistensi - CI, RI, dan CR")
-print("5. Matriks Fuzzy TFN - Fuzzifikasi matriks")
-print("6. Ringkasan Hasil - Resume perhitungan")
+print(f"[OK] File Excel berhasil dibuat: {output_file}")
+print("\nFile berisi SINGLE SHEET dengan semua langkah perhitungan Fuzzy AHP:")
+print("  1. Tabel Skala Saaty")
+print("  2. Tabel Skala Fuzzy (TFN)")
+print("  3. Matriks Perbandingan Berpasangan (Crisp)")
+print("  4. Perhitungan Vector Eigen (Geometric Mean)")
+print("  5. Uji Konsistensi (CI, RI, CR)")
+print("  6. Matriks Fuzzy (TFN)")
+print("  7. Ringkasan Hasil")
