@@ -1,14 +1,11 @@
 """
 Script untuk membuat Model Tabel Excel Perhitungan Fuzzy AHP dengan RUMUS EXCEL
-Data dapat diubah langsung di Excel dan hasil akan otomatis terhitung
-Digunakan untuk validasi hasil perhitungan sistem
+VERSI 3 - Menggunakan rumus eksplisit (tanpa SUMPRODUCT) untuk kompatibilitas maksimal
 """
 
 import openpyxl
-from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, Protection
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
-from openpyxl.formatting.rule import FormulaRule, DataBarRule
-from openpyxl.comments import Comment
 
 # Create workbook
 wb = openpyxl.Workbook()
@@ -35,11 +32,10 @@ header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="s
 section_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
 green_fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
 yellow_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
-orange_fill = PatternFill(start_color="ED7D31", end_color="ED7D31", fill_type="solid")
 light_blue_fill = PatternFill(start_color="D6DCE4", end_color="D6DCE4", fill_type="solid")
 light_green_fill = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
 light_yellow_fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
-input_fill = PatternFill(start_color="FFFFCC", end_color="FFFFCC", fill_type="solid")  # Light yellow for input
+input_fill = PatternFill(start_color="FFFFCC", end_color="FFFFCC", fill_type="solid")
 
 # Kriteria
 kriteria = [
@@ -53,7 +49,7 @@ kriteria = [
 n = len(kriteria)
 
 # Random Index values
-ri_values = [0, 0, 0.58, 0.90, 1.12, 1.24, 1.32, 1.41, 1.46, 1.49, 1.51, 1.58]
+ri_values = {1: 0, 2: 0, 3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41, 9: 1.46, 10: 1.49}
 
 def apply_header_style(cell, fill=header_fill):
     cell.font = header_font
@@ -72,14 +68,14 @@ def apply_input_style(cell):
     cell.border = thin_border
     cell.fill = input_fill
 
-def apply_section_header(ws, row, text, col_start=1, col_end=10):
-    cell = ws.cell(row=row, column=col_start)
+def apply_section_header(ws, row, text, col_end=10):
+    cell = ws.cell(row=row, column=1)
     cell.value = text
     cell.font = section_font
     cell.fill = section_fill
     cell.alignment = center_align
-    ws.merge_cells(start_row=row, start_column=col_start, end_row=row, end_column=col_end)
-    for c in range(col_start, col_end + 1):
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=col_end)
+    for c in range(1, col_end + 1):
         ws.cell(row=row, column=c).border = thin_border
 
 current_row = 1
@@ -91,7 +87,7 @@ ws['A1'] = "MODEL PERHITUNGAN FUZZY AHP - DENGAN RUMUS EXCEL"
 ws['A1'].font = Font(bold=True, size=16, color="1F4E79")
 ws.merge_cells('A1:J1')
 
-ws['A2'] = "Sel berwarna KUNING adalah INPUT yang dapat diubah. Hasil akan otomatis terhitung."
+ws['A2'] = "Sel berwarna KUNING adalah INPUT yang dapat diubah."
 ws['A2'].font = Font(italic=True, size=10, color="FF0000")
 ws.merge_cells('A2:J2')
 
@@ -99,27 +95,271 @@ ws['A4'] = "Nama Peserta:"
 ws['B4'] = "David Kulian"
 ws['B4'].font = Font(bold=True)
 ws['B4'].fill = input_fill
-ws['D4'] = "Jumlah Kriteria (n):"
-ws['E4'] = n
-ws['E4'].font = Font(bold=True, size=12)
 
 current_row = 6
 
 # ============================================
-# TABEL SKALA TFN (Referensi)
+# MATRIKS PERBANDINGAN BERPASANGAN (CRISP) - INPUT
 # ============================================
-apply_section_header(ws, current_row, "TABEL REFERENSI SKALA FUZZY (TFN)", 1, 10)
+apply_section_header(ws, current_row, "LANGKAH 1: MATRIKS PERBANDINGAN BERPASANGAN (CRISP)")
+current_row += 1
+
+ws.cell(row=current_row, column=1).value = "Masukkan nilai perbandingan (1-9) di sel KUNING. Diagonal selalu 1."
+ws.cell(row=current_row, column=1).font = Font(italic=True, size=9, color="666666")
+ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
+current_row += 1
+
+# Header row untuk matriks crisp
+crisp_header_row = current_row
+ws.cell(row=current_row, column=1).value = "Kriteria"
+apply_header_style(ws.cell(row=current_row, column=1))
+
+# Kolom kriteria: B, C, D, E, F, G (kolom 2-7)
+krit_cols = []
+for j in range(n):
+    col = j + 2  # Kolom 2 sampai 7 (B-G)
+    krit_cols.append(get_column_letter(col))
+    cell = ws.cell(row=current_row, column=col)
+    cell.value = kriteria[j]
+    apply_header_style(cell)
+
+# Kolom tambahan: GM (H), Wi (I)
+gm_col = get_column_letter(n+2)  # H
+wi_col = get_column_letter(n+3)  # I
+
+ws.cell(row=current_row, column=n+2).value = "GM"
+ws.cell(row=current_row, column=n+3).value = "Wi (Bobot)"
+apply_header_style(ws.cell(row=current_row, column=n+2), fill=green_fill)
+apply_header_style(ws.cell(row=current_row, column=n+3), fill=green_fill)
+current_row += 1
+
+crisp_data_start = current_row  # Row 9
+print(f"crisp_data_start = {crisp_data_start}")
+
+# Data rows matriks crisp
+for i in range(n):
+    cell = ws.cell(row=current_row, column=1)
+    cell.value = kriteria[i]
+    cell.font = Font(bold=True, size=10)
+    cell.border = thin_border
+    cell.fill = light_blue_fill
+    cell.alignment = left_align
+    
+    for j in range(n):
+        col = j + 2
+        cell = ws.cell(row=current_row, column=col)
+        
+        if i == j:
+            cell.value = 1
+            apply_cell_style(cell)
+        elif i < j:
+            cell.value = 1
+            apply_input_style(cell)
+        else:
+            upper_row = crisp_data_start + j
+            upper_col = krit_cols[i]  # Kolom untuk kriteria i
+            cell.value = f"=1/{upper_col}{upper_row}"
+            apply_cell_style(cell)
+            cell.fill = light_green_fill
+    
+    # GM = (B*C*D*E*F*G)^(1/6) - explicit multiplication
+    gm_parts = []
+    for j in range(n):
+        gm_parts.append(f"{krit_cols[j]}{current_row}")
+    gm_formula = f"=({'+'.join([f'{p}' for p in gm_parts]).replace('+', '*')})^(1/{n})"
+    # Simpler: just multiply all
+    gm_formula = f"=({krit_cols[0]}{current_row}*{krit_cols[1]}{current_row}*{krit_cols[2]}{current_row}*{krit_cols[3]}{current_row}*{krit_cols[4]}{current_row}*{krit_cols[5]}{current_row})^(1/6)"
+    
+    gm_cell = ws.cell(row=current_row, column=n+2)
+    gm_cell.value = gm_formula
+    apply_cell_style(gm_cell)
+    gm_cell.fill = light_green_fill
+    gm_cell.number_format = '0.0000'
+    
+    current_row += 1
+
+crisp_data_end = current_row - 1  # Row 14
+print(f"crisp_data_end = {crisp_data_end}")
+
+# Total GM
+ws.cell(row=current_row, column=n+1).value = "Total:"
+ws.cell(row=current_row, column=n+1).font = Font(bold=True)
+
+gm_sum_row = current_row
+gm_sum_cell = ws.cell(row=current_row, column=n+2)
+gm_sum_cell.value = f"=SUM({gm_col}{crisp_data_start}:{gm_col}{crisp_data_end})"
+gm_sum_cell.font = Font(bold=True)
+apply_cell_style(gm_sum_cell)
+gm_sum_cell.fill = yellow_fill
+gm_sum_cell.number_format = '0.0000'
+
+gm_sum_ref = f"${gm_col}${gm_sum_row}"
+print(f"gm_sum_ref = {gm_sum_ref}")
+
+# Wi (Eigenvector) = GM / Total GM
+for i in range(n):
+    row = crisp_data_start + i
+    wi_cell = ws.cell(row=row, column=n+3)
+    wi_cell.value = f"={gm_col}{row}/{gm_sum_ref}"
+    apply_cell_style(wi_cell)
+    wi_cell.fill = light_green_fill
+    wi_cell.number_format = '0.0000'
+
+# Total Wi (should be 1)
+wi_sum_cell = ws.cell(row=current_row, column=n+3)
+wi_sum_cell.value = f"=SUM({wi_col}{crisp_data_start}:{wi_col}{crisp_data_end})"
+wi_sum_cell.font = Font(bold=True)
+apply_cell_style(wi_sum_cell)
+wi_sum_cell.fill = yellow_fill
+wi_sum_cell.number_format = '0.0000'
+
+current_row += 2
+
+# ============================================
+# PERHITUNGAN LAMBDA MAX & KONSISTENSI
+# ============================================
+apply_section_header(ws, current_row, "LANGKAH 2 & 3: PERHITUNGAN LAMBDA MAX & UJI KONSISTENSI")
+current_row += 1
+
+ws.cell(row=current_row, column=1).value = "A*w = Matriks x Bobot (untuk setiap baris)"
+ws.cell(row=current_row, column=1).font = subtitle_font
 current_row += 1
 
 # Header
-headers = ["Intensitas", "l", "m", "u", "", "Intensitas", "1/l", "1/m", "1/u"]
+ws.cell(row=current_row, column=1).value = "Kriteria"
+ws.cell(row=current_row, column=2).value = "A*w"
+ws.cell(row=current_row, column=3).value = "(A*w)/w"
+apply_header_style(ws.cell(row=current_row, column=1))
+apply_header_style(ws.cell(row=current_row, column=2))
+apply_header_style(ws.cell(row=current_row, column=3))
+current_row += 1
+
+aw_start = current_row
+print(f"aw_start = {aw_start}")
+
+for i in range(n):
+    ws.cell(row=current_row, column=1).value = kriteria[i]
+    apply_cell_style(ws.cell(row=current_row, column=1))
+    ws.cell(row=current_row, column=1).fill = light_blue_fill
+    
+    crisp_row = crisp_data_start + i
+    
+    # A*w = B*$I$9 + C*$I$10 + D*$I$11 + E*$I$12 + F*$I$13 + G*$I$14 (explicit)
+    aw_parts = []
+    for j in range(n):
+        crisp_cell = f"{krit_cols[j]}{crisp_row}"
+        wi_ref = f"${wi_col}${crisp_data_start + j}"
+        aw_parts.append(f"{crisp_cell}*{wi_ref}")
+    aw_formula = "=" + "+".join(aw_parts)
+    
+    aw_cell = ws.cell(row=current_row, column=2)
+    aw_cell.value = aw_formula
+    apply_cell_style(aw_cell)
+    aw_cell.fill = light_green_fill
+    aw_cell.number_format = '0.0000'
+    
+    # (A*w)/w
+    wi_ref = f"${wi_col}${crisp_data_start + i}"
+    ratio_cell = ws.cell(row=current_row, column=3)
+    ratio_cell.value = f"=B{current_row}/{wi_ref}"
+    apply_cell_style(ratio_cell)
+    ratio_cell.fill = light_green_fill
+    ratio_cell.number_format = '0.0000'
+    
+    current_row += 1
+
+aw_end = current_row - 1
+print(f"aw_end = {aw_end}")
+
+current_row += 1
+
+# Lambda Max
+lambda_row = current_row
+ws.cell(row=current_row, column=1).value = "Lambda Max (lmax):"
+ws.cell(row=current_row, column=1).font = subtitle_font
+lambda_cell = ws.cell(row=current_row, column=2)
+lambda_cell.value = f"=AVERAGE(C{aw_start}:C{aw_end})"
+lambda_cell.font = Font(bold=True, size=14, color="ED7D31")
+lambda_cell.fill = yellow_fill
+apply_cell_style(lambda_cell)
+lambda_cell.number_format = '0.0000'
+lambda_ref = f"$B${lambda_row}"
+
+ws.cell(row=current_row, column=4).value = "= rata-rata (A*w)/w"
+ws.cell(row=current_row, column=4).font = formula_font
+current_row += 1
+
+# CI
+ci_row = current_row
+ws.cell(row=current_row, column=1).value = "Consistency Index (CI):"
+ws.cell(row=current_row, column=1).font = subtitle_font
+ci_cell = ws.cell(row=current_row, column=2)
+ci_cell.value = f"=({lambda_ref}-{n})/({n}-1)"
+ci_cell.font = Font(bold=True, size=12)
+ci_cell.fill = light_green_fill
+apply_cell_style(ci_cell)
+ci_cell.number_format = '0.0000'
+ci_ref = f"$B${ci_row}"
+
+ws.cell(row=current_row, column=4).value = f"= (lmax - {n}) / ({n} - 1)"
+ws.cell(row=current_row, column=4).font = formula_font
+current_row += 1
+
+# RI
+ri_row = current_row
+ws.cell(row=current_row, column=1).value = "Random Index (RI):"
+ws.cell(row=current_row, column=1).font = subtitle_font
+ri_cell = ws.cell(row=current_row, column=2)
+ri_cell.value = ri_values[n]
+ri_cell.font = Font(bold=True, size=12)
+apply_cell_style(ri_cell)
+ri_ref = f"$B${ri_row}"
+
+ws.cell(row=current_row, column=4).value = f"Untuk n={n}, RI = {ri_values[n]}"
+ws.cell(row=current_row, column=4).font = formula_font
+current_row += 1
+
+# CR
+cr_row = current_row
+ws.cell(row=current_row, column=1).value = "Consistency Ratio (CR):"
+ws.cell(row=current_row, column=1).font = subtitle_font
+cr_cell = ws.cell(row=current_row, column=2)
+cr_cell.value = f"=IF({ri_ref}=0,0,{ci_ref}/{ri_ref})"
+cr_cell.font = Font(bold=True, size=14)
+cr_cell.fill = yellow_fill
+apply_cell_style(cr_cell)
+cr_cell.number_format = '0.0000'
+cr_ref = f"$B${cr_row}"
+
+ws.cell(row=current_row, column=4).value = "= CI / RI"
+ws.cell(row=current_row, column=4).font = formula_font
+current_row += 1
+
+# Status
+ws.cell(row=current_row, column=1).value = "Status Konsistensi:"
+ws.cell(row=current_row, column=1).font = subtitle_font
+status_cell = ws.cell(row=current_row, column=2)
+status_cell.value = f'=IF({cr_ref}<=0.1,"KONSISTEN","TIDAK KONSISTEN")'
+status_cell.font = Font(bold=True, size=11)
+apply_cell_style(status_cell)
+ws.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=3)
+
+current_row += 2
+
+# ============================================
+# TABEL TFN REFERENSI
+# ============================================
+apply_section_header(ws, current_row, "TABEL REFERENSI SKALA FUZZY (TFN)")
+current_row += 1
+
+headers = ["Intensitas", "l", "m", "u", "", "Kebalikan", "1/u", "1/m", "1/l"]
 for i, h in enumerate(headers, 1):
     cell = ws.cell(row=current_row, column=i)
     cell.value = h
     apply_header_style(cell)
 current_row += 1
 
-# TFN Scale data - stored in cells for formula reference
+tfn_start = current_row
 tfn_data = [
     (1, 1, 1, 1),
     (2, 0.5, 1, 1.5),
@@ -132,250 +372,38 @@ tfn_data = [
     (9, 4, 4.5, 4.5)
 ]
 
-tfn_start_row = current_row
-for i, (intensity, l, m, u) in enumerate(tfn_data):
+for intensity, l, m, u in tfn_data:
     ws.cell(row=current_row, column=1).value = intensity
     ws.cell(row=current_row, column=2).value = l
     ws.cell(row=current_row, column=3).value = m
     ws.cell(row=current_row, column=4).value = u
     
-    # Reciprocal (kebalikan) - menggunakan formula
     ws.cell(row=current_row, column=6).value = intensity
-    ws.cell(row=current_row, column=7).value = f"=1/D{current_row}"  # 1/u
-    ws.cell(row=current_row, column=8).value = f"=1/C{current_row}"  # 1/m
-    ws.cell(row=current_row, column=9).value = f"=1/B{current_row}"  # 1/l
+    ws.cell(row=current_row, column=7).value = round(1/u, 4)
+    ws.cell(row=current_row, column=8).value = round(1/m, 4)
+    ws.cell(row=current_row, column=9).value = round(1/l, 4)
     
     for c in range(1, 10):
         apply_cell_style(ws.cell(row=current_row, column=c))
     current_row += 1
 
-tfn_end_row = current_row - 1
-current_row += 1
-
-# ============================================
-# MATRIKS PERBANDINGAN BERPASANGAN (CRISP) - INPUT
-# ============================================
-apply_section_header(ws, current_row, "LANGKAH 1: MATRIKS PERBANDINGAN BERPASANGAN (CRISP) - INPUT", 1, 10)
-current_row += 1
-
-ws.cell(row=current_row, column=1).value = "Masukkan nilai perbandingan (1-9). Nilai di bawah diagonal akan otomatis dihitung (resiprokal)."
-ws.cell(row=current_row, column=1).font = Font(italic=True, size=9, color="666666")
-ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
-current_row += 1
-
-crisp_start_row = current_row
-
-# Header row
-ws.cell(row=current_row, column=1).value = "Kriteria"
-apply_header_style(ws.cell(row=current_row, column=1))
-for j, krit in enumerate(kriteria, start=2):
-    cell = ws.cell(row=current_row, column=j)
-    cell.value = krit
-    apply_header_style(cell)
-
-# Extra columns for GM and Eigenvector
-ws.cell(row=current_row, column=n+2).value = "GM"
-ws.cell(row=current_row, column=n+3).value = "Eigenvector"
-apply_header_style(ws.cell(row=current_row, column=n+2), fill=green_fill)
-apply_header_style(ws.cell(row=current_row, column=n+3), fill=green_fill)
-current_row += 1
-
-crisp_data_start = current_row
-
-# Data rows dengan formula
-for i in range(n):
-    # Kriteria name
-    cell = ws.cell(row=current_row, column=1)
-    cell.value = kriteria[i]
-    cell.font = Font(bold=True, size=10)
-    cell.border = thin_border
-    cell.fill = light_blue_fill
-    cell.alignment = left_align
-    
-    for j in range(n):
-        cell = ws.cell(row=current_row, column=j + 2)
-        if i == j:
-            # Diagonal = 1 (fixed)
-            cell.value = 1
-            apply_cell_style(cell)
-        elif i < j:
-            # Upper triangle - INPUT (dapat diubah)
-            cell.value = 1  # Default value
-            apply_input_style(cell)
-            cell.comment = Comment("INPUT: Masukkan nilai 1-9", "System")
-        else:
-            # Lower triangle - FORMULA (resiprokal dari upper)
-            upper_cell = get_column_letter(i + 2) + str(crisp_data_start + j)
-            cell.value = f"=1/{upper_cell}"
-            apply_cell_style(cell)
-            cell.fill = light_green_fill
-    
-    # Geometric Mean formula: =PRODUCT(range)^(1/n)
-    gm_range = f"{get_column_letter(2)}{current_row}:{get_column_letter(n+1)}{current_row}"
-    gm_cell = ws.cell(row=current_row, column=n+2)
-    gm_cell.value = f"=PRODUCT({gm_range})^(1/{n})"
-    apply_cell_style(gm_cell)
-    gm_cell.fill = light_green_fill
-    
-    current_row += 1
-
-crisp_data_end = current_row - 1
-
-# Sum of GM
-ws.cell(row=current_row, column=n+1).value = "Total GM:"
-ws.cell(row=current_row, column=n+1).font = Font(bold=True)
-gm_sum_cell = ws.cell(row=current_row, column=n+2)
-gm_sum_cell.value = f"=SUM({get_column_letter(n+2)}{crisp_data_start}:{get_column_letter(n+2)}{crisp_data_end})"
-gm_sum_cell.font = Font(bold=True)
-apply_cell_style(gm_sum_cell)
-gm_sum_cell.fill = yellow_fill
-
-gm_sum_ref = f"${get_column_letter(n+2)}${current_row}"
-current_row += 1
-
-# Add Eigenvector formulas (need to go back and add them)
-for i in range(n):
-    row = crisp_data_start + i
-    ev_cell = ws.cell(row=row, column=n+3)
-    gm_cell_ref = f"{get_column_letter(n+2)}{row}"
-    ev_cell.value = f"={gm_cell_ref}/{gm_sum_ref}"
-    apply_cell_style(ev_cell)
-    ev_cell.fill = light_green_fill
-
-# Sum of Eigenvector (should be 1)
-ws.cell(row=current_row-1, column=n+3).value = f"=SUM({get_column_letter(n+3)}{crisp_data_start}:{get_column_letter(n+3)}{crisp_data_end})"
-ws.cell(row=current_row-1, column=n+3).font = Font(bold=True)
-apply_cell_style(ws.cell(row=current_row-1, column=n+3))
-ws.cell(row=current_row-1, column=n+3).fill = yellow_fill
+tfn_end = current_row - 1
+print(f"tfn_start = {tfn_start}, tfn_end = {tfn_end}")
 
 current_row += 1
-
-# ============================================
-# PERHITUNGAN LAMBDA MAX & KONSISTENSI
-# ============================================
-apply_section_header(ws, current_row, "LANGKAH 2 & 3: PERHITUNGAN LAMBDA MAX & UJI KONSISTENSI", 1, 10)
-current_row += 1
-
-# A*w calculation (untuk lambda max)
-ws.cell(row=current_row, column=1).value = "Perhitungan A*w (Matriks x Eigenvector):"
-ws.cell(row=current_row, column=1).font = subtitle_font
-current_row += 1
-
-ws.cell(row=current_row, column=1).value = "Kriteria"
-ws.cell(row=current_row, column=2).value = "A*w"
-ws.cell(row=current_row, column=3).value = "(A*w)/w"
-apply_header_style(ws.cell(row=current_row, column=1))
-apply_header_style(ws.cell(row=current_row, column=2))
-apply_header_style(ws.cell(row=current_row, column=3))
-current_row += 1
-
-aw_start_row = current_row
-for i in range(n):
-    ws.cell(row=current_row, column=1).value = kriteria[i]
-    apply_cell_style(ws.cell(row=current_row, column=1))
-    ws.cell(row=current_row, column=1).fill = light_blue_fill
-    
-    # A*w = SUMPRODUCT of row i in crisp matrix with eigenvector column
-    crisp_row_range = f"{get_column_letter(2)}{crisp_data_start + i}:{get_column_letter(n+1)}{crisp_data_start + i}"
-    ev_range = f"${get_column_letter(n+3)}${crisp_data_start}:${get_column_letter(n+3)}${crisp_data_end}"
-    
-    aw_cell = ws.cell(row=current_row, column=2)
-    aw_cell.value = f"=SUMPRODUCT({crisp_row_range},{ev_range})"
-    apply_cell_style(aw_cell)
-    aw_cell.fill = light_green_fill
-    
-    # (A*w)/w
-    ev_cell_ref = f"{get_column_letter(n+3)}{crisp_data_start + i}"
-    ratio_cell = ws.cell(row=current_row, column=3)
-    ratio_cell.value = f"=B{current_row}/{ev_cell_ref}"
-    apply_cell_style(ratio_cell)
-    ratio_cell.fill = light_green_fill
-    
-    current_row += 1
-
-aw_end_row = current_row - 1
-current_row += 1
-
-# Lambda Max, CI, CR calculation
-ws.cell(row=current_row, column=1).value = "Lambda Max (λmax):"
-ws.cell(row=current_row, column=1).font = subtitle_font
-lambda_max_cell = ws.cell(row=current_row, column=2)
-lambda_max_cell.value = f"=AVERAGE(C{aw_start_row}:C{aw_end_row})"
-lambda_max_cell.font = Font(bold=True, size=14, color="ED7D31")
-lambda_max_cell.fill = yellow_fill
-apply_cell_style(lambda_max_cell)
-lambda_max_ref = f"$B${current_row}"
-
-ws.cell(row=current_row, column=4).value = "Rumus: λmax = (1/n) * Σ(A*w/w)"
-ws.cell(row=current_row, column=4).font = formula_font
-current_row += 1
-
-# CI
-ws.cell(row=current_row, column=1).value = "Consistency Index (CI):"
-ws.cell(row=current_row, column=1).font = subtitle_font
-ci_cell = ws.cell(row=current_row, column=2)
-ci_cell.value = f"=({lambda_max_ref}-{n})/({n}-1)"
-ci_cell.font = Font(bold=True, size=12)
-ci_cell.fill = light_green_fill
-apply_cell_style(ci_cell)
-ci_ref = f"$B${current_row}"
-
-ws.cell(row=current_row, column=4).value = "Rumus: CI = (λmax - n) / (n - 1)"
-ws.cell(row=current_row, column=4).font = formula_font
-current_row += 1
-
-# RI
-ws.cell(row=current_row, column=1).value = "Random Index (RI):"
-ws.cell(row=current_row, column=1).font = subtitle_font
-ri_cell = ws.cell(row=current_row, column=2)
-ri_cell.value = ri_values[n-1]  # RI for n=6 is 1.24
-ri_cell.font = Font(bold=True, size=12)
-apply_cell_style(ri_cell)
-ri_ref = f"$B${current_row}"
-
-ws.cell(row=current_row, column=4).value = f"Untuk n={n}, RI = {ri_values[n-1]}"
-ws.cell(row=current_row, column=4).font = formula_font
-current_row += 1
-
-# CR
-ws.cell(row=current_row, column=1).value = "Consistency Ratio (CR):"
-ws.cell(row=current_row, column=1).font = subtitle_font
-cr_cell = ws.cell(row=current_row, column=2)
-cr_cell.value = f"=IF({ri_ref}=0,0,{ci_ref}/{ri_ref})"
-cr_cell.font = Font(bold=True, size=14)
-cr_cell.fill = yellow_fill
-apply_cell_style(cr_cell)
-cr_ref = f"$B${current_row}"
-
-ws.cell(row=current_row, column=4).value = "Rumus: CR = CI / RI"
-ws.cell(row=current_row, column=4).font = formula_font
-current_row += 1
-
-# Status Konsistensi
-ws.cell(row=current_row, column=1).value = "Status Konsistensi:"
-ws.cell(row=current_row, column=1).font = subtitle_font
-status_cell = ws.cell(row=current_row, column=2)
-status_cell.value = f'=IF({cr_ref}<=0.1,"KONSISTEN (CR <= 0.1)","TIDAK KONSISTEN (CR > 0.1)")'
-status_cell.font = Font(bold=True, size=11)
-apply_cell_style(status_cell)
-ws.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=4)
-
-current_row += 2
 
 # ============================================
 # MATRIKS FUZZY (TFN)
 # ============================================
-apply_section_header(ws, current_row, "LANGKAH 4: FUZZIFIKASI MATRIKS PERBANDINGAN (TFN)", 1, 20)
+apply_section_header(ws, current_row, "LANGKAH 4: FUZZIFIKASI MATRIKS (TFN)", col_end=20)
 current_row += 1
 
-ws.cell(row=current_row, column=1).value = "Nilai crisp dikonversi ke Triangular Fuzzy Number (l, m, u) menggunakan tabel referensi di atas"
+ws.cell(row=current_row, column=1).value = "Konversi otomatis berdasarkan nilai crisp"
 ws.cell(row=current_row, column=1).font = Font(italic=True, size=9, color="666666")
 ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=20)
 current_row += 1
 
-fuzzy_start_row = current_row
-
-# Header row
+# Header
 ws.cell(row=current_row, column=1).value = "Kriteria"
 apply_header_style(ws.cell(row=current_row, column=1))
 
@@ -388,7 +416,7 @@ for krit in kriteria:
     col_idx += 3
 current_row += 1
 
-# Sub-header (l, m, u)
+# Sub-header
 ws.cell(row=current_row, column=1).value = ""
 apply_header_style(ws.cell(row=current_row, column=1), fill=yellow_fill)
 col_idx = 2
@@ -400,9 +428,9 @@ for _ in kriteria:
         col_idx += 1
 current_row += 1
 
-fuzzy_data_start = current_row
+fuzzy_start = current_row
 
-# Data rows dengan formula VLOOKUP
+# Data rows dengan formula INDEX/MATCH
 for i in range(n):
     cell = ws.cell(row=current_row, column=1)
     cell.value = kriteria[i]
@@ -412,23 +440,24 @@ for i in range(n):
     
     col_idx = 2
     for j in range(n):
-        crisp_cell = f"{get_column_letter(j+2)}{crisp_data_start + i}"
-        
-        # Formula untuk mengambil TFN berdasarkan nilai crisp
-        # Menggunakan INDEX/MATCH atau VLOOKUP
-        tfn_table = f"$A${tfn_start_row}:$D${tfn_end_row}"
+        crisp_row = crisp_data_start + i
+        crisp_col = krit_cols[j]
+        crisp_ref = f"{crisp_col}{crisp_row}"
         
         if i <= j:
-            # Upper triangle atau diagonal - gunakan TFN langsung
-            l_formula = f"=INDEX($B${tfn_start_row}:$B${tfn_end_row},MATCH(ROUND(ABS({crisp_cell}),0),$A${tfn_start_row}:$A${tfn_end_row},0))"
-            m_formula = f"=INDEX($C${tfn_start_row}:$C${tfn_end_row},MATCH(ROUND(ABS({crisp_cell}),0),$A${tfn_start_row}:$A${tfn_end_row},0))"
-            u_formula = f"=INDEX($D${tfn_start_row}:$D${tfn_end_row},MATCH(ROUND(ABS({crisp_cell}),0),$A${tfn_start_row}:$A${tfn_end_row},0))"
+            # Upper triangle - TFN langsung
+            l_formula = f"=INDEX($B${tfn_start}:$B${tfn_end},MATCH(MAX(1,MIN(9,ROUND(ABS({crisp_ref}),0))),$A${tfn_start}:$A${tfn_end},0))"
+            m_formula = f"=INDEX($C${tfn_start}:$C${tfn_end},MATCH(MAX(1,MIN(9,ROUND(ABS({crisp_ref}),0))),$A${tfn_start}:$A${tfn_end},0))"
+            u_formula = f"=INDEX($D${tfn_start}:$D${tfn_end},MATCH(MAX(1,MIN(9,ROUND(ABS({crisp_ref}),0))),$A${tfn_start}:$A${tfn_end},0))"
         else:
-            # Lower triangle - gunakan reciprocal (1/u, 1/m, 1/l)
-            upper_crisp = f"{get_column_letter(i+2)}{crisp_data_start + j}"
-            l_formula = f"=1/INDEX($D${tfn_start_row}:$D${tfn_end_row},MATCH(ROUND(ABS({upper_crisp}),0),$A${tfn_start_row}:$A${tfn_end_row},0))"
-            m_formula = f"=1/INDEX($C${tfn_start_row}:$C${tfn_end_row},MATCH(ROUND(ABS({upper_crisp}),0),$A${tfn_start_row}:$A${tfn_end_row},0))"
-            u_formula = f"=1/INDEX($B${tfn_start_row}:$B${tfn_end_row},MATCH(ROUND(ABS({upper_crisp}),0),$A${tfn_start_row}:$A${tfn_end_row},0))"
+            # Lower triangle - kebalikan
+            upper_crisp_row = crisp_data_start + j
+            upper_crisp_col = krit_cols[i]
+            upper_ref = f"{upper_crisp_col}{upper_crisp_row}"
+            
+            l_formula = f"=1/INDEX($D${tfn_start}:$D${tfn_end},MATCH(MAX(1,MIN(9,ROUND(ABS({upper_ref}),0))),$A${tfn_start}:$A${tfn_end},0))"
+            m_formula = f"=1/INDEX($C${tfn_start}:$C${tfn_end},MATCH(MAX(1,MIN(9,ROUND(ABS({upper_ref}),0))),$A${tfn_start}:$A${tfn_end},0))"
+            u_formula = f"=1/INDEX($B${tfn_start}:$B${tfn_end},MATCH(MAX(1,MIN(9,ROUND(ABS({upper_ref}),0))),$A${tfn_start}:$A${tfn_end},0))"
         
         ws.cell(row=current_row, column=col_idx).value = l_formula
         ws.cell(row=current_row, column=col_idx+1).value = m_formula
@@ -436,6 +465,7 @@ for i in range(n):
         
         for c in range(col_idx, col_idx+3):
             apply_cell_style(ws.cell(row=current_row, column=c))
+            ws.cell(row=current_row, column=c).number_format = '0.00'
             if i > j:
                 ws.cell(row=current_row, column=c).fill = light_green_fill
         
@@ -443,83 +473,19 @@ for i in range(n):
     
     current_row += 1
 
-fuzzy_data_end = current_row - 1
-current_row += 1
-
-# ============================================
-# PERHITUNGAN FUZZY SYNTHETIC EXTENT
-# ============================================
-apply_section_header(ws, current_row, "LANGKAH 5: PERHITUNGAN FUZZY SYNTHETIC EXTENT", 1, 10)
-current_row += 1
-
-ws.cell(row=current_row, column=1).value = "Si = (Σl, Σm, Σu) untuk setiap baris, lalu dinormalisasi"
-ws.cell(row=current_row, column=1).font = Font(italic=True, size=9, color="666666")
-ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
-current_row += 1
-
-# Header
-ws.cell(row=current_row, column=1).value = "Kriteria"
-ws.cell(row=current_row, column=2).value = "Σl"
-ws.cell(row=current_row, column=3).value = "Σm"
-ws.cell(row=current_row, column=4).value = "Σu"
-for c in range(1, 5):
-    apply_header_style(ws.cell(row=current_row, column=c))
-current_row += 1
-
-sum_start = current_row
-# Calculate sum of each row
-for i in range(n):
-    ws.cell(row=current_row, column=1).value = kriteria[i]
-    apply_cell_style(ws.cell(row=current_row, column=1))
-    ws.cell(row=current_row, column=1).fill = light_blue_fill
-    
-    # Sum l columns (every 3rd starting from col 2)
-    l_cells = "+".join([f"{get_column_letter(2 + j*3)}{fuzzy_data_start + i}" for j in range(n)])
-    ws.cell(row=current_row, column=2).value = f"={l_cells}"
-    apply_cell_style(ws.cell(row=current_row, column=2))
-    ws.cell(row=current_row, column=2).fill = light_green_fill
-    
-    # Sum m columns
-    m_cells = "+".join([f"{get_column_letter(3 + j*3)}{fuzzy_data_start + i}" for j in range(n)])
-    ws.cell(row=current_row, column=3).value = f"={m_cells}"
-    apply_cell_style(ws.cell(row=current_row, column=3))
-    ws.cell(row=current_row, column=3).fill = light_green_fill
-    
-    # Sum u columns
-    u_cells = "+".join([f"{get_column_letter(4 + j*3)}{fuzzy_data_start + i}" for j in range(n)])
-    ws.cell(row=current_row, column=4).value = f"={u_cells}"
-    apply_cell_style(ws.cell(row=current_row, column=4))
-    ws.cell(row=current_row, column=4).fill = light_green_fill
-    
-    current_row += 1
-
-sum_end = current_row - 1
-
-# Total row
-ws.cell(row=current_row, column=1).value = "TOTAL"
-ws.cell(row=current_row, column=1).font = Font(bold=True)
-apply_cell_style(ws.cell(row=current_row, column=1))
-
-for c in range(2, 5):
-    col_letter = get_column_letter(c)
-    ws.cell(row=current_row, column=c).value = f"=SUM({col_letter}{sum_start}:{col_letter}{sum_end})"
-    ws.cell(row=current_row, column=c).font = Font(bold=True)
-    apply_cell_style(ws.cell(row=current_row, column=c))
-    ws.cell(row=current_row, column=c).fill = yellow_fill
-
-total_row = current_row
+fuzzy_end = current_row - 1
 current_row += 2
 
 # ============================================
-# BOBOT AKHIR KRITERIA
+# RINGKASAN BOBOT
 # ============================================
-apply_section_header(ws, current_row, "RINGKASAN: BOBOT KRITERIA HASIL FUZZY AHP", 1, 10)
+apply_section_header(ws, current_row, "RINGKASAN: BOBOT KRITERIA")
 current_row += 1
 
 ws.cell(row=current_row, column=1).value = "No"
 ws.cell(row=current_row, column=2).value = "Kriteria"
-ws.cell(row=current_row, column=3).value = "Bobot (wi)"
-ws.cell(row=current_row, column=4).value = "Bobot (%)"
+ws.cell(row=current_row, column=3).value = "Bobot"
+ws.cell(row=current_row, column=4).value = "Persentase"
 apply_header_style(ws.cell(row=current_row, column=1), fill=green_fill)
 apply_header_style(ws.cell(row=current_row, column=2), fill=green_fill)
 apply_header_style(ws.cell(row=current_row, column=3), fill=green_fill)
@@ -534,15 +500,13 @@ for i in range(n):
     ws.cell(row=current_row, column=2).value = kriteria[i]
     apply_cell_style(ws.cell(row=current_row, column=2))
     
-    # Eigenvector reference
-    ev_ref = f"{get_column_letter(n+3)}{crisp_data_start + i}"
-    ws.cell(row=current_row, column=3).value = f"={ev_ref}"
+    wi_ref = f"{wi_col}{crisp_data_start + i}"
+    ws.cell(row=current_row, column=3).value = f"={wi_ref}"
     apply_cell_style(ws.cell(row=current_row, column=3))
     ws.cell(row=current_row, column=3).fill = light_green_fill
     ws.cell(row=current_row, column=3).number_format = '0.0000'
     
-    # Percentage
-    ws.cell(row=current_row, column=4).value = f"={ev_ref}*100"
+    ws.cell(row=current_row, column=4).value = f"={wi_ref}*100"
     apply_cell_style(ws.cell(row=current_row, column=4))
     ws.cell(row=current_row, column=4).fill = light_yellow_fill
     ws.cell(row=current_row, column=4).number_format = '0.00"%"'
@@ -551,7 +515,6 @@ for i in range(n):
 
 bobot_end = current_row - 1
 
-# Total
 ws.cell(row=current_row, column=2).value = "TOTAL"
 ws.cell(row=current_row, column=2).font = Font(bold=True)
 apply_cell_style(ws.cell(row=current_row, column=2))
@@ -568,12 +531,12 @@ ws.cell(row=current_row, column=4).fill = yellow_fill
 
 current_row += 2
 
-# Status box
+# Status
 ws.cell(row=current_row, column=1).value = "STATUS:"
 ws.cell(row=current_row, column=1).font = subtitle_font
-ws.cell(row=current_row, column=2).value = f'=IF({cr_ref}<=0.1,"VALID - Hasil dapat digunakan","TIDAK VALID - Perbaiki matriks perbandingan")'
-ws.cell(row=current_row, column=2).font = Font(bold=True, size=11)
-ws.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=5)
+ws.cell(row=current_row, column=2).value = f'=IF({cr_ref}<=0.1,"VALID - Dapat digunakan","TIDAK VALID")'
+ws.cell(row=current_row, column=2).font = Font(bold=True, size=12)
+ws.merge_cells(start_row=current_row, start_column=2, end_row=current_row, end_column=4)
 
 # ============================================
 # Set column widths
@@ -583,27 +546,28 @@ ws.column_dimensions['B'].width = 14
 ws.column_dimensions['C'].width = 14
 ws.column_dimensions['D'].width = 14
 ws.column_dimensions['E'].width = 14
-ws.column_dimensions['F'].width = 12
-ws.column_dimensions['G'].width = 12
-ws.column_dimensions['H'].width = 12
-ws.column_dimensions['I'].width = 12
-ws.column_dimensions['J'].width = 12
-for j in range(11, 25):
+ws.column_dimensions['F'].width = 14
+ws.column_dimensions['G'].width = 14
+ws.column_dimensions['H'].width = 14
+ws.column_dimensions['I'].width = 14
+for j in range(10, 25):
     ws.column_dimensions[get_column_letter(j)].width = 7
 
-# Save workbook
-output_file = "d:/laragon/www/appSaringPramuka/Fuzzy_AHP_Calculator.xlsx"
+# Print summary
+print("\n=== POSISI SEL PENTING ===")
+print(f"Matriks Crisp: B{crisp_data_start}:G{crisp_data_end}")
+print(f"GM Column: {gm_col}{crisp_data_start}:{gm_col}{crisp_data_end}")
+print(f"Wi Column: {wi_col}{crisp_data_start}:{wi_col}{crisp_data_end}")
+print(f"GM Sum: {gm_sum_ref}")
+print(f"A*w: B{aw_start}:B{aw_end}")
+print(f"(A*w)/w: C{aw_start}:C{aw_end}")
+print(f"Lambda Max: {lambda_ref}")
+print(f"CI: {ci_ref}")
+print(f"RI: {ri_ref}")
+print(f"CR: {cr_ref}")
+print(f"TFN Table: A{tfn_start}:D{tfn_end}")
+
+# Save
+output_file = "d:/laragon/www/appSaringPramuka/Fuzzy_AHP_Calculator_v3.xlsx"
 wb.save(output_file)
-print(f"[OK] File Excel dengan RUMUS berhasil dibuat: {output_file}")
-print("\n=== CARA PENGGUNAAN ===")
-print("1. Buka file Excel")
-print("2. Cari sel berwarna KUNING MUDA (input cells)")
-print("3. Ubah nilai pada MATRIKS PERBANDINGAN BERPASANGAN (diagonal atas)")
-print("4. Masukkan nilai 1-9 sesuai skala Saaty")
-print("5. Hasil akan OTOMATIS terhitung:")
-print("   - Eigenvector (bobot kriteria)")
-print("   - Lambda Max")
-print("   - CI, CR, dan Status Konsistensi")
-print("   - Matriks Fuzzy TFN")
-print("   - Fuzzy Synthetic Extent")
-print("6. Gunakan untuk validasi hasil perhitungan di sistem")
+print(f"\n[OK] File berhasil dibuat: {output_file}")
