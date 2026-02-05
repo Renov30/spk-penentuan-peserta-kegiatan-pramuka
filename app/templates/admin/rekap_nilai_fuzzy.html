@@ -511,7 +511,7 @@
                   <h4
                     class="font-semibold mb-3 {{ 'text-purple-400' if current_theme == 'dark' else 'text-purple-600' }}"
                   >
-                    {{ 'Matriks Fuzzy (TFN)' if current_lang == 'id' else 'Fuzzy Matrix (TFN)' }}
+                    {{ 'Matriks Fuzzy (TFN hasil konversi rasio)' if current_lang == 'id' else 'Fuzzy Matrix (TFN from Ratio Conversion Results)' }}
                   </h4>
                   <div class="overflow-x-auto">
                     <table
@@ -620,13 +620,13 @@
                         >
                           <td class="p-2">{{ item.criteria }}</td>
                           <td class="p-2 text-center font-mono">
-                            {{ "%.2f"|format(item.l)|replace(".", ",") }}
+                            {{ item.l | round(6) }}
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ "%.2f"|format(item.m)|replace(".", ",") }}
+                            {{ item.m | round(6) }}
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ "%.2f"|format(item.u)|replace(".", ",") }}
+                            {{ item.u | round(6) }}
                           </td>
                         </tr>
                         {% endfor %}
@@ -635,16 +635,13 @@
                         >
                           <td class="p-2">Total</td>
                           <td class="p-2 text-center font-mono">
-                            {{ "%.2f"|format(total_fuzzy_sum.l)|replace(".",
-                            ",") }}
+                            {{ total_fuzzy_sum.l | round(6) }}
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ "%.2f"|format(total_fuzzy_sum.m)|replace(".",
-                            ",") }}
+                            {{ total_fuzzy_sum.m | round(6) }}
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ "%.2f"|format(total_fuzzy_sum.u)|replace(".",
-                            ",") }}
+                            {{ total_fuzzy_sum.u | round(6) }}
                           </td>
                         </tr>
                       </tbody>

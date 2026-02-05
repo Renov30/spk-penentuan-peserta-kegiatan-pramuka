@@ -169,7 +169,7 @@ class FuzzyAHPCalculator:
     def __init__(self, criteria_names: List[str]):
         self.criteria_names = criteria_names
         self.n = len(criteria_names)
-        self.fuzzy_pairwise_matrix = None  # Matriks dengan TFN
+        self.fuzzy_pairwise_matrix = None
         self.fuzzy_synthetic_extent = None
         self.fuzzy_weights = None
         self.normalized_weights = None

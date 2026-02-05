@@ -2180,14 +2180,19 @@ def admin_import_users():
             flash(f"{t['missing_columns']}: {', '.join(missing)}", "danger")
             return redirect(url_for("admin_users"))
 
-        existing_usernames = {u[0] for u in db.session.query(Users.username).all()}
         valid_levels = {"admin", "penilai", "peserta"}
+        valid_status = {"aktif", "nonaktif"}
+        valid_gender = {"laki-laki", "perempuan"}
+        existing_usernames = {u[0] for u in db.session.query(Users.username).all()}
+
         count_added, count_skipped = 0, 0
         new_users = []
         for _, row in df.iterrows():
             if pd.isna(row["username"]) or pd.isna(row["email"]):
                 count_skipped += 1
                 continue
+            username = str(row["username"]).strip()
+            email = str(row["email"]).strip().lower()
             if row["username"] in existing_usernames:
                 count_skipped += 1
                 continue
@@ -2198,21 +2203,47 @@ def admin_import_users():
                 count_skipped += 1
                 continue
 
+            # ===== NORMALISASI DATA =====
+            nomor_hp = str(row["nomor_hp"]).strip() if pd.notna(row["nomor_hp"]) else ""
+            jenis_kelamin = (
+                row["jenis_kelamin"].lower().strip()
+                if pd.notna(row["jenis_kelamin"])
+                else None
+            )
+
+            if jenis_kelamin not in valid_gender:
+                jenis_kelamin = None
+
+            try:
+                usia = int(row["usia"])
+            except (ValueError, TypeError):
+                usia = 0
+
+            status = (
+                row["status"].lower().strip() if pd.notna(row["status"]) else "aktif"
+            )
+
+            if status not in valid_status:
+                status = "aktif"
+
+            # ===== PASSWORD =====
             password = (
                 row["password"]
                 if "password" in df.columns and pd.notna(row["password"])
                 else "12345678"
             )
+
             new_users.append(
                 Users(
                     nama_lengkap=row["nama_lengkap"],
-                    username=row["username"],
-                    email=row["email"],
+                    username=username,
+                    email=email,
                     password=generate_password_hash(str(password)),
                     level=row["level"],
-                    jenis_kelamin=row.get("jenis_kelamin"),
-                    usia=row.get("usia", 0),
-                    nomor_hp=row.get("nomor_hp", ""),
+                    jenis_kelamin=jenis_kelamin,
+                    usia=usia,
+                    nomor_hp=nomor_hp,
+                    status=status,
                 )
             )
             count_added += 1
