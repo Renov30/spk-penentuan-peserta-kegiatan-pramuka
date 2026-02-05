@@ -7005,12 +7005,12 @@ def penilai_detail_nilai(user_id, event_id):
     n = len(criterias)
 
     # ==========================================
-    # LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan
+    # LANGKAH 1: Penyusunan Matriks Perbandingan Berpasangan (Crisp)
     # ==========================================
 
     # Helper function to format TFN values as fractions
     def format_tfn_val(v):
-        if abs(v - round(v)) < 0.01:
+        if abs(v - round(v)) < 0.01:  # It's essentially an integer
             return f"{int(round(v))}"
         # Check for common reciprocals 1/2 to 1/9
         for x in range(2, 10):
