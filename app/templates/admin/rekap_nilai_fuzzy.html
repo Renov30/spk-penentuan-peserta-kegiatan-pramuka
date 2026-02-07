@@ -620,13 +620,13 @@
                         >
                           <td class="p-2">{{ item.criteria }}</td>
                           <td class="p-2 text-center font-mono">
-                            {{ item.l | round(6) }}
+                            {{ item.l | round(2) }}
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ item.m | round(6) }}
+                            {{ item.m | round(2) }}
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ item.u | round(6) }}
+                            {{ item.u | round(2) }}
                           </td>
                         </tr>
                         {% endfor %}
@@ -635,13 +635,13 @@
                         >
                           <td class="p-2">Total</td>
                           <td class="p-2 text-center font-mono">
-                            {{ total_fuzzy_sum.l | round(6) }}
+                            {{ total_fuzzy_sum.l | round(2) }}
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ total_fuzzy_sum.m | round(6) }}
+                            {{ total_fuzzy_sum.m | round(2) }}
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ total_fuzzy_sum.u | round(6) }}
+                            {{ total_fuzzy_sum.u | round(2) }}
                           </td>
                         </tr>
                       </tbody>
