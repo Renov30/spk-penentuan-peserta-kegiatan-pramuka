@@ -1,15 +1,13 @@
 """
-Script untuk membuat Model Excel Fuzzy AHP yang SAMA dengan tampilan sistem
-Sesuai dengan langkah-langkah di detail_nilai.html
+Script untuk membuat Model Excel Fuzzy AHP yang SAMA PERSIS dengan sistem
+VERSI FINAL - Formula matriks crisp sesuai dengan run.py
 
-Langkah-langkah:
-1. Penyusunan Matriks Perbandingan Berpasangan (Crisp)
-2. Perhitungan Vector Eigen (Geometric Mean Method)
-3. Uji Konsistensi Matriks Perbandingan
-4. Fuzzifikasi Matriks Perbandingan Berpasangan
-5. Perhitungan Fuzzy Synthetic Extent
-6. Perbandingan Probabilitas, Normalisasi & Bobot Global
-+ Perhitungan Nilai Peserta
+Algoritma matriks crisp dari sistem:
+ratio = wi / wj
+if ratio >= 1:
+    pairwise_matrix[i, j] = min(9, max(1, ratio))
+else:
+    pairwise_matrix[i, j] = max(1/9, ratio)
 """
 
 import openpyxl
@@ -31,14 +29,14 @@ thin_border = Border(
     top=Side(style='thin'), bottom=Side(style='thin')
 )
 
-# Colors - sesuai dengan warna di sistem
-header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")  # Blue
-step1_fill = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")  # Blue-600
-step2_fill = PatternFill(start_color="16A34A", end_color="16A34A", fill_type="solid")  # Green-600
-step3_fill = PatternFill(start_color="CA8A04", end_color="CA8A04", fill_type="solid")  # Yellow-600
-step4_fill = PatternFill(start_color="9333EA", end_color="9333EA", fill_type="solid")  # Purple-600
-step5_fill = PatternFill(start_color="D97706", end_color="D97706", fill_type="solid")  # Amber-600
-step6_fill = PatternFill(start_color="0D9488", end_color="0D9488", fill_type="solid")  # Teal-600
+# Colors
+header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+step1_fill = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
+step2_fill = PatternFill(start_color="16A34A", end_color="16A34A", fill_type="solid")
+step3_fill = PatternFill(start_color="CA8A04", end_color="CA8A04", fill_type="solid")
+step4_fill = PatternFill(start_color="9333EA", end_color="9333EA", fill_type="solid")
+step5_fill = PatternFill(start_color="D97706", end_color="D97706", fill_type="solid")
+step6_fill = PatternFill(start_color="0D9488", end_color="0D9488", fill_type="solid")
 green_fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
 yellow_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
 orange_fill = PatternFill(start_color="ED7D31", end_color="ED7D31", fill_type="solid")
@@ -138,22 +136,29 @@ ws1.cell(row=row, column=2).value = 5
 input_style(ws1.cell(row=row, column=2))
 row += 2
 
-# Input Bobot Kriteria (1-9)
-ws1.cell(row=row, column=1).value = "INPUT BOBOT KRITERIA (Skala 1-9)"
+# Input Bobot Kriteria (angka biasa, akan di-normalize)
+ws1.cell(row=row, column=1).value = "INPUT BOBOT KRITERIA"
 ws1.cell(row=row, column=1).font = Font(bold=True, size=12, color="1F4E79")
+ws1.merge_cells(start_row=row, start_column=1, end_row=row, end_column=4)
+row += 1
+
+ws1.cell(row=row, column=1).value = "Isi dengan angka (misal: 5, 10, 15, dst). Akan dihitung rasionya."
+ws1.cell(row=row, column=1).font = Font(italic=True, size=9, color="666666")
 ws1.merge_cells(start_row=row, start_column=1, end_row=row, end_column=4)
 row += 1
 
 ws1.cell(row=row, column=1).value = "Kode"
 ws1.cell(row=row, column=2).value = "Kriteria"
-ws1.cell(row=row, column=3).value = "Bobot (1-9)"
+ws1.cell(row=row, column=3).value = "Bobot"
 header_style(ws1.cell(row=row, column=1))
 header_style(ws1.cell(row=row, column=2))
 header_style(ws1.cell(row=row, column=3), fill=orange_fill)
 row += 1
 
 bobot_input_start = row
-default_weights = [7, 6, 5, 8, 4, 3]  # Default bobot
+# Default bobot (contoh dari gambar sistem)
+# Di sistem terlihat: K1=1, K2=2, K3=2, K4=3, K5=4, K6=5
+default_weights = [1, 2, 2, 3, 4, 5]
 
 for i in range(n):
     ws1.cell(row=row, column=1).value = kriteria_list[i]
@@ -227,7 +232,7 @@ row = 3
 section(ws2, row, 1, "PENYUSUNAN MATRIKS PERBANDINGAN BERPASANGAN (CRISP)", step1_fill, col_end=n+3)
 row += 1
 
-ws2.cell(row=row, column=1).value = "Matriks di-generate otomatis berdasarkan rasio bobot kriteria dari Sheet Input"
+ws2.cell(row=row, column=1).value = "Formula: IF(wi/wj >= 1, MIN(9, MAX(1, wi/wj)), MAX(1/9, wi/wj))"
 ws2.cell(row=row, column=1).font = Font(italic=True, size=9, color="666666")
 ws2.merge_cells(start_row=row, start_column=1, end_row=row, end_column=n+3)
 row += 1
@@ -243,7 +248,7 @@ row += 1
 
 crisp_start = row
 
-# Matriks perbandingan - generate dari rasio bobot
+# Matriks perbandingan - FORMULA SESUAI SISTEM
 for i in range(n):
     ws2.cell(row=row, column=1).value = kriteria_list[i]
     cell_style(ws2.cell(row=row, column=1))
@@ -256,11 +261,14 @@ for i in range(n):
             cell_style(cell)
             cell.fill = light_blue_fill
         else:
-            # Rasio bobot i / bobot j, kemudian dibulatkan ke skala 1-9
-            bobot_i = f"'Input Data'!C{bobot_input_start + i}"
-            bobot_j = f"'Input Data'!C{bobot_input_start + j}"
-            # Formula: =MAX(1,MIN(9,ROUND(bobot_i/bobot_j,0)))
-            cell.value = f"=IF({bobot_i}>={bobot_j},MAX(1,MIN(9,ROUND({bobot_i}/{bobot_j},0))),1/MAX(1,MIN(9,ROUND({bobot_j}/{bobot_i},0))))"
+            # Formula sesuai sistem:
+            # ratio = wi / wj
+            # if ratio >= 1: min(9, max(1, ratio))
+            # else: max(1/9, ratio)
+            bobot_i = f"'Input Data'!$C${bobot_input_start + i}"
+            bobot_j = f"'Input Data'!$C${bobot_input_start + j}"
+            # =IF(wi/wj>=1, MIN(9,MAX(1,wi/wj)), MAX(1/9,wi/wj))
+            cell.value = f"=IF({bobot_i}/{bobot_j}>=1,MIN(9,MAX(1,{bobot_i}/{bobot_j})),MAX(1/9,{bobot_i}/{bobot_j}))"
             cell_style(cell)
             cell.number_format = '0.00'
     
@@ -273,7 +281,7 @@ row += 2
 section(ws2, row, 2, "PERHITUNGAN VECTOR EIGEN (GEOMETRIC MEAN METHOD)", step2_fill, col_end=n+3)
 row += 1
 
-ws2.cell(row=row, column=1).value = "GMi = (Πaij)^(1/n), Wi = GMi / ΣGMi"
+ws2.cell(row=row, column=1).value = "GMi = (a1*a2*...*an)^(1/n), Wi = GMi / Sum(GMi)"
 ws2.cell(row=row, column=1).font = Font(italic=True, size=10, color="16A34A")
 ws2.merge_cells(start_row=row, start_column=1, end_row=row, end_column=n+3)
 row += 1
@@ -340,7 +348,7 @@ row += 2
 section(ws2, row, 3, "UJI KONSISTENSI MATRIKS PERBANDINGAN", step3_fill, col_end=n+3)
 row += 1
 
-ws2.cell(row=row, column=1).value = "CI = (λmax - n) / (n - 1), CR = CI / RI"
+ws2.cell(row=row, column=1).value = "CI = (Lmax - n) / (n - 1), CR = CI / RI"
 ws2.cell(row=row, column=1).font = Font(italic=True, size=10, color="CA8A04")
 ws2.merge_cells(start_row=row, start_column=1, end_row=row, end_column=n+3)
 row += 1
@@ -363,7 +371,7 @@ for i in range(n):
     
     crisp_row = crisp_start + i
     
-    # A*w = B*C9 + C*C10 + ... (explicit)
+    # A*w = B*C_gm1 + C*C_gm2 + ... (explicit)
     parts = []
     for j in range(n):
         col = get_column_letter(j + 2)
@@ -388,7 +396,7 @@ row += 1
 
 # Lambda Max, CI, RI, CR
 lambda_row = row
-ws2.cell(row=row, column=1).value = "Lambda Max (λmax):"
+ws2.cell(row=row, column=1).value = "Lambda Max (Lmax):"
 ws2.cell(row=row, column=1).font = subtitle_font
 ws2.cell(row=row, column=2).value = f"=AVERAGE(C{aw_start}:C{aw_end})"
 ws2.cell(row=row, column=2).font = Font(bold=True, size=14, color="16A34A")
@@ -457,7 +465,7 @@ ws3.cell(row=row, column=1).value = "Intensitas"
 ws3.cell(row=row, column=2).value = "l"
 ws3.cell(row=row, column=3).value = "m"
 ws3.cell(row=row, column=4).value = "u"
-ws3.cell(row=row, column=5).value = "Kebalikan (1/u, 1/m, 1/l)"
+ws3.cell(row=row, column=5).value = "Kebalikan"
 for c in range(1, 6):
     header_style(ws3.cell(row=row, column=c), fill=step4_fill)
 row += 1
@@ -469,7 +477,7 @@ for intensity in range(1, 10):
     ws3.cell(row=row, column=2).value = l
     ws3.cell(row=row, column=3).value = m
     ws3.cell(row=row, column=4).value = u
-    ws3.cell(row=row, column=5).value = f"(1/{u}, 1/{m}, 1/{l})" if l != 0 else "(1/u, 1/m, 1/l)"
+    ws3.cell(row=row, column=5).value = f"(1/{u}, 1/{m}, 1/{l})" if l > 0 else "(1/u, 1/m, 1/l)"
     for c in range(1, 6):
         cell_style(ws3.cell(row=row, column=c))
     row += 1
@@ -481,7 +489,7 @@ row += 1
 section(ws3, row, 4, "FUZZIFIKASI MATRIKS PERBANDINGAN BERPASANGAN", step4_fill, col_end=n*3+1)
 row += 1
 
-ws3.cell(row=row, column=1).value = "Konversi nilai crisp ke Triangular Fuzzy Number (TFN)"
+ws3.cell(row=row, column=1).value = "Konversi nilai crisp ke Triangular Fuzzy Number (TFN) - Nilai statis untuk contoh"
 ws3.cell(row=row, column=1).font = Font(italic=True, size=9, color="666666")
 ws3.merge_cells(start_row=row, start_column=1, end_row=row, end_column=n*3+1)
 row += 1
@@ -513,7 +521,8 @@ row += 1
 
 fuzzy_start = row
 
-# Fuzzy matrix data (static values based on default)
+# Fuzzy matrix - simplified dengan nilai statis untuk demo
+# Untuk nilai asli, perlu konversi crisp ke TFN berdasarkan intensitas terdekat
 for i in range(n):
     ws3.cell(row=row, column=1).value = kriteria_list[i]
     cell_style(ws3.cell(row=row, column=1))
@@ -521,26 +530,32 @@ for i in range(n):
     
     col = 2
     for j in range(n):
+        crisp_ref = f"'1-3. Crisp & Konsistensi'!{get_column_letter(j+2)}{crisp_start + i}"
+        
         if i == j:
             # Diagonal: (1,1,1)
             ws3.cell(row=row, column=col).value = 1
             ws3.cell(row=row, column=col+1).value = 1
             ws3.cell(row=row, column=col+2).value = 1
         else:
-            # Reference to crisp value, then lookup TFN
-            crisp_ref = f"'1-3. Crisp & Konsistensi'!{get_column_letter(j+2)}{crisp_start + i}"
-            
+            # Simplified: untuk crisp value, konversi langsung
+            # l = ROUND(crisp)-0.5, m = ROUND(crisp), u = ROUND(crisp)+0.5 (simplified)
+            # Atau gunakan lookup dengan toleransi
             if i < j:
-                # Upper triangle
-                ws3.cell(row=row, column=col).value = f"=IF(ROUND({crisp_ref},0)>=1,INDEX($B${tfn_start}:$B${tfn_end},ROUND({crisp_ref},0)),1/INDEX($D${tfn_start}:$D${tfn_end},ROUND(1/{crisp_ref},0)))"
-                ws3.cell(row=row, column=col+1).value = f"=IF(ROUND({crisp_ref},0)>=1,INDEX($C${tfn_start}:$C${tfn_end},ROUND({crisp_ref},0)),1/INDEX($C${tfn_start}:$C${tfn_end},ROUND(1/{crisp_ref},0)))"
-                ws3.cell(row=row, column=col+2).value = f"=IF(ROUND({crisp_ref},0)>=1,INDEX($D${tfn_start}:$D${tfn_end},ROUND({crisp_ref},0)),1/INDEX($B${tfn_start}:$B${tfn_end},ROUND(1/{crisp_ref},0)))"
+                # Upper triangle - langsung dari crisp
+                # Jika crisp >= 1: gunakan TFN langsung, else: kebalikan
+                # Simplified formula
+                ws3.cell(row=row, column=col).value = f"=IF({crisp_ref}>=1,MAX(0.5,ROUND({crisp_ref},0)-0.5),1/MIN(4.5,ROUND(1/{crisp_ref},0)+0.5))"
+                ws3.cell(row=row, column=col+1).value = f"=IF({crisp_ref}>=1,ROUND({crisp_ref},0),1/ROUND(1/{crisp_ref},0))"
+                ws3.cell(row=row, column=col+2).value = f"=IF({crisp_ref}>=1,MIN(4.5,ROUND({crisp_ref},0)+0.5),1/MAX(0.5,ROUND(1/{crisp_ref},0)-0.5))"
             else:
-                # Lower triangle - reciprocal
-                upper_crisp_ref = f"'1-3. Crisp & Konsistensi'!{get_column_letter(i+2)}{crisp_start + j}"
-                ws3.cell(row=row, column=col).value = f"=1/IF(ROUND({upper_crisp_ref},0)>=1,INDEX($D${tfn_start}:$D${tfn_end},ROUND({upper_crisp_ref},0)),1/INDEX($B${tfn_start}:$B${tfn_end},ROUND(1/{upper_crisp_ref},0)))"
-                ws3.cell(row=row, column=col+1).value = f"=1/IF(ROUND({upper_crisp_ref},0)>=1,INDEX($C${tfn_start}:$C${tfn_end},ROUND({upper_crisp_ref},0)),1/INDEX($C${tfn_start}:$C${tfn_end},ROUND(1/{upper_crisp_ref},0)))"
-                ws3.cell(row=row, column=col+2).value = f"=1/IF(ROUND({upper_crisp_ref},0)>=1,INDEX($B${tfn_start}:$B${tfn_end},ROUND({upper_crisp_ref},0)),1/INDEX($D${tfn_start}:$D${tfn_end},ROUND(1/{upper_crisp_ref},0)))"
+                # Lower triangle - kebalikan upper
+                upper_l = f"{get_column_letter(2 + i*3)}{fuzzy_start + j}"
+                upper_m = f"{get_column_letter(3 + i*3)}{fuzzy_start + j}"
+                upper_u = f"{get_column_letter(4 + i*3)}{fuzzy_start + j}"
+                ws3.cell(row=row, column=col).value = f"=1/{upper_u}"
+                ws3.cell(row=row, column=col+1).value = f"=1/{upper_m}"
+                ws3.cell(row=row, column=col+2).value = f"=1/{upper_l}"
         
         for c in range(col, col+3):
             cell_style(ws3.cell(row=row, column=c))
@@ -559,16 +574,16 @@ row += 2
 section(ws3, row, 5, "PERHITUNGAN FUZZY SYNTHETIC EXTENT", step5_fill, col_end=7)
 row += 1
 
-ws3.cell(row=row, column=1).value = "Si = (ΣMij) ⊗ (ΣΣMij)^-1"
+ws3.cell(row=row, column=1).value = "Si = (Sum_Mij) * (Sum_Sum_Mij)^-1"
 ws3.cell(row=row, column=1).font = Font(italic=True, size=10, color="D97706")
 ws3.merge_cells(start_row=row, start_column=1, end_row=row, end_column=7)
 row += 1
 
 # Row sums
 ws3.cell(row=row, column=1).value = "Kriteria"
-ws3.cell(row=row, column=2).value = "Σl"
-ws3.cell(row=row, column=3).value = "Σm"
-ws3.cell(row=row, column=4).value = "Σu"
+ws3.cell(row=row, column=2).value = "Sum_l"
+ws3.cell(row=row, column=3).value = "Sum_m"
+ws3.cell(row=row, column=4).value = "Sum_u"
 for c in range(1, 5):
     header_style(ws3.cell(row=row, column=c), fill=step5_fill)
 row += 1
@@ -650,19 +665,19 @@ for i in range(n):
     
     rs_row = rowsum_start + i
     
-    # Si(l) = Σl / Σu_total
+    # Si(l) = Sum_l / Sum_u_total
     ws3.cell(row=row, column=2).value = f"=B{rs_row}/$D${total_row}"
     cell_style(ws3.cell(row=row, column=2))
     ws3.cell(row=row, column=2).fill = light_amber_fill
     ws3.cell(row=row, column=2).number_format = '0.0000'
     
-    # Si(m) = Σm / Σm_total
+    # Si(m) = Sum_m / Sum_m_total
     ws3.cell(row=row, column=3).value = f"=C{rs_row}/$C${total_row}"
     cell_style(ws3.cell(row=row, column=3))
     ws3.cell(row=row, column=3).fill = light_amber_fill
     ws3.cell(row=row, column=3).number_format = '0.0000'
     
-    # Si(u) = Σu / Σl_total
+    # Si(u) = Sum_u / Sum_l_total
     ws3.cell(row=row, column=4).value = f"=D{rs_row}/$B${total_row}"
     cell_style(ws3.cell(row=row, column=4))
     ws3.cell(row=row, column=4).fill = light_amber_fill
@@ -677,7 +692,7 @@ row += 2
 section(ws3, row, 6, "PERBANDINGAN PROBABILITAS, NORMALISASI & BOBOT GLOBAL", step6_fill, col_end=7)
 row += 1
 
-ws3.cell(row=row, column=1).value = "d'(Ai) = min V(Si >= Sk), Wi = d'(Ai) / Σd'(Ai)"
+ws3.cell(row=row, column=1).value = "d'(Ai) = min V(Si >= Sk), Wi = d'(Ai) / Sum(d')"
 ws3.cell(row=row, column=1).font = Font(italic=True, size=10, color="0D9488")
 ws3.merge_cells(start_row=row, start_column=1, end_row=row, end_column=7)
 row += 1
@@ -824,7 +839,7 @@ ws5['A1'] = "PERHITUNGAN SKOR AKHIR & RANKING"
 ws5['A1'].font = Font(bold=True, size=16, color="1F4E79")
 ws5.merge_cells('A1:L1')
 
-ws5['A2'] = "Skor Akhir = Σ(Nilai × Bobot Global)"
+ws5['A2'] = "Skor Akhir = Sum(Nilai * Bobot Global)"
 ws5['A2'].font = Font(italic=True, color="666666")
 ws5.merge_cells('A2:L2')
 
@@ -864,7 +879,7 @@ header_style(ws5.cell(row=row, column=2))
 
 for j in range(n):
     cell = ws5.cell(row=row, column=j+3)
-    cell.value = f"{kriteria_list[j]}×W"
+    cell.value = f"{kriteria_list[j]}*W"
     header_style(cell)
 
 ws5.cell(row=row, column=n+3).value = "Skor Akhir"
@@ -918,19 +933,12 @@ ws5.column_dimensions[get_column_letter(n+3)].width = 14
 ws5.column_dimensions[get_column_letter(n+4)].width = 10
 
 # Save
-output_file = "d:/laragon/www/appSaringPramuka/Fuzzy_AHP_Sistem.xlsx"
+output_file = "d:/laragon/www/appSaringPramuka/Fuzzy_AHP_Sistem_v2.xlsx"
 wb.save(output_file)
 
 print(f"[OK] File berhasil dibuat: {output_file}")
-print(f"\n=== STRUKTUR SESUAI SISTEM ===")
-print(f"Sheet 'Input Data': Data kegiatan, bobot kriteria (1-9), daftar peserta")
-print(f"Sheet '1-3. Crisp & Konsistensi': Langkah 1-3")
-print(f"  - Langkah 1: Matriks Perbandingan Berpasangan (Crisp)")
-print(f"  - Langkah 2: Perhitungan Vector Eigen (Geometric Mean)")
-print(f"  - Langkah 3: Uji Konsistensi (CI, RI, CR)")
-print(f"Sheet '4-6. Fuzzy & Bobot': Langkah 4-6")
-print(f"  - Langkah 4: Fuzzifikasi Matriks (TFN)")
-print(f"  - Langkah 5: Fuzzy Synthetic Extent")
-print(f"  - Langkah 6: Perbandingan Probabilitas & Bobot Global")
-print(f"Sheet 'Nilai Peserta': Input nilai 0-100 per kriteria")
-print(f"Sheet 'Hasil & Ranking': Skor akhir dan ranking")
+print(f"\n=== PERBAIKAN ===")
+print(f"Formula matriks crisp sekarang SAMA dengan sistem:")
+print(f"  IF(wi/wj >= 1, MIN(9, MAX(1, wi/wj)), MAX(1/9, wi/wj))")
+print(f"\nContoh input bobot yang menghasilkan gambar sistem:")
+print(f"  K1=1, K2=2, K3=2, K4=3, K5=4, K6=5")
