@@ -280,25 +280,75 @@ r+=1
 # --- LANGKAH 6 ---
 sec(ws7,r,6,"PERBANDINGAN PROBABILITAS, NORMALISASI & BOBOT GLOBAL",s6,n*3+1)
 r+=1
-ws7.cell(r,1).value="d'(Ai) = (Si_l + Si_m + Si_u) / 3,  Wi = d'(Ai) / Σd'"
-ws7.cell(r,1).font=Font(italic=True,size=9);r+=1
-ws7.cell(r,1).value="Kriteria";ws7.cell(r,2).value="d'(Ai)";ws7.cell(r,3).value="Bobot (Wi)";ws7.cell(r,4).value="Persentase"
-for c in range(1,5):hs(ws7.cell(r,c),s6)
+ws7.cell(r,1).value="V(Si>=Sk) = 1 jika mi>=mk | 0 jika lk>=ui | (lk-ui)/((mi-ui)-(mk-lk))"
+ws7.cell(r,1).font=Font(italic=True,size=9)
+ws7.merge_cells(start_row=r,start_column=1,end_row=r,end_column=n+1)
+r+=1
+
+# --- Matriks V(Si >= Sk) ---
+ws7.cell(r,1).value="Matriks V(Si >= Sk)"
+ws7.cell(r,1).font=Font(bold=True,size=11,color="0D9488")
+r+=1
+ws7.cell(r,1).value="V(Si>=Sk)";hs(ws7.cell(r,1),s6)
+for j in range(n):hs(ws7.cell(r,j+2),s6);ws7.cell(r,j+2).value=K[j]
+r+=1;VMS=r
+for i in range(n):
+    ws7.cell(r,1).value=K[i];cs(ws7.cell(r,1));ws7.cell(r,1).fill=lb
+    si_l=f"$B${SIS+i}";si_m=f"$C${SIS+i}";si_u=f"$D${SIS+i}"
+    for j in range(n):
+        c=ws7.cell(r,j+2)
+        if i==j:
+            c.value="-";cs(c);c.fill=lb
+        else:
+            sk_l=f"$B${SIS+j}";sk_m=f"$C${SIS+j}";sk_u=f"$D${SIS+j}"
+            # V(Si >= Sk): m1=sk, m2=si
+            # if si_m >= sk_m: 1
+            # elif sk_l >= si_u: 0
+            # else: (sk_l - si_u) / ((si_m - si_u) - (sk_m - sk_l))
+            c.value=f"=IF({si_m}>={sk_m},1,IF({sk_l}>={si_u},0,({sk_l}-{si_u})/(({si_m}-{si_u})-({sk_m}-{sk_l}))))"
+            cs(c);c.number_format='0.0000';c.fill=lt
+    r+=1
+r+=1
+
+# --- d'(Ai) = min V(Si >= Sk) ---
+ws7.cell(r,1).value="Nilai Ordinat d'(Ai) = min V(Si >= Sk)"
+ws7.cell(r,1).font=Font(bold=True,size=11,color="0D9488")
+r+=1
+ws7.cell(r,1).value="Kriteria";ws7.cell(r,2).value="d'(Ai)"
+hs(ws7.cell(r,1),s6);hs(ws7.cell(r,2),s6)
 r+=1;DPS=r
 for i in range(n):
-    sr=SIS+i
     ws7.cell(r,1).value=KN[i];cs(ws7.cell(r,1));ws7.cell(r,1).fill=lb
-    ws7.cell(r,2).value=f"=(B{sr}+C{sr}+D{sr})/3";cs(ws7.cell(r,2));ws7.cell(r,2).number_format='0.0000';ws7.cell(r,2).fill=lt
+    vr=VMS+i
+    # MIN of all non-diagonal values in V matrix row
+    vals=[f"{get_column_letter(j+2)}{vr}" for j in range(n) if j!=i]
+    ws7.cell(r,2).value=f"=MIN({','.join(vals)})";cs(ws7.cell(r,2));ws7.cell(r,2).number_format='0.0000';ws7.cell(r,2).fill=lt
     r+=1
 DPE=r-1
-DTR=r
-ws7.cell(r,1).value="Total";ws7.cell(r,1).font=Font(bold=True);cs(ws7.cell(r,1))
-ws7.cell(r,2).value=f"=SUM(B{DPS}:B{DPE})";ws7.cell(r,2).font=Font(bold=True);cs(ws7.cell(r,2));ws7.cell(r,2).fill=ylw
+r+=1
+
+# --- Bobot Global Ternormalisasi ---
+ws7.cell(r,1).value="Bobot Global Ternormalisasi (Wi)"
+ws7.cell(r,1).font=Font(bold=True,size=11,color="0D9488")
+r+=1
+ws7.cell(r,1).value="wi = d'(Ai) / Σ d'(Ai)"
+ws7.cell(r,1).font=Font(italic=True,size=9)
+r+=1
+ws7.cell(r,1).value="Kriteria";ws7.cell(r,2).value="Bobot Global (Wi)"
+hs(ws7.cell(r,1),s6);hs(ws7.cell(r,2),s6)
+r+=1;WIS=r
+DTR_formula=f"SUM(B{DPS}:B{DPE})"
 for i in range(n):
-    dr=DPS+i
-    ws7.cell(dr,3).value=f"=B{dr}/$B${DTR}";cs(ws7.cell(dr,3));ws7.cell(dr,3).number_format='0.0000';ws7.cell(dr,3).fill=lt
-    ws7.cell(dr,4).value=f"=C{dr}*100";cs(ws7.cell(dr,4));ws7.cell(dr,4).number_format='0.00"%"'
-ws7.cell(r,3).value=f"=SUM(C{DPS}:C{DPE})";ws7.cell(r,3).font=Font(bold=True);cs(ws7.cell(r,3));ws7.cell(r,3).fill=ylw
+    ws7.cell(r,1).value=KN[i];cs(ws7.cell(r,1));ws7.cell(r,1).fill=lb
+    ws7.cell(r,2).value=f"=B{DPS+i}/{DTR_formula}";cs(ws7.cell(r,2));ws7.cell(r,2).number_format='0.0000';ws7.cell(r,2).fill=lt
+    r+=1
+WIE=r-1
+ws7.cell(r,1).value="Total";ws7.cell(r,1).font=Font(bold=True);cs(ws7.cell(r,1))
+ws7.cell(r,3).value="";  # placeholder
+ws7.cell(r,2).value=f"=SUM(B{WIS}:B{WIE})";ws7.cell(r,2).font=Font(bold=True);cs(ws7.cell(r,2));ws7.cell(r,2).fill=ylw;ws7.cell(r,2).number_format='0.00'
+# Keep DPS reference for Hasil sheet (bobot is now at WIS)
+# Override DPS to WIS for bobot reference
+DPS=WIS
 
 ws7.column_dimensions['A'].width=25
 for c in range(2,n*3+5):ws7.column_dimensions[get_column_letter(c)].width=8
@@ -313,7 +363,7 @@ ws8.cell(r,1).value="BOBOT (Wi)";ws8.cell(r,1).font=Font(bold=True)
 r+=1
 for j in range(n):c=ws8.cell(r,j+1);c.value=K[j];hs(c,[p1h,p1h,p2h,p2h,p3h,p3h][j])
 r+=1;WR=r
-for j in range(n):c=ws8.cell(r,j+1);c.value=f"='Langkah 4-6'!C{DPS+j}";cs(c);c.fill=lt;c.number_format='0.0000'
+for j in range(n):c=ws8.cell(r,j+1);c.value=f"='Langkah 4-6'!B{DPS+j}";cs(c);c.fill=lt;c.number_format='0.0000'
 r+=2
 
 ws8.cell(r,1).value="PERHITUNGAN SKOR";ws8.cell(r,1).font=Font(bold=True,size=12)
@@ -339,7 +389,7 @@ for i in range(NP):
 
 for c in 'ABCDEFG':ws8.column_dimensions[c].width=14
 
-out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v3.xlsx"
+out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v4.xlsx"
 wb.save(out)
 print(f"[OK] {out}")
 print("Sheet: Input | Penilai 1-3 | Rekap Nilai | Langkah 1-3 | Langkah 4-6 | Hasil & Ranking")
