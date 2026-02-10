@@ -231,7 +231,7 @@ for i in range(n):
     for j in range(n):
         l,m,u=FMV[i][j]
         for k,v in enumerate([l,m,u]):
-            c=ws7.cell(r,col+k);c.value=round(v,2);cs(c);c.number_format='0.00'
+            c=ws7.cell(r,col+k);c.value=v;cs(c);c.number_format='0.0000'
             if i!=j:c.fill=lp
         col+=3
     r+=1
@@ -357,13 +357,20 @@ for c in range(2,n*3+5):ws7.column_dimensions[get_column_letter(c)].width=8
 ws8=wb.create_sheet("Hasil & Ranking")
 ws8['A1']="SKOR AKHIR (DEFUZZIFIKASI)";ws8['A1'].font=Font(bold=True,size=16);ws8.merge_cells('A1:H1')
 ws8['A2']="Skor = (ΣL×w + ΣM×w + ΣU×w) / 3";ws8['A2'].font=Font(italic=True);ws8.merge_cells('A2:H2')
+ws8['A3']="Bobot = bobot_db / total_bobot. Fuzzy: nilai<=5 → Likert TFN, nilai>5 → (nilai-5, nilai, nilai+5)"
+ws8['A3'].font=Font(italic=True,size=9,color="666666");ws8.merge_cells('A3:H3')
 
-r=4
-ws8.cell(r,1).value="BOBOT (Wi)";ws8.cell(r,1).font=Font(bold=True)
+r=5
+ws8.cell(r,1).value="BOBOT (bobot/total)";ws8.cell(r,1).font=Font(bold=True)
 r+=1
 for j in range(n):c=ws8.cell(r,j+1);c.value=K[j];hs(c,[p1h,p1h,p2h,p2h,p3h,p3h][j])
 r+=1;WR=r
-for j in range(n):c=ws8.cell(r,j+1);c.value=f"='Langkah 4-6'!B{DPS+j}";cs(c);c.fill=lt;c.number_format='0.0000'
+# Bobot = bobot_i / SUM(bobot) sesuai sistem (baris 327 fuzzy_ahp.py)
+total_w_ref=f"SUM('Input'!$C${BS}:'Input'!$C${BS+n-1})"
+for j in range(n):
+    c=ws8.cell(r,j+1)
+    c.value=f"='Input'!$C${BS+j}/{total_w_ref}"
+    cs(c);c.fill=lt;c.number_format='0.0000'
 r+=2
 
 ws8.cell(r,1).value="PERHITUNGAN SKOR";ws8.cell(r,1).font=Font(bold=True,size=12)
@@ -378,7 +385,16 @@ for i in range(NP):
     for j in range(n):
         nr=f"'Rekap Nilai'!{get_column_letter(j+3)}{RNS+i}"
         wr=f"${get_column_letter(j+1)}${WR}"
-        Lp.append(f"MAX(0,{nr}-5)*{wr}");Mp.append(f"{nr}*{wr}");Up.append(f"MIN(100,{nr}+5)*{wr}")
+        # Fuzzifikasi sesuai sistem: auto-detect
+        # Jika nilai<=5 (Likert): L=IF(<=1,1,IF(<=2,1,IF(<=3,2,IF(<=4,3,4))))
+        #                         M=nilai, U=IF(<=1,2,IF(<=2,3,IF(<=3,4,IF(<=4,5,5))))
+        # Jika nilai>5 (Numeric): L=MAX(0,nilai-5), M=nilai, U=MIN(100,nilai+5)
+        L_f=f"IF({nr}<=5,IF({nr}<=1,1,IF({nr}<=2,1,IF({nr}<=3,2,IF({nr}<=4,3,4)))),MAX(0,{nr}-5))"
+        M_f=f"IF({nr}<=5,{nr},{nr})"
+        U_f=f"IF({nr}<=5,IF({nr}<=1,2,IF({nr}<=2,3,IF({nr}<=3,4,IF({nr}<=4,5,5)))),MIN(100,{nr}+5))"
+        Lp.append(f"{L_f}*{wr}")
+        Mp.append(f"{M_f}*{wr}")
+        Up.append(f"{U_f}*{wr}")
     ws8.cell(r,3).value=f"={'+'.join(Lp)}";cs(ws8.cell(r,3));ws8.cell(r,3).number_format='0.00';ws8.cell(r,3).fill=lg
     ws8.cell(r,4).value=f"={'+'.join(Mp)}";cs(ws8.cell(r,4));ws8.cell(r,4).number_format='0.00';ws8.cell(r,4).fill=lg
     ws8.cell(r,5).value=f"={'+'.join(Up)}";cs(ws8.cell(r,5));ws8.cell(r,5).number_format='0.00';ws8.cell(r,5).fill=lg
@@ -389,7 +405,7 @@ for i in range(NP):
 
 for c in 'ABCDEFG':ws8.column_dimensions[c].width=14
 
-out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v4.xlsx"
+out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v6.xlsx"
 wb.save(out)
 print(f"[OK] {out}")
 print("Sheet: Input | Penilai 1-3 | Rekap Nilai | Langkah 1-3 | Langkah 4-6 | Hasil & Ranking")
