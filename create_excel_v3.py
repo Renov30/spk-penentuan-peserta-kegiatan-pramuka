@@ -80,39 +80,52 @@ PN=["David Kulian","Siti Aminah","Budi Santoso","Dewi Lestari","Ahmad Fauzi","Ri
 for i in range(NP):ws1.cell(r,1).value=i+1;cs(ws1.cell(r,1));ws1.cell(r,2).value=PN[i];ins(ws1.cell(r,2));r+=1
 ws1.column_dimensions['A'].width=12;ws1.column_dimensions['B'].width=25;ws1.column_dimensions['C'].width=10
 
-# ======= Sheet 2-4: Penilai =======
-NPV={1:[[85,78],[78,82],[92,88],[80,85],[88,90],[75,80],[82,78],[90,85],[85,82],[78,80]],
-     2:[[88,92],[82,88],[90,85],[85,90],[87,80],[80,85],[88,82],[85,88],[82,85],[85,90]],
-     3:[[87,85],[80,78],[88,90],[82,80],[90,88],[85,82],[80,85],[88,92],[85,80],[82,85]]}
-pfs=[p1f,p2f,p3f];phs=[p1h,p2h,p3h];PKi={1:[0,1],2:[2,3],3:[4,5]};NRS={}
+# ======= Sheet 2-4: Penilai (masing-masing menilai semua K1-K6) =======
+NPV={1:[[85,78,88,92,87,85],[78,82,82,88,80,78],[92,88,90,85,88,90],[80,85,85,90,82,80],
+         [88,90,87,80,90,88],[75,80,80,85,85,82],[82,78,88,82,80,85],[90,85,85,88,88,92],
+         [85,82,82,85,85,80],[78,80,85,90,82,85]],
+     2:[[88,80,90,88,85,87],[82,85,88,85,82,80],[90,82,85,90,90,88],[85,88,90,85,80,82],
+         [87,90,80,87,88,90],[80,78,85,80,82,85],[88,82,82,88,85,80],[85,90,88,85,92,88],
+         [82,85,85,82,80,85],[85,82,90,85,85,82]],
+     3:[[87,82,85,90,88,85],[80,80,78,82,78,80],[88,90,90,88,90,88],[82,85,80,88,80,82],
+         [90,88,88,85,90,87],[85,82,82,78,82,80],[80,85,85,80,85,82],[88,88,92,90,88,90],
+         [85,80,80,85,80,82],[82,85,85,82,85,80]]}
+pfs=[p1f,p2f,p3f];phs=[p1h,p2h,p3h];NRS={}
 
 for p in range(1,4):
     ws=wb.create_sheet(f"Penilai {p}")
-    k1,k2=PKi[p]
-    ws['A1']=f"INPUT PENILAI {p} ({K[k1]}, {K[k2]})";ws['A1'].font=Font(bold=True,size=14,color="FFFFFF");ws['A1'].fill=phs[p-1];ws.merge_cells('A1:D1')
+    ws['A1']=f"INPUT PENILAI {p} (Semua Kriteria K1-K6)";ws['A1'].font=Font(bold=True,size=14,color="FFFFFF");ws['A1'].fill=phs[p-1]
+    ws.merge_cells(f'A1:{get_column_letter(n+2)}1')
     r=3
-    for c,v in enumerate(["No","Nama",K[k1],K[k2]],1):hs(ws.cell(r,c),phs[p-1]);ws.cell(r,c).value=v
+    headers=["No","Nama"]+K
+    for c,v in enumerate(headers,1):hs(ws.cell(r,c),phs[p-1]);ws.cell(r,c).value=v
     r+=1;NRS[p]=r
     for i in range(NP):
         ws.cell(r,1).value=i+1;cs(ws.cell(r,1))
         ws.cell(r,2).value=f"='Input'!B{PS+i}";cs(ws.cell(r,2));ws.cell(r,2).fill=pfs[p-1]
-        ws.cell(r,3).value=NPV[p][i][0];ins(ws.cell(r,3))
-        ws.cell(r,4).value=NPV[p][i][1];ins(ws.cell(r,4));r+=1
-    for c in 'ABCD':ws.column_dimensions[c].width=15
+        for j in range(n):
+            ws.cell(r,j+3).value=NPV[p][i][j];ins(ws.cell(r,j+3))
+        r+=1
+    ws.column_dimensions['A'].width=8;ws.column_dimensions['B'].width=20
+    for j in range(n):ws.column_dimensions[get_column_letter(j+3)].width=12
 
-# ======= Sheet 5: Rekap =======
+# ======= Sheet 5: Rekap (rata-rata 3 penilai) =======
 ws5=wb.create_sheet("Rekap Nilai")
-ws5['A1']="REKAP NILAI DARI 3 PENILAI";ws5['A1'].font=Font(bold=True,size=14);ws5.merge_cells('A1:H1')
-r=3
+ws5['A1']="REKAP NILAI (RATA-RATA 3 PENILAI)";ws5['A1'].font=Font(bold=True,size=14);ws5.merge_cells('A1:H1')
+ws5['A2']="Nilai = AVERAGE(Penilai1, Penilai2, Penilai3) per kriteria";ws5['A2'].font=Font(italic=True,size=9);ws5.merge_cells('A2:H2')
+r=4
 ws5.cell(r,1).value="No";ws5.cell(r,2).value="Nama";hs(ws5.cell(r,1));hs(ws5.cell(r,2))
-for j in range(n):c=ws5.cell(r,j+3);c.value=K[j];hs(c,[p1h,p1h,p2h,p2h,p3h,p3h][j])
+for j in range(n):c=ws5.cell(r,j+3);c.value=K[j];hs(c,hdr)
 r+=1;RNS=r
 for i in range(NP):
     ws5.cell(r,1).value=i+1;cs(ws5.cell(r,1))
     ws5.cell(r,2).value=f"='Input'!B{PS+i}";cs(ws5.cell(r,2));ws5.cell(r,2).fill=lb
-    for j in range(2):c=ws5.cell(r,j+3);c.value=f"='Penilai 1'!{get_column_letter(j+3)}{NRS[1]+i}";cs(c);c.fill=p1f
-    for j in range(2):c=ws5.cell(r,j+5);c.value=f"='Penilai 2'!{get_column_letter(j+3)}{NRS[2]+i}";cs(c);c.fill=p2f
-    for j in range(2):c=ws5.cell(r,j+7);c.value=f"='Penilai 3'!{get_column_letter(j+3)}{NRS[3]+i}";cs(c);c.fill=p3f
+    for j in range(n):
+        col_letter=get_column_letter(j+3)
+        p1=f"'Penilai 1'!{col_letter}{NRS[1]+i}"
+        p2=f"'Penilai 2'!{col_letter}{NRS[2]+i}"
+        p3=f"'Penilai 3'!{col_letter}{NRS[3]+i}"
+        c=ws5.cell(r,j+3);c.value=f"=AVERAGE({p1},{p2},{p3})";cs(c);c.fill=lg;c.number_format='0.00'
     r+=1
 ws5.column_dimensions['A'].width=8;ws5.column_dimensions['B'].width=20
 for j in range(n):ws5.column_dimensions[get_column_letter(j+3)].width=10
@@ -405,7 +418,7 @@ for i in range(NP):
 
 for c in 'ABCDEFG':ws8.column_dimensions[c].width=14
 
-out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v6.xlsx"
+out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v7.xlsx"
 wb.save(out)
 print(f"[OK] {out}")
 print("Sheet: Input | Penilai 1-3 | Rekap Nilai | Langkah 1-3 | Langkah 4-6 | Hasil & Ranking")
