@@ -223,7 +223,22 @@ ws7['A1']="LANGKAH 4-6: FUZZIFIKASI, SYNTHETIC EXTENT & BOBOT GLOBAL"
 ws7['A1'].font=Font(bold=True,size=14);ws7.merge_cells('A1:T1')
 
 r=3
-# --- LANGKAH 4 ---
+# --- Table TFN Reference (Hidden/Side) ---
+tfn_rows = []
+for k, v in TFN.items():
+    tfn_rows.append([k, v[0], v[1], v[2]])
+
+# Write TFN table at X4
+ws7.cell(3, 24).value = "Key"
+ws7.cell(3, 25).value = "l"
+ws7.cell(3, 26).value = "m"
+ws7.cell(3, 27).value = "u"
+for idx, row_data in enumerate(tfn_rows):
+    curr_r = 4 + idx
+    for c_idx, val in enumerate(row_data):
+        ws7.cell(curr_r, 24 + c_idx).value = val
+
+# --- LANGKAH 4 (FORMULA) ---
 sec(ws7,r,4,"FUZZIFIKASI MATRIKS PERBANDINGAN BERPASANGAN",s4,n*3+1)
 r+=1
 ws7.cell(r,1).value="";hs(ws7.cell(r,1),s4)
@@ -242,10 +257,33 @@ for i in range(n):
     ws7.cell(r,1).value=K[i];cs(ws7.cell(r,1));ws7.cell(r,1).fill=lb
     col=2
     for j in range(n):
-        l,m,u=FMV[i][j]
-        for k,v in enumerate([l,m,u]):
-            c=ws7.cell(r,col+k);c.value=v;cs(c);c.number_format='0.0000'
-            if i!=j:c.fill=lp
+        # Referensi nilai crisp dari Langkah 1-3
+        crisp_ref = f"'Langkah 1-3'!{get_column_letter(2+j)}${CRS+i}"
+        
+        # Formula TFN Lookup
+        # Key = MAX(1, MIN(9, ROUND(IF(val>=1, val, 1/val), 0)))
+        key_formula = f"MAX(1,MIN(9,ROUND(IF({crisp_ref}>=1,{crisp_ref},1/{crisp_ref}),0)))"
+        
+        l_look = f"VLOOKUP({key_formula},$X$4:$AA$12,2,FALSE)"
+        m_look = f"VLOOKUP({key_formula},$X$4:$AA$12,3,FALSE)"
+        u_look = f"VLOOKUP({key_formula},$X$4:$AA$12,4,FALSE)"
+        
+        # Jika val >= 1: TFN(val)
+        # Jika val < 1: Reciprocal TFN(1/val) = (1/u, 1/m, 1/l)
+        f_l = f"=IF({crisp_ref}>=1,{l_look},1/{u_look})"
+        f_m = f"=IF({crisp_ref}>=1,{m_look},1/{m_look})"
+        f_u = f"=IF({crisp_ref}>=1,{u_look},1/{l_look})"
+        
+        # Kolom l
+        c=ws7.cell(r,col);c.value=f_l;cs(c);c.number_format='0.0000'
+        if i!=j:c.fill=lp
+        # Kolom m
+        c=ws7.cell(r,col+1);c.value=f_m;cs(c);c.number_format='0.0000'
+        if i!=j:c.fill=lp
+        # Kolom u
+        c=ws7.cell(r,col+2);c.value=f_u;cs(c);c.number_format='0.0000'
+        if i!=j:c.fill=lp
+        
         col+=3
     r+=1
 r+=1
@@ -418,7 +456,7 @@ for i in range(NP):
 
 for c in 'ABCDEFG':ws8.column_dimensions[c].width=14
 
-out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v7.xlsx"
+out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v8.xlsx"
 wb.save(out)
 print(f"[OK] {out}")
 print("Sheet: Input | Penilai 1-3 | Rekap Nilai | Langkah 1-3 | Langkah 4-6 | Hasil & Ranking")
