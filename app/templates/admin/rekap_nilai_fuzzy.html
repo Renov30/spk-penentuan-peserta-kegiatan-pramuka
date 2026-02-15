@@ -879,7 +879,293 @@
                 </div>
               </div>
 
-              <!-- LANGKAH 7: Hasil Nilai Akhir & Peringkat Peserta -->
+              <!-- ================================================================ -->
+              <!-- LANGKAH 7: RINCIAN PERHITUNGAN NILAI PER PESERTA -->
+              <!-- ================================================================ -->
+              <div
+                x-data="{ open: false }"
+                class="mb-4 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              >
+                <button
+                  @click="open = !open"
+                  class="w-full p-4 flex items-center justify-between {{ 'bg-indigo-900/30 hover:bg-indigo-900/50' if current_theme == 'dark' else 'bg-indigo-50 hover:bg-indigo-100' }} transition"
+                >
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold"
+                      >7</span
+                    >
+                    <span
+                      class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                      >Rincian Perhitungan Nilai Per Peserta</span
+                    >
+                  </div>
+                  <i
+                    class="fa-solid"
+                    :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"
+                  ></i>
+                </button>
+                <div
+                  x-show="open"
+                  x-collapse
+                  class="p-4 border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                >
+                  <p class="text-sm opacity-80 mb-4">
+                    Rincian perhitungan nilai akhir masing-masing peserta
+                    menggunakan metode Fuzzy AHP. Setiap peserta dinilai
+                    berdasarkan semua kriteria, kemudian nilai difuzzifikasi dan
+                    dikalikan bobot.
+                  </p>
+
+                  {% for row in rekap_data %}
+                  <div
+                    x-data="{ openDetail: false }"
+                    class="mb-3 rounded-lg overflow-hidden {{ 'bg-gray-800 border border-gray-700' if current_theme == 'dark' else 'bg-gray-50 border border-gray-200' }}"
+                  >
+                    <button
+                      @click="openDetail = !openDetail"
+                      class="w-full p-3 flex items-center justify-between {{ 'hover:bg-gray-700' if current_theme == 'dark' else 'hover:bg-gray-100' }} transition"
+                    >
+                      <div class="flex items-center gap-3">
+                        <img
+                          src="{{ url_for('static', filename=row.foto) }}"
+                          alt="{{ row.nama }}"
+                          class="w-8 h-8 rounded-full object-cover border {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-300' }}"
+                          style="width: 32px; height: 32px; min-width: 32px"
+                        />
+                        <div class="text-left">
+                          <div
+                            class="font-medium text-sm {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ row.nama }}
+                          </div>
+                          <div class="text-xs opacity-60">
+                            {{ row.asal_gudep }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <span
+                          class="px-2 py-1 rounded text-xs font-bold {{ 'bg-indigo-900/50 text-indigo-300' if current_theme == 'dark' else 'bg-indigo-100 text-indigo-700' }}"
+                        >
+                          Skor: {{ "%.2f"|format(row.final_score)|replace(".",
+                          ",") }}
+                        </span>
+                        <span
+                          class="inline-flex items-center justify-center w-6 h-6 rounded-full {{ 'bg-yellow-400 text-yellow-900' if row.rank == 1 else ('bg-gray-300 text-gray-800' if row.rank == 2 else ('bg-amber-600 text-white' if row.rank == 3 else 'bg-gray-100 dark:bg-gray-700 opacity-70')) }} font-bold text-xs"
+                        >
+                          {{ row.rank }}
+                        </span>
+                        <i
+                          class="fa-solid text-xs"
+                          :class="openDetail ? 'fa-chevron-up' : 'fa-chevron-down'"
+                        ></i>
+                      </div>
+                    </button>
+                    <div
+                      x-show="openDetail"
+                      x-collapse
+                      class="border-t {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                    >
+                      <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                          <thead>
+                            <tr
+                              class="{{ 'bg-gray-700 text-gray-300' if current_theme == 'dark' else 'bg-gray-100 text-gray-600' }} text-xs uppercase tracking-wider"
+                            >
+                              <th class="p-3 font-semibold">Kriteria</th>
+                              <th class="p-3 font-semibold text-center">
+                                Bobot (w)
+                              </th>
+                              <th class="p-3 font-semibold text-center">
+                                Nilai Asli
+                              </th>
+                              <th class="p-3 font-semibold text-center">
+                                Fuzzy (L, M, U)
+                              </th>
+                              <th class="p-3 font-semibold text-center">
+                                Weighted Fuzzy (L×w, M×w, U×w)
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody
+                            class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}"
+                          >
+                            {% for detail in row.calculation_details %}
+                            <tr
+                              class="transition-colors hover:bg-opacity-50 {{ 'hover:bg-gray-700' if current_theme == 'dark' else 'hover:bg-gray-50' }}"
+                            >
+                              <td class="p-3">
+                                <div
+                                  class="font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                                >
+                                  {{ detail.criteria_name }}
+                                </div>
+                              </td>
+                              <td class="p-3 text-center">
+                                <span class="font-mono"
+                                  >{{ "%.2f"|format(detail.weight)|replace(".",
+                                  ",") }}</span
+                                >
+                              </td>
+                              <td class="p-3 text-center">
+                                <span
+                                  class="font-bold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
+                                >
+                                  {{ "%.2f"|format(detail.raw_score) }}
+                                </span>
+                              </td>
+                              <td class="p-3 text-center">
+                                <span class="font-mono text-xs">
+                                  ({{ "%.2f"|format(detail.fuzzy_l) }}, {{
+                                  "%.2f"|format(detail.fuzzy_m) }}, {{
+                                  "%.2f"|format(detail.fuzzy_u) }})
+                                </span>
+                              </td>
+                              <td class="p-3 text-center">
+                                <span
+                                  class="font-mono text-xs {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
+                                >
+                                  ({{
+                                  "%.2f"|format(detail.weighted_l)|replace(".",
+                                  ",") }}, {{
+                                  "%.2f"|format(detail.weighted_m)|replace(".",
+                                  ",") }}, {{
+                                  "%.2f"|format(detail.weighted_u)|replace(".",
+                                  ",") }})
+                                </span>
+                              </td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                          <tfoot
+                            class="{{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-100' }}"
+                          >
+                            <tr class="font-bold">
+                              <td colspan="4" class="p-3 text-right">
+                                Total Fuzzy:
+                              </td>
+                              <td
+                                class="p-3 text-center {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
+                              >
+                                <span class="font-mono text-xs">
+                                  ({{
+                                  "%.2f"|format(row.fuzzy_total_l)|replace(".",
+                                  ",") }}, {{
+                                  "%.2f"|format(row.fuzzy_total_m)|replace(".",
+                                  ",") }}, {{
+                                  "%.2f"|format(row.fuzzy_total_u)|replace(".",
+                                  ",") }})
+                                </span>
+                              </td>
+                            </tr>
+                            <tr
+                              class="font-bold {{ 'bg-indigo-900/30' if current_theme == 'dark' else 'bg-indigo-50' }}"
+                            >
+                              <td colspan="4" class="p-3 text-right">
+                                Skor Akhir (Defuzzifikasi):
+                                <span
+                                  class="font-normal text-xs opacity-70 ml-1"
+                                  >(ΣL×w + ΣM×w + ΣU×w) / 3</span
+                                >
+                              </td>
+                              <td
+                                class="p-3 text-center {{ 'text-indigo-400' if current_theme == 'dark' else 'text-indigo-600' }}"
+                              >
+                                <span class="font-mono text-base">
+                                  {{ "%.2f"|format(row.final_score)|replace(".",
+                                  ",") }}
+                                </span>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+
+                      <!-- Nilai Akhir (Defuzzifikasi) per peserta -->
+                      <div class="p-6">
+                        <div class="text-center">
+                          <div
+                            class="inline-block px-3 py-1.5 rounded-full {{ 'bg-blue-900 text-blue-200' if current_theme == 'dark' else 'bg-blue-100 text-blue-800' }} text-xs font-semibold mb-3"
+                          >
+                            Nilai Akhir (Defuzzifikasi)
+                          </div>
+
+                          <div class="mb-4">
+                            <div
+                              class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }} mb-1"
+                            >
+                              Formula Defuzzifikasi (Center of Area):
+                            </div>
+                            <div
+                              class="inline-block px-4 py-2 rounded-lg {{ 'bg-gray-800 border border-gray-700' if current_theme == 'dark' else 'bg-gray-50 border border-gray-300' }}"
+                            >
+                              <span
+                                class="font-mono text-sm {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }} font-semibold"
+                              >
+                                (ΣL×w + ΣM×w + ΣU×w) / 3
+                              </span>
+                            </div>
+                          </div>
+
+                          <div class="mb-4">
+                            <div
+                              class="text-xs {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }} mb-1"
+                            >
+                              Perhitungan:
+                            </div>
+                            <div
+                              class="inline-block px-4 py-2 rounded-lg {{ 'bg-gray-800 border border-gray-700' if current_theme == 'dark' else 'bg-gray-50 border border-gray-300' }}"
+                            >
+                              <span
+                                class="font-mono text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
+                              >
+                                ({{
+                                "%.2f"|format(row.fuzzy_total_l)|replace(".",
+                                ",") }} + {{
+                                "%.2f"|format(row.fuzzy_total_m)|replace(".",
+                                ",") }} + {{
+                                "%.2f"|format(row.fuzzy_total_u)|replace(".",
+                                ",") }}) / 3
+                              </span>
+                            </div>
+                          </div>
+
+                          <div
+                            class="my-4 py-8 rounded-xl {{ 'bg-gradient-to-br from-blue-600 to-purple-600' if current_theme == 'dark' else 'bg-gradient-to-br from-blue-500 to-purple-500' }}"
+                          >
+                            <div
+                              class="text-white text-xs font-semibold mb-2 opacity-90"
+                            >
+                              SKOR AKHIR
+                            </div>
+                            <div
+                              class="text-white text-5xl font-black mb-1 drop-shadow-lg"
+                            >
+                              {{ "%.2f"|format(row.final_score)|replace(".",
+                              ",") }}
+                            </div>
+                          </div>
+
+                          <div
+                            class="text-xs {{ 'text-gray-500' if current_theme == 'dark' else 'text-gray-500' }} italic"
+                          >
+                            <i class="fa-solid fa-info-circle mr-1"></i>
+                            Nilai dihitung menggunakan metode Fuzzy AHP
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% else %}
+                  <p class="text-center opacity-60 py-4">
+                    Belum ada data peserta.
+                  </p>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- LANGKAH 8: Hasil Nilai Akhir & Peringkat Peserta -->
               <div
                 x-data="{ open: true }"
                 class="mb-6 step-card rounded-xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
@@ -891,7 +1177,7 @@
                   <div class="flex items-center gap-3">
                     <span
                       class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold"
-                      >7</span
+                      >8</span
                     >
                     <span
                       class="font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"

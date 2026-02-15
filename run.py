@@ -6192,39 +6192,85 @@ def admin_rekap_nilai_fuzzy(event_id):
     for hasil, user, participant in hasil_seleksi:
         row = {
             'nama': user.nama_lengkap,
+            'user_id': user.id,
             'foto': user.foto if user.foto else 'img/default-user.png',
             'asal_gudep': participant.asal_gudep if participant else '-',
             'criteria_values': {},
             'total_score': hasil.skor_akhir,
             'rank': hasil.ranking,
             'cluster': 1 if hasil.ranking <= total_kuota else 2,
-            'status': 'Berhak' if hasil.ranking <= total_kuota else 'Tidak Berhak'
+            'status': 'Berhak' if hasil.ranking <= total_kuota else 'Tidak Berhak',
+            'calculation_details': [],
+            'fuzzy_total_l': 0,
+            'fuzzy_total_m': 0,
+            'fuzzy_total_u': 0,
+            'final_score': 0
         }
+        
+        fuzzy_total_l = 0
+        fuzzy_total_m = 0
+        fuzzy_total_u = 0
         
         # Calculate per-criteria weighted score
         for c in criterias:
-             # Get raw score
-            penilaian = Penilaian.query.filter_by(
+             # Get average score from all evaluators
+            avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(
                 id_users=user.id,
                 id_kriteria=c.id_kriteria
-            ).first()
+            ).scalar()
             
             val = 0.0
-            if penilaian:
-                score = float(penilaian.nilai)
+            weight = criteria_weights.get(c.id_kriteria, 0)
+            
+            if avg_score is not None:
+                score = float(avg_score)
                 # Fuzzify
                 l, m, u = fuzzify_score(score)
-                # Weighting 
-                weight = criteria_weights.get(c.id_kriteria, 0)
                 
-                # Calculate contribution: Defuzzified(FuzzyScore * Weight)
-                # = (l*w + m*w + u*w) / 3
-                # = w * (l+m+u)/3
-                # = w * defuzzified_raw_score
+                # Weighted fuzzy values
+                weighted_l = l * weight
+                weighted_m = m * weight
+                weighted_u = u * weight
+                
+                # Accumulate totals
+                fuzzy_total_l += weighted_l
+                fuzzy_total_m += weighted_m
+                fuzzy_total_u += weighted_u
                 
                 val = weight * ((l + m + u) / 3.0)
+                
+                row['calculation_details'].append({
+                    'criteria_name': c.nama_kriteria,
+                    'criteria_aspek': c.aspek if hasattr(c, 'aspek') else '',
+                    'weight': weight,
+                    'raw_score': score,
+                    'fuzzy_l': l,
+                    'fuzzy_m': m,
+                    'fuzzy_u': u,
+                    'weighted_l': weighted_l,
+                    'weighted_m': weighted_m,
+                    'weighted_u': weighted_u
+                })
+            else:
+                row['calculation_details'].append({
+                    'criteria_name': c.nama_kriteria,
+                    'criteria_aspek': c.aspek if hasattr(c, 'aspek') else '',
+                    'weight': weight,
+                    'raw_score': 0,
+                    'fuzzy_l': 0,
+                    'fuzzy_m': 0,
+                    'fuzzy_u': 0,
+                    'weighted_l': 0,
+                    'weighted_m': 0,
+                    'weighted_u': 0
+                })
             
             row['criteria_values'][c.id_kriteria] = val
+        
+        row['fuzzy_total_l'] = fuzzy_total_l
+        row['fuzzy_total_m'] = fuzzy_total_m
+        row['fuzzy_total_u'] = fuzzy_total_u
+        row['final_score'] = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3 if row['calculation_details'] else 0
             
         rekap_data.append(row)
         
