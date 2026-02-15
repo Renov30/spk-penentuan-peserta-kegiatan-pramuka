@@ -260,9 +260,12 @@ for i in range(n):
         # Referensi nilai crisp dari Langkah 1-3
         crisp_ref = f"'Langkah 1-3'!{get_column_letter(2+j)}${CRS+i}"
         
-        # Formula TFN Lookup
-        # Key = MAX(1, MIN(9, ROUND(IF(val>=1, val, 1/val), 0)))
-        key_formula = f"MAX(1,MIN(9,ROUND(IF({crisp_ref}>=1,{crisp_ref},1/{crisp_ref}),0)))"
+        # Formula TFN Lookup with Python-style banker's rounding (round half to even)
+        # raw = IF(val>=1, val, 1/val)
+        # banker_round = IF(MOD(raw,1)=0.5, 2*ROUND(raw/2,0), ROUND(raw,0))
+        raw_val = f"IF({crisp_ref}>=1,{crisp_ref},1/{crisp_ref})"
+        banker_round = f"IF(MOD({raw_val},1)=0.5,2*ROUND({raw_val}/2,0),ROUND({raw_val},0))"
+        key_formula = f"MAX(1,MIN(9,{banker_round}))"
         
         l_look = f"VLOOKUP({key_formula},$X$4:$AA$12,2,FALSE)"
         m_look = f"VLOOKUP({key_formula},$X$4:$AA$12,3,FALSE)"
@@ -456,7 +459,7 @@ for i in range(NP):
 
 for c in 'ABCDEFG':ws8.column_dimensions[c].width=14
 
-out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v8.xlsx"
+out="d:/laragon/www/appSaringPramuka/Fuzzy_AHP_3_Penilai_v9.xlsx"
 wb.save(out)
 print(f"[OK] {out}")
 print("Sheet: Input | Penilai 1-3 | Rekap Nilai | Langkah 1-3 | Langkah 4-6 | Hasil & Ranking")
