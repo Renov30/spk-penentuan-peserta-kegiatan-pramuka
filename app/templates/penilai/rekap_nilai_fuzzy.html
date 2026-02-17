@@ -892,90 +892,206 @@
                     >
                   </p>
                   <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                      <thead>
-                        <tr
-                          class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-50 text-gray-600' }} text-sm uppercase tracking-wider"
-                        >
-                          <th class="p-4 font-semibold text-center w-16">No</th>
-                          <th class="p-4 font-semibold">{{ 'Nama Peserta' if current_lang == 'id' else 'Participant Name' }}</th>
-                          <th class="p-4 font-semibold text-center">
-                            {{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}
-                          </th>
-                          <th class="p-4 font-semibold text-center">
-                            {{ 'Peringkat' if current_lang == 'id' else 'Rank' }}
-                          </th>
-                          <th class="p-4 font-semibold text-center">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody
-                        class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}"
-                      >
-                        {% for row in rekap_data %}
-                        <tr
-                          class="transition-colors hover:bg-opacity-50 {{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}"
-                        >
-                          <td class="p-4 text-center text-sm opacity-70">
-                            {{ loop.index }}
-                          </td>
-                          <td class="p-4">
-                            <div class="flex items-center gap-3">
-                              <img
-                                src="{{ url_for('static', filename=row.foto) }}"
-                                alt="{{ row.nama }}"
-                                class="w-10 h-10 rounded-full object-cover border-2 {{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-200' }}"
-                                style="width: 40px; height: 40px; min-width: 40px;"
-                              />
-                              <div>
-                                <div
-                                  class="font-medium {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                                >
-                                  {{ row.nama }}
-                                </div>
-                                <div class="text-xs opacity-60">
-                                  {{ row.asal_gudep }}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="p-4 text-center">
-                            <span
-                              class="text-base font-bold {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}"
-                            >
-                              {{ "%.2f"|format(row.total_score)|replace('.',
-                              ',') }}
-                            </span>
-                          </td>
-                          <td class="p-4 text-center">
-                            <span
-                              class="inline-flex items-center justify-center w-8 h-8 rounded-full {{ 'bg-yellow-400 text-yellow-900' if row.rank == 1 else ('bg-gray-300 text-gray-800' if row.rank == 2 else ('bg-amber-600 text-white' if row.rank == 3 else 'bg-gray-100 dark:bg-gray-700 opacity-70')) }} font-bold text-sm"
-                            >
-                              {{ row.rank }}
-                            </span>
-                          </td>
-                          <td class="p-4 text-center">
-                            {% if row.status == 'Berhak' %}
-                            <span
-                              class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
-                              >{{ 'Berhak' if current_lang == 'id' else 'Eligible' }}</span
-                            >
-                            {% else %}
-                            <span
-                              class="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800"
-                              >{{ 'Tidak Berhak' if current_lang == 'id' else 'Not Eligible' }}</span
-                            >
-                            {% endif %}
-                          </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                          <td colspan="5" class="p-8 text-center opacity-60">
-                            {{ 'Belum ada data penilaian.' if current_lang == 'id' else 'No evaluation data available.' }}
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
+                    <table class="w-full text-left border-collapse table-fixed">
+
+<colgroup>
+<col style="width:64px">
+<col style="width:auto">
+<col style="width:160px">
+<col style="width:120px">
+<col style="width:140px">
+<col style="width:64px">
+</colgroup>
+
+<thead>
+<tr class="{{ 'bg-gray-800 text-gray-300' if current_theme == 'dark' else 'bg-gray-50 text-gray-600' }} text-sm uppercase tracking-wider">
+
+<th class="w-16 p-4 text-center font-semibold">No</th>
+
+<th class="p-4 font-semibold">
+{{ 'Nama Peserta' if current_lang == 'id' else 'Participant Name' }}
+</th>
+
+<th class="w-[140px] p-4 text-center font-semibold">
+{{ 'Nilai Akhir' if current_lang == 'id' else 'Final Score' }}
+</th>
+
+<th class="w-[100px] p-4 text-center font-semibold">
+{{ 'Peringkat' if current_lang == 'id' else 'Rank' }}
+</th>
+
+<th class="w-[120px] p-4 text-center font-semibold">
+{{ 'Status' if current_lang == 'id' else 'Status' }}
+</th>
+
+<th class="w-16 p-4 text-center font-semibold">
+{{ 'Detail' if current_lang == 'id' else 'Detail' }}
+</th>
+
+</tr>
+</thead>
+
+<tbody class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}">
+
+{% for row in rekap_data %}
+
+<tr x-data="{ openDetail:false }"
+class="{{ 'hover:bg-gray-800/50' if current_theme == 'dark' else 'hover:bg-gray-50' }} transition">
+
+<td class="w-16 text-center p-4">
+{{ loop.index }}
+</td>
+
+<td class="p-4">
+
+<div class="flex items-center gap-3">
+
+<img
+src="{{ url_for('static', filename=row.foto) }}"
+class="w-10 h-10 rounded-full object-cover border
+{{ 'border-gray-600' if current_theme == 'dark' else 'border-gray-300' }}"
+>
+
+<div class="min-w-0">
+
+<div class="font-semibold truncate">
+{{ row.nama }}
+</div>
+
+<div class="text-xs opacity-60 truncate">
+{{ row.asal_gudep }}
+</div>
+
+</div>
+
+</div>
+
+</td>
+
+<td class="w-[140px] text-center p-4">
+
+{% set score = row.final_score if row.final_score is defined else row.total_score %}
+
+<div class="font-mono font-bold text-lg
+{{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}">
+
+{{ "%.3f"|format(score)|replace('.', ',') }}
+
+</div>
+
+<div class="text-[10px] opacity-50">
+{{ 'Defuzzifikasi' if current_lang == 'id' else 'Defuzzification' }}
+</div>
+
+</td>
+
+<td class="w-[100px] text-center p-4">
+
+{% if row.rank == 1 %}
+<span class="w-9 h-9 flex items-center justify-center rounded-full bg-yellow-400 text-yellow-900 font-bold mx-auto">1</span>
+
+{% elif row.rank == 2 %}
+<span class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-300 text-gray-800 font-bold mx-auto">2</span>
+
+{% elif row.rank == 3 %}
+<span class="w-9 h-9 flex items-center justify-center rounded-full bg-amber-600 text-white font-bold mx-auto">3</span>
+
+{% else %}
+<span class="w-9 h-9 flex items-center justify-center rounded-full
+{{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 text-gray-700' }}
+mx-auto">
+{{ row.rank }}
+</span>
+{% endif %}
+
+</td>
+
+<td class="w-[120px] text-center p-4">
+
+{% if row.status == 'Berhak' %}
+<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+{{ 'Berhak' if current_lang == 'id' else 'Eligible' }}
+</span>
+{% else %}
+<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
+{{ 'Tidak Berhak' if current_lang == 'id' else 'Not Eligible' }}
+</span>
+{% endif %}
+
+</td>
+
+<td class="w-16 text-center p-4">
+
+<button @click="openDetail=!openDetail">
+
+<i class="fa-solid text-xs transition"
+:class="openDetail?'fa-chevron-up text-indigo-500':'fa-chevron-down opacity-50'">
+</i>
+
+</button>
+
+</td>
+
+</tr>
+
+<tr x-show="openDetail">
+
+<td colspan="6"
+class="{{ 'bg-gray-800/40' if current_theme == 'dark' else 'bg-gray-50' }} p-5">
+
+<div class="grid grid-cols-4 gap-4 text-center">
+
+<div>
+<div class="text-xs opacity-60">ΣL</div>
+<div class="font-mono font-bold">
+{{ "%.4f"|format(row.fuzzy_total_l if row.fuzzy_total_l is defined else 0)|replace('.', ',') }}
+</div>
+</div>
+
+<div>
+<div class="text-xs opacity-60">ΣM</div>
+<div class="font-mono font-bold">
+{{ "%.4f"|format(row.fuzzy_total_m if row.fuzzy_total_m is defined else 0)|replace('.', ',') }}
+</div>
+</div>
+
+<div>
+<div class="text-xs opacity-60">ΣU</div>
+<div class="font-mono font-bold">
+{{ "%.4f"|format(row.fuzzy_total_u if row.fuzzy_total_u is defined else 0)|replace('.', ',') }}
+</div>
+</div>
+
+<div>
+<div class="text-xs opacity-60">
+Final Score
+</div>
+
+<div class="font-mono font-bold text-indigo-500 text-lg">
+{{ "%.4f"|format(score)|replace('.', ',') }}
+</div>
+</div>
+
+</div>
+
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="6" class="text-center p-8 opacity-60">
+{{ 'Tidak ada data' if current_lang == 'id' else 'No data available' }}
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
                   </div>
                 </div>
               </div>

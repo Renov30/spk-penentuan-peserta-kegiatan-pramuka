@@ -7888,6 +7888,11 @@ def admin_rekap_nilai_fuzzy(event_id):
     rekap_data = []
 
     for hasil, user, participant in hasil_seleksi:
+
+        fuzzy_total_l = 0
+        fuzzy_total_m = 0
+        fuzzy_total_u = 0
+
         row = {
             "nama": user.nama_lengkap,
             "foto": user.foto if user.foto else "img/default-user.png",
@@ -7897,30 +7902,45 @@ def admin_rekap_nilai_fuzzy(event_id):
             "rank": hasil.ranking,
             "cluster": 1 if hasil.ranking <= total_kuota else 2,
             "status": "Berhak" if hasil.ranking <= total_kuota else "Tidak Berhak",
+            "fuzzy_total_l": 0,
+            "fuzzy_total_m": 0,
+            "fuzzy_total_u": 0,
+            "final_score": 0,
         }
 
-        # Calculate per-criteria weighted score
         for c in criterias:
-            # Get raw score
-            penilaian = Penilaian.query.filter_by(
-                id_users=user.id, id_kriteria=c.id_kriteria
-            ).first()
+
+            avg_score = (
+                db.session.query(db.func.avg(Penilaian.nilai))
+                .filter_by(id_users=user.id, id_kriteria=c.id_kriteria)
+                .scalar()
+            )
 
             val = 0.0
-            if penilaian:
-                score = float(penilaian.nilai)
-                # Fuzzify
-                l, m, u = fuzzify_score(score)
-                # Weighting
-                weight = criteria_weights.get(c.id_kriteria, 0)
+            weight = criteria_weights.get(c.id_kriteria, 0)
 
-                # Calculate contribution: Defuzzified(FuzzyScore * Weight)
-                # = (l*w + m*w + u*w) / 3
-                # = w * (l+m+u)/3
-                # = w * defuzzified_raw_score
+            if avg_score is not None:
+
+                score = float(avg_score)
+
+                l, m, u = fuzzify_score(score)
+
+                weighted_l = l * weight
+                weighted_m = m * weight
+                weighted_u = u * weight
+
+                fuzzy_total_l += weighted_l
+                fuzzy_total_m += weighted_m
+                fuzzy_total_u += weighted_u
 
                 val = weight * ((l + m + u) / 3.0)
+
             row["criteria_values"][c.id_kriteria] = val
+        row["fuzzy_total_l"] = fuzzy_total_l
+        row["fuzzy_total_m"] = fuzzy_total_m
+        row["fuzzy_total_u"] = fuzzy_total_u
+        row["final_score"] = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3
+
         rekap_data.append(row)
     sidebar_state = current_user.sidebar_state or "expanded"
     return render_template(
