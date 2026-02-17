@@ -23,6 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from slugify import slugify
 from urllib.parse import urlparse, urljoin
 import io
+import base64
 from app.translations import TRANSLATIONS
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -3874,6 +3875,26 @@ def export_laporan_word(event_id):
         tanggal_laporan=now.strftime('%d-%m-%Y'),
         tanggal_laporan_indo=tanggal_laporan_indo
     )
+    
+    # Embed gambar logo sebagai Base64 data URI agar tampil di Word
+    # Word tidak bisa resolve URL relatif dari server
+    logo_files = {
+        'images/Logo-Gerakan-Pramuka.png': 'Logo-Gerakan-Pramuka.png',
+        'images/Logo-WOSM.png': 'Logo-WOSM.png'
+    }
+    
+    for static_path, filename in logo_files.items():
+        image_full_path = os.path.join(app.root_path, 'static', static_path.replace('/', os.sep))
+        if os.path.exists(image_full_path):
+            try:
+                with open(image_full_path, 'rb') as img_file:
+                    img_data = base64.b64encode(img_file.read()).decode('utf-8')
+                # Ganti URL relatif dengan data URI base64
+                relative_url = url_for('static', filename=static_path)
+                data_uri = f'data:image/png;base64,{img_data}'
+                html_content = html_content.replace(relative_url, data_uri)
+            except Exception as e:
+                logging.warning(f"Gagal embed logo {filename} ke Word: {str(e)}")
     
     # Return sebagai file Word (MIME type HTML tetapi extension doc trick)
     response = make_response(html_content)
