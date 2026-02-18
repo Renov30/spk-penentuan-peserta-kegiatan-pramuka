@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html
   style="font-size: 80%"
   class="transition duration-300 ease-in-out"
@@ -53,8 +53,17 @@
     {% include 'script_theme.html' %}
   </head>
   <body
-    x-data="{ ready: false, page: 'main', current_lang: '{{ current_lang }}', modal: { show: false, title: '', message: '' }}"
-    x-init="ready = true"
+    x-data="{ ready: false, page: 'main', current_lang: '{{ current_lang }}', modal: { show: false, title: '', message: '' }, autoOpenKegiatan: null }"
+    x-init="
+      ready = true;
+      const params = new URLSearchParams(window.location.search);
+      const openPenilaian = params.get('open_penilaian');
+      if (openPenilaian) {
+        page = 'assessment_management';
+        $store.page.breadcrumbs = current_lang === 'id' ? ['Manajemen Seleksi', 'Manajemen Penilaian'] : ['Selection Management', 'Assessment Management'];
+        autoOpenKegiatan = openPenilaian;
+      }
+    "
     :class="{ 'dark': $store.theme?.isDark }"
     x-bind:class="{
         'bg-background-dark text-white': $store.theme?.isDark,

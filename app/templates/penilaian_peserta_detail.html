@@ -161,7 +161,7 @@
                   'Participant Score Details' }}
                 </h1>
                 <a
-                  href="{{ url_for('admin_manajemen_seleksi') }}"
+                  href="{{ url_for('admin_manajemen_seleksi') }}?open_penilaian={{ event.id_kegiatan }}"
                   class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-gray-500 text-white hover:bg-gray-600 active:scale-95 transition-all shadow cursor-pointer"
                 >
                   <i class="fa-solid fa-arrow-left mr-2"></i>
