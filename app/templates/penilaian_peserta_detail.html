@@ -40,6 +40,82 @@
 
     <!-- Script Theme -->
     {% include 'script_theme.html' %}
+
+    <style>
+      .badge-evaluator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .evaluator-colors-0 {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .evaluator-colors-1 {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .evaluator-colors-2 {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .evaluator-colors-3 {
+        background: #fce7f3;
+        color: #9d174d;
+      }
+      .evaluator-colors-4 {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+      .evaluator-colors-5 {
+        background: #f3e8ff;
+        color: #6b21a8;
+      }
+
+      .dark .evaluator-colors-0 {
+        background: #1e3a5f;
+        color: #93c5fd;
+      }
+      .dark .evaluator-colors-1 {
+        background: #14532d;
+        color: #86efac;
+      }
+      .dark .evaluator-colors-2 {
+        background: #78350f;
+        color: #fcd34d;
+      }
+      .dark .evaluator-colors-3 {
+        background: #831843;
+        color: #f9a8d4;
+      }
+      .dark .evaluator-colors-4 {
+        background: #312e81;
+        color: #a5b4fc;
+      }
+      .dark .evaluator-colors-5 {
+        background: #4c1d95;
+        color: #c4b5fd;
+      }
+
+      .score-cell {
+        min-width: 60px;
+        text-align: center;
+      }
+      .avg-cell {
+        font-weight: 700;
+      }
+      .fuzzy-badge {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-family: monospace;
+      }
+    </style>
   </head>
   <body
     x-data="{ ready: false, current_lang: '{{ current_lang }}' }"
@@ -75,6 +151,7 @@
 
             <!-- Content -->
             <div class="w-full px-6 py-6">
+              <!-- Page Header -->
               <div class="flex items-center justify-between mb-8">
                 <h1
                   class="text-2xl font-bold flex items-center gap-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
@@ -92,34 +169,112 @@
                 </a>
               </div>
 
+              <!-- Participant Info Card -->
               <div
-                class="mb-8 rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                class="mb-6 rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
               >
-                <!-- Header Info -->
                 <div
                   class="p-6 {{ 'bg-gray-900 border-b border-gray-700' if current_theme == 'dark' else 'bg-white border-b border-gray-200' }}"
                 >
-                  <h2
-                    class="text-2xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-                  >
-                    {{ participant.nama_lengkap }}
-                  </h2>
-                  <div
-                    class="flex flex-wrap gap-4 text-sm {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
-                  >
-                    <span class="flex items-center gap-2">
-                      <i class="fa-solid fa-calendar-check"></i>
-                      {{ event.nama_kegiatan }}
-                    </span>
-                    <span class="flex items-center gap-2">
-                      <i class="fa-solid fa-layer-group"></i>
-                      {{ participant.golongan }}
-                    </span>
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg"
+                    >
+                      {{ participant.nama_lengkap[0] if participant else
+                      user_peserta.nama_lengkap[0] }}
+                    </div>
+                    <div>
+                      <h2
+                        class="text-2xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                      >
+                        {{ participant.nama_lengkap if participant else
+                        user_peserta.nama_lengkap }}
+                      </h2>
+                      <div
+                        class="flex flex-wrap gap-4 text-sm mt-1 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+                      >
+                        <span class="flex items-center gap-2">
+                          <i class="fa-solid fa-calendar-check"></i>
+                          {{ event.nama_kegiatan }}
+                        </span>
+                        {% if participant %}
+                        <span class="flex items-center gap-2">
+                          <i class="fa-solid fa-layer-group"></i>
+                          {{ participant.golongan }}
+                        </span>
+                        {% endif %} {% if hasil_seleksi %}
+                        <span
+                          class="flex items-center gap-2 font-semibold text-green-500"
+                        >
+                          <i class="fa-solid fa-trophy"></i>
+                          {{ 'Ranking' if current_lang == 'id' else 'Rank' }}:
+                          #{{ hasil_seleksi.ranking }}
+                        </span>
+                        <span
+                          class="flex items-center gap-2 font-semibold text-blue-500"
+                        >
+                          <i class="fa-solid fa-star"></i>
+                          {{ 'Skor Akhir' if current_lang == 'id' else 'Final
+                          Score' }}: {{ "%.2f"|format(hasil_seleksi.skor_akhir)
+                          }}
+                        </span>
+                        {% endif %}
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <!-- Scores Table -->
-                <div class="p-6">
+              <!-- Evaluator Legend -->
+              {% if evaluators %}
+              <div
+                class="mb-6 rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              >
+                <div class="p-4">
+                  <h3
+                    class="text-sm font-semibold mb-3 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-700' }}"
+                  >
+                    <i class="fa-solid fa-users mr-2 text-indigo-500"></i>
+                    {{ 'Daftar Penilai' if current_lang == 'id' else
+                    'Evaluators' }} ({{ evaluators|length }})
+                  </h3>
+                  <div class="flex flex-wrap gap-3">
+                    {% for ev in evaluators %}
+                    <span
+                      class="badge-evaluator evaluator-colors-{{ loop.index0 % 6 }}"
+                    >
+                      <i class="fa-solid fa-user-check"></i>
+                      {{ ev.nama_lengkap }}
+                    </span>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Section 1: Nilai Per Penilai Per Kriteria -->
+              <div
+                class="mb-6 rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              >
+                <div
+                  class="p-4 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                >
+                  <h3
+                    class="text-lg font-bold flex items-center gap-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  >
+                    <i class="fa-solid fa-table-cells text-blue-500"></i>
+                    {{ 'Nilai Per Penilai Per Kriteria' if current_lang == 'id'
+                    else 'Scores per Evaluator per Criteria' }}
+                  </h3>
+                  <p
+                    class="text-sm mt-1 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                  >
+                    {{ 'Menampilkan nilai dari setiap penilai untuk
+                    masing-masing kriteria' if current_lang == 'id' else 'Shows
+                    scores from each evaluator for every criterion' }}
+                  </p>
+                </div>
+                <div class="p-4">
                   <div class="overflow-x-auto">
                     <table class="w-full">
                       <thead>
@@ -127,31 +282,42 @@
                           class="{{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
                         >
                           <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            class="px-3 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
                           >
-                            {{ 'No' if current_lang == 'id' else 'No' }}
+                            No
                           </th>
                           <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            class="px-3 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
                           >
                             {{ 'Kriteria Penilaian' if current_lang == 'id' else
-                            'Assessment Criteria' }}
+                            'Criteria' }}
                           </th>
                           <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            class="px-3 py-3 text-center text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
                           >
                             {{ 'Bobot' if current_lang == 'id' else 'Weight' }}
                           </th>
+                          {% for ev in evaluators %}
                           <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            class="px-3 py-3 text-center text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
                           >
-                            {{ 'Nilai' if current_lang == 'id' else 'Score' }}
+                            <span
+                              class="badge-evaluator evaluator-colors-{{ loop.index0 % 6 }}"
+                            >
+                              {{ ev.nama_lengkap.split(' ')[0] }}
+                            </span>
                           </th>
+                          {% endfor %}
                           <th
-                            class="px-4 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                            class="px-3 py-3 text-center text-sm font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
                           >
-                            {{ 'Penilai' if current_lang == 'id' else
-                            'Evaluator' }}
+                            <span class="inline-flex items-center gap-1">
+                              <i
+                                class="fa-solid fa-calculator text-xs text-purple-500"
+                              ></i>
+                              {{ 'Rata-rata' if current_lang == 'id' else
+                              'Average' }}
+                            </span>
                           </th>
                         </tr>
                       </thead>
@@ -160,38 +326,51 @@
                       >
                         {% for score in detail_scores %}
                         <tr
-                          class="{{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }}"
+                          class="{{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }} transition-colors"
                         >
                           <td
-                            class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            class="px-3 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
                           >
                             {{ loop.index }}
                           </td>
                           <td
-                            class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            class="px-3 py-3 text-sm font-medium {{ 'text-gray-200' if current_theme == 'dark' else 'text-gray-900' }}"
                           >
                             {{ score.kriteria }}
                           </td>
                           <td
-                            class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
+                            class="px-3 py-3 text-sm text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
                           >
                             {{ score.bobot }}
                           </td>
-                          <td
-                            class="px-4 py-3 text-sm font-semibold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
-                          >
-                            {{ score.nilai }}
+                          {% for ev_score in score.evaluator_scores %}
+                          <td class="px-3 py-3 text-sm text-center score-cell">
+                            {% if ev_score.nilai is not none %}
+                            <span
+                              class="font-semibold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
+                            >
+                              {{ ev_score.nilai }}
+                            </span>
+                            {% else %}
+                            <span
+                              class="{{ 'text-gray-600' if current_theme == 'dark' else 'text-gray-400' }}"
+                              >-</span
+                            >
+                            {% endif %}
                           </td>
-                          <td
-                            class="px-4 py-3 text-sm {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-900' }}"
-                          >
-                            {{ score.penilai or '-' }}
+                          {% endfor %}
+                          <td class="px-3 py-3 text-sm text-center avg-cell">
+                            <span
+                              class="inline-block px-2 py-0.5 rounded-lg {{ 'bg-purple-900/50 text-purple-300' if current_theme == 'dark' else 'bg-purple-100 text-purple-700' }}"
+                            >
+                              {{ score.avg_nilai }}
+                            </span>
                           </td>
                         </tr>
                         {% endfor %} {% if not detail_scores %}
                         <tr>
                           <td
-                            colspan="5"
+                            colspan="{{ 4 + evaluators|length }}"
                             class="px-4 py-8 text-center {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
                           >
                             {{ 'Tidak ada data nilai' if current_lang == 'id'
@@ -204,6 +383,184 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Section 2: Rincian Perhitungan Fuzzy AHP -->
+              {% if detail_scores %}
+              <div
+                class="mb-6 rounded-2xl shadow-lg overflow-hidden {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+              >
+                <div
+                  class="p-4 border-b {{ 'border-gray-700' if current_theme == 'dark' else 'border-gray-200' }}"
+                >
+                  <h3
+                    class="text-lg font-bold flex items-center gap-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  >
+                    <i class="fa-solid fa-gears text-emerald-500"></i>
+                    {{ 'Rincian Perhitungan Nilai Peserta' if current_lang ==
+                    'id' else 'Participant Score Calculation Details' }}
+                  </h3>
+                  <p
+                    class="text-sm mt-1 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                  >
+                    {{ 'Perhitungan nilai akhir menggunakan metode Fuzzy AHP' if
+                    current_lang == 'id' else 'Final score calculation using
+                    Fuzzy AHP method' }}
+                  </p>
+                </div>
+                <div class="p-4">
+                  <div class="overflow-x-auto">
+                    <table class="w-full">
+                      <thead>
+                        <tr
+                          class="{{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-100' }}"
+                        >
+                          <th
+                            class="px-3 py-3 text-left text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                          >
+                            {{ 'Kriteria' if current_lang == 'id' else
+                            'Criteria' }}
+                          </th>
+                          <th
+                            class="px-3 py-3 text-center text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                          >
+                            {{ 'Bobot (W)' if current_lang == 'id' else 'Weight
+                            (W)' }}
+                          </th>
+                          <th
+                            class="px-3 py-3 text-center text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                          >
+                            {{ 'Nilai Asli' if current_lang == 'id' else 'Raw
+                            Score' }}
+                          </th>
+                          <th
+                            class="px-3 py-3 text-center text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                          >
+                            {{ 'Fuzzy (L, M, U)' if current_lang == 'id' else
+                            'Fuzzy (L, M, U)' }}
+                          </th>
+                          <th
+                            class="px-3 py-3 text-center text-sm font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                          >
+                            {{ 'Weighted Fuzzy (L×W, M×W, U×W)' if current_lang
+                            == 'id' else 'Weighted Fuzzy (L×W, M×W, U×W)' }}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody
+                        class="divide-y {{ 'divide-gray-700' if current_theme == 'dark' else 'divide-gray-200' }}"
+                      >
+                        {% for score in detail_scores %}
+                        <tr
+                          class="{{ 'hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50' }} transition-colors"
+                        >
+                          <td
+                            class="px-3 py-3 text-sm font-medium {{ 'text-gray-200' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            {{ score.kriteria }}
+                          </td>
+                          <td
+                            class="px-3 py-3 text-sm text-center {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                          >
+                            {{ score.weight }}
+                          </td>
+                          <td
+                            class="px-3 py-3 text-sm text-center font-semibold {{ 'text-blue-400' if current_theme == 'dark' else 'text-blue-600' }}"
+                          >
+                            {{ score.avg_nilai }}
+                          </td>
+                          <td class="px-3 py-3 text-sm text-center">
+                            <span
+                              class="fuzzy-badge {{ 'bg-gray-700 text-gray-200' if current_theme == 'dark' else 'bg-gray-100 text-gray-700' }}"
+                            >
+                              ({{ "%.2f"|format(score.fuzzy_l) }}, {{
+                              "%.2f"|format(score.fuzzy_m) }}, {{
+                              "%.2f"|format(score.fuzzy_u) }})
+                            </span>
+                          </td>
+                          <td class="px-3 py-3 text-sm text-center">
+                            <span
+                              class="fuzzy-badge {{ 'bg-emerald-900/50 text-emerald-300' if current_theme == 'dark' else 'bg-emerald-100 text-emerald-700' }}"
+                            >
+                              ({{ "%.2f"|format(score.weighted_l) }}, {{
+                              "%.2f"|format(score.weighted_m) }}, {{
+                              "%.2f"|format(score.weighted_u) }})
+                            </span>
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                      <tfoot>
+                        <tr
+                          class="{{ 'bg-gray-800 border-t-2 border-gray-600' if current_theme == 'dark' else 'bg-gray-50 border-t-2 border-gray-300' }}"
+                        >
+                          <td
+                            colspan="4"
+                            class="px-3 py-3 text-sm text-right font-bold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                          >
+                            Total Fuzzy:
+                          </td>
+                          <td class="px-3 py-3 text-sm text-center">
+                            <span
+                              class="fuzzy-badge font-bold {{ 'bg-purple-900/50 text-purple-300' if current_theme == 'dark' else 'bg-purple-100 text-purple-700' }}"
+                            >
+                              ({{ "%.2f"|format(fuzzy_total_l) }}, {{
+                              "%.2f"|format(fuzzy_total_m) }}, {{
+                              "%.2f"|format(fuzzy_total_u) }})
+                            </span>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  <!-- Final Score Box -->
+                  <div
+                    class="mt-6 p-4 rounded-xl {{ 'bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-700' if current_theme == 'dark' else 'bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200' }}"
+                  >
+                    <div
+                      class="flex flex-col sm:flex-row items-center justify-between gap-4"
+                    >
+                      <div>
+                        <h4
+                          class="text-sm font-semibold {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+                        >
+                          <i class="fa-solid fa-square-root-variable mr-1"></i>
+                          {{ 'Defuzzifikasi (Center of Area)' if current_lang ==
+                          'id' else 'Defuzzification (Center of Area)' }}
+                        </h4>
+                        <p
+                          class="text-xs mt-1 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                        >
+                          ({{ "%.2f"|format(fuzzy_total_l) }} + {{
+                          "%.2f"|format(fuzzy_total_m) }} + {{
+                          "%.2f"|format(fuzzy_total_u) }}) / 3
+                        </p>
+                      </div>
+                      <div class="text-center">
+                        <div
+                          class="text-xs font-medium {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-500' }}"
+                        >
+                          {{ 'Skor Akhir' if current_lang == 'id' else 'Final
+                          Score' }}
+                        </div>
+                        <div
+                          class="text-3xl font-bold {{ 'text-white' if current_theme == 'dark' else 'text-indigo-700' }}"
+                        >
+                          {{ "%.2f"|format(final_score) }}
+                        </div>
+                        {% if hasil_seleksi %}
+                        <div class="text-sm mt-1 font-semibold text-amber-500">
+                          <i class="fa-solid fa-medal"></i>
+                          {{ 'Ranking' if current_lang == 'id' else 'Rank' }}:
+                          #{{ hasil_seleksi.ranking }}
+                        </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
             </div>
           </section>
         </main>

@@ -1342,34 +1342,118 @@ def admin_penilaian_detail_view(user_id, kegiatan_id):
     t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
         
     try:
-        user = Users.query.get_or_404(user_id)
-        participant = Participants.query.filter_by(email=user.email).first()
+        user_peserta = Users.query.get_or_404(user_id)
+        participant = Participants.query.filter_by(email=user_peserta.email).first()
         event = Event.query.get_or_404(kegiatan_id)
         
         # Ambil semua kriteria untuk kegiatan ini
-        kriteria_list = Criteria.query.filter_by(event_id=kegiatan_id).all()
+        kriteria_list = Criteria.query.filter_by(event_id=kegiatan_id).order_by(Criteria.id_kriteria).all()
         
+        # Ambil SEMUA penilaian untuk peserta ini di kegiatan ini
+        all_penilaian = Penilaian.query.filter(
+            Penilaian.id_users == user_id,
+            Penilaian.id_kriteria.in_([k.id_kriteria for k in kriteria_list])
+        ).all()
+        
+        # Kumpulkan semua evaluator yang memberikan nilai
+        evaluator_ids = set()
+        for p in all_penilaian:
+            if p.evaluator_id:
+                evaluator_ids.add(p.evaluator_id)
+        
+        # Ambil data evaluator
+        evaluators = []
+        if evaluator_ids:
+            evaluator_users = Users.query.filter(Users.id.in_(evaluator_ids)).all()
+            evaluators = sorted(evaluator_users, key=lambda x: x.id)
+        
+        # Buat mapping: (evaluator_id, kriteria_id) -> nilai  
+        score_map = {}
+        for p in all_penilaian:
+            score_map[(p.evaluator_id, p.id_kriteria)] = p.nilai
+        
+        # Susun data detail per kriteria dengan semua penilai
         detail_scores = []
+        total_bobot = sum(k.bobot for k in kriteria_list)
+        
+        # Data untuk perhitungan Fuzzy AHP (seperti di halaman hasil)
+        fuzzy_total_l = 0
+        fuzzy_total_m = 0
+        fuzzy_total_u = 0
+        calculation_details = []
+        
         for kriteria in kriteria_list:
-            # Ambil nilai untuk kriteria ini
-            penilaian = Penilaian.query.filter_by(
-                id_users=user_id,
-                id_kriteria=kriteria.id_kriteria
-            ).first()
+            # Nilai per evaluator
+            evaluator_scores = []
+            nilai_list = []
+            for ev in evaluators:
+                nilai = score_map.get((ev.id, kriteria.id_kriteria), None)
+                evaluator_scores.append({
+                    'evaluator_id': ev.id,
+                    'evaluator_nama': ev.nama_lengkap,
+                    'nilai': nilai
+                })
+                if nilai is not None:
+                    nilai_list.append(nilai)
             
-            # Ambil nama penilai jika ada
-            penilai_nama = None
-            if penilaian and penilaian.evaluator_id:
-                evaluator = Users.query.get(penilaian.evaluator_id)
-                if evaluator:
-                    penilai_nama = evaluator.nama_lengkap
+            # Hitung rata-rata
+            avg_nilai = sum(nilai_list) / len(nilai_list) if nilai_list else 0
+            
+            # Normalized weight
+            weight = (kriteria.bobot / total_bobot) if total_bobot > 0 else 0
+            
+            # Fuzzifikasi (sama dengan logika di fuzzy_ahp.py dan halaman hasil)
+            if avg_nilai > 0:
+                if avg_nilai <= 5:  # Likert scale
+                    if avg_nilai <= 1:
+                        l, m, u = 1, 1, 2
+                    elif avg_nilai <= 2:
+                        l, m, u = 1, 2, 3
+                    elif avg_nilai <= 3:
+                        l, m, u = 2, 3, 4
+                    elif avg_nilai <= 4:
+                        l, m, u = 3, 4, 5
+                    else:
+                        l, m, u = 4, 5, 5
+                else:  # 0-100 scale
+                    l = max(0, avg_nilai - 5)
+                    m = avg_nilai
+                    u = min(100, avg_nilai + 5)
+                
+                weighted_l = l * weight
+                weighted_m = m * weight
+                weighted_u = u * weight
+                
+                fuzzy_total_l += weighted_l
+                fuzzy_total_m += weighted_m
+                fuzzy_total_u += weighted_u
+            else:
+                l, m, u = 0, 0, 0
+                weighted_l, weighted_m, weighted_u = 0, 0, 0
             
             detail_scores.append({
                 'kriteria': kriteria.nama_kriteria,
+                'kriteria_id': kriteria.id_kriteria,
                 'bobot': kriteria.bobot,
-                'nilai': penilaian.nilai if penilaian else 0,
-                'penilai': penilai_nama
+                'weight': round(weight, 2),
+                'evaluator_scores': evaluator_scores,
+                'avg_nilai': round(avg_nilai, 2),
+                'fuzzy_l': round(l, 2),
+                'fuzzy_m': round(m, 2),
+                'fuzzy_u': round(u, 2),
+                'weighted_l': round(weighted_l, 2),
+                'weighted_m': round(weighted_m, 2),
+                'weighted_u': round(weighted_u, 2)
             })
+        
+        # Skor akhir defuzzifikasi
+        final_score = round((fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3, 2) if detail_scores else 0
+        
+        # Ambil hasil seleksi (ranking)
+        hasil_seleksi = HasilSeleksi.query.filter_by(
+            id_users=user_id,
+            event_id=kegiatan_id
+        ).first()
             
         sidebar_state = current_user.sidebar_state or 'expanded'
             
@@ -1377,8 +1461,15 @@ def admin_penilaian_detail_view(user_id, kegiatan_id):
             'penilaian_peserta_detail.html',
             user=current_user,
             participant=participant,
+            user_peserta=user_peserta,
             event=event,
             detail_scores=detail_scores,
+            evaluators=evaluators,
+            fuzzy_total_l=round(fuzzy_total_l, 2),
+            fuzzy_total_m=round(fuzzy_total_m, 2),
+            fuzzy_total_u=round(fuzzy_total_u, 2),
+            final_score=final_score,
+            hasil_seleksi=hasil_seleksi,
             sidebar_state=sidebar_state
         )
     except Exception as e:
