@@ -1374,7 +1374,29 @@ def admin_penilaian_detail_view(user_id, kegiatan_id):
         
         # Susun data detail per kriteria dengan semua penilai
         detail_scores = []
-        total_bobot = sum(k.bobot for k in kriteria_list)
+        
+        # Calculate Fuzzy AHP weights for correct bobot values
+        from app.ahp_calculator import FuzzyAHPCalculator
+        from app.fuzzy_ahp import get_pairwise_matrix_from_db
+        
+        criteria_names_list = [k.nama_kriteria for k in kriteria_list]
+        criteria_ids_list = [k.id_kriteria for k in kriteria_list]
+        pairwise_matrix = get_pairwise_matrix_from_db(kegiatan_id, criteria_ids_list)
+        
+        fuzzy_ahp_weight_map = {}
+        if pairwise_matrix is not None and len(kriteria_list) > 1:
+            fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names_list)
+            fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
+            fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
+            fuzzy_weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+            for name in criteria_names_list:
+                fuzzy_ahp_weight_map[name] = round(fuzzy_weights.get(name, 0), 4)
+        
+        # Fallback to database weights if Fuzzy AHP weights not available
+        if not fuzzy_ahp_weight_map:
+            total_bobot = sum(k.bobot for k in kriteria_list)
+            for k in kriteria_list:
+                fuzzy_ahp_weight_map[k.nama_kriteria] = (k.bobot / total_bobot) if total_bobot > 0 else 0
         
         # Data untuk perhitungan Fuzzy AHP (seperti di halaman hasil)
         fuzzy_total_l = 0
@@ -1399,8 +1421,8 @@ def admin_penilaian_detail_view(user_id, kegiatan_id):
             # Hitung rata-rata
             avg_nilai = sum(nilai_list) / len(nilai_list) if nilai_list else 0
             
-            # Normalized weight
-            weight = (kriteria.bobot / total_bobot) if total_bobot > 0 else 0
+            # Use Fuzzy AHP weight (consistent with Bobot Global)
+            weight = fuzzy_ahp_weight_map.get(kriteria.nama_kriteria, 0)
             
             # Fuzzifikasi (sama dengan logika di fuzzy_ahp.py dan halaman hasil)
             if avg_nilai > 0:
@@ -5908,7 +5930,17 @@ def penilai_detail_nilai(user_id, event_id):
     # ==========================================
     # Calculate total weight and breakdown per participant
     # ==========================================
-    total_bobot = sum(c.bobot for c in criterias)
+    # Use Fuzzy AHP weights from Step 6 if available, otherwise fall back to database weights
+    fuzzy_ahp_weight_map = {}
+    if normalized_weights:
+        for item in normalized_weights:
+            fuzzy_ahp_weight_map[item['criteria']] = item['weight']
+    
+    # Fallback: use database weights if Fuzzy AHP weights not available
+    if not fuzzy_ahp_weight_map:
+        total_bobot = sum(c.bobot for c in criterias)
+        for criteria in criterias:
+            fuzzy_ahp_weight_map[criteria.nama_kriteria] = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
     
     calculation_details = []
     fuzzy_total_l = 0
@@ -5916,8 +5948,8 @@ def penilai_detail_nilai(user_id, event_id):
     fuzzy_total_u = 0
     
     for criteria in criterias:
-        # Normalized weight
-        weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
+        # Use Fuzzy AHP weight (consistent with Step 6 Bobot Global)
+        weight = fuzzy_ahp_weight_map.get(criteria.nama_kriteria, 0)
         
         # Get average score from all evaluators
         avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(
@@ -6285,6 +6317,12 @@ def admin_rekap_nilai_fuzzy(event_id):
                 'criteria': name,
                 'weight': round(weights.get(name, 0), 4)
             })
+        
+        # Update criteria_weights to use Fuzzy AHP weights instead of database weights
+        fuzzy_weight_map = {name: round(weights.get(name, 0), 4) for name in criteria_names}
+        criteria_weights = {}
+        for c in criterias:
+            criteria_weights[c.id_kriteria] = fuzzy_weight_map.get(c.nama_kriteria, 0)
     
     # Get Results (Users)
     hasil_seleksi = db.session.query(
@@ -6641,7 +6679,17 @@ def admin_detail_nilai(user_id, event_id):
     # ==========================================
     # Calculate total weight and breakdown per participant
     # ==========================================
-    total_bobot = sum(c.bobot for c in criterias)
+    # Use Fuzzy AHP weights from Step 6 if available, otherwise fall back to database weights
+    fuzzy_ahp_weight_map = {}
+    if normalized_weights:
+        for item in normalized_weights:
+            fuzzy_ahp_weight_map[item['criteria']] = item['weight']
+    
+    # Fallback: use database weights if Fuzzy AHP weights not available
+    if not fuzzy_ahp_weight_map:
+        total_bobot = sum(c.bobot for c in criterias)
+        for criteria in criterias:
+            fuzzy_ahp_weight_map[criteria.nama_kriteria] = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
     
     calculation_details = []
     fuzzy_total_l = 0
@@ -6649,8 +6697,8 @@ def admin_detail_nilai(user_id, event_id):
     fuzzy_total_u = 0
     
     for criteria in criterias:
-        # Normalized weight
-        weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
+        # Use Fuzzy AHP weight (consistent with Step 6 Bobot Global)
+        weight = fuzzy_ahp_weight_map.get(criteria.nama_kriteria, 0)
         
         # Get average score from all evaluators
         avg_score = db.session.query(db.func.avg(Penilaian.nilai)).filter_by(

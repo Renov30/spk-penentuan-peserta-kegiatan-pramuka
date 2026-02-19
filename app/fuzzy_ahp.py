@@ -319,7 +319,11 @@ def calculate_spk(event_id: int, use_fuzzy_ahp: bool = True) -> Tuple[bool, str]
         if not success:
             return False, f"Error menghitung bobot: {msg}"
     
-    # Ambil bobot yang sudah ada (dari database)
+    # Ambil bobot yang sudah ada (dari database) - refresh from DB to get latest
+    # Refresh criteria objects to get updated bobot values after Fuzzy AHP calculation
+    for c in criterias:
+        db.session.refresh(c)
+    
     total_bobot = sum(c.bobot for c in criterias)
     if total_bobot == 0:
         return False, "Bobot kriteria belum dihitung. Silakan input matriks perbandingan berpasangan terlebih dahulu."
