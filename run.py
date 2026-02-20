@@ -1382,18 +1382,33 @@ def admin_penilaian_detail_view(user_id, kegiatan_id):
         criteria_names_list = [k.nama_kriteria for k in kriteria_list]
         criteria_ids_list = [k.id_kriteria for k in kriteria_list]
         pairwise_matrix = get_pairwise_matrix_from_db(kegiatan_id, criteria_ids_list)
+        n = len(kriteria_list)
+        
+        if pairwise_matrix is None and n > 0:
+            total_bobot_check = sum(k.bobot for k in kriteria_list)
+            if total_bobot_check > 0:
+                import numpy as np
+                pairwise_matrix = np.ones((n, n))
+                for i in range(n):
+                    for j in range(n):
+                        if i != j:
+                            wi = kriteria_list[i].bobot if kriteria_list[i].bobot > 0 else 0.001
+                            wj = kriteria_list[j].bobot if kriteria_list[j].bobot > 0 else 0.001
+                            ratio = wi / wj
+                            if ratio >= 1:
+                                pairwise_matrix[i, j] = min(9, max(1, ratio))
+                            else:
+                                pairwise_matrix[i, j] = max(1/9, ratio)
         
         fuzzy_ahp_weight_map = {}
-        if pairwise_matrix is not None and len(kriteria_list) > 1:
+        if pairwise_matrix is not None and n > 0:
             fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names_list)
             fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
             fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
             fuzzy_weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
             for name in criteria_names_list:
                 fuzzy_ahp_weight_map[name] = round(fuzzy_weights.get(name, 0), 4)
-        
-        # Fallback to database weights if Fuzzy AHP weights not available
-        if not fuzzy_ahp_weight_map:
+        else:
             total_bobot = sum(k.bobot for k in kriteria_list)
             for k in kriteria_list:
                 fuzzy_ahp_weight_map[k.nama_kriteria] = (k.bobot / total_bobot) if total_bobot > 0 else 0
