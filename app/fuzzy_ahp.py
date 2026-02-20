@@ -320,15 +320,42 @@ def calculate_spk(event_id: int, use_fuzzy_ahp: bool = True) -> Tuple[bool, str]
             return False, f"Error menghitung bobot: {msg}"
     
     # Ambil bobot yang sudah ada (dari database) - refresh from DB to get latest
-    # Refresh criteria objects to get updated bobot values after Fuzzy AHP calculation
     for c in criterias:
         db.session.refresh(c)
+        
+    n = len(criterias)
+    criteria_names = [c.nama_kriteria for c in criterias]
     
-    total_bobot = sum(c.bobot for c in criterias)
-    if total_bobot == 0:
-        return False, "Bobot kriteria belum dihitung. Silakan input matriks perbandingan berpasangan terlebih dahulu."
-    
-    criteria_weights = {c.id_kriteria: (c.bobot / total_bobot if total_bobot > 0 else 0) for c in criterias}
+    # Generate pairwise matrix if it doesn't exist, to match admin_detail_nilai behavior
+    if pairwise_matrix is None and n > 0:
+        total_bobot_check = sum(c.bobot for c in criterias)
+        if total_bobot_check > 0:
+            import numpy as np
+            pairwise_matrix = np.ones((n, n))
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        wi = criterias[i].bobot if criterias[i].bobot > 0 else 0.001
+                        wj = criterias[j].bobot if criterias[j].bobot > 0 else 0.001
+                        ratio = wi / wj
+                        if ratio >= 1:
+                            pairwise_matrix[i, j] = min(9, max(1, ratio))
+                        else:
+                            pairwise_matrix[i, j] = max(1/9, ratio)
+                            
+    criteria_weights = {}
+    if pairwise_matrix is not None and n > 0:
+        from app.ahp_calculator import FuzzyAHPCalculator
+        fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
+        fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
+        weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+        for c in criterias:
+            criteria_weights[c.id_kriteria] = round(weights.get(c.nama_kriteria, 0), 4)
+    else:
+        total_bobot = sum(c.bobot for c in criterias)
+        if total_bobot == 0:
+            return False, "Bobot kriteria belum dihitung. Silakan input matriks perbandingan berpasangan terlebih dahulu."
+        criteria_weights = {c.id_kriteria: (c.bobot / total_bobot if total_bobot > 0 else 0) for c in criterias}
     
     # 3. Ambil Peserta
     event = Event.query.get(event_id)
