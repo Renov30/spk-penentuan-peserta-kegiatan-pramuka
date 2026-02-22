@@ -69,6 +69,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_, not_
 from slugify import slugify
 from urllib.parse import urlparse, urljoin
+import io
+import base64
 from app.translations import TRANSLATIONS
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -1872,38 +1874,191 @@ def admin_penilaian_detail_view(user_id, kegiatan_id):
     t = TRANSLATIONS.get(lang, TRANSLATIONS["id"])
 
     try:
-        user = Users.query.get_or_404(user_id)
-        participant = Participants.query.filter_by(email=user.email).first()
+        user_peserta = Users.query.get_or_404(user_id)
+        participant = Participants.query.filter_by(email=user_peserta.email).first()
         event = Event.query.get_or_404(kegiatan_id)
-        kriteria_list = Criteria.query.filter_by(event_id=kegiatan_id).all()
+        kriteria_list = (
+            Criteria.query.filter_by(event_id=kegiatan_id)
+            .order_by(Criteria.id_kriteria)
+            .all()
+        )
 
+        # Ambil SEMUA penilaian untuk peserta ini di kegiatan ini
+        all_penilaian = Penilaian.query.filter(
+            Penilaian.id_users == user_id,
+            Penilaian.id_kriteria.in_([k.id_kriteria for k in kriteria_list]),
+        ).all()
+
+        # Kumpulkan semua evaluator yang memberikan nilai
+        evaluator_ids = set()
+        for p in all_penilaian:
+            if p.evaluator_id:
+                evaluator_ids.add(p.evaluator_id)
+
+        # Ambil data evaluator
+        evaluators = []
+        if evaluator_ids:
+            evaluator_users = Users.query.filter(Users.id.in_(evaluator_ids)).all()
+            evaluators = sorted(evaluator_users, key=lambda x: x.id)
+
+        # Buat mapping: (evaluator_id, kriteria_id) -> nilai
+        score_map = {}
+        for p in all_penilaian:
+            score_map[(p.evaluator_id, p.id_kriteria)] = p.nilai
+
+        # Susun data detail per kriteria dengan semua penilai
         detail_scores = []
-        for kriteria in kriteria_list:
-            penilaian = Penilaian.query.filter_by(
-                id_users=user_id, id_kriteria=kriteria.id_kriteria
-            ).first()
 
-            # Ambil nama penilai jika ada
-            penilai_nama = None
-            if penilaian and penilaian.evaluator_id:
-                evaluator = Users.query.get(penilaian.evaluator_id)
-                if evaluator:
-                    penilai_nama = evaluator.nama_lengkap
+        # Calculate Fuzzy AHP weights for correct bobot values
+        from app.ahp_calculator import FuzzyAHPCalculator
+        from app.fuzzy_ahp import get_pairwise_matrix_from_db
+
+        criteria_names_list = [k.nama_kriteria for k in kriteria_list]
+        criteria_ids_list = [k.id_kriteria for k in kriteria_list]
+        pairwise_matrix = get_pairwise_matrix_from_db(kegiatan_id, criteria_ids_list)
+        n = len(kriteria_list)
+
+        if pairwise_matrix is None and n > 0:
+            total_bobot_check = sum(k.bobot for k in kriteria_list)
+            if total_bobot_check > 0:
+                import numpy as np
+
+                pairwise_matrix = np.ones((n, n))
+                for i in range(n):
+                    for j in range(n):
+                        if i != j:
+                            wi = (
+                                kriteria_list[i].bobot
+                                if kriteria_list[i].bobot > 0
+                                else 0.001
+                            )
+                            wj = (
+                                kriteria_list[j].bobot
+                                if kriteria_list[j].bobot > 0
+                                else 0.001
+                            )
+                            ratio = wi / wj
+                            if ratio >= 1:
+                                pairwise_matrix[i, j] = min(9, max(1, ratio))
+                            else:
+                                pairwise_matrix[i, j] = max(1 / 9, ratio)
+
+        fuzzy_ahp_weight_map = {}
+        if pairwise_matrix is not None and n > 0:
+            fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names_list)
+            fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
+            fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
+            fuzzy_weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+            for name in criteria_names_list:
+                fuzzy_ahp_weight_map[name] = round(fuzzy_weights.get(name, 0), 4)
+        else:
+            total_bobot = sum(k.bobot for k in kriteria_list)
+            for k in kriteria_list:
+                fuzzy_ahp_weight_map[k.nama_kriteria] = (
+                    (k.bobot / total_bobot) if total_bobot > 0 else 0
+                )
+
+        # Data untuk perhitungan Fuzzy AHP (seperti di halaman hasil)
+        fuzzy_total_l = 0
+        fuzzy_total_m = 0
+        fuzzy_total_u = 0
+        calculation_details = []
+
+        for kriteria in kriteria_list:
+            # Nilai per evaluator
+            evaluator_scores = []
+            nilai_list = []
+            for ev in evaluators:
+                nilai = score_map.get((ev.id, kriteria.id_kriteria), None)
+                evaluator_scores.append(
+                    {
+                        "evaluator_id": ev.id,
+                        "evaluator_nama": ev.nama_lengkap,
+                        "nilai": nilai,
+                    }
+                )
+                if nilai is not None:
+                    nilai_list.append(nilai)
+
+            # Hitung rata-rata
+            avg_nilai = sum(nilai_list) / len(nilai_list) if nilai_list else 0
+
+            # Use Fuzzy AHP weight (consistent with Bobot Global)
+            weight = fuzzy_ahp_weight_map.get(kriteria.nama_kriteria, 0)
+
+            # Fuzzifikasi (sama dengan logika di fuzzy_ahp.py dan halaman hasil)
+            if avg_nilai > 0:
+                if avg_nilai <= 5:  # Likert scale
+                    if avg_nilai <= 1:
+                        l, m, u = 1, 1, 2
+                    elif avg_nilai <= 2:
+                        l, m, u = 1, 2, 3
+                    elif avg_nilai <= 3:
+                        l, m, u = 2, 3, 4
+                    elif avg_nilai <= 4:
+                        l, m, u = 3, 4, 5
+                    else:
+                        l, m, u = 4, 5, 5
+                else:  # 0-100 scale
+                    l = max(0, avg_nilai - 5)
+                    m = avg_nilai
+                    u = min(100, avg_nilai + 5)
+
+                weighted_l = l * weight
+                weighted_m = m * weight
+                weighted_u = u * weight
+
+                fuzzy_total_l += weighted_l
+                fuzzy_total_m += weighted_m
+                fuzzy_total_u += weighted_u
+            else:
+                l, m, u = 0, 0, 0
+                weighted_l, weighted_m, weighted_u = 0, 0, 0
+
             detail_scores.append(
                 {
                     "kriteria": kriteria.nama_kriteria,
+                    "kriteria_id": kriteria.id_kriteria,
                     "bobot": kriteria.bobot,
-                    "nilai": penilaian.nilai if penilaian else 0,
-                    "penilai": penilai_nama,
+                    "weight": round(weight, 2),
+                    "evaluator_scores": evaluator_scores,
+                    "avg_nilai": round(avg_nilai, 2),
+                    "fuzzy_l": round(l, 2),
+                    "fuzzy_m": round(m, 2),
+                    "fuzzy_u": round(u, 2),
+                    "weighted_l": round(weighted_l, 2),
+                    "weighted_m": round(weighted_m, 2),
+                    "weighted_u": round(weighted_u, 2),
                 }
             )
+
+        # Skor akhir defuzzifikasi
+        final_score = (
+            round((fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3, 2)
+            if detail_scores
+            else 0
+        )
+
+        # Ambil hasil seleksi (ranking)
+        hasil_seleksi = HasilSeleksi.query.filter_by(
+            id_users=user_id, event_id=kegiatan_id
+        ).first()
+
         sidebar_state = current_user.sidebar_state or "expanded"
+
         return render_template(
             "penilaian_peserta_detail.html",
             user=current_user,
             participant=participant,
+            user_peserta=user_peserta,
             event=event,
             detail_scores=detail_scores,
+            evaluators=evaluators,
+            fuzzy_total_l=round(fuzzy_total_l, 2),
+            fuzzy_total_m=round(fuzzy_total_m, 2),
+            fuzzy_total_u=round(fuzzy_total_u, 2),
+            final_score=final_score,
+            hasil_seleksi=hasil_seleksi,
             sidebar_state=sidebar_state,
             is_public_page=False,
         )
@@ -5146,6 +5301,28 @@ def export_laporan_word(event_id):
         tanggal_laporan_indo=tanggal_laporan_indo,
     )
 
+    # Embed gambar logo sebagai Base64 data URI agar tampil di Word
+    # Word tidak bisa resolve URL relatif dari server
+    logo_files = {
+        "images/Logo-Gerakan-Pramuka.png": "Logo-Gerakan-Pramuka.png",
+        "images/Logo-WOSM.png": "Logo-WOSM.png",
+    }
+
+    for static_path, filename in logo_files.items():
+        image_full_path = os.path.join(
+            app.root_path, "static", static_path.replace("/", os.sep)
+        )
+        if os.path.exists(image_full_path):
+            try:
+                with open(image_full_path, "rb") as img_file:
+                    img_data = base64.b64encode(img_file.read()).decode("utf-8")
+                # Ganti URL relatif dengan data URI base64
+                relative_url = url_for("static", filename=static_path)
+                data_uri = f"data:image/png;base64,{img_data}"
+                html_content = html_content.replace(relative_url, data_uri)
+            except Exception as e:
+                logging.warning(f"Gagal embed logo {filename} ke Word: {str(e)}")
+
     # Return sebagai file Word (MIME type HTML tetapi extension doc trick)
     response = make_response(html_content)
     response.headers["Content-Type"] = "application/msword"
@@ -7182,18 +7359,34 @@ def penilai_detail_nilai(user_id, event_id):
     # ==========================================
     # Calculate total weight and breakdown per participant
     # ==========================================
-    total_bobot = sum(c.bobot for c in criterias)
+    # Use Fuzzy AHP weights from Step 6 if available, otherwise fall back to database weights
+    fuzzy_ahp_weight_map = {}
+    if normalized_weights:
+        for item in normalized_weights:
+            fuzzy_ahp_weight_map[item["criteria"]] = item["weight"]
+
+    # Fallback: use database weights if Fuzzy AHP weights not available
+    if not fuzzy_ahp_weight_map:
+        total_bobot = sum(c.bobot for c in criterias)
+        for criteria in criterias:
+            fuzzy_ahp_weight_map[criteria.nama_kriteria] = (
+                (criteria.bobot / total_bobot) if total_bobot > 0 else 0
+            )
     calculation_details = []
     fuzzy_total_l = 0
     fuzzy_total_m = 0
     fuzzy_total_u = 0
     for criteria in criterias:
-        weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
+        # Use Fuzzy AHP weight (consistent with Step 6 Bobot Global)
+        weight = fuzzy_ahp_weight_map.get(criteria.nama_kriteria, 0)
+
+        # Get average score from all evaluators
         avg_score = (
             db.session.query(db.func.avg(Penilaian.nilai))
             .filter_by(id_users=user_id, id_kriteria=criteria.id_kriteria)
             .scalar()
         )
+
         if avg_score is not None:
             score = float(avg_score)
             if score <= 5:
@@ -7507,6 +7700,14 @@ def penilai_rekap_nilai_fuzzy(event_id):
             normalized_weights.append(
                 {"criteria": name, "weight": round(weights.get(name, 0), 4)}
             )
+
+        # Update criteria_weights to use Fuzzy AHP weights instead of database weights
+        fuzzy_weight_map = {
+            name: round(weights.get(name, 0), 4) for name in criteria_names
+        }
+        criteria_weights = {}
+        for c in criterias:
+            criteria_weights[c.id_kriteria] = fuzzy_weight_map.get(c.nama_kriteria, 0)
 
     # Get Results (Users)
     hasil_seleksi = (
@@ -8178,18 +8379,34 @@ def admin_detail_nilai(user_id, event_id):
     # ==========================================
     # Calculate total weight and breakdown per participant
     # ==========================================
-    total_bobot = sum(c.bobot for c in criterias)
+    # Use Fuzzy AHP weights from Step 6 if available, otherwise fall back to database weights
+    fuzzy_ahp_weight_map = {}
+    if normalized_weights:
+        for item in normalized_weights:
+            fuzzy_ahp_weight_map[item["criteria"]] = item["weight"]
+
+    # Fallback: use database weights if Fuzzy AHP weights not available
+    if not fuzzy_ahp_weight_map:
+        total_bobot = sum(c.bobot for c in criterias)
+        for criteria in criterias:
+            fuzzy_ahp_weight_map[criteria.nama_kriteria] = (
+                (criteria.bobot / total_bobot) if total_bobot > 0 else 0
+            )
     calculation_details = []
     fuzzy_total_l = 0
     fuzzy_total_m = 0
     fuzzy_total_u = 0
     for criteria in criterias:
-        weight = (criteria.bobot / total_bobot) if total_bobot > 0 else 0
+        # Use Fuzzy AHP weight (consistent with Step 6 Bobot Global)
+        weight = fuzzy_ahp_weight_map.get(criteria.nama_kriteria, 0)
+
+        # Get average score from all evaluators
         avg_score = (
             db.session.query(db.func.avg(Penilaian.nilai))
             .filter_by(id_users=user_id, id_kriteria=criteria.id_kriteria)
             .scalar()
         )
+
         if avg_score is not None:
             score = float(avg_score)
             if score <= 5:

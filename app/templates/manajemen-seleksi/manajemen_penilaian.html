@@ -57,6 +57,15 @@
         }
     }
   }"
+  x-init="
+    if (autoOpenKegiatan) {
+      const kegiatanMap = { {% for kegiatan in kegiatan_list %}{{ kegiatan.id_kegiatan }}: '{{ kegiatan.nama_kegiatan }}'{% if not loop.last %}, {% endif %}{% endfor %} };
+      const kId = parseInt(autoOpenKegiatan);
+      if (kegiatanMap[kId]) {
+        $nextTick(() => selectKegiatan({ id_kegiatan: kId, nama_kegiatan: kegiatanMap[kId] }));
+      }
+    }
+  "
   x-transition:enter="transition ease-out duration-500"
   x-transition:enter-start="opacity-0 translate-y-5"
   x-transition:enter-end="opacity-100 translate-y-0"
