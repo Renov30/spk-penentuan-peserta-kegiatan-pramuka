@@ -7488,12 +7488,6 @@ def penilai_rekap_nilai_fuzzy(event_id):
     criterias = (
         Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
     )
-    # Normalize weights
-    total_bobot = sum(c.bobot for c in criterias)
-    criteria_weights = {
-        c.id_kriteria: (c.bobot / total_bobot if total_bobot > 0 else 0)
-        for c in criterias
-    }
 
     # Get Quota
     kuota = Kuota.query.filter_by(event_id=event_id).first()
@@ -7692,22 +7686,24 @@ def penilai_rekap_nilai_fuzzy(event_id):
     # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
     # ==========================================
     normalized_weights = None
+    fuzzy_ahp_weight_map = {}
 
     if pairwise_matrix is not None and n > 0:
+
         weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+
         normalized_weights = []
+
+        # Loop 1: isi normalized_weights
         for name in criteria_names:
+
             normalized_weights.append(
                 {"criteria": name, "weight": round(weights.get(name, 0), 4)}
             )
 
-        # Update criteria_weights to use Fuzzy AHP weights instead of database weights
-        fuzzy_weight_map = {
-            name: round(weights.get(name, 0), 4) for name in criteria_names
-        }
-        criteria_weights = {}
-        for c in criterias:
-            criteria_weights[c.id_kriteria] = fuzzy_weight_map.get(c.nama_kriteria, 0)
+        # Loop 2: isi fuzzy_ahp_weight_map (DI LUAR loop pertama)
+        for item in normalized_weights:
+            fuzzy_ahp_weight_map[item["criteria"]] = item["weight"]
 
     # Get Results (Users)
     hasil_seleksi = (
@@ -7753,7 +7749,7 @@ def penilai_rekap_nilai_fuzzy(event_id):
             )
 
             val = 0.0
-            weight = criteria_weights.get(c.id_kriteria, 0)
+            weight = fuzzy_ahp_weight_map.get(c.nama_kriteria, 0)
 
             if avg_score is not None:
                 score = float(avg_score)
@@ -7863,12 +7859,6 @@ def admin_rekap_nilai_fuzzy(event_id):
     criterias = (
         Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
     )
-    # Normalize weights
-    total_bobot = sum(c.bobot for c in criterias)
-    criteria_weights = {
-        c.id_kriteria: (c.bobot / total_bobot if total_bobot > 0 else 0)
-        for c in criterias
-    }
 
     # Get Quota
     kuota = Kuota.query.filter_by(event_id=event_id).first()
@@ -8067,14 +8057,25 @@ def admin_rekap_nilai_fuzzy(event_id):
     # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
     # ==========================================
     normalized_weights = None
+    fuzzy_ahp_weight_map = {}
 
     if pairwise_matrix is not None and n > 0:
+
         weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
+
         normalized_weights = []
+
+        # Loop 1: isi normalized_weights
         for name in criteria_names:
+
             normalized_weights.append(
                 {"criteria": name, "weight": round(weights.get(name, 0), 4)}
             )
+
+        # Loop 2: isi fuzzy_ahp_weight_map (DI LUAR loop pertama)
+        for item in normalized_weights:
+
+            fuzzy_ahp_weight_map[item["criteria"]] = item["weight"]
 
     # Get Results (Users)
     hasil_seleksi = (
@@ -8118,7 +8119,7 @@ def admin_rekap_nilai_fuzzy(event_id):
             )
 
             val = 0.0
-            weight = criteria_weights.get(c.id_kriteria, 0)
+            weight = fuzzy_ahp_weight_map.get(c.nama_kriteria, 0)
 
             if avg_score is not None:
 

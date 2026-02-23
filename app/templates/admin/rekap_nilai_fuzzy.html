@@ -956,7 +956,7 @@
                           <td class="w-[140px] text-center p-4">
                             {% set score = row.final_score if row.final_score is defined else row.total_score %}
                             <div class="font-mono font-bold text-lg {{ 'text-green-400' if current_theme == 'dark' else 'text-green-600' }}">
-                              {{ "%.3f"|format(score)|replace('.', ',') }}
+                              {{ "%.2f"|format(score)|replace('.', ',') }}
                             </div>
                             <div class="text-[10px] opacity-50">
                               {{ 'Defuzzifikasi' if current_lang == 'id' else 'Defuzzification' }}
