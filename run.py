@@ -2747,6 +2747,20 @@ def api_update_user_status(user_id):
         )
 
 
+# Manajemen Perlombaan
+@app.route("/admin/manajemen_perlombaan")
+@login_required
+@admin_required
+def admin_manajemen_perlombaan():
+    sidebar_state = current_user.sidebar_state or "expanded"
+
+    return render_template(
+        "manajemen_perlombaan.html",
+        sidebar_state=sidebar_state,
+        is_public_page=False,
+    )
+
+
 # Manajemen Seleksi
 @app.route("/admin/manajemen_seleksi")
 @login_required
