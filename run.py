@@ -15,7 +15,7 @@ from flask import (
     make_response,
 )
 from flask_session import Session
-from flask_session.filesystem import FileSystemSessionInterface
+from flask_session.sessions import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
