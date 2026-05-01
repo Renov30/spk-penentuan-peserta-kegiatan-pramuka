@@ -1,44 +1,18 @@
-from flask import (
-    Flask,
-    Response,
-    abort,
-    request,
-    render_template,
-    request as flask_request,
-    redirect,
-    url_for,
-    flash,
-    session,
-    jsonify,
-    current_app,
-    send_file,
-    make_response,
-)
+<<<<<<<<< Temporary merge branch 1
+from flask import Flask, Response, abort, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app
+=========
+from flask import Flask, Response, request, render_template, request as flask_request, redirect, url_for, flash, session, jsonify, current_app, send_file
+>>>>>>>>> Temporary merge branch 2
 from flask_session import Session
 from flask_session.sessions import FileSystemSessionInterface
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import create_app, db
-from app.models import (
-    Users,
-    Participants,
-    Notification,
-    Event,
-    Kuota,
-    Criteria,
-    HasilSeleksi,
-    Penilaian,
-    HimpunanKriteria,
-    News,
-    Comment,
-    CommentLike,
-    tb_participant_kegiatan,
-    PairwiseComparison,
-    AHPResults,
-    ArsipSeleksi,
-    LogAktivitas,
-    Settings,
-)
+<<<<<<<<< Temporary merge branch 1
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, News, Comment, CommentLike, ParticipantKegiatan
+=========
+from app.models import Users, Participants, Notification, Event, Kuota, Criteria, HasilSeleksi, Penilaian, HimpunanKriteria, tb_participant_kegiatan, PairwiseComparison, AHPResults, ArsipSeleksi, LogAktivitas, Settings
+>>>>>>>>> Temporary merge branch 2
 from flask_mail import Mail, Message
 from twilio.rest import Client
 from authlib.integrations.flask_client import OAuth
@@ -1122,16 +1096,14 @@ def find_account():
                     </a>
                 </p>
                 """
-                sent = send_email_message(email_subject, email, html_body)
-                if sent:
-                    flash(f"{t['email_sent_code']} {escape(email)}", "success")
-                else:
-                    flash(
-                        "Gagal mengirim email. Periksa konfigurasi server email.",
-                        "danger",
-                    )
-                return redirect(url_for("verify_code"))
-
+<<<<<<<<< Temporary merge branch 1
+                mail.send(msg)
+                flash(f"{t['email_sent_code']} {escape(email)}", 'success')
+=========
+                send_email_message('Verifikasi Akun Anda', email, html_body)
+                flash(f'Kode verifikasi telah dikirim ke email {escape(email)}', 'success')
+>>>>>>>>> Temporary merge branch 2
+                return redirect(url_for('verify_code'))
             elif not user_exists and not email_exists:
                 flash(f"{t['username_email_not_found']}", "danger")
             elif not user_exists:
@@ -2250,14 +2222,20 @@ def admin_add_user():
                 )
                 db.session.add(new_user)
                 db.session.commit()
-                if level == "peserta":
+<<<<<<<<< Temporary merge branch 1
+                flash(t['user_created'], "success")
+                return redirect(url_for('admin_users'))
+=========
+                
+                # Buat notifikasi untuk admin jika user yang dibuat adalah peserta
+                if level == 'peserta':
                     create_notification_to_all_admins(
-                        t.get("notif_new_participant").format(
-                            name=nama_lengkap, email=email
-                        )
+                        f"Peserta baru terdaftar: {nama_lengkap} ({email})"
                     )
-                flash(t["user_created"], "success")
-                return redirect(url_for("admin_users", page="kelola"))
+                
+                flash("Akun berhasil dibuat!", "success")
+                return redirect(url_for('admin_users', page='kelola'))
+>>>>>>>>> Temporary merge branch 2
             except Exception as e:
                 db.session.rollback()
                 logging.error(f"Error during registration: {e}")
@@ -5441,13 +5419,20 @@ def hapus_arsip(arsip_id):
 @login_required
 @admin_required
 def admin_peserta():
-    sidebar_state = current_user.sidebar_state or "expanded"
-    total_peserta = Users.query.filter_by(level="peserta").count()
-
-    peserta_aktif = Users.query.filter_by(level="peserta", status="aktif").count()
-    peserta_nonaktif = Users.query.filter_by(
-        level="peserta", status="non-aktif"
-    ).count()
+    sidebar_state = current_user.sidebar_state or 'expanded'
+<<<<<<<<< Temporary merge branch 1
+    participants = Participants.query.order_by(Participants.id.asc()).all()
+    return render_template('data_peserta.html', sidebar_state=sidebar_state, participants=participants, time=time)
+=========
+    
+    # Get statistics
+    total_peserta = Users.query.filter_by(level='peserta').count()
+    
+    # Count by status
+    peserta_aktif = Users.query.filter_by(level='peserta', status='aktif').count()
+    peserta_nonaktif = Users.query.filter_by(level='peserta', status='non-aktif').count()
+    
+    # Get all events for filter
     events = Event.query.all()
     return render_template(
         "data_peserta.html",
@@ -5799,11 +5784,14 @@ def api_tambah_peserta_kegiatan_bulk():
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error in api_tambah_peserta_kegiatan_bulk: {e}")
-        current_app.logger.exception("Error in api_tambah_peserta_kegiatan_bulk:")
-        return jsonify({"success": False, "message": t.get("api_internal_error")}), 500
-
-
-@app.route("/admin/hasil_seleksi")
+        current_app.logger.exception('Error in api_tambah_peserta_kegiatan_bulk:')
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+>>>>>>>>> Temporary merge branch 2
+    
+@app.route('/admin/hasil_seleksi')
 @login_required
 @admin_required
 def admin_hasil_seleksi():
@@ -7855,340 +7843,72 @@ def penilai_rekap_nilai_fuzzy(event_id):
 @app.route("/admin/hasil-penilaian/rekap/<int:event_id>")
 @login_required
 @admin_required
-def admin_rekap_nilai_fuzzy(event_id):
-    from app.ahp_calculator import (
-        AHPCalculator,
-        FuzzyAHPCalculator,
-        TFN_SCALE,
-        RI_TABLE,
-        get_tfn_reciprocal,
-    )
-    from app.fuzzy_ahp import get_pairwise_matrix_from_db, fuzzify_score
-    import numpy as np
-
-    # Get Event
-    event = Event.query.get_or_404(event_id)
-
-    # Get Criteria
-    criterias = (
-        Criteria.query.filter_by(event_id=event_id).order_by(Criteria.id_kriteria).all()
-    )
-
-    # Get Quota
-    kuota = Kuota.query.filter_by(event_id=event_id).first()
-    total_kuota = (kuota.putra + kuota.putri) if kuota else 0
-    if total_kuota == 0:
-        total_kuota = 9999  # Default all if no quota set
-
-    # Get Criteria Names and IDs for Fuzzy Calculation
-    criteria_names = [c.nama_kriteria for c in criterias]
-    criteria_ids = [c.id_kriteria for c in criterias]
-    n = len(criterias)
-
-    # ==========================================
-    # LANGKAH 1: Fuzzifikasi Matriks Perbandingan Berpasangan
-    # ==========================================
-
-    # Helper function to format TFN values as fractions
-    def format_tfn_val(v):
-        if abs(v - round(v)) < 0.01:  # It's essentially an integer
-            return f"{int(round(v))}"
-        # Check for common reciprocals 1/2 to 1/9
-        for x in range(2, 10):
-            if abs(v - 1 / x) < 0.02:
-                return f"1/{x}"
-        # Check for values like 3/2, 5/2, 7/2, 9/2
-        for num in [3, 5, 7, 9]:
-            if abs(v - num / 2) < 0.02:
-                return f"{num}/2"
-        # Check for 2/3
-        if abs(v - 2 / 3) < 0.02:
-            return f"2/3"
-        return f"{v:.2f}"
-
-    def format_tfn_tuple(tfn_tuple):
-        l, m, u = tfn_tuple
-        return f"({format_tfn_val(l)}, {format_tfn_val(m)}, {format_tfn_val(u)})"
-
-    tfn_scale_table = []
-    for intensity in range(1, 10):
-        tfn = TFN_SCALE.get(intensity, (1, 1, 1))
-        reciprocal = get_tfn_reciprocal(tfn)
-        tfn_scale_table.append(
-            {
-                "intensity": intensity,
-                "tfn": format_tfn_tuple(tfn),
-                "reciprocal": format_tfn_tuple(reciprocal),
-            }
-        )
-
-    # Get pairwise comparison matrix from database
-    pairwise_matrix = get_pairwise_matrix_from_db(event_id, criteria_ids)
-    pairwise_data = None
-    fuzzy_pairwise_data = None
-    use_generated_matrix = False
-
-    # Jika tidak ada matriks di database tapi ada bobot kriteria, generate matriks dari bobot
-    if pairwise_matrix is None and n > 0:
-        total_bobot_check = sum(c.bobot for c in criterias)
-        if total_bobot_check > 0:
-            # Generate matriks perbandingan dari rasio bobot
-            pairwise_matrix = np.ones((n, n))
-            for i in range(n):
-                for j in range(n):
-                    if i != j:
-                        # Rasio bobot sebagai nilai perbandingan
-                        wi = criterias[i].bobot if criterias[i].bobot > 0 else 0.001
-                        wj = criterias[j].bobot if criterias[j].bobot > 0 else 0.001
-                        ratio = wi / wj
-                        # Batasi ke skala 1-9
-                        if ratio >= 1:
-                            pairwise_matrix[i, j] = min(9, max(1, ratio))
-                        else:
-                            pairwise_matrix[i, j] = max(1 / 9, ratio)
-            use_generated_matrix = True
-
-    if pairwise_matrix is not None and n > 0:
-        pairwise_data = pairwise_matrix.tolist()
-
-        # Convert to fuzzy (TFN) matrix with formatted strings
-        fuzzy_ahp_calc = FuzzyAHPCalculator(criteria_names)
-        fuzzy_ahp_calc.set_fuzzy_pairwise_matrix(pairwise_matrix)
-        fuzzy_pairwise_data = []
-
-        for i in range(n):
-            row = []
-            for j in range(n):
-                tfn_tuple = tuple(fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j])
-                row.append(format_tfn_tuple(tfn_tuple))
-            fuzzy_pairwise_data.append(row)
-
-    # ==========================================
-    # LANGKAH 2: Perhitungan Vector Eigen
-    # ==========================================
-    eigenvector_data = None
-    lambda_max = None
-
-    if pairwise_matrix is not None and n > 0:
-        ahp_calc = AHPCalculator(criteria_names)
-        ahp_calc.set_pairwise_matrix(pairwise_matrix)
-        eigenvector = ahp_calc.calculate_eigenvector()
-        lambda_max = ahp_calc.calculate_lambda_max()
-
-        eigenvector_data = []
-        for i, name in enumerate(criteria_names):
-            eigenvector_data.append({"criteria": name, "value": float(eigenvector[i])})
-
-    # ==========================================
-    # LANGKAH 3: Uji Konsistensi Matriks
-    # ==========================================
-    ci = None
-    cr = None
-    is_consistent = False
-    ri_value = RI_TABLE.get(n, 1.58) if n > 0 else 0
-
-    if pairwise_matrix is not None and n > 1:
-        ci, cr, is_consistent = ahp_calc.check_consistency()
-
-    # ==========================================
-    # LANGKAH 4: Sintesis Fuzzy (Fuzzy Synthetic Extent)
-    # ==========================================
-    fuzzy_synthetic_extent = None
-    row_sums_data = None
-    total_fuzzy_sum = None
-
-    if pairwise_matrix is not None and n > 0:
-        synthetic_extents = fuzzy_ahp_calc.calculate_fuzzy_synthetic_extent()
-
-        # Get row sums for display
-        row_sums_data = []
-        total_l, total_m, total_u = 0, 0, 0
-        for i in range(n):
-            l_sum, m_sum, u_sum = 0, 0, 0
-            for j in range(n):
-                l, m, u = fuzzy_ahp_calc.fuzzy_pairwise_matrix[i, j]
-                l_sum += l
-                m_sum += m
-                u_sum += u
-            row_sums_data.append(
-                {"criteria": criteria_names[i], "l": l_sum, "m": m_sum, "u": u_sum}
-            )
-            total_l += l_sum
-            total_m += m_sum
-            total_u += u_sum
-
-        total_fuzzy_sum = {"l": total_l, "m": total_m, "u": total_u}
-
-        fuzzy_synthetic_extent = []
-        for i, name in enumerate(criteria_names):
-            si = synthetic_extents[i]
-            fuzzy_synthetic_extent.append(
-                {"criteria": name, "l": si[0], "m": si[1], "u": si[2]}
-            )
-
-    # ==========================================
-    # LANGKAH 5: Perbandingan Probabilitas V(M2 >= M1)
-    # ==========================================
-    probability_matrix = None
-    d_prime_values = None
-
-    if pairwise_matrix is not None and n > 1:
-        synthetic_extents = fuzzy_ahp_calc.fuzzy_synthetic_extent
-
-        # Build probability comparison matrix
-        probability_matrix = []
-        for i in range(n):
-            row = []
-            for j in range(n):
-                if i == j:
-                    row.append("-")
-                else:
-                    # V(Si >= Sj)
-                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(
-                        synthetic_extents[j], synthetic_extents[i]
-                    )
-                    row.append(round(prob, 4))
-            probability_matrix.append(row)
-
-        # Calculate d'(Ai) = min V(Si >= Sk) for all k != i
-        d_prime_values = []
-        for i in range(n):
-            min_prob = float("inf")
-            for j in range(n):
-                if i != j:
-                    prob = fuzzy_ahp_calc.compare_fuzzy_probability(
-                        synthetic_extents[j], synthetic_extents[i]
-                    )
-                    min_prob = min(min_prob, prob)
-            d_prime_values.append(
-                {
-                    "criteria": criteria_names[i],
-                    "value": round(min_prob, 4) if min_prob != float("inf") else 0,
-                }
-            )
-
-    # ==========================================
-    # LANGKAH 6: Normalisasi & Perhitungan Bobot Global
-    # ==========================================
-    normalized_weights = None
-    fuzzy_ahp_weight_map = {}
-
-    if pairwise_matrix is not None and n > 0:
-
-        weights = fuzzy_ahp_calc.calculate_fuzzy_weights()
-
-        normalized_weights = []
-
-        # Loop 1: isi normalized_weights
-        for name in criteria_names:
-
-            normalized_weights.append(
-                {"criteria": name, "weight": round(weights.get(name, 0), 4)}
-            )
-
-        # Loop 2: isi fuzzy_ahp_weight_map (DI LUAR loop pertama)
-        for item in normalized_weights:
-
-            fuzzy_ahp_weight_map[item["criteria"]] = item["weight"]
-
-    # Get Results (Users)
-    hasil_seleksi = (
-        db.session.query(HasilSeleksi, Users, Participants)
-        .join(Users, HasilSeleksi.id_users == Users.id)
-        .outerjoin(Participants, Users.email == Participants.email)
-        .filter(HasilSeleksi.event_id == event_id)
-        .order_by(HasilSeleksi.ranking.asc())
-        .all()
-    )
-
-    rekap_data = []
-
-    for hasil, user, participant in hasil_seleksi:
-
-        fuzzy_total_l = 0
-        fuzzy_total_m = 0
-        fuzzy_total_u = 0
-
-        row = {
-            "nama": user.nama_lengkap,
-            "foto": user.foto if user.foto else "img/default-user.png",
-            "asal_gudep": participant.asal_gudep if participant else "-",
-            "criteria_values": {},
-            "total_score": hasil.skor_akhir,
-            "rank": hasil.ranking,
-            "cluster": 1 if hasil.ranking <= total_kuota else 2,
-            "status": "Berhak" if hasil.ranking <= total_kuota else "Tidak Berhak",
-            "fuzzy_total_l": 0,
-            "fuzzy_total_m": 0,
-            "fuzzy_total_u": 0,
-            "final_score": 0,
-        }
-
-        for c in criterias:
-
-            avg_score = (
-                db.session.query(db.func.avg(Penilaian.nilai))
-                .filter_by(id_users=user.id, id_kriteria=c.id_kriteria)
-                .scalar()
-            )
-
-            val = 0.0
-            weight = fuzzy_ahp_weight_map.get(c.nama_kriteria, 0)
-
-            if avg_score is not None:
-
-                score = float(avg_score)
-
-                l, m, u = fuzzify_score(score)
-
-                weighted_l = l * weight
-                weighted_m = m * weight
-                weighted_u = u * weight
-
-                fuzzy_total_l += weighted_l
-                fuzzy_total_m += weighted_m
-                fuzzy_total_u += weighted_u
-
-                val = weight * ((l + m + u) / 3.0)
-
-            row["criteria_values"][c.id_kriteria] = val
-        row["fuzzy_total_l"] = fuzzy_total_l
-        row["fuzzy_total_m"] = fuzzy_total_m
-        row["fuzzy_total_u"] = fuzzy_total_u
-        row["final_score"] = (fuzzy_total_l + fuzzy_total_m + fuzzy_total_u) / 3
-
-        rekap_data.append(row)
-    sidebar_state = current_user.sidebar_state or "expanded"
+def admin_hasil_penilaian():
+    lang = session.get('lang', 'id')
+    t = TRANSLATIONS.get(lang, TRANSLATIONS['id'])
+    # Get all events
+    all_events = Event.query.order_by(Event.waktu_pelaksanaan_dimulai.desc()).all()
+    
+    # Get selected event from query parameter
+    selected_event_id = request.args.get('event_id', type=int)
+    selected_event = None
+    results = []
+    
+    if selected_event_id:
+        selected_event = Event.query.get(selected_event_id)
+        if selected_event:
+            from app.fuzzy_ahp import calculate_spk
+            
+            # Calculate SPK for this event
+            success, msg = calculate_spk(selected_event_id)
+            if not success:
+                logging.warning(f"Gagal hitung SPK untuk event {selected_event_id}: {msg}")
+            else:
+                # Buat notifikasi untuk admin saat hasil seleksi selesai
+                create_notification_to_all_admins(
+                    f"Hasil seleksi selesai dihitung untuk kegiatan: {selected_event.nama_kegiatan}"
+                )
+            
+            # Fetch results for this event only
+            hasil_seleksi = db.session.query(
+                HasilSeleksi,
+                Users,
+                Participants
+            ).join(
+                Users, HasilSeleksi.id_users == Users.id
+            ).outerjoin(
+                Participants, Users.email == Participants.email
+            ).filter(
+                HasilSeleksi.event_id == selected_event_id
+            ).order_by(
+                HasilSeleksi.ranking.asc()
+            ).all()
+            
+            # Build results list
+            for hasil, user, participant in hasil_seleksi:
+                results.append({
+                    'hasil': hasil,
+                    'user': user,
+                    'participant': participant
+                })
+        else:
+            flash(f"{t['event_not_found']}", "error")
+            selected_event = None
+    sidebar_state = current_user.sidebar_state or 'expanded'
+<<<<<<<<< Temporary merge branch 1
+    return render_template('admin/hasil_penilaian.html', assigned_events=all_events, selected_event=selected_event, results=results, sidebar_state=sidebar_state)
+=========
     return render_template(
         "admin/rekap_nilai_fuzzy.html",
         event=event,
         criteria_headers=criterias,
         rekap_data=rekap_data,
         sidebar_state=sidebar_state,
-        # Fuzzy AHP Step Data
-        criteria_names=criteria_names,
-        tfn_scale_table=tfn_scale_table,
-        pairwise_data=pairwise_data,
-        fuzzy_pairwise_data=fuzzy_pairwise_data,
-        use_generated_matrix=use_generated_matrix,
-        eigenvector_data=eigenvector_data,
-        lambda_max=lambda_max,
-        ci=ci,
-        cr=cr,
-        is_consistent=is_consistent,
-        ri_value=ri_value,
-        ri_table=RI_TABLE,
-        row_sums_data=row_sums_data,
-        total_fuzzy_sum=total_fuzzy_sum,
-        fuzzy_synthetic_extent=fuzzy_synthetic_extent,
-        probability_matrix=probability_matrix,
-        d_prime_values=d_prime_values,
-        normalized_weights=normalized_weights,
-        is_public_page=False,
+        show_back_button=True  # Tampilkan tombol kembali karena dibuka dari manajemen seleksi
     )
+>>>>>>>>> Temporary merge branch 2
 
-
-@app.route("/admin/detail-nilai/<int:user_id>/<int:event_id>")
+@app.route('/admin/detail-nilai/<int:user_id>/<int:event_id>')
 @login_required
 @admin_required
 def admin_detail_nilai(user_id, event_id):
@@ -9184,25 +8904,22 @@ def api_daftar_seleksi():
         log_activity(
             current_user.id, f"{t['register_event']}: {kegiatan.nama_kegiatan}"
         )
-
+<<<<<<<<< Temporary merge branch 1
+=========
+        
         # Buat notifikasi untuk admin
         participant_name = biodata.nama_lengkap or current_user.nama_lengkap
         event_name = kegiatan.nama_kegiatan
         create_notification_to_all_admins(
-            t["participant_registered_to_event"].format(
-                participant=participant_name, event=event_name
-            )
+            f"Peserta {biodata.nama_lengkap or current_user.nama_lengkap} mendaftar ke seleksi: {kegiatan.nama_kegiatan}"
         )
-        return (
-            jsonify(
-                {
-                    "status": "success",
-                    "message": f"{t['register_event_success']}: {kegiatan.nama_kegiatan}",
-                }
-            ),
-            200,
-        )
-
+        
+>>>>>>>>> Temporary merge branch 2
+        return jsonify({
+            'status': 'success', 
+            'message': f"{t['register_event_success']}: {kegiatan.nama_kegiatan}"
+        }), 200
+        
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception("Error in /api/daftar_seleksi:")
