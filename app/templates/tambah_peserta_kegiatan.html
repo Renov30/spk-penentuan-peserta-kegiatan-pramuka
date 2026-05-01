@@ -1,9 +1,5 @@
 <!DOCTYPE html>
-<html
-  style="font-size: 80%"
-  class="transition duration-300 ease-in-out"
-  lang="{{ current_lang }}"
->
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -245,124 +241,31 @@
     %}
 
     <!-- Data untuk JavaScript -->
-    <script type="application/json" id="kegiatan-data">
-      {{ events|map(attribute='id_kegiatan')|list|tojson }}
-    </script>
-
-    <script>
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-
-      // Parse kegiatan data dari JSON
-      const kegiatanInfo = {};
-      {% for event in events %}
-      kegiatanInfo[String({{ event.id_kegiatan }})] = {
-        nama: {{ event.nama_kegiatan|tojson }},
-        jenis: {{ event.jenis_kegiatan|tojson }},
-        tempat: {{ event.tempat_pelaksanaan|tojson }},
-        mulai: {{ (event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') if event.waktu_pelaksanaan_dimulai else '-')|tojson }},
-        selesai: {{ (event.waktu_pelaksanaan_selesai.strftime('%d %B %Y') if event.waktu_pelaksanaan_selesai else '-')|tojson }}
-      };
-      {% endfor %}
-
-      // Update info kegiatan
-      document.getElementById('kegiatan_id').addEventListener('change', function() {
-        const kegiatanId = this.value;
-        const infoDiv = document.getElementById('infoKegiatan');
-        const detailsDiv = document.getElementById('kegiatanDetails');
-
-        if (kegiatanId && kegiatanInfo[kegiatanId]) {
-          const k = kegiatanInfo[kegiatanId];
-          detailsDiv.innerHTML = `
-            <p><strong>Nama Kegiatan:</strong> ${k.nama}</p>
-            <p><strong>Jenis:</strong> ${k.jenis}</p>
-            <p><strong>Tempat:</strong> ${k.tempat}</p>
-            <p><strong>Waktu:</strong> ${k.mulai} - ${k.selesai}</p>
-          `;
-          infoDiv.classList.remove('hidden');
-        } else {
-          infoDiv.classList.add('hidden');
+    <script type="application/json" id="tambah-peserta-data">
+      {
+        "csrfToken": {{ csrf_token()|tojson }},
+        "lang": {{ current_lang|tojson }},
+        "messages": {
+          "selectActivity": {{ "Pilih kegiatan terlebih dahulu"|tojson if current_lang=="id" else "Please select an activity first"|tojson }},
+          "selectParticipant": {{ "Pilih minimal satu peserta"|tojson if current_lang=="id" else "Please select at least one participant"|tojson }},
+          "processing": {{ "Memproses..."|tojson if current_lang=="id" else "Processing..."|tojson }},
+          "success": {{ "Peserta berhasil ditambahkan ke kegiatan"|tojson if current_lang=="id" else "Participants successfully added to activity"|tojson }},
+          "failed": {{ "Gagal menambahkan peserta"|tojson if current_lang=="id" else "Failed to add participants"|tojson }}
+        },
+        "kegiatanInfo": {
+          {% for event in events %}
+          "{{ event.id_kegiatan }}": {
+            "nama": {{ event.nama_kegiatan|tojson }},
+            "jenis": {{ event.jenis_kegiatan|tojson }},
+            "tempat": {{ event.tempat_pelaksanaan|tojson }},
+            "mulai": {{ (event.waktu_pelaksanaan_dimulai.strftime('%d %B %Y') if event.waktu_pelaksanaan_dimulai else '-')|tojson }},
+            "selesai": {{ (event.waktu_pelaksanaan_selesai.strftime('%d %B %Y') if event.waktu_pelaksanaan_selesai else '-')|tojson }}
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
         }
-      });
-
-      // Submit form
-      function submitForm() {
-        const kegiatanId = document.getElementById('kegiatan_id').value;
-        const checkboxes = document.querySelectorAll('input[name="participant_ids[]"]:checked');
-
-        if (!kegiatanId) {
-          alert('{{ "Pilih kegiatan terlebih dahulu" if current_lang == "id" else "Please select an activity first" }}');
-          return;
-        }
-
-        if (checkboxes.length === 0) {
-          alert('{{ "Pilih minimal satu peserta" if current_lang == "id" else "Please select at least one participant" }}');
-          return;
-        }
-
-        // Get participant IDs - bisa dari biodata.id atau user.id
-        // Disable button
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>{{ "Memproses..." if current_lang == "id" else "Processing..." }}';
-
-        // Prepare participant IDs - jika tidak ada biodata, kirim user_id
-        const participantIds = [];
-        checkboxes.forEach(cb => {
-          const hasBiodata = cb.getAttribute('data-has-biodata') === 'true';
-          if (hasBiodata) {
-            // Jika ada biodata, gunakan participant_id
-            participantIds.push(parseInt(cb.value));
-          } else {
-            // Jika tidak ada biodata, gunakan user_id untuk dibuatkan biodata
-            const userId = parseInt(cb.getAttribute('data-user-id'));
-            if (userId && !isNaN(userId)) {
-              participantIds.push(userId);
-            }
-          }
-        });
-
-        if (participantIds.length === 0) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fa-solid fa-plus mr-2"></i>{{ "Tambah Peserta ke Kegiatan" if current_lang == "id" else "Add Participant to Activity" }}';
-          alert('{{ "Tidak ada peserta yang valid dipilih" if current_lang == "id" else "No valid participants selected" }}');
-          return;
-        }
-
-        // Send request
-        const requestData = {
-          kegiatan_id: parseInt(kegiatanId),
-          participant_ids: participantIds
-        };
-
-        fetch('/api/peserta/tambah-kegiatan-bulk', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-          },
-          body: JSON.stringify(requestData)
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            alert(data.message || '{{ "Peserta berhasil ditambahkan ke kegiatan" if current_lang == "id" else "Participants successfully added to activity" }}');
-            // Reset form
-            document.getElementById('formTambahPeserta').reset();
-            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-            document.getElementById('infoKegiatan').classList.add('hidden');
-          } else {
-            alert(data.message || '{{ "Gagal menambahkan peserta" if current_lang == "id" else "Failed to add participants" }}');
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('{{ "Terjadi kesalahan saat menambahkan peserta" if current_lang == "id" else "An error occurred while adding participants" }}');
-        })
-        .finally(() => {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fa-solid fa-plus mr-2"></i>{{ "Tambah Peserta ke Kegiatan" if current_lang == "id" else "Add Participant to Activity" }}';
-        });
       }
     </script>
+
+    <script src="{{ url_for('static', filename='js/tambah_peserta_kegiatan.js') }}"></script>
   </body>
 </html>

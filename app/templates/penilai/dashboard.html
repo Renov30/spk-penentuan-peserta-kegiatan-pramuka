@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html
-  style="font-size: 80%"
   class="transition duration-300 ease-in-out"
   lang="{{ current_lang }}"
   x-data
@@ -19,6 +18,8 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+
+    <!-- Vanila CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
@@ -70,6 +71,9 @@
         >
           <div class="container mx-auto p-6">
             <!-- Welcome Section -->
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
             <div class="mb-8">
               <h1
                 class="text-3xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-800' }}"
@@ -87,7 +91,7 @@
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div
-                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-gray-800' }}"
+                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 text-white hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white text-gray-800 hover:shadow-gray-700' }}"
               >
                 <div class="flex items-center justify-between">
                   <div>
@@ -106,7 +110,7 @@
               </div>
 
               <div
-                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-gray-800' }}"
+                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 text-white hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white text-gray-800 hover:shadow-gray-700' }}"
               >
                 <div class="flex items-center justify-between">
                   <div>
@@ -127,7 +131,7 @@
               </div>
 
               <div
-                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-gray-800' }}"
+                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 text-white hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white text-gray-800 hover:shadow-gray-700' }}"
               >
                 <div class="flex items-center justify-between">
                   <div>
@@ -149,7 +153,7 @@
             <!-- Quick Actions -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div
-                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white hover:shadow-gray-700' }}"
               >
                 <div class="flex items-center gap-4 mb-4">
                   <div
@@ -182,7 +186,7 @@
               </div>
 
               <div
-                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+                class="p-6 rounded-xl shadow-lg {{ 'bg-gray-900 hover:shadow-yellow-300' if current_theme == 'dark' else 'bg-white hover:shadow-gray-700' }}"
               >
                 <div class="flex items-center gap-4 mb-4">
                   <div
@@ -217,5 +221,9 @@
         </main>
       </div>
     </div>
+
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
   </body>
 </html>

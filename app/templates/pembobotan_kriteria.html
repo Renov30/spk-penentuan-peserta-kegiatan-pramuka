@@ -1,9 +1,5 @@
 <!DOCTYPE html>
-<html
-  style="font-size: 80%"
-  class="transition duration-300 ease-in-out"
-  lang="{{ current_lang }}"
->
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -296,140 +292,42 @@
     %}
 
     <script>
-      function pembobotanData() {
-        return {
-          ready: false,
-          selectedEventId: {% if selected_event %}{{ selected_event.id_kegiatan }}{% else %}null{% endif %},
-          criteriaList: [
-            {% if criteria_list %}
-            {% for c in criteria_list %}
-            {id: {{ c.id_kriteria }}, nama_kriteria: "{{ c.nama_kriteria }}", bobot: {{ c.bobot }}}{% if not loop.last %},{% endif %}
-            {% endfor %}
-            {% endif %}
-          ],
-          pairwiseMatrix: {{ pairwise_matrix | tojson if pairwise_matrix else '[]' }},
-          ahpResults: {% if ahp_results %}{
-            lambda_max: {{ ahp_results.lambda_max or 'null' }},
-            ci: {{ ahp_results.ci or 'null' }},
-            cr: {{ ahp_results.cr or 'null' }},
-            is_consistent: {{ 'true' if ahp_results.is_consistent else 'false' }},
-            weights_json: {{ ahp_results.weights_json | safe if ahp_results.weights_json else 'null' }}
-          }{% else %}null{% endif %},
-          weights: {},
+      window.PEMBOBOTAN_DATA = {
+        csrfToken: "{{ csrf_token() }}",
+        lang: "{{ current_lang }}",
 
-          init() {
-            if (this.selectedEventId) {
-              // Data sudah dimuat dari server
-            }
-            this.initializeMatrix();
-            this.loadWeights();
-          },
+        selectedEventId: {% if selected_event %}{{ selected_event.id_kegiatan }}{% else %}null{% endif %},
 
-          loadWeights() {
-            if (this.ahpResults && this.ahpResults.weights_json) {
-              try {
-                const weightsData = JSON.parse(this.ahpResults.weights_json);
-                this.weights = weightsData;
-              } catch (e) {
-                console.error('Error parsing weights:', e);
-              }
-            }
-          },
+        criteriaList: [
+          {% if criteria_list %}
+          {% for c in criteria_list %}
+          {
+            id: {{ c.id_kriteria }},
+            nama_kriteria: {{ c.nama_kriteria | tojson }},
+            bobot: {{ c.bobot }}
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+          {% endif %}
+        ],
 
-          initializeMatrix() {
-            if (this.criteriaList.length > 0 && this.pairwiseMatrix.length === 0) {
-              const n = this.criteriaList.length;
-              this.pairwiseMatrix = Array(n).fill(null).map(() => Array(n).fill(1));
-            }
-          },
+        pairwiseMatrix: {{ pairwise_matrix | tojson if pairwise_matrix else '[]' }},
 
-          async loadEventData() {
-            if (!this.selectedEventId) return;
+        ahpResults: {% if ahp_results %}{
+          lambda_max: {{ ahp_results.lambda_max or 'null' }},
+          ci: {{ ahp_results.ci or 'null' }},
+          cr: {{ ahp_results.cr or 'null' }},
+          is_consistent: {{ 'true' if ahp_results.is_consistent else 'false' }},
+          weights_json: {{ ahp_results.weights_json | tojson if ahp_results.weights_json else 'null' }}
+        }{% else %}null{% endif %},
 
-            window.location.href = `/admin/pembobotan_kriteria?event_id=${this.selectedEventId}`;
-          },
-
-          updateReciprocal(i, j) {
-            if (i === j) {
-              this.pairwiseMatrix[i][j] = 1;
-              return;
-            }
-
-            const value = parseFloat(this.pairwiseMatrix[i][j]);
-            if (value > 0) {
-              this.pairwiseMatrix[j][i] = (1 / value).toFixed(3);
-            }
-          },
-
-          async saveMatrix() {
-            if (!this.selectedEventId) {
-              alert('{{ "Pilih kegiatan terlebih dahulu" if current_lang == "id" else "Please select an event first" }}');
-              return;
-            }
-
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-            try {
-              const response = await fetch(`/api/save_pairwise_matrix/${this.selectedEventId}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({
-                  matrix: this.pairwiseMatrix
-                })
-              });
-
-              const data = await response.json();
-
-              if (data.success) {
-                alert(data.message);
-                this.loadEventData();
-              } else {
-                alert(data.message);
-              }
-            } catch (error) {
-              alert('{{ "Error menyimpan matriks" if current_lang == "id" else "Error saving matrix" }}');
-              console.error(error);
-            }
-          },
-
-          async calculateAHP(useFuzzy) {
-            if (!this.selectedEventId) {
-              alert('{{ "Pilih kegiatan terlebih dahulu" if current_lang == "id" else "Please select an event first" }}');
-              return;
-            }
-
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-            try {
-              const response = await fetch(`/api/calculate_ahp/${this.selectedEventId}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({
-                  use_fuzzy: useFuzzy
-                })
-              });
-
-              const data = await response.json();
-
-              if (data.success) {
-                alert(data.message);
-                this.loadEventData();
-              } else {
-                alert(data.message);
-              }
-            } catch (error) {
-              alert('{{ "Error menghitung AHP" if current_lang == "id" else "Error calculating AHP" }}');
-              console.error(error);
-            }
-          }
+        texts: {
+          select_event: "{{ 'Pilih kegiatan terlebih dahulu' if current_lang == 'id' else 'Please select an event first' }}",
+          save_error: "{{ 'Error menyimpan matriks' if current_lang == 'id' else 'Error saving matrix' }}",
+          calc_error: "{{ 'Error menghitung AHP' if current_lang == 'id' else 'Error calculating AHP' }}"
         }
-      }
+      };
     </script>
+
+    <script src="{{ url_for('static', filename='js/pembobotan_kriteria.js') }}"></script>
   </body>
 </html>
