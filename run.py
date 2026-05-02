@@ -74,6 +74,7 @@ import base64
 from app.translations import TRANSLATIONS
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+import pytz
 import pdfkit
 import requests
 import random, string
@@ -9116,7 +9117,8 @@ def api_daftar_seleksi():
         kegiatan = Event.query.get(kegiatan_id)
         if not kegiatan:
             return jsonify({"status": "error", "message": t["event_not_found"]}), 404
-        today = datetime.utcnow().date()
+        tz = pytz.timezone("Asia/Jayapura")  # atau Asia/Jakarta
+        today = datetime.now(tz).date()
         if today < kegiatan.mulai or today > kegiatan.selesai:
             return (
                 jsonify({"status": "error", "message": t["registration_closed"]}),
