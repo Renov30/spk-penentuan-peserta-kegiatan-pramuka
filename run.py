@@ -431,16 +431,15 @@ def generate_username(email):
 # Google OAuth Config
 oauth = OAuth(app)
 GOOGLE_WEB_CLIENT = {
-    "client_id": os.getenv("GOOGLE_CLIENT_ID_WEB"),
-    "client_secret": os.getenv("GOOGLE_CLIENT_SECRET_WEB"),
-    "redirect_uri": "https://spk-pramuka.id/login/google/callback/",
+    "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+    "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
 }
 
 GOOGLE_PUBLIC_CLIENT_IDS = {
     "ios": os.getenv("GOOGLE_CLIENT_ID_IOS"),
-    # "android": os.getenv("GOOGLE_CLIENT_ID_ANDROID"),
     "desktop": os.getenv("GOOGLE_CLIENT_ID_DESKTOP"),
 }
+
 
 oauth.register(
     name="google_web",
