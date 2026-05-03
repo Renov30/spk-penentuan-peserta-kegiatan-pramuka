@@ -85,7 +85,7 @@
       {% if not (is_public_page|string|lower == 'true') %}
       <!-- Halaman PRIVAT -->
       <a
-        href="/login/"
+        href="{{ url_for('login') }}"
         class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
         title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
       >
@@ -285,7 +285,7 @@
             {% endif %}
 
             <a
-              href="/logout/"
+              href="{{ url_for('logout') }}"
               class="block px-4 py-2 text-sm text-red-600
              {{ 'hover:bg-gray-600'
                 if current_theme == 'dark'
@@ -300,7 +300,7 @@
         {% else %}
         <!-- Link Login (Belum Login) -->
         <a
-          href="/login/"
+          href="{{ url_for('login') }}"
           class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-2xl"
           title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
         >

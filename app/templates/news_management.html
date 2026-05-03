@@ -280,7 +280,7 @@
                               <button
                                 @click="
                                         showModal = true;
-                                        deleteUrl = `/admin/news/delete/${news.id_news}`;
+                                        deleteUrl = "{{ url_for('admin_delete_news', news_id=0) }}".replace('0', news.id_news);
                                         newsTitle = news.title;
                                       "
                                 class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-500 hover:bg-red-600 text-white transition shadow cursor-pointer"
@@ -395,7 +395,7 @@
 
                 <form
                   method="POST"
-                  :action="modalMode === 'create' ? '{{ url_for('admin_create_news') }}' : `/admin/news/edit/${editId}`"
+                  :action="modalMode === 'create' ? '{{ url_for('admin_create_news') }}' : '{{ url_for('admin_edit_news', news_id=0) }}'.replace('0', editId)"
                   enctype="multipart/form-data"
                 >
                   <input
@@ -646,7 +646,7 @@
         </button>
         <button
           x-show="modal.title === 'Berhasil'"
-          @click="window.location.href = '/admin/view_config'"
+          @click="window.location.href = '{{ url_for('admin_view_config') }}'"
           class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer mt-2.5"
         >
           <i class="fa-solid fa-gear mr-2"></i>

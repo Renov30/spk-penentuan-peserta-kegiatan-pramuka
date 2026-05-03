@@ -36,7 +36,7 @@
   <template x-if="selectedUser">
     <form
       method="POST"
-      :action="'/admin/edit_user/' + selectedUser.id"
+      :action="'{{ url_for('admin_edit_user', user_id=0) }}'.replace('0', selectedUser.id)"
       enctype="multipart/form-data"
       class="space-y-6 max-w-4xl mx-auto rounded-lg py-8 px-8 {{ 'bg-gray-900 text-gray-100' if current_theme == 'dark' else 'bg-white text-gray-800 dark:bg-gray-100' }}"
     >

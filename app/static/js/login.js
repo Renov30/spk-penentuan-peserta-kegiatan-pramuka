@@ -22,9 +22,13 @@ function redirectToLoginWithGoogle() {
     next = "";
   }
 
+  // Gunakan window.location.pathname untuk mendeteksi subfolder secara otomatis
+  const base = window.location.pathname.includes('/saringpramuka') ? '/saringpramuka' : '';
+
   const url = next
-    ? `/login/google/?next=${encodeURIComponent(next)}`
-    : `/login/google/`;
+    ? `${base}/login/google/?next=${encodeURIComponent(next)}`
+    : `${base}/login/google/`;
+
 
   window.location.href = url;
 }

@@ -93,7 +93,7 @@
                     Selected' }} (<span x-text="selectedItems.length"></span>)
                   </button>
                   <button
-                    @click="window.location.href='/admin/manajemen_seleksi'"
+                    @click="window.location.href='{{ url_for('admin_manajemen_seleksi') }}'"
                     class="px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-300 hover:bg-gray-800 dark:bg-gray-700' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-500 dark:bg-gray-400' }}"
                   >
                     <i class="fa-solid fa-arrow-left mr-2"></i>

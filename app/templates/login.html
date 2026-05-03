@@ -177,7 +177,7 @@
 
         <p class="text-[0.9rem] mt-2 mb-6">
           <a
-            href="/find_account/"
+            href="{{ url_for('find_account') }}"
             class="text-blue-800 no-underline text-[0.9rem] hover:underline"
             >{{ 'Lupa password?' if current_lang == 'id' else 'Forgot password?'
             }}</a
@@ -198,7 +198,7 @@
             {{ "Belum punya akun?" if current_lang == 'id' else "Don't have an
             account?" }}
             <a
-              href="/register/"
+              href="{{ url_for('register') }}"
               class="text-blue-800 no-underline text-[0.9rem] hover:underline"
             >
               {{ 'Registrasi' if current_lang == 'id' else 'Registration' }}

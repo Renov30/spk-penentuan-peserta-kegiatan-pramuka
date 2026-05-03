@@ -326,7 +326,7 @@
                 class="absolute -right-[30] mt-2 w-36 border rounded-md shadow-md z-50 {{ 'bg-gray-900 border-gray-600' if current_theme == 'dark' else 'bg-white border-gray-200' }}"
               >
                 <a
-                  href="/logout/"
+                  href="{{ url_for('logout') }}"
                   class="block px-4 py-2 text-sm text-red-600 {{ 'hover:bg-gray-600' if current_theme == 'dark' else 'hover:bg-yellow-100' }}"
                 >
                   <i class="fas fa-sign-out-alt mr-2 text-red-500"></i>
@@ -337,7 +337,7 @@
             {% else %}
             <!-- Link Login System (sebelum login) -->
             <a
-              href="/login/"
+              href="{{ url_for('login') }}"
               class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-xl"
               title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
             >

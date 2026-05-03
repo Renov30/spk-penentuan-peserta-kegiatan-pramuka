@@ -107,11 +107,38 @@ import pytz
 
 load_dotenv()
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 app = create_app()
+
+# Middleware untuk menangani subfolder di shared hosting
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+# Middleware untuk memaksa subfolder di Hosting
+class SubfolderMiddleware:
+    def __init__(self, app, prefix):
+        self.app = app
+        self.prefix = prefix
+
+    def __call__(self, environ, start_response):
+        # Jika kita di hosting
+        if '/home/payp1663/' in os.path.abspath(__file__):
+            environ['SCRIPT_NAME'] = self.prefix
+            path_info = environ.get('PATH_INFO', '')
+            if path_info.startswith(self.prefix):
+                environ['PATH_INFO'] = path_info[len(self.prefix):]
+        return self.app(environ, start_response)
+
+app.wsgi_app = SubfolderMiddleware(app.wsgi_app, '/saringpramuka')
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+
 app.config["SESSION_FILE_PATH"] = os.path.join(app.root_path, "flask_session")
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_USE_SIGNER"] = True
+app.config["SESSION_COOKIE_PATH"] = "/saringpramuka"
+
 secret_key = os.getenv("APP_SECRET_KEY")
 if not secret_key:
     raise RuntimeError("APP_SECRET_KEY is not set")

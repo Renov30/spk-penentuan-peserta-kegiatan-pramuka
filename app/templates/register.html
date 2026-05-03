@@ -62,7 +62,7 @@
       {% endfor %} {% endif %} {% endwith %}
       <!-- Flash message End -->
 
-      <form id="registerForm" action="/register" method="post">
+      <form id="registerForm" action="{{ url_for('register') }}" method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="mb-4">
           <label
@@ -156,7 +156,7 @@
         {{ 'Sudah mempunyai akun?' if current_lang == 'id' else 'Already have an
         account?' }}
         <a
-          href="/login/"
+          href="{{ url_for('login') }}"
           class="text-blue-800 no-underline text-[0.9rem] hover:underline"
           >{{ 'Masuk' if current_lang == 'id' else 'Login' }}</a
         >
