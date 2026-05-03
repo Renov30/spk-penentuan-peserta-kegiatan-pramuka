@@ -19,3 +19,5 @@ Flask-Login>=0.6.0
 Flask-SQLAlchemy>=3.0.0
 requests>=2.31.0
 markupsafe>=2.1.0
+PyMySQL>=1.1.0
+cryptography>=41.0.0
