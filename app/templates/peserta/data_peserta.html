@@ -2,7 +2,6 @@
 <html
   class="transition duration-300 ease-in-out"
   lang="{{ current_lang }}"
-  style="font-size: 80%"
   x-data
 >
   <head>
@@ -401,7 +400,11 @@
         </main>
       </div>
     </div>
-
+    
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
+    
     <script>
       function previewImage(input) {
         if (input.files && input.files[0]) {

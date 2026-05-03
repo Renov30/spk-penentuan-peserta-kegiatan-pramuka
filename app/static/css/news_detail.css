@@ -1,0 +1,50 @@
+@media (max-width: 768px) {
+  .floating-share,
+  .fixed.right-6.top-1\/3 {
+    pointer-events: auto;
+    z-index: 30;
+  }
+}
+
+.share-btn {
+  position: relative;
+  padding: 0.75rem;
+  border-radius: 9999px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.share-btn:hover,
+.share-btn:focus {
+  transform: translateX(-4px) scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.share-tooltip {
+  position: absolute;
+  right: 120%;
+  background: #111;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(6px);
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.share-btn:hover .share-tooltip,
+.share-btn:focus .share-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}

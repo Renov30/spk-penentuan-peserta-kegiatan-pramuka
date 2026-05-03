@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html
-  style="font-size: 80%"
   class="transition duration-300 ease-in-out"
   lang="{{ current_lang }}"
   x-data
@@ -19,9 +18,15 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+
+    <!-- Vanilla CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/form_penilaian.css') }}"
     />
 
     <!-- Icons -->
@@ -45,68 +50,6 @@
 
     <!-- Script Theme -->
     {% include 'script_theme.html' %}
-
-    <style>
-      /* Likert Scale Styles */
-      .likert-option input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-
-      .likert-option {
-        position: relative;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-
-      .likert-circle {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        border: 3px solid #d1d5db;
-        background: transparent;
-        transition: all 0.3s ease;
-        position: relative;
-      }
-
-      .likert-circle::after {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0);
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #3b82f6;
-        transition: transform 0.3s ease;
-      }
-
-      .likert-option input:checked ~ .likert-circle {
-        border-color: #3b82f6;
-        background: rgba(59, 130, 246, 0.1);
-      }
-
-      .likert-option input:checked ~ .likert-circle::after {
-        transform: translate(-50%, -50%) scale(1);
-      }
-
-      .likert-option:hover .likert-circle {
-        border-color: #60a5fa;
-        transform: scale(1.05);
-      }
-
-      .dark .likert-circle {
-        border-color: #4b5563;
-      }
-
-      .dark .likert-option input:checked ~ .likert-circle {
-        border-color: #60a5fa;
-        background: rgba(96, 165, 250, 0.15);
-      }
-    </style>
   </head>
   <body
     x-data="{ ready: false }"
@@ -131,6 +74,9 @@
           :class="{ 'sidebar-open': Alpine.store('sidebar').open }"
         >
           <div class="container mx-auto p-6 max-w-5xl">
+            <!-- Notification Box -->
+            {% include 'notification_box.html' %}
+
             <!-- Back Button -->
             <a
               href="{{ url_for('penilai_event_participants', event_id=event.id_kegiatan) }}"
@@ -305,5 +251,9 @@
         </main>
       </div>
     </div>
+
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
   </body>
 </html>

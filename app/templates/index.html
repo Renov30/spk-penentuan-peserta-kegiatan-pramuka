@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<html
-  class="transition duration-300 ease-in-out"
-  lang="{{ current_lang }}"
-  style="font-size: 80%"
->
+<!doctype html>
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -48,6 +44,44 @@
 
     <!-- Script Theme -->
     {% include 'script_theme.html' %}
+
+    <style>
+      .about-slider {
+        width: 100%;
+        min-height: 500px;
+        position: relative;
+      }
+
+      .about-slide {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      .about-item {
+        position: absolute;
+        width: 100%;
+        top: 50%;
+        left: 0;
+        transform: translateY(-50%);
+        opacity: 0;
+        transition: all 0.6s ease;
+      }
+
+      /* SLIDE AKTIF */
+      .about-item:nth-child(1) {
+        opacity: 1;
+        position: relative;
+        transform: translateY(0);
+      }
+
+      /* PREVIEW (opsional) */
+      .about-item:nth-child(2) {
+        opacity: 0.2;
+        transform: translateY(20px) scale(0.95);
+        pointer-events: none;
+      }
+    </style>
   </head>
 
   <body
@@ -127,7 +161,6 @@
             <i class="fas fa-user-plus"></i>
           </a>
 
-          <!-- Notifikasi -->
           <!-- Notifikasi (Removed) -->
 
           <!-- Hamburger Icon (Mobile Only) -->
@@ -157,6 +190,12 @@
               class="hover:text-yellow-400 text-lg {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
             >
               {{ 'Berita' if current_lang == 'id' else 'News' }}
+            </a>
+            <a
+              href="#event"
+              class="hover:text-yellow-400 text-lg {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+            >
+              {{ 'Kegiatan' if current_lang == 'id' else 'Event' }}
             </a>
             <a
               href="#about"
@@ -287,7 +326,7 @@
                 class="absolute -right-[30] mt-2 w-36 border rounded-md shadow-md z-50 {{ 'bg-gray-900 border-gray-600' if current_theme == 'dark' else 'bg-white border-gray-200' }}"
               >
                 <a
-                  href="/logout/"
+                  href="{{ url_for('logout') }}"
                   class="block px-4 py-2 text-sm text-red-600 {{ 'hover:bg-gray-600' if current_theme == 'dark' else 'hover:bg-yellow-100' }}"
                 >
                   <i class="fas fa-sign-out-alt mr-2 text-red-500"></i>
@@ -298,7 +337,7 @@
             {% else %}
             <!-- Link Login System (sebelum login) -->
             <a
-              href="/login/"
+              href="{{ url_for('login') }}"
               class="flex items-center justify-center gap-1 text-yellow-400 hover:text-yellow-300 transition text-xl"
               title="{{ 'Masuk ke Akun' if current_lang == 'id' else 'Login' }}"
             >
@@ -339,6 +378,14 @@
         >
           <i class="fas fa-newspaper"></i>
           {{ 'Berita' if current_lang == 'id' else 'News' }}
+        </a>
+        <a
+          href="#event"
+          @click="open = false"
+          class="hover:text-yellow-400 text-base flex items-center gap-3 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+        >
+          <i class="fas fa-newspaper"></i>
+          {{ 'Kegiatan' if current_lang == 'id' else 'Event' }}
         </a>
         <a
           href="#about"
@@ -527,10 +574,87 @@
       </div>
     </section>
 
+    <!-- Event Section -->
+    <section
+      id="event"
+      class="py-12 md:py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+    >
+      <div class="container mx-auto px-6 mt-12">
+        <div class="text-center mb-12">
+          <h2
+            class="text-2xl font-semibold mb-4 {{ 'text-yellow-400' if current_theme == 'dark' else 'text-yellow-500' }}"
+          >
+            {{ 'Kegiatan Terbaru' if current_lang == 'id' else 'Latest News' }}
+          </h2>
+          <p
+            class="text-sm {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+          >
+            {{ 'Ikuti perkembangan terbaru dan informasi terkini dari kami.' if
+            current_lang == 'id' else 'Stay updated with our latest news and
+            information.' }}
+          </p>
+        </div>
+
+        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+          {% for news in latest_news %}
+          <div
+            class="rounded-xl shadow-lg overflow-hidden hover:shadow-yellow-400/30 transition cursor-pointer flex flex-col {{ 'bg-gray-700' if current_theme == 'dark' else 'bg-gray-200' }}"
+          >
+            <!-- Thumbnail -->
+            <img
+              src="{{ url_for('static', filename=news.thumbnail) }}"
+              alt="{{ news.title }}"
+              class="w-full h-48 object-cover"
+            />
+
+            <div class="flex-grow p-3.5">
+              <!-- Title -->
+              <h3
+                class="text-xl font-bold mb-2 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              >
+                {{ news.title }}
+              </h3>
+
+              <!-- Date -->
+              <p
+                class="text-sm mb-3 {{ 'text-gray-400' if current_theme == 'dark' else 'text-gray-600' }}"
+              >
+                {{ news.published_at.strftime('%d %B %Y') }}
+              </p>
+
+              <!-- Excerpt -->
+              <p
+                class="mb-4 text-[0.9rem] {{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+              >
+                {{ news.content | striptags | truncate(150) }}
+              </p>
+            </div>
+
+            <!-- Read More -->
+            <a
+              href="{{ url_for('news_detail', slug=news.slug) }}"
+              class="text-yellow-400 text-[0.9rem] hover:underline font-semibold mt-6 self-start p-3.5"
+            >
+              {{ 'Selengkapnya →' if current_lang == 'id' else 'Learn More →' }}
+            </a>
+          </div>
+          {% endfor %} {% if latest_news|length == 0 %}
+          <div class="text-center text-gray-400 py-12">
+            <i class="fa-regular fa-newspaper text-4xl mb-4"></i>
+            <p class="text-lg font-semibold">
+              {{ 'Belum ada berita' if current_lang == 'id' else 'No news
+              available' }}
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
     <!-- About Section -->
     <section
       id="about"
-      class="py-12 md:py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-800' if current_theme == 'dark' else 'bg-gray-300' }}"
+      class="py-12 md:py-20 min-h-screen wow animate__animated animate__fadeInUp animate__delay-0.5s {{ 'bg-gray-700 text-white' if current_theme == 'dark' else 'bg-gray-200 text-black' }}"
     >
       <div class="container mx-auto px-6 mt-7">
         <div class="text-center mb-12">
@@ -557,88 +681,120 @@
           </p>
         </div>
 
-        <!-- Grid content -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-          <!-- Image -->
-          <div class="flex justify-center">
-            <img
-              src="{{ url_for('static', filename='images/tim.png') }}"
-              alt="{{ 'Tim Kami' if current_lang == 'id' else 'Our team' }}"
-              class="rounded-xl shadow-lg"
-            />
-          </div>
+        <div class="about-slider relative overflow-hidden">
+          <div class="about-slide">
+            <!-- SLIDE 1 -->
+            <div class="about-item">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                <!-- Image -->
+                <div class="flex justify-center">
+                  <img
+                    src="{{ url_for('static', filename='images/tim.png') }}"
+                    alt="{{ 'Tim Kami' if current_lang == 'id' else 'Our team' }}"
+                    class="rounded-xl shadow-lg"
+                  />
+                </div>
 
-          <!-- Description -->
-          <div>
-            <h3
-              class="text-xl font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
-            >
-              {{ 'Mengapa memilih sistem ini?' if current_lang == 'id' else 'Why
-              Choose This System?' }}
-            </h3>
-            <ul class="space-y-4 text-lg">
-              <li class="flex items-start">
-                <i
-                  class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
-                ></i>
-                <span
-                  class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-                >
-                  {{ 'Sistem ini menggunakan metode Fuzzy AHP untuk meminimalkan
-                  subjektivitas, sehingga setiap peserta dinilai berdasarkan
-                  kriteria yang terukur dan terstruktur.' if current_lang ==
-                  'id' else 'This system uses the Fuzzy AHP method to minimize
-                  subjectivity, ensuring that every participant is evaluated
-                  based on measurable and structured criteria.' }}
-                </span>
-              </li>
-              <li class="flex items-start">
-                <i
-                  class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
-                ></i>
-                <span
-                  class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-                >
-                  {{ 'Seluruh data penilaian, hasil perhitungan, dan ranking
-                  akhir tersimpan dengan baik dan dapat ditinjau kapan saja,
-                  mendukung proses seleksi yang terbuka dan akuntabel.' if
-                  current_lang == 'id' else 'All assessment data, calculations,
-                  and final results are stored and can be reviewed at any time,
-                  promoting accountability and openness in the selection
-                  process.' }}
-                </span>
-              </li>
-              <li class="flex items-start">
-                <i
-                  class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
-                ></i>
-                <span
-                  class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-                >
-                  {{ 'Perhitungan kompleks dilakukan secara otomatis, sehingga
-                  mengurangi beban kerja panitia dalam proses penilaian dan
-                  pengambilan keputusan.' if current_lang == 'id' else 'The
-                  system automates complex calculations and simplifies data
-                  entry, reducing the time and effort required for manual
-                  scoring and decision-making.' }}
-                </span>
-              </li>
-              <li class="flex items-start">
-                <i
-                  class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
-                ></i>
-                <span
-                  class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
-                >
-                  {{ 'Dirancang dengan tampilan yang sederhana dan mudah
-                  digunakan, sistem ini dapat diakses oleh admin maupun juri
-                  dari mana saja melalui perangkat berbasis web.' if
-                  current_lang == 'id' else 'Designed with simplicity in mind,
-                  the web-based platform allows both administrators and juries
-                  to easily access and manage data from anywhere.' }}
-                </span>
-              </li>
-            </ul>
+                <!-- Description -->
+                <div>
+                  <h3
+                    class="text-xl font-bold mb-4 {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+                  >
+                    {{ 'Mengapa memilih sistem ini?' if current_lang == 'id'
+                    else 'Why Choose This System?' }}
+                  </h3>
+                  <ul class="space-y-4 text-lg">
+                    <li class="flex items-start">
+                      <i
+                        class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
+                      ></i>
+                      <span
+                        class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                      >
+                        {{ 'Sistem ini menggunakan metode Fuzzy AHP untuk
+                        meminimalkan subjektivitas, sehingga setiap peserta
+                        dinilai berdasarkan kriteria yang terukur dan
+                        terstruktur.' if current_lang == 'id' else 'This system
+                        uses the Fuzzy AHP method to minimize subjectivity,
+                        ensuring that every participant is evaluated based on
+                        measurable and structured criteria.' }}
+                      </span>
+                    </li>
+                    <li class="flex items-start">
+                      <i
+                        class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
+                      ></i>
+                      <span
+                        class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                      >
+                        {{ 'Seluruh data penilaian, hasil perhitungan, dan
+                        ranking akhir tersimpan dengan baik dan dapat ditinjau
+                        kapan saja, mendukung proses seleksi yang terbuka dan
+                        akuntabel.' if current_lang == 'id' else 'All assessment
+                        data, calculations, and final results are stored and can
+                        be reviewed at any time, promoting accountability and
+                        openness in the selection process.' }}
+                      </span>
+                    </li>
+                    <li class="flex items-start">
+                      <i
+                        class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
+                      ></i>
+                      <span
+                        class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                      >
+                        {{ 'Perhitungan kompleks dilakukan secara otomatis,
+                        sehingga mengurangi beban kerja panitia dalam proses
+                        penilaian dan pengambilan keputusan.' if current_lang ==
+                        'id' else 'The system automates complex calculations and
+                        simplifies data entry, reducing the time and effort
+                        required for manual scoring and decision-making.' }}
+                      </span>
+                    </li>
+                    <li class="flex items-start">
+                      <i
+                        class="fas fa-check-circle text-yellow-400 text-[0.9rem] mt-1 mr-3"
+                      ></i>
+                      <span
+                        class="{{ 'text-white' if current_theme == 'dark' else 'text-gray-700' }}"
+                      >
+                        {{ 'Dirancang dengan tampilan yang sederhana dan mudah
+                        digunakan, sistem ini dapat diakses oleh admin maupun
+                        juri dari mana saja melalui perangkat berbasis web.' if
+                        current_lang == 'id' else 'Designed with simplicity in
+                        mind, the web-based platform allows both administrators
+                        and juries to easily access and manage data from
+                        anywhere.' }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- SLIDE 2 -->
+            <div class="about-item">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                <div class="flex justify-center">
+                  <img
+                    src="{{ url_for('static', filename='images/.png') }}"
+                    alt="{{ 'Tim Kami' if current_lang == 'id' else 'Our team' }}"
+                    class="rounded-xl shadow-lg"
+                  />
+                </div>
+                <div>
+                  <h3>Fitur Unggulan</h3>
+                  <p>Penjelasan fitur lainnya…</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Button Slide -->
+          <div
+            class="about-nav absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3"
+          >
+            <button class="about-prev">‹</button>
+            <button class="about-next">›</button>
           </div>
         </div>
       </div>
@@ -855,184 +1011,21 @@
     <!-- Animation Script -->
     {% include 'script_animation.html' %}
 
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        // === Set Bahasa ===
-        const TRANSLATIONS = {{ TRANSLATIONS|default({})|tojson }};
-        const CURRENT_LANG = "{{ current_lang|default('id') }}";
+      const next = document.querySelector(".about-next");
+      const prev = document.querySelector(".about-prev");
+      const slide = document.querySelector(".about-slide");
 
-        function t(key, params = {}) {
-          let msg = TRANSLATIONS[CURRENT_LANG]?.[key] || key;
-
-          // Ganti placeholder dinamis, misal {username}, {error}
-          Object.keys(params).forEach(k => {
-            msg = msg.replaceAll(`{${k}}`, params[k]);
-          });
-
-          return msg;
-        }
-
-        // === Smooth Scroll ===
-        $('a[href^="#"]').on("click", function (e) {
-          e.preventDefault();
-          const target = this.hash;
-          const $target = $(target);
-          $("html, body")
-            .stop()
-            .animate(
-              { scrollTop: $target.offset().top },
-              1300,
-              "easeInOutExpo"
-            );
-        });
-
-        // === Transparent Header on Scroll ===
-        $(window).on("scroll", function () {
-          const header = document.getElementById("main-header");
-          if (window.scrollY > 10) {
-            header.classList.remove("bg-opacity-100");
-            header.classList.add("bg-opacity-30");
-          } else {
-            header.classList.remove("bg-opacity-30");
-            header.classList.add("bg-opacity-100");
-          }
-        });
-
-        // === Flip Card Interaction ===
-        const cards = document.querySelectorAll(".card-inner");
-        cards.forEach((card) => {
-          card.addEventListener("click", function (e) {
-            cards.forEach((c) => {
-              if (c !== card) c.classList.remove("rotate-y-180");
-            });
-            card.classList.toggle("rotate-y-180");
-            e.stopPropagation();
-          });
-        });
-        const socialLinks = document.querySelectorAll(".card-inner a");
-        socialLinks.forEach((link) => {
-          link.addEventListener("click", function (e) {
-            e.stopPropagation();
-          });
-        });
-        document.addEventListener("click", function () {
-          cards.forEach((card) => {
-            card.classList.remove("rotate-y-180");
-          });
-        });
-
-        // === Slider Gambar Otomatis ===
-        const images = [
-          document.getElementById("img1"),
-          document.getElementById("img2"),
-          document.getElementById("img3"),
-        ];
-        const fadeOverlay = document.getElementById("colorFade");
-        let currentIndex = 0;
-        function showNextImage() {
-          fadeOverlay.classList.add("show");
-          setTimeout(() => {
-            images.forEach((img) => img.classList.remove("active"));
-            currentIndex = (currentIndex + 1) % images.length;
-            images[currentIndex].classList.add("active");
-            fadeOverlay.classList.remove("show");
-          }, 1000);
-        }
-        setInterval(showNextImage, 4000);
-
-        // === Validasi Form ===
-        const form = document.querySelector("form");
-        if (form) {
-          form.addEventListener("submit", function (e) {
-            const email = document.getElementById("email")?.value || "";
-            let nomor_hp = document.getElementById("nomor_hp")?.value || "";
-            const btn = document.getElementById("submitBtn");
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            const hpRegex = /^(08\d{8,11}|\+628\d{7,10})$/;
-            const validPrefixes = [
-              "0811",
-              "0812",
-              "0813",
-              "0821",
-              "0822",
-              "0823",
-              "0851",
-              "0852",
-              "0853",
-              "0817",
-              "0818",
-              "0819",
-              "0857",
-              "0858",
-              "0896",
-              "0897",
-              "0898",
-              "0899",
-            ];
-
-            if (!emailRegex.test(email)) {
-              e.preventDefault();
-              showError(t("invalid_email_format"));
-              return;
-            }
-
-            if (nomor_hp.startsWith("+62")) {
-              nomor_hp = "0" + nomor_hp.slice(3);
-            }
-
-            if (!hpRegex.test(nomor_hp)) {
-              e.preventDefault();
-              showError(t("invalid_phone_format"));
-              return;
-            }
-
-            const prefix = nomor_hp.substring(0, 4);
-            if (!validPrefixes.includes(prefix)) {
-              e.preventDefault();
-              showError(t("invalid_phone_prefix"));
-              return;
-            }
-
-            if (/^(0+|08[0-9]{7}1234|08[0-9]{9}000)$/.test(nomor_hp)) {
-              e.preventDefault();
-              showError(t("invalid_phone_number"));
-              return;
-            }
-
-            if (btn) {
-              btn.disabled = true;
-              btn.innerText = "Mengirim...";
-            }
-          });
-        }
-
-        function showError(message) {
-          const overlay = document.getElementById("overlay-error");
-          const errorMsg = document.getElementById("error-message");
-
-          errorMsg.textContent = message;
-          overlay.classList.remove("hidden");
-          overlay.classList.add("flex");
-          document.body.classList.add("blurred", "overflow-hidden");
-        }
-
-        function closeError() {
-          const overlay = document.getElementById("overlay-error");
-
-          overlay.classList.remove("flex");
-          overlay.classList.add("hidden");
-          document.body.classList.remove("blurred", "overflow-hidden");
-        }
-
-
+      next.addEventListener("click", () => {
+        const items = document.querySelectorAll(".about-item");
+        slide.appendChild(items[0]);
       });
-    </script>
-    <script>
-      window.closeFlashAndShowNotifBox = function (element) {
-        const flashOverlay = element.closest(".flash-wrapper");
-        if (flashOverlay) flashOverlay.classList.add("hidden");
-        // Notification box logic removed
-      };
+
+      prev.addEventListener("click", () => {
+        const items = document.querySelectorAll(".about-item");
+        slide.prepend(items[items.length - 1]);
+      });
     </script>
   </body>
 </html>

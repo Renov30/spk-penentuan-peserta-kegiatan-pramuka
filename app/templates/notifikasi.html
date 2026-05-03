@@ -1,9 +1,5 @@
 <!DOCTYPE html>
-<html
-  style="font-size: 80%"
-  class="transition duration-300 ease-in-out"
-  lang="{{ current_lang }}"
->
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,12 +14,18 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+
+    <!-- Vanilla CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/notifications.css') }}"
+    />
 
-    <!-- Icons -->
+    <!-- Fontawesome -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
@@ -219,182 +221,62 @@
       </div>
     </div>
 
-    <!-- Animation & Notification Script -->
-    {% include 'script_animation.html' %} {% include 'script_notification.html'
-    %}
-
     <!-- Toast Notification Container -->
     <div
       id="toast-container"
       class="fixed bottom-6 right-6 z-[9999] space-y-3"
     ></div>
 
-    <!-- Custom Confirm Dialog (Removed) -->
+    <!-- Custom Confirm Dialog -->
+    <div
+      id="confirm-dialog"
+      class="fixed inset-0 z-[10000] hidden items-center justify-center backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }}"
+    >
+      <div
+        class="rounded-xl shadow-2xl max-w-md w-full mx-4 {{ 'bg-gray-800 text-white' if current_theme == 'dark' else 'bg-white text-gray-900' }}"
+      >
+        <div class="p-6">
+          <div class="flex items-center gap-4 mb-4">
+            <div
+              class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center {{ 'bg-yellow-500 bg-opacity-20' if current_theme == 'dark' else 'bg-yellow-100' }}"
+            >
+              <i
+                class="fas fa-exclamation-triangle text-yellow-500 text-xl"
+              ></i>
+            </div>
+            <h3
+              class="text-lg font-semibold {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+              id="confirm-title"
+            >
+              {{ 'Konfirmasi' if current_lang == 'id' else 'Confirmation' }}
+            </h3>
+          </div>
+          <p
+            class="mb-6 {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}"
+            id="confirm-message"
+          ></p>
+          <div class="flex gap-3 justify-end">
+            <button
+              id="confirm-cancel"
+              class="px-4 py-2 rounded-lg {{ 'bg-gray-700 hover:bg-gray-600 text-white' if current_theme == 'dark' else 'bg-gray-200 hover:bg-gray-300 text-gray-900' }} transition"
+            >
+              {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+            </button>
+            <button
+              id="confirm-ok"
+              class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition"
+            >
+              {{ 'Ya' if current_lang == 'id' else 'Yes' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
 
-    <style>
-      @keyframes slideInRight {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-
-      @keyframes slideOutRight {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-      }
-
-      .toast {
-        animation: slideInRight 0.3s ease-out;
-      }
-
-      .toast.hide {
-        animation: slideOutRight 0.3s ease-in;
-      }
-    </style>
-
-    <!-- Notification Management Script -->
-    <script>
-      const csrfToken = document.querySelector(
-        'meta[name="csrf-token"]'
-      ).content;
-
-      // Toast Notification Function
-      function showNotification(message, type = "info") {
-        const container = document.getElementById("toast-container");
-        if (!container) {
-          console.error("Toast container not found");
-          return;
-        }
-
-        // Create toast element
-        const toast = document.createElement("div");
-        toast.className = `toast flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg min-w-[300px] max-w-md ${
-          type === "success"
-            ? "bg-green-500 text-white"
-            : type === "error"
-            ? "bg-red-500 text-white"
-            : type === "warning"
-            ? "bg-yellow-500 text-gray-900"
-            : "bg-blue-500 text-white"
-        }`;
-
-        // Icon based on type
-        const icon =
-          type === "success"
-            ? '<i class="fas fa-check-circle text-xl"></i>'
-            : type === "error"
-            ? '<i class="fas fa-times-circle text-xl"></i>'
-            : type === "warning"
-            ? '<i class="fas fa-exclamation-triangle text-xl"></i>'
-            : '<i class="fas fa-info-circle text-xl"></i>';
-
-        toast.innerHTML = `
-          ${icon}
-          <span class="flex-1 font-medium">${message}</span>
-          <button onclick="this.parentElement.classList.add('hide'); setTimeout(() => this.parentElement.remove(), 300)"
-                  class="text-white hover:text-gray-200 transition cursor-pointer">
-            <i class="fas fa-times"></i>
-          </button>
-        `;
-
-        container.appendChild(toast);
-
-        // Auto remove after 4 seconds
-        setTimeout(() => {
-          toast.classList.add("hide");
-          setTimeout(() => toast.remove(), 300);
-        }, 4000);
-      }
-
-
-
-      // Filter and Search Notifications
-      function filterNotifications() {
-        const searchInput = document.getElementById('searchNotification');
-        const categoryFilter = document.getElementById('filterCategory');
-        const statusFilter = document.getElementById('filterStatus');
-
-        if (!searchInput || !categoryFilter || !statusFilter) {
-          return;
-        }
-
-        const searchTerm = (searchInput.value || '').toLowerCase();
-        const selectedCategory = categoryFilter.value;
-        const selectedStatus = statusFilter.value;
-
-        const notificationItems = document.querySelectorAll('.notification-item');
-        let visibleCount = 0;
-
-        notificationItems.forEach(item => {
-          const category = item.getAttribute('data-category');
-          const status = item.getAttribute('data-status');
-          const message = item.getAttribute('data-message') || '';
-
-          // Check search term
-          const matchesSearch = searchTerm === '' || message.includes(searchTerm);
-
-          // Check category filter
-          const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
-
-          // Check status filter
-          const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
-
-          // Show or hide based on all filters
-          if (matchesSearch && matchesCategory && matchesStatus) {
-            item.style.display = 'flex';
-            visibleCount++;
-          } else {
-            item.style.display = 'none';
-          }
-        });
-
-        // Show "no results" message if no notifications are visible
-        const notificationsList = document.getElementById('notificationsList');
-        let noResultsMsg = notificationsList.querySelector('.no-results-message');
-
-        if (visibleCount === 0 && notificationItems.length > 0) {
-          if (!noResultsMsg) {
-            noResultsMsg = document.createElement('div');
-            noResultsMsg.className = 'no-results-message rounded-xl shadow p-12 text-center {{ 'bg-gray-900 text-white' if current_theme == 'dark' else 'bg-white text-black' }}';
-            noResultsMsg.innerHTML = `
-              <i class="fa-solid fa-search text-6xl text-gray-400 mb-4"></i>
-              <p class="text-lg {{ 'text-gray-300' if current_theme == 'dark' else 'text-gray-600' }}">
-                {{ 'Tidak ada notifikasi yang sesuai dengan filter' if current_lang == 'id' else 'No notifications match the filter' }}
-              </p>
-            `;
-            notificationsList.appendChild(noResultsMsg);
-          }
-        } else {
-          if (noResultsMsg) {
-            noResultsMsg.remove();
-          }
-        }
-      }
-
-      // Initialize filter on page load
-      document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchNotification');
-        const categoryFilter = document.getElementById('filterCategory');
-        const statusFilter = document.getElementById('filterStatus');
-
-        if (searchInput && categoryFilter && statusFilter) {
-          // Apply filter if any filter has a value
-          if (searchInput.value || categoryFilter.value !== 'all' || statusFilter.value !== 'all') {
-            filterNotifications();
-          }
-        }
-      });
-    </script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
   </body>
 </html>

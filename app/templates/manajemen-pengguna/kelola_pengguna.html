@@ -31,7 +31,7 @@
   <!-- Search Bar & Filter -->
   <div
     class="flex flex-wrap items-center justify-between gap-3 mb-6"
-    x-data="{ openAddUser: false }"
+    x-data="{ openAddUser: false, openImport: false }"
   >
     <div class="flex flex-wrap items-center gap-3">
       <input
@@ -61,7 +61,9 @@
         x-model="filterStatus"
         class="px-4 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white' if current_theme == 'dark' else 'dark:bg-gray-100 dark:text-gray-900' }}"
       >
-        <option value="">{{ 'Semua Status' if current_lang == 'id' else 'All Status' }}</option>
+        <option value="">
+          {{ 'Semua Status' if current_lang == 'id' else 'All Status' }}
+        </option>
         <option value="aktif">
           {{ 'Aktif' if current_lang == 'id' else 'Active' }}
         </option>
@@ -73,6 +75,13 @@
 
     <!-- Tombol Aksi -->
     <div class="flex gap-2">
+      <button
+        @click="openImport = true"
+        class="flex items-center px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition cursor-pointer"
+      >
+        <i class="fa-solid fa-upload mr-2"></i>
+        {{ 'Import Data' if current_lang == 'id' else 'Import Data' }}
+      </button>
       <button
         @click="openAddUser = true"
         class="flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition cursor-pointer"
@@ -86,11 +95,132 @@
         @click="
           fetch('{{ url_for('download_users') }}')
             .then(res => res.blob())
-            .then(blob => {const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'users.csv'; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);});"
+            .then(blob => {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'users.csv';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            });
+        "
       >
         <i class="fa-solid fa-download mr-2"></i>
         {{ 'Unduh' if current_lang == 'id' else 'Download' }}
       </button>
+    </div>
+
+    <!-- Modal Import Data -->
+    <div
+      x-show="openImport"
+      x-cloak
+      x-transition.opacity
+      class="fixed inset-0 flex items-center justify-center z-999999999999 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }}"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-lg w-full max-w-lg p-6 {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
+        @click.away="openImport = false"
+        x-data="{ loading: false, fileName: '', previewData: null }"
+      >
+        <!-- Header -->
+        <div class="flex justify-between items-center border-b pb-3 mb-12">
+          <div class="flex justify-between items-start gap-2.5">
+            <i class="fa-solid fa-file-import size-3.5 mt-2 text-green-700"></i>
+            <h2
+              class="text-xl font-semibold {{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-900' }}"
+            >
+              {{ 'Import Data Pengguna' if current_lang == 'id' else 'Import User Data' }}
+            </h2>
+          </div>
+          <button
+            @click="openImport = false"
+            class="cursor-pointer dark:hover:text-red-600 {{ 'text-gray-500 hover:text-gray-800' if current_theme == 'dark' else 'text-gray-700 hover:text-gray-800' }}"
+          >
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Form Import -->
+        <form
+          action="{{ url_for('admin_import_users') }}"
+          method="POST"
+          enctype="multipart/form-data"
+          @submit="loading = true"
+          class="space-y-4"
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <!-- Input File -->
+          <div>
+            <label
+              class="block text-sm font-medium mb-1 {{ 'text-gray-200 dark:text-gray-300' if current_theme == 'dark' else 'text-gray-800 dark:text-gray-900' }}"
+            >
+              {{ 'Pilih File' if current_lang == 'id' else 'Choose File' }}
+            </label>
+            <div
+              class="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition {{ 'hover:bg-gray-50 dark:hover:bg-gray-800' if current_theme == 'dark' else 'hover:bg-gray-50 dark:hover:bg-gray-300' }}"
+              @click="$refs.fileInput.click()"
+            >
+              <input
+                type="file"
+                x-ref="fileInput"
+                name="file"
+                accept=".csv,.xls,.xlsx"
+                @change="fileName = $refs.fileInput.files[0]?.name || ''; previewData = null"
+                class="hidden"
+                required
+              />
+              <template x-if="!fileName">
+                <p
+                  class="text-sm {{ 'text-gray-500 dark:text-gray-300' if current_theme == 'dark' else 'text-blue-600' }}"
+                >
+                  <i class="fa-solid fa-cloud-upload-alt mr-1 text-blue-600"></i>
+                  {{ 'Klik untuk memilih file' if current_lang == 'id' else 'Click to select file' }}
+                </p>
+              </template>
+              <template x-if="fileName">
+                <p
+                  class="font-medium {{ 'text-gray-400 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-800 dark:text-gray-900' }}"
+                >
+                  <i
+                    class="fa-solid fa-file mr-2 {{ 'text-blue-500' if current_theme == 'dark' else 'text-blue-700' }}"
+                  ></i>
+                  <span x-text="fileName"></span>
+                </p>
+              </template>
+            </div>
+          </div>
+
+          <!-- Progress Indicator -->
+          <template x-if="loading">
+            <div class="flex items-center justify-center text-blue-500 mt-2">
+              <i class="fa-solid fa-spinner animate-spin text-xl mr-2"></i>
+              <span>{{ 'Mengupload dan memproses...' if current_lang == 'id' else 'Uploading and processing...' }}</span>
+            </div>
+          </template>
+
+          <!-- Tombol Aksi -->
+          <div class="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              @click="openImport = false"
+              class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark"></i>
+              {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+            </button>
+            <button
+              type="submit"
+              :disabled="loading"
+              class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer"
+            >
+              {{ 'Upload' if current_lang == 'id' else 'Upload' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Modal Tambah Pengguna -->
@@ -98,7 +228,7 @@
       x-show="openAddUser"
       x-cloak
       x-transition.opacity
-      class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }}"
+      class="fixed inset-0 flex items-center justify-center z-999999999999 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-gray-400/50' }}"
     >
       <div
         x-transition.scale
@@ -106,14 +236,11 @@
         @click.away="openAddUser = false"
       >
         <!-- Header -->
-        <div
-          class="flex justify-between items-center border-b pb-3 mb-6"
-        >
+        <div class="flex justify-between items-center border-b pb-3 mb-6">
           <h2
             class="text-xl font-semibold {{ 'text-gray-800 dark:text-gray-200' if current_theme == 'dark' else 'text-gray-900 dark:text-gray-900' }}"
           >
-            {{ 'Tambah Pengguna Baru' if current_lang == 'id'
-            else 'Add New User' }}
+            {{ 'Tambah Pengguna Baru' if current_lang == 'id' else 'Add New User' }}
           </h2>
           <button
             @click="openAddUser = false"
@@ -123,25 +250,15 @@
           </button>
         </div>
 
-        <!-- Form -->
-        <form
-          action="{{ url_for('admin_add_user') }}"
-          method="POST"
-          class="space-y-4"
-        >
-          <!-- CSRF Token -->
-          <input
-            type="hidden"
-            name="csrf_token"
-            value="{{ csrf_token() }}"
-          />
+        <!-- Form Tambah Pengguna -->
+        <form action="{{ url_for('admin_add_user') }}" method="POST" class="space-y-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
           <!-- Nama Lengkap -->
           <div>
-            <label class="block text-sm font-medium mb-1"
-              >{{ 'Nama Lengkap' if current_lang == 'id' else
-              'Full Name' }}</label
-            >
+            <label class="block text-sm font-medium mb-1">
+              {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}
+            </label>
             <input
               type="text"
               id="fullName"
@@ -154,9 +271,7 @@
 
           <!-- Email -->
           <div>
-            <label class="block text-sm font-medium mb-1"
-              >Email</label
-            >
+            <label class="block text-sm font-medium mb-1">Email</label>
             <input
               type="email"
               id="email"
@@ -169,9 +284,7 @@
 
           <!-- Username -->
           <div>
-            <label class="block text-sm font-medium mb-1"
-              >Username</label
-            >
+            <label class="block text-sm font-medium mb-1">Username</label>
             <input
               type="text"
               id="username"
@@ -184,10 +297,9 @@
 
           <!-- Password -->
           <div>
-            <label class="block text-sm font-medium mb-1"
-              >{{ 'Kata Sandi' if current_lang == 'id' else
-              'Password' }}</label
-            >
+            <label class="block text-sm font-medium mb-1">
+              {{ 'Kata Sandi' if current_lang == 'id' else 'Password' }}
+            </label>
             <input
               type="password"
               id="password"
@@ -200,10 +312,9 @@
 
           <!-- Konfirmasi Password -->
           <div>
-            <label class="block text-sm font-medium mb-1"
-              >{{ 'Konfirmasi Kata Sandi' if current_lang ==
-              'id' else 'Confirm Password' }}</label
-            >
+            <label class="block text-sm font-medium mb-1">
+              {{ 'Konfirmasi Kata Sandi' if current_lang == 'id' else 'Confirm Password' }}
+            </label>
             <input
               type="password"
               id="confirmPassword"
@@ -216,28 +327,18 @@
 
           <!-- Role -->
           <div>
-            <label class="block text-sm font-medium mb-1"
-              >{{ 'Role Pengguna' if current_lang == 'id' else
-              'User Role' }}</label
-            >
+            <label class="block text-sm font-medium mb-1">
+              {{ 'Role Pengguna' if current_lang == 'id' else 'User Role' }}
+            </label>
             <select
               name="level"
               id="level"
               class="w-full px-3 py-2 border rounded-lg {{ 'dark:bg-gray-800 dark:text-white focus:ring focus:ring-blue-400' if current_theme == 'dark' else 'dark:bg-gray-300 dark:text-gray-900 focus:ring focus:ring-blue-400' }}"
               required
             >
-              <option value="peserta">
-                {{ 'Peserta' if current_lang == 'id' else
-                'Participant' }}
-              </option>
-              <option value="penilai">
-                {{ 'Penilai' if current_lang == 'id' else
-                'Evaluator' }}
-              </option>
-              <option value="admin">
-                {{ 'Admin' if current_lang == 'id' else
-                'Admin' }}
-              </option>
+              <option value="peserta">{{ 'Peserta' if current_lang == 'id' else 'Participant' }}</option>
+              <option value="penilai">{{ 'Penilai' if current_lang == 'id' else 'Evaluator' }}</option>
+              <option value="admin">{{ 'Admin' if current_lang == 'id' else 'Admin' }}</option>
             </select>
           </div>
 
@@ -249,16 +350,14 @@
               class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
             >
               <i class="fa-solid fa-xmark"></i>
-              {{ 'Batal' if current_lang == 'id' else 'Cancel'
-              }}
+              {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
             </button>
             <button
               type="submit"
               class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition cursor-pointer"
             >
               <i class="fa-solid fa-floppy-disk"></i>
-              {{ 'Simpan' if current_lang == 'id' else 'Save'
-              }}
+              {{ 'Simpan' if current_lang == 'id' else 'Save' }}
             </button>
           </div>
         </form>
@@ -276,16 +375,12 @@
           class="{{ 'bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-300' if current_theme == 'dark' else 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-100' }}"
         >
           <th class="border p-2 px-4 py-2">No</th>
-          <th class="border p-2 px-4 py-2">
-            {{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}
-          </th>
+          <th class="border p-2 px-4 py-2">{{ 'Nama Lengkap' if current_lang == 'id' else 'Full Name' }}</th>
           <th class="border p-2 px-4 py-2">Email</th>
           <th class="border p-2 px-4 py-2">Username</th>
           <th class="border p-2 px-4 py-2">Role</th>
           <th class="border p-2 px-4 py-2">Status</th>
-          <th class="border p-2 px-4 py-2">
-            {{ 'Aksi' if current_lang == 'id' else 'Action' }}
-          </th>
+          <th class="border p-2 px-4 py-2">{{ 'Aksi' if current_lang == 'id' else 'Action' }}</th>
         </tr>
       </thead>
       <tbody>
@@ -320,15 +415,8 @@
               {{ user.status }}
             </span>
           </td>
-          <td
-            class="border p-2 px-4 py-2 flex gap-2"
-            x-data="{ 
-              showModal: false, 
-              deleteUrl: '{{ url_for('delete_user', user_id=user.id) }}', 
-              username: '{{ user.username }}'
-            }"
-          >
-            <!-- prettier-ignore -->
+          <td class="border p-2 px-4 py-2 flex gap-2" x-data="{ showModal: false, deleteUrl: '{{ url_for('delete_user', user_id=user.id) }}', username: '{{ user.username }}' }">
+            <!-- Tombol Edit -->
             <button
               @click="
                 let userData = {
@@ -359,7 +447,6 @@
                   nomor_hp: '{{user.biodata.nomor_hp|replace("'", "\\'")}}',
                   foto: '{{user.biodata.foto|replace("'", "\\'")}}'
                 };
-                // Merge data biodata ke userData jika ada
                 if (userData.biodata.nama_lengkap) userData.nama_lengkap = userData.biodata.nama_lengkap;
                 if (userData.biodata.email) userData.email = userData.biodata.email;
                 if (userData.biodata.jenis_kelamin) userData.jenis_kelamin = userData.biodata.jenis_kelamin;
@@ -377,6 +464,7 @@
               Edit
             </button>
 
+            <!-- Tombol Hapus -->
             <button
               type="button"
               @click="showModal = true; username = '{{ user.username }}'; deleteUrl = '{{ url_for('delete_user', user_id=user.id) }}';"
@@ -408,55 +496,34 @@
                 </button>
 
                 <!-- Icon -->
-                <div
-                  class="text-3xl mb-2 animate-bounce text-red-600"
-                >
+                <div class="text-3xl mb-2 animate-bounce text-red-600">
                   <i class="fa-solid fa-trash"></i>
                 </div>
 
-                <h2
-                  class="text-lg font-semibold mb-6 {{ 'text-red-700' if current_theme == 'dark' else 'text-red-800' }}"
-                >
-                  {{ 'Konfirmasi Hapus' if current_lang == 'id'
-                  else 'Confirm Delete' }}
+                <h2 class="text-lg font-semibold mb-6 {{ 'text-red-700' if current_theme == 'dark' else 'text-red-800' }}">
+                  {{ 'Konfirmasi Hapus' if current_lang == 'id' else 'Confirm Delete' }}
                 </h2>
 
                 <p class="text-gray-600 text-center mb-10">
-                  {{ 'Apakah Anda yakin ingin menghapus pengguna'
-                  if current_lang == 'id' else 'Are you sure you
-                  want to delete user' }}
-                  <span
-                    class="font-semibold text-red-600"
-                    x-text="username"
-                  ></span
-                  >?
+                  {{ 'Apakah Anda yakin ingin menghapus pengguna' if current_lang == 'id' else 'Are you sure you want to delete user' }}
+                  <span class="font-semibold text-red-600" x-text="username"></span>?
                 </p>
 
-                <form
-                  :action="deleteUrl"
-                  method="POST"
-                  id="deleteForm{{ user.id }}"
-                >
-                  <input
-                    type="hidden"
-                    name="csrf_token"
-                    value="{{ csrf_token() }}"
-                  />
+                <form :action="deleteUrl" method="POST" id="deleteForm{{ user.id }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                   <div class="flex justify-end gap-5 mb-5">
                     <button
                       type="button"
                       @click="showModal = false"
                       class="px-4 py-2 rounded-lg cursor-pointer bg-gray-300 hover:bg-gray-400 text-gray-800"
                     >
-                      {{ 'Batal' if current_lang == 'id' else
-                      'Cancel' }}
+                      {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
                     </button>
                     <button
                       type="submit"
                       class="px-4 py-2 rounded-lg cursor-pointer bg-red-600 hover:bg-red-700 text-white"
                     >
-                      {{ 'Hapus' if current_lang == 'id' else
-                      'Delete' }}
+                      {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
                     </button>
                   </div>
                 </form>
@@ -466,12 +533,8 @@
         </tr>
         {% else %}
         <tr>
-          <td
-            colspan="7"
-            class="p-4 text-center text-gray-500 mt-4"
-          >
-            {{ 'Tidak ada data' if current_lang == 'id' else 'No
-            data available' }}
+          <td colspan="7" class="p-4 text-center text-gray-500 mt-4">
+            {{ 'Tidak ada data' if current_lang == 'id' else 'No data available' }}
           </td>
         </tr>
         {% endfor %}

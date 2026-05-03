@@ -62,7 +62,7 @@
 
         try {
           const res = await fetch(
-            `/admin/api/berita?page=${page}&per_page=${this.$store.pagination.perPage}`
+            `{{ url_for('admin_api_berita') }}?page=${page}&per_page=${this.$store.pagination.perPage}`
           );
 
           if (!res.ok) throw new Error("API error");

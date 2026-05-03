@@ -7,7 +7,7 @@
   x-transition:leave="transition ease-in duration-300"
   x-transition:leave-start="opacity-100 translate-y-0"
   x-transition:leave-end="opacity-0 translate-y-5"
-  class="p-6 rounded-2xl shadow-md {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
+  class="p-6 m-10 rounded-2xl shadow-md {{ 'bg-gray-900' if current_theme == 'dark' else 'bg-white' }}"
   x-data="laporanArsipData()"
   x-init="init()"
 >
@@ -115,7 +115,7 @@
           </th>
           <th
             scope="col"
-            class="px-4 py-3 text-right {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
+            class="px-4 py-3 text-center {{ 'text-white' if current_theme == 'dark' else 'text-gray-900' }}"
           >
             {{ 'Aksi' if current_lang == 'id' else 'Action' }}
           </th>
@@ -165,8 +165,9 @@
                   {{ 'Unduh' if current_lang == 'id' else 'Download' }}
                 </button>
                 <button
-                  @click="deleteArsip(arsip.id)"
-                  class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg cursor-pointer"
+                  @click="openDeleteModal(arsip.id)"
+                  :disabled="isDeleting"
+                  class="px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg cursor-pointer"
                 >
                   <i class="fa-solid fa-trash"></i>
                   {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
@@ -211,7 +212,7 @@
   <div
     x-show="showGenerateModal"
     @click.away="showGenerateModal = false"
-    class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black bg-opacity-50' if current_theme == 'dark' else 'bg-gray-300 bg-opacity-70' }}"
+    class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm {{ 'bg-black/50 bg-opacity-50' if current_theme == 'dark' else 'bg-white/50 bg-opacity-70' }}"
     style="display: none"
   >
     <div
@@ -260,7 +261,7 @@
           </button>
           <button
             @click="generateReport('pdf')"
-            class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer"
+            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
           >
             <i class="fa-solid fa-file-pdf mr-2"></i>PDF
           </button>
@@ -270,140 +271,116 @@
       <div class="flex gap-2">
         <button
           @click="showGenerateModal = false"
-          class="flex-1 px-4 py-2 rounded-lg cursor-pointer {{ 'bg-gray-600 hover:bg-gray-500 text-white' if current_theme == 'dark' else 'bg-gray-300 hover:bg-gray-400 text-gray-900' }}"
+          class="flex-1 px-4 py-2 rounded-lg cursor-pointer bg-red-600 hover:bg-red-700 text-white"
         >
           {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
         </button>
       </div>
     </div>
   </div>
+
+  <!-- Alert / Notification -->
+  <div
+    x-show="alert.show"
+    x-transition.opacity
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+    @click.self="alert.show = false"
+  >
+    <div
+      x-transition.scale
+      @click.stop
+      class="w-full max-w-md rounded-2xl shadow-2xl border p-6"
+      :class="{
+      'bg-green-50 border-green-300 text-green-800': alert.type === 'success',
+      'bg-red-50 border-red-300 text-red-800': alert.type === 'error',
+      'bg-yellow-50 border-yellow-300 text-yellow-800': alert.type === 'warning',
+      'bg-blue-50 border-blue-300 text-blue-800': alert.type === 'info',
+    }"
+    >
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-3">
+        <div
+          class="w-10 h-10 flex items-center justify-center rounded-full"
+          :class="{
+          'bg-green-100 text-green-600': alert.type === 'success',
+          'bg-red-100 text-red-600': alert.type === 'error',
+          'bg-yellow-100 text-yellow-600': alert.type === 'warning',
+          'bg-blue-100 text-blue-600': alert.type === 'info',
+        }"
+        >
+          <i
+            class="fa-solid text-lg"
+            :class="{
+            'fa-circle-check': alert.type === 'success',
+            'fa-circle-xmark': alert.type === 'error',
+            'fa-triangle-exclamation': alert.type === 'warning',
+            'fa-circle-info': alert.type === 'info',
+          }"
+          ></i>
+        </div>
+
+        <div class="flex-1">
+          <h4 class="font-semibold text-base capitalize">
+            <span x-text="alert.type"></span>
+          </h4>
+          <p class="text-sm leading-relaxed" x-text="alert.message"></p>
+        </div>
+      </div>
+
+      <!-- Action -->
+      <div class="flex justify-end mt-4">
+        <button
+          @click.stop="alert.show = false"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-200 hover:bg-gray-300 text-gray-800 transition"
+        >
+          {{ 'Tutup' if current_lang == 'id' else 'Close' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi Hapus -->
+  <div
+    x-show="confirmDelete.show"
+    x-transition.opacity
+    class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-white/50' }}"
+  >
+    <div
+      @click.outside="closeDeleteModal()"
+      class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 {{ 'dark:bg-gray-900' if current_theme == 'dark' else 'dark:bg-gray-200' }}"
+    >
+      <div class="flex justify-center mb-4">
+        <i class="fa-solid fa-trash text-red-600 text-3xl"></i>
+      </div>
+
+      <h2 class="text-lg font-semibold text-center">
+        {{ 'Hapus Arsip' if current_lang == 'id' else 'Delete Archive' }}
+      </h2>
+
+      <p class="text-sm text-center text-gray-600 mt-2">
+        {{ 'Apakah Anda yakin ingin menghapus arsip ini? Tindakan ini tidak
+        dapat dibatalkan.' if current_lang == 'id' else 'Are you sure you want
+        to delete this archive? This action cannot be undone.' }}
+      </p>
+
+      <div class="mt-6 flex justify-center gap-3">
+        <button
+          @click="closeDeleteModal()"
+          class="px-4 py-2 rounded-lg {{ 'bg-gray-600 hover:bg-gray-700' if current_theme == 'dark' else 'bg-gray-300 hover:bg-gray-400' }}"
+          :disabled="isDeleting"
+        >
+          {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
+        </button>
+
+        <button
+          @click="deleteArsipConfirmed()"
+          class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+          :disabled="isDeleting"
+        >
+          <i x-show="isDeleting" class="fa-solid fa-spinner animate-spin"></i>
+          {{ 'Hapus' if current_lang == 'id' else 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
-
-<script>
-  function laporanArsipData() {
-    return {
-      arsipList: {{ arsip_list | tojson if arsip_list else '[]' }},
-      filteredArsip: [],
-      searchQuery: '',
-      filterType: '',
-      selectedEventId: '',
-      showGenerateModal: false,
-      generateEventId: '',
-
-      init() {
-        this.filteredArsip = this.arsipList;
-      },
-
-      filterArsip() {
-        let filtered = this.arsipList;
-
-        // Filter by event
-        if (this.selectedEventId) {
-          filtered = filtered.filter(a => a.event_id == this.selectedEventId);
-        }
-
-        // Filter by type
-        if (this.filterType) {
-          filtered = filtered.filter(a => a.file_type === this.filterType);
-        }
-
-        // Filter by search query
-        if (this.searchQuery) {
-          const query = this.searchQuery.toLowerCase();
-          filtered = filtered.filter(a =>
-            a.nama_arsip.toLowerCase().includes(query) ||
-            a.nama_kegiatan.toLowerCase().includes(query)
-          );
-        }
-
-        this.filteredArsip = filtered;
-      },
-
-      loadArsip() {
-        this.filterArsip();
-      },
-
-      async generateReport(type) {
-        if (!this.generateEventId) {
-          alert('{{ "Pilih kegiatan terlebih dahulu" if current_lang == "id" else "Please select an event first" }}');
-          return;
-        }
-
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-        const endpoint = type === 'excel'
-          ? `/api/generate_laporan_excel/${this.generateEventId}`
-          : `/api/generate_laporan_pdf/${this.generateEventId}`;
-
-        try {
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': csrfToken
-            }
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            alert(data.message);
-            this.showGenerateModal = false;
-            // Reload page to refresh arsip list
-            window.location.reload();
-          } else {
-            alert(data.message);
-          }
-        } catch (error) {
-          alert('{{ "Error saat generate laporan" if current_lang == "id" else "Error generating report" }}');
-          console.error(error);
-        }
-      },
-
-      viewArsip(arsip) {
-        if (arsip.file_path) {
-          const newWindow = window.open(`/${arsip.file_path}`, '_blank');
-
-          // Jika file PDF, buka dialog print setelah window ter-load
-          if (arsip.file_type === 'pdf' && newWindow) {
-            newWindow.onload = function() {
-              setTimeout(() => {
-                newWindow.print();
-              }, 500); // Delay sedikit untuk memastikan PDF ter-render
-            };
-          }
-        }
-      },
-
-      async deleteArsip(arsipId) {
-        if (!confirm('{{ "Apakah Anda yakin ingin menghapus arsip ini?" if current_lang == "id" else "Are you sure you want to delete this archive?" }}')) {
-          return;
-        }
-
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-        try {
-          const response = await fetch(`/api/hapus_arsip/${arsipId}`, {
-            method: 'DELETE',
-            headers: {
-              'X-CSRFToken': csrfToken
-            }
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            alert(data.message);
-            // Remove from list
-            this.arsipList = this.arsipList.filter(a => a.id !== arsipId);
-            this.filterArsip();
-          } else {
-            alert(data.message);
-          }
-        } catch (error) {
-          alert('{{ "Error saat menghapus arsip" if current_lang == "id" else "Error deleting archive" }}');
-          console.error(error);
-        }
-      }
-    }
-  }
-</script>

@@ -1,9 +1,5 @@
 <!DOCTYPE html>
-<html
-  style="font-size: 80%"
-  lang="{{ current_lang }}"
-  x-data="assignmentManager()"
->
+<html lang="{{ current_lang }}" x-data="assignmentManager()">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,51 +8,35 @@
       {{ 'Penugasan Penilai | SPK Pramuka' if current_lang == 'id' else
       'Evaluator Assignment | Scout DSS' }}
     </title>
+
+    <!-- Tailwind CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
+    />
+
+    <!-- Vanila CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/toast.css') }}"
     />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
+
+    <!-- Font Awesome -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+
+    <!-- Alpine.js -->
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
     {% include "script_sidebar.html" %} {% include 'script_theme.html' %}
-    <style>
-      .toast {
-        animation: slideIn 0.3s ease-out;
-      }
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-      .toast.hide {
-        animation: slideOut 0.3s ease-in;
-      }
-      @keyframes slideOut {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-      }
-    </style>
   </head>
   <body
     class="transition duration-300 ease-in-out font-sans scroll-smooth {{ 'bg-background-dark text-white' if current_theme == 'dark' else 'bg-gray-100 text-black' }}"
@@ -206,7 +186,7 @@
             <div
               x-show="showModal"
               style="display: none"
-              class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+              class="fixed inset-0 z-[9999] flex items-center justify-center bg-opacity-50 backdrop-blur-sm {{ 'bg-black/50' if current_theme == 'dark' else 'bg-white/50' }}"
               x-transition:enter="transition ease-out duration-300"
               x-transition:enter-start="opacity-0"
               x-transition:enter-end="opacity-100"
@@ -215,26 +195,30 @@
               x-transition:leave-end="opacity-0"
             >
               <div
-                class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all"
+                class="rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all {{ 'bg-white dark:bg-gray-800' if current_theme == 'dark' else 'bg-white dark:bg-gray-200' }}"
                 @click.away="closeModal()"
               >
                 <!-- Modal Header -->
                 <div
-                  class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900"
+                  class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center {{ 'bg-gray-50 dark:bg-gray-900' if current_theme == 'dark' else 'bg-gray-50 dark:bg-gray-200' }}"
                 >
                   <div>
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-white">
+                    <h3
+                      class="text-lg font-bold text-gray-800 {{ 'dark:text-white' if current_theme == 'dark' else 'dark:text-black' }}"
+                    >
                       {{ 'Pilih Kriteria' if current_lang == 'id' else 'Select
                       Criteria' }}
                     </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p
+                      class="text-xs text-gray-500 mt-1 {{ 'dark:text-gray-400' if current_theme == 'dark' else 'dark:text-gray-800' }}"
+                    >
                       <span x-text="currentEvaluatorName"></span> &bull;
                       <span x-text="currentEventName"></span>
                     </p>
                   </div>
                   <button
                     @click="closeModal()"
-                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    class="text-red-600 hover:text-red-700 dark:hover:text-red-500"
                   >
                     <i class="fa-solid fa-times"></i>
                   </button>
@@ -244,7 +228,7 @@
                 <div class="p-6 max-h-[60vh] overflow-y-auto">
                   <div
                     x-show="currentEventCriteria.length === 0"
-                    class="text-center text-gray-500 py-4"
+                    class="text-center text-gray-500 py-4 {{ 'dark:text-white' if current_theme == 'dark' else 'dark:text-black' }}"
                   >
                     {{ 'Tidak ada kriteria tersedia untuk kegiatan ini.' if
                     current_lang == 'id' else 'No criteria available for this
@@ -263,7 +247,7 @@
                           class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
                         />
                         <span
-                          class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                          class="ml-2 text-sm font-medium text-gray-700 {{ 'dark:text-gray-300' if current_theme == 'dark' else 'dark:text-gray-900' }}"
                         >
                           {{ 'Pilih Semua' if current_lang == 'id' else 'Select
                           All' }}
@@ -280,7 +264,7 @@
                       :key="criterion.id"
                     >
                       <label
-                        class="flex items-start p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition"
+                        class="flex items-start p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition {{ 'hover:bg-gray-50 dark:hover:bg-gray-700' if current_theme == 'dark' else 'hover:bg-gray-50 dark:hover:bg-gray-100' }}"
                       >
                         <input
                           type="checkbox"
@@ -290,7 +274,7 @@
                         />
                         <div class="ml-3">
                           <span
-                            class="block text-sm font-medium text-gray-800 dark:text-white"
+                            class="block text-sm font-medium text-gray-800 {{ 'dark:text-white' if current_theme == 'dark' else 'dark:text-black' }}"
                             x-text="criterion.nama"
                           ></span>
                         </div>
@@ -301,11 +285,11 @@
 
                 <!-- Modal Footer -->
                 <div
-                  class="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3"
+                  class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 {{ 'bg-gray-50 dark:bg-gray-900' if current_theme == 'dark' else 'bg-gray-50 dark:bg-gray-200' }}"
                 >
                   <button
                     @click="closeModal()"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-red-500 border border-gray-300 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700 dark:bg-red-600 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-red-700"
                   >
                     {{ 'Batal' if current_lang == 'id' else 'Cancel' }}
                   </button>
@@ -404,169 +388,21 @@
         </main>
       </div>
     </div>
+    <!-- Animation & Notification Script -->
+    {% include 'script_animation.html' %} {% include 'script_notification.html'
+    %}
 
     <script>
-      function assignmentManager() {
-        return {
-          assignments: {{ assignments|tojson|safe }},
-          eventsCriteria: {{ events_criteria|tojson|safe }},
+      window.INIT_ASSIGNMENTS = {{ assignments | tojson | safe }};
+      window.INIT_EVENTS_CRITERIA = {{ events_criteria | tojson | safe }};
 
-          // Modal state
-          showModal: false,
-          currentEvaluatorId: null,
-          currentEventId: null,
-          currentEvaluatorName: "",
-          currentEventName: "",
-          currentEventCriteria: [],
-          selectedCriteria: [],
+      window.LABEL_ASSIGN =
+        "{{ 'Tugaskan' if current_lang == 'id' else 'Assign' }}";
 
-          hasAssignment(evaluatorId, eventId) {
-            return (
-              this.assignments[evaluatorId] &&
-              this.assignments[evaluatorId][eventId] &&
-              this.assignments[evaluatorId][eventId].length > 0
-            );
-          },
-
-          getAssignmentLabel(evaluatorId, eventId) {
-            if (!this.hasAssignment(evaluatorId, eventId)) {
-              return '{{ "Tugaskan" if current_lang == "id" else "Assign" }}';
-            }
-            const count = this.assignments[evaluatorId][eventId].length;
-            const total = this.eventsCriteria[eventId]
-              ? this.eventsCriteria[eventId].length
-              : 0;
-            return count === total ? "All" : `${count}/${total}`;
-          },
-
-          getAssignmentCount(evaluatorId, eventId) {
-            if (!this.hasAssignment(evaluatorId, eventId)) return 0;
-            return this.assignments[evaluatorId][eventId].length;
-          },
-
-          openModal(evaluatorId, eventId, evaluatorName, eventName) {
-            this.currentEvaluatorId = evaluatorId;
-            this.currentEventId = eventId;
-            this.currentEvaluatorName = evaluatorName;
-            this.currentEventName = eventName;
-            this.currentEventCriteria = this.eventsCriteria[eventId] || [];
-
-            // Load existing assignments
-            if (
-              this.assignments[evaluatorId] &&
-              this.assignments[evaluatorId][eventId]
-            ) {
-              this.selectedCriteria = [
-                ...this.assignments[evaluatorId][eventId],
-              ];
-            } else {
-              this.selectedCriteria = [];
-            }
-
-            this.showModal = true;
-          },
-
-          closeModal() {
-            this.showModal = false;
-            this.selectedCriteria = [];
-          },
-
-          toggleAll(checked) {
-            if (checked) {
-              this.selectedCriteria = this.currentEventCriteria.map(
-                (c) => c.id
-              );
-            } else {
-              this.selectedCriteria = [];
-            }
-          },
-
-          async saveAssignment() {
-            const url = "/api/update_evaluator_criteria";
-            const csrfToken = document.querySelector(
-              'meta[name="csrf-token"]'
-            ).content;
-
-            try {
-              const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "X-CSRFToken": csrfToken,
-                },
-                body: JSON.stringify({
-                  evaluator_id: this.currentEvaluatorId,
-                  event_id: this.currentEventId,
-                  criteria_ids: this.selectedCriteria,
-                }),
-              });
-
-              const data = await response.json();
-
-              if (data.status === "success") {
-                // Update local state
-                if (!this.assignments[this.currentEvaluatorId]) {
-                  this.assignments[this.currentEvaluatorId] = {};
-                }
-                this.assignments[this.currentEvaluatorId][this.currentEventId] =
-                  [...this.selectedCriteria];
-
-                showNotification(data.message, "success");
-                this.closeModal();
-
-                // Reload page to update summary (delayed)
-                setTimeout(() => location.reload(), 1000);
-              } else {
-                showNotification(data.message, "error");
-              }
-            } catch (error) {
-              console.error("Error:", error);
-              showNotification(
-                '{{ "Terjadi kesalahan" if current_lang == "id" else "An error occurred" }}',
-                "error"
-              );
-            }
-          },
-        };
-      }
-
-      function showNotification(message, type) {
-        const container = document.getElementById("toast-container");
-
-        // Create toast element
-        const toast = document.createElement("div");
-        toast.className = `toast flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg min-w-[300px] max-w-md ${
-          type === "success"
-            ? "bg-green-500 text-white"
-            : type === "error"
-            ? "bg-red-500 text-white"
-            : "bg-blue-500 text-white"
-        }`;
-
-        // Icon based on type
-        const icon =
-          type === "success"
-            ? '<i class="fas fa-check-circle text-xl"></i>'
-            : type === "error"
-            ? '<i class="fas fa-times-circle text-xl"></i>'
-            : '<i class="fas fa-info-circle text-xl"></i>';
-
-        toast.innerHTML = `
-                ${icon}
-                <span class="flex-1 font-medium">${message}</span>
-                <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-
-        container.appendChild(toast);
-
-        // Auto remove after 3 seconds
-        setTimeout(() => {
-          toast.classList.add("hide");
-          setTimeout(() => toast.remove(), 300);
-        }, 3000);
-      }
+      window.LABEL_ERROR =
+        "{{ 'Terjadi kesalahan' if current_lang == 'id' else 'An error occurred' }}";
     </script>
+
+    <script src="{{ url_for('static', filename='js/assignment-manager.js') }}"></script>
   </body>
 </html>

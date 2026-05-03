@@ -1,9 +1,5 @@
-<!doctype html>
-<html
-  style="font-size: 80%"
-  class="transition duration-300 ease-in-out"
-  lang="{{ current_lang }}"
->
+<!DOCTYPE html>
+<html class="transition duration-300 ease-in-out" lang="{{ current_lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,6 +14,8 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/output.css') }}"
     />
+
+    <!-- Vanila CSS -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
@@ -157,7 +155,7 @@
                       {{ 'Kelola' if current_lang == 'id' else 'Manage' }}
                     </button>
                     <a
-                      href="/admin/view_config"
+                      href="{{ url_for('admin_view_config') }}"
                       class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-green-500 text-white hover:bg-green-600 active:scale-95 transition-all shadow dark:bg-green-600 dark:hover:bg-green-700 cursor-pointer"
                     >
                       <i class="fa-solid fa-eye mr-2"></i>
@@ -316,7 +314,6 @@
               <!-- === (Tabs) === -->
               {%include 'manajemen-seleksi/konfigurasi_seleksi.html'%} {%include
               'manajemen-seleksi/manajemen_penilaian.html'%} {%include
-              'manajemen-seleksi/hasil_seleksi.html'%} {%include
               'manajemen-seleksi/laporan_arsip_seleksi.html'%}
             </div>
           </section>
@@ -371,7 +368,7 @@
           </button>
           <button
             x-show="modal.title === 'Berhasil'"
-            @click="window.location.href = '/admin/view_config'"
+            @click="window.location.href = '{{ url_for('admin_view_config') }}'"
             class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all shadow-md dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer"
           >
             <i class="fa-solid fa-gear mr-2"></i>
@@ -394,6 +391,12 @@
       });
     </script>
 
+    <script>
+      window.INIT_ARSIP = {{ arsip_list | tojson | safe }};
+      window.CSRF_TOKEN = "{{ csrf_token() }}";
+    </script>
+
+    <script src="{{ url_for('static', filename='js/laporan-arsip.js') }}"></script>
     <script src="{{ url_for('static', filename='js/konfigurasi_seleksi.js') }}"></script>
 
     <!-- Animation & Notification Script -->
